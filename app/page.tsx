@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { FormEvent, useState } from "react";
 
 const COLLABORATION_EMAIL = "research@frame.health";
@@ -154,12 +153,13 @@ export default function Home() {
             </ul>
           </div>
           <figure className="hero-image image-frame">
-            <Image
+            <img
               src="/frame-hero.png"
               alt="Frame screenless wearable positioned on the inner lower upper arm above the elbow"
-              fill
-              priority
-              sizes="(max-width: 800px) 100vw, 50vw"
+              className="cover-image"
+              loading="eager"
+              fetchPriority="high"
+              decoding="async"
             />
             <figcaption>Product concept · final industrial design in development</figcaption>
           </figure>
@@ -204,11 +204,12 @@ export default function Home() {
             </p>
           </div>
           <figure className="wide-image image-frame">
-            <Image
+            <img
               src="/frame-ultrasound.png"
               alt="Generated cutaway showing a wearable ultrasound sensor observing the brachial artery beneath the skin"
-              fill
-              sizes="(max-width: 900px) 100vw, 1200px"
+              className="cover-image"
+              loading="lazy"
+              decoding="async"
             />
             <figcaption>
               Simplified sensing concept · anatomy and final sensor configuration
@@ -251,11 +252,12 @@ export default function Home() {
       <section className="software-section section">
         <div className="container software-grid">
           <figure className="software-image image-frame">
-            <Image
+            <img
               src="/frame-app.png"
               alt="Generated Frame app experience showing an overnight pattern, baseline comparison, reliable coverage, and an interrupted period"
-              fill
-              sizes="(max-width: 800px) 100vw, 56vw"
+              className="cover-image"
+              loading="lazy"
+              decoding="async"
             />
           </figure>
           <div className="software-copy">
