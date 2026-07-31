@@ -38,9 +38,9 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /Continuous monitoring does not mean continuous guessing\./);
   assert.match(html, /Research-stage technology/);
   assert.match(html, /Frame is under development and is not currently available for sale\./);
-  assert.match(html, /frame-hero\.png/);
-  assert.match(html, /frame-ultrasound\.png/);
-  assert.match(html, /frame-app\.png/);
+  assert.match(html, /frame-product-studio\.png/);
+  assert.match(html, /frame-sensing-studio\.png/);
+  assert.match(html, /frame-app-studio\.png/);
   assert.match(html, /Product and research updates only\./);
   assert.match(html, /href="\/privacy"/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
@@ -59,9 +59,9 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     readdir(new URL("../public/", import.meta.url)),
   ]);
 
-  assert.match(page, /src="\/frame-hero\.png"/);
-  assert.match(page, /src="\/frame-ultrasound\.png"/);
-  assert.match(page, /src="\/frame-app\.png"/);
+  assert.match(page, /src="\/frame-product-studio\.png"/);
+  assert.match(page, /src="\/frame-sensing-studio\.png"/);
+  assert.match(page, /src="\/frame-app-studio\.png"/);
   assert.doesNotMatch(page, /<svg|ProductDiagram|CrossSection|PatternTimeline/);
   assert.match(page, /fetch\("\/api\/waitlist"/);
   assert.doesNotMatch(page, /Connect a real waitlist API/);
@@ -73,17 +73,17 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(hosting, /"d1": "DB"/);
   assert.deepEqual(
     [
-      "frame-app.png",
-      "frame-hero.png",
-      "frame-ultrasound.png",
+      "frame-app-studio.png",
+      "frame-product-studio.png",
+      "frame-sensing-studio.png",
       "og-launch.png",
     ].filter(
       (file) => publicFiles.includes(file),
     ),
     [
-      "frame-app.png",
-      "frame-hero.png",
-      "frame-ultrasound.png",
+      "frame-app-studio.png",
+      "frame-product-studio.png",
+      "frame-sensing-studio.png",
       "og-launch.png",
     ],
   );

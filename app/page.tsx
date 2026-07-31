@@ -252,8 +252,8 @@ export default function Home() {
           </div>
           <figure className="hero-image image-frame">
             <Image
-              src="/frame-hero.png"
-              alt="Frame screenless wearable positioned on the inner lower upper arm above the elbow"
+              src="/frame-product-studio.png"
+              alt="Frame screenless cardiovascular wearable in charcoal knit with an integrated ultrasound sensor"
               className="cover-image"
               fill
               sizes="(max-width: 980px) calc(100vw - 64px), 55vw"
@@ -306,8 +306,8 @@ export default function Home() {
           </div>
           <figure className="wide-image image-frame">
             <Image
-              src="/frame-ultrasound.png"
-              alt="Generated cutaway showing a wearable ultrasound sensor observing the brachial artery beneath the skin"
+              src="/frame-sensing-studio.png"
+              alt="Exploded sensing concept showing the Frame ultrasound sensor above skin, tissue, and an artery"
               className="cover-image"
               fill
               sizes="(max-width: 680px) calc(100vw - 36px), (max-width: 1244px) calc(100vw - 64px), 1180px"
@@ -356,8 +356,8 @@ export default function Home() {
         <div className="container software-grid">
           <figure className="software-image image-frame">
             <Image
-              src="/frame-app.png"
-              alt="Generated Frame app experience showing an overnight pattern, baseline comparison, reliable coverage, and an interrupted period"
+              src="/frame-app-studio.png"
+              alt="Frame companion app showing reliable overnight coverage, an interrupted period, and a pattern to explore"
               className="cover-image"
               fill
               sizes="(max-width: 980px) calc(100vw - 64px), 58vw"

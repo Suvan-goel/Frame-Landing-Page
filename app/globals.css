@@ -276,13 +276,12 @@ h2 {
 .image-frame {
   position: relative;
   margin: 0;
-  border: 1px solid rgba(32, 33, 30, 0.08);
-  background: #e7ddce;
-  overflow: hidden;
+  background: transparent;
+  overflow: visible;
 }
 
 .image-frame img {
-  object-fit: cover;
+  object-fit: contain !important;
 }
 
 .cover-image {
@@ -294,11 +293,14 @@ h2 {
 
 .image-frame figcaption {
   position: absolute;
-  right: 16px;
+  right: auto;
   bottom: 14px;
   left: 16px;
-  padding: 8px 10px;
-  background: rgba(250, 248, 242, 0.86);
+  width: max-content;
+  max-width: calc(100% - 32px);
+  padding: 7px 9px;
+  border: 1px solid rgba(32, 33, 30, 0.08);
+  background: rgba(250, 248, 242, 0.76);
   color: var(--ink-soft);
   font-size: 0.58rem;
   letter-spacing: 0.03em;
@@ -311,6 +313,7 @@ h2 {
 
 .hero-image img {
   object-position: center center;
+  filter: drop-shadow(0 24px 30px rgba(32, 33, 30, 0.08));
 }
 
 .context-section {
@@ -410,11 +413,17 @@ h2 {
 
 .wide-image {
   min-height: 0;
-  aspect-ratio: 1.815 / 1;
+  aspect-ratio: 1.5 / 1;
+  margin-bottom: 52px;
 }
 
 .wide-image img {
   object-position: center;
+  filter: drop-shadow(0 18px 24px rgba(32, 33, 30, 0.06));
+}
+
+.wide-image figcaption {
+  bottom: -40px;
 }
 
 .method-steps {
@@ -453,6 +462,10 @@ h2 {
 .software-image {
   min-height: 0;
   aspect-ratio: 1.02 / 1;
+}
+
+.software-image img {
+  filter: drop-shadow(0 24px 32px rgba(32, 33, 30, 0.12));
 }
 
 .software-copy h2,
@@ -1176,11 +1189,18 @@ h2 {
 
   .wide-image {
     min-height: 0;
-    aspect-ratio: 4 / 3;
+    aspect-ratio: 1.36 / 1;
+    margin-bottom: 58px;
   }
 
   .wide-image img {
     object-position: center;
+  }
+
+  .wide-image figcaption {
+    bottom: -46px;
+    left: 0;
+    max-width: 100%;
   }
 
   .method-steps {
@@ -1202,7 +1222,7 @@ h2 {
   }
 
   .software-image img {
-    object-position: 64% center;
+    object-position: center;
   }
 
   .software-copy h2,
