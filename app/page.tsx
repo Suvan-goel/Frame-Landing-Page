@@ -258,7 +258,7 @@ export default function Home() {
               fill
               sizes="(max-width: 980px) calc(100vw - 64px), 55vw"
               quality={88}
-              unoptimized={process.env.NODE_ENV === "development"}
+              unoptimized
               loading="eager"
               fetchPriority="high"
             />
@@ -312,7 +312,7 @@ export default function Home() {
               fill
               sizes="(max-width: 680px) calc(100vw - 36px), (max-width: 1244px) calc(100vw - 64px), 1180px"
               quality={86}
-              unoptimized={process.env.NODE_ENV === "development"}
+              unoptimized
             />
             <figcaption>
               Simplified sensing concept · anatomy and final sensor configuration
@@ -362,7 +362,7 @@ export default function Home() {
               fill
               sizes="(max-width: 980px) calc(100vw - 64px), 58vw"
               quality={86}
-              unoptimized={process.env.NODE_ENV === "development"}
+              unoptimized
             />
           </figure>
           <div className="software-copy">
