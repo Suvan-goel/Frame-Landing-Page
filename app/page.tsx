@@ -1,10 +1,10 @@
 "use client";
 
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { BrandWordmark } from "./components/brand-wordmark";
 
-const COLLABORATION_EMAIL = "research@frame.health";
+const COLLABORATION_EMAIL = "support@framewearable.com";
 
 const content = {
   navigation: [
@@ -31,7 +31,7 @@ const content = {
     "Expanded daily-life coverage",
   ],
   contact: {
-    general: "hello@frame.health",
+    general: "support@framewearable.com",
     collaboration: COLLABORATION_EMAIL,
   },
 } as const;
@@ -53,7 +53,7 @@ function WaitlistForm({
   tone = "light",
 }: {
   idPrefix: string;
-  placement: "hero" | "footer";
+  placement: "hero" | "footer" | "popup";
   tone?: "light" | "dark";
 }) {
   const [email, setEmail] = useState("");
@@ -201,9 +201,58 @@ function WaitlistForm({
   );
 }
 
+function WaitlistPopup() {
+  const dialogRef = useRef<HTMLDialogElement>(null);
+
+  useEffect(() => {
+    const dialog = dialogRef.current;
+    if (!dialog || dialog.open) return;
+
+    dialog.showModal();
+    dialog.querySelector<HTMLInputElement>('input[type="email"]')?.focus();
+  }, []);
+
+  return (
+    <dialog
+      className="waitlist-popup"
+      ref={dialogRef}
+      aria-labelledby="waitlist-popup-title"
+      aria-describedby="waitlist-popup-description"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) {
+          event.currentTarget.close();
+        }
+      }}
+    >
+      <div className="waitlist-popup__card">
+        <button
+          className="waitlist-popup__close"
+          type="button"
+          aria-label="Close waitlist signup"
+          onClick={() => dialogRef.current?.close()}
+        >
+          Close <span aria-hidden="true">×</span>
+        </button>
+        <p className="eyebrow">Frame early access</p>
+        <h2 id="waitlist-popup-title">See what’s coming next.</h2>
+        <p id="waitlist-popup-description">
+          Join the waitlist for product progress, research updates, and future
+          testing opportunities.
+        </p>
+        <WaitlistForm
+          idPrefix="popup-waitlist"
+          placement="popup"
+          tone="dark"
+        />
+      </div>
+    </dialog>
+  );
+}
+
 export default function Home() {
   return (
     <main>
+      <WaitlistPopup />
       <header className="nav-shell">
         <nav className="nav container" aria-label="Primary navigation">
           <a className="wordmark" href="#top" aria-label="Frame home">

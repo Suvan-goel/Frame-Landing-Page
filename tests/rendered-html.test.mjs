@@ -42,6 +42,9 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /frame-sensing-studio\.png/);
   assert.match(html, /frame-app-studio\.png/);
   assert.match(html, /Product and research updates only\./);
+  assert.match(html, /Frame early access/);
+  assert.match(html, /See what’s coming next\./);
+  assert.match(html, /aria-label="Close waitlist signup"/);
   assert.match(html, /href="\/privacy"/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
@@ -66,6 +69,8 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(page, /src="\/frame-app-studio\.png"/);
   assert.doesNotMatch(page, /<svg|ProductDiagram|CrossSection|PatternTimeline/);
   assert.match(page, /fetch\("\/api\/waitlist"/);
+  assert.match(page, /dialog\.showModal\(\)/);
+  assert.match(page, /placement="popup"/);
   assert.doesNotMatch(page, /Connect a real waitlist API/);
   assert.match(layout, /url: `\$\{baseUrl\}\/og-launch\.png`/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);

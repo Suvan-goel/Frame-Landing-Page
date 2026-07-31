@@ -64,7 +64,10 @@ export default function PrivacyPage() {
           <p>
             You can unsubscribe from any update using the link in that message.
             To ask what information we hold or request deletion, email{" "}
-            <a href="mailto:hello@frame.health">hello@frame.health</a>.
+            <a href="mailto:support@framewearable.com">
+              support@framewearable.com
+            </a>
+            .
           </p>
         </section>
 
