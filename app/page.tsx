@@ -15,7 +15,7 @@ const content = {
     ["Baseline", "What is normal for you during comparable periods."],
     ["Response", "How your cardiovascular system changes around meaningful events."],
     ["Recovery", "How quickly you return toward your usual pattern."],
-    ["Confidence", "What was measured reliably—and what was not."],
+    ["Confidence", "What was measured reliably-and what was not."],
   ],
   principles: [
     ["Personal, not generic", "Compared with your own baseline and context."],
@@ -232,7 +232,7 @@ export default function Home() {
             <p className="hero-intro">
               Frame is developing a non-invasive upper-arm wearable that uses
               ultrasound to track blood-pressure patterns through sleep, rest,
-              and recovery—then turns them into clear, personal insight.
+              and recovery-then turns them into clear, personal insight.
             </p>
             <div className="hero-actions">
               <WaitlistForm
@@ -276,7 +276,7 @@ export default function Home() {
               Blood pressure changes with sleep, movement, stress, exercise,
               food, posture, and recovery. Most people only see an occasional
               snapshot. Frame aims to help make sense of what happens in
-              between—without treating every temporary rise as harmful.
+              between-without treating every temporary rise as harmful.
             </p>
           </div>
           <div className="insight-list" aria-label="The four concepts behind Frame">

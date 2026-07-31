@@ -29,7 +29,7 @@ test("server-renders the Frame landing page", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>Frame — Blood pressure in context<\/title>/i);
+  assert.match(html, /<title>Frame - Blood pressure in context<\/title>/i);
   assert.match(
     html,
     /See how your cardiovascular system responds to daily life\./,

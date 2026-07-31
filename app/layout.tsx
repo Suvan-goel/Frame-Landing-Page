@@ -26,7 +26,7 @@ export async function generateMetadata(): Promise<Metadata> {
 
   return {
     metadataBase: new URL(baseUrl),
-    title: "Frame — Blood pressure in context",
+    title: "Frame - Blood pressure in context",
     description:
       "Frame is developing a non-invasive ultrasound wearable to help people understand how their cardiovascular system responds to sleep, stress, exercise, and recovery.",
     applicationName: "Frame",
@@ -55,7 +55,7 @@ export async function generateMetadata(): Promise<Metadata> {
           url: `${baseUrl}/og-launch.png`,
           width: 1732,
           height: 908,
-          alt: "Frame — Blood pressure, in context.",
+          alt: "Frame - Blood pressure, in context.",
         },
       ],
     },
