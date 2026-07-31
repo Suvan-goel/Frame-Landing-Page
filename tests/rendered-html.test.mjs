@@ -47,15 +47,17 @@ test("server-renders the Frame landing page", async () => {
 });
 
 test("uses generated raster visuals and keeps the page editable", async () => {
-  const [page, layout, css, schema, api, privacy, hosting, publicFiles] =
+  const [page, layout, css, api, supabase, privacy, publicFiles] =
     await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
-    readFile(new URL("../db/schema.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/waitlist/route.ts", import.meta.url), "utf8"),
+    readFile(
+      new URL("../lib/supabase-admin.server.ts", import.meta.url),
+      "utf8",
+    ),
     readFile(new URL("../app/privacy/page.tsx", import.meta.url), "utf8"),
-    readFile(new URL("../.openai/hosting.json", import.meta.url), "utf8"),
     readdir(new URL("../public/", import.meta.url)),
   ]);
 
@@ -67,10 +69,10 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.doesNotMatch(page, /Connect a real waitlist API/);
   assert.match(layout, /url: `\$\{baseUrl\}\/og-launch\.png`/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
-  assert.match(schema, /waitlistSignups/);
-  assert.match(api, /INSERT INTO waitlist_signups/);
+  assert.match(api, /from\("waitlist_signups"\)\.insert/);
+  assert.match(supabase, /SUPABASE_SECRET_KEY/);
+  assert.doesNotMatch(page, /SUPABASE_SECRET_KEY|createClient/);
   assert.match(privacy, /We do not sell your information\./);
-  assert.match(hosting, /"d1": "DB"/);
   assert.deepEqual(
     [
       "frame-app-studio.png",

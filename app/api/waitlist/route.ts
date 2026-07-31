@@ -1,4 +1,4 @@
-import { ensureWaitlistStorage, getWaitlistDatabase } from "@/db/waitlist";
+import { getSupabaseAdmin } from "@/lib/supabase-admin.server";
 
 export const dynamic = "force-dynamic";
 
@@ -65,35 +65,23 @@ export async function POST(request: Request) {
   }
 
   try {
-    await ensureWaitlistStorage();
-    const database = await getWaitlistDatabase();
-    const result = await database
-      .prepare(
-        `INSERT INTO waitlist_signups (
-          email,
-          normalized_email,
-          placement,
-          utm_source,
-          utm_medium,
-          utm_campaign
-        ) VALUES (?, ?, ?, ?, ?, ?)
-        ON CONFLICT(normalized_email) DO NOTHING`,
-      )
-      .bind(
-        email,
-        normalizedEmail,
-        cleanAttribution(payload.placement) ?? "landing_page",
-        cleanAttribution(payload.utmSource),
-        cleanAttribution(payload.utmMedium),
-        cleanAttribution(payload.utmCampaign),
-      )
-      .run();
+    const supabase = await getSupabaseAdmin();
+    const { error } = await supabase.from("waitlist_signups").insert({
+      email,
+      placement: cleanAttribution(payload.placement) ?? "landing_page",
+      utm_source: cleanAttribution(payload.utmSource),
+      utm_medium: cleanAttribution(payload.utmMedium),
+      utm_campaign: cleanAttribution(payload.utmCampaign),
+    });
 
-    const joined = Number(result.meta.changes ?? 0) > 0;
-    return jsonResponse(
-      { status: joined ? "joined" : "already_joined" },
-      joined ? 201 : 200,
-    );
+    if (error?.code === "23505") {
+      return jsonResponse({ status: "already_joined" });
+    }
+    if (error) {
+      throw error;
+    }
+
+    return jsonResponse({ status: "joined" }, 201);
   } catch (error) {
     console.error("Waitlist signup failed", error);
     return jsonResponse(

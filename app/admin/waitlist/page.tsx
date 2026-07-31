@@ -5,10 +5,9 @@ import {
   requireChatGPTUser,
 } from "@/app/chatgpt-auth";
 import {
-  ensureWaitlistStorage,
-  getWaitlistDatabase,
+  getSupabaseAdmin,
   isWaitlistAdmin,
-} from "@/db/waitlist";
+} from "@/lib/supabase-admin.server";
 
 export const dynamic = "force-dynamic";
 
@@ -28,23 +27,22 @@ export default async function WaitlistAdminPage() {
     notFound();
   }
 
-  await ensureWaitlistStorage();
-  const database = await getWaitlistDatabase();
-  const signups = await database
-    .prepare(
-      `SELECT
-        id,
-        email,
-        placement,
-        utm_source,
-        utm_medium,
-        utm_campaign,
-        created_at
-      FROM waitlist_signups
-      ORDER BY created_at DESC, id DESC
-      LIMIT 500`,
+  const supabase = await getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("waitlist_signups")
+    .select(
+      "id,email,placement,utm_source,utm_medium,utm_campaign,created_at",
     )
-    .all<WaitlistSignup>();
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .limit(500)
+    .returns<WaitlistSignup[]>();
+
+  if (error) {
+    console.error("Waitlist dashboard query failed", error);
+    throw new Error("The waitlist is temporarily unavailable.");
+  }
+  const signups = data ?? [];
 
   return (
     <main className="admin-page">
@@ -57,8 +55,8 @@ export default async function WaitlistAdminPage() {
             <p className="eyebrow">Owner view</p>
             <h1>Waitlist</h1>
             <p>
-              {signups.results.length} most recent{" "}
-              {signups.results.length === 1 ? "signup" : "signups"}
+              {signups.length} most recent{" "}
+              {signups.length === 1 ? "signup" : "signups"}
             </p>
           </div>
           <div className="admin-actions">
@@ -71,7 +69,7 @@ export default async function WaitlistAdminPage() {
           </div>
         </header>
 
-        {signups.results.length ? (
+        {signups.length ? (
           <div className="admin-table-shell">
             <table className="admin-table">
               <thead>
@@ -83,7 +81,7 @@ export default async function WaitlistAdminPage() {
                 </tr>
               </thead>
               <tbody>
-                {signups.results.map((signup) => (
+                {signups.map((signup) => (
                   <tr key={signup.id}>
                     <td>{signup.email}</td>
                     <td>{signup.placement.replaceAll("_", " ")}</td>
@@ -98,7 +96,7 @@ export default async function WaitlistAdminPage() {
                           dateStyle: "medium",
                           timeStyle: "short",
                           timeZone: "UTC",
-                        }).format(new Date(`${signup.created_at}Z`))}
+                        }).format(new Date(signup.created_at))}
                       </time>
                     </td>
                   </tr>

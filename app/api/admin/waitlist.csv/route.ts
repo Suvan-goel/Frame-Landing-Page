@@ -1,9 +1,8 @@
 import { getChatGPTUser } from "@/app/chatgpt-auth";
 import {
-  ensureWaitlistStorage,
-  getWaitlistDatabase,
+  getSupabaseAdmin,
   isWaitlistAdmin,
-} from "@/db/waitlist";
+} from "@/lib/supabase-admin.server";
 
 export const dynamic = "force-dynamic";
 
@@ -33,25 +32,26 @@ export async function GET() {
     return Response.json({ error: "Not authorized." }, { status: 403 });
   }
 
-  await ensureWaitlistStorage();
-  const database = await getWaitlistDatabase();
-  const signups = await database
-    .prepare(
-      `SELECT
-        email,
-        placement,
-        utm_source,
-        utm_medium,
-        utm_campaign,
-        created_at
-      FROM waitlist_signups
-      ORDER BY created_at DESC, id DESC`,
-    )
-    .all<WaitlistExportRow>();
+  const supabase = await getSupabaseAdmin();
+  const { data, error } = await supabase
+    .from("waitlist_signups")
+    .select("email,placement,utm_source,utm_medium,utm_campaign,created_at")
+    .order("created_at", { ascending: false })
+    .order("id", { ascending: false })
+    .returns<WaitlistExportRow[]>();
+
+  if (error) {
+    console.error("Waitlist CSV query failed", error);
+    return Response.json(
+      { error: "The waitlist export is temporarily unavailable." },
+      { status: 503 },
+    );
+  }
+  const signups = data ?? [];
 
   const rows = [
     ["email", "placement", "utm_source", "utm_medium", "utm_campaign", "created_at"],
-    ...signups.results.map((signup) => [
+    ...signups.map((signup) => [
       signup.email,
       signup.placement,
       signup.utm_source,
