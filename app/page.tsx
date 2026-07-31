@@ -304,51 +304,58 @@ export default function Home() {
               comfortable, and useful over time.
             </p>
           </div>
-          <figure className="wide-image image-frame">
-            <Image
-              src="/frame-sensing-studio.png"
-              alt="Exploded sensing concept showing the Frame ultrasound sensor above skin, tissue, and an artery"
-              className="cover-image"
-              fill
-              sizes="(max-width: 680px) calc(100vw - 36px), (max-width: 1244px) calc(100vw - 64px), 1180px"
-              quality={86}
-              unoptimized
-            />
-            <figcaption>
-              Simplified sensing concept · anatomy and final sensor configuration
-              are illustrative
-            </figcaption>
-          </figure>
-          <ol className="method-steps">
-            <li>
-              <span>01</span>
-              <div>
-                <h3>Observe</h3>
-                <p>A specialised sensor observes the artery beneath the skin.</p>
+          <div className="method-layout">
+            <figure className="wide-image">
+              <div className="wide-image-media image-frame">
+                <Image
+                  src="/frame-sensing-studio.png"
+                  alt="Exploded sensing concept showing the Frame ultrasound sensor above skin, tissue, and an artery"
+                  className="cover-image"
+                  fill
+                  sizes="(max-width: 680px) calc(100vw - 72px), (max-width: 980px) 40vw, 480px"
+                  quality={86}
+                  unoptimized
+                />
               </div>
-            </li>
-            <li>
-              <span>02</span>
-              <div>
-                <h3>Interpret</h3>
-                <p>Arterial features are analysed using a personalised model.</p>
-              </div>
-            </li>
-            <li>
-              <span>03</span>
-              <div>
-                <h3>Add context</h3>
-                <p>Motion, contact, temperature, sleep, and activity add meaning.</p>
-              </div>
-            </li>
-            <li>
-              <span>04</span>
-              <div>
-                <h3>Show what is trusted</h3>
-                <p>Uncertain or interrupted periods remain clearly marked.</p>
-              </div>
-            </li>
-          </ol>
+              <figcaption>
+                Simplified sensing concept · anatomy and final sensor
+                configuration are illustrative
+              </figcaption>
+            </figure>
+            <ol className="method-steps">
+              <li>
+                <span>01</span>
+                <div>
+                  <h3>Observe</h3>
+                  <p>A specialised sensor observes the artery beneath the skin.</p>
+                </div>
+              </li>
+              <li>
+                <span>02</span>
+                <div>
+                  <h3>Interpret</h3>
+                  <p>Arterial features are analysed using a personalised model.</p>
+                </div>
+              </li>
+              <li>
+                <span>03</span>
+                <div>
+                  <h3>Add context</h3>
+                  <p>
+                    Motion, contact, temperature, sleep, and activity add
+                    meaning.
+                  </p>
+                </div>
+              </li>
+              <li>
+                <span>04</span>
+                <div>
+                  <h3>Show what is trusted</h3>
+                  <p>Uncertain or interrupted periods remain clearly marked.</p>
+                </div>
+              </li>
+            </ol>
+          </div>
         </div>
       </section>
 
