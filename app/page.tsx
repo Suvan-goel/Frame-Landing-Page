@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Image from "next/image";
 
 const COLLABORATION_EMAIL = "research@frame.health";
 
@@ -38,68 +39,163 @@ function Arrow() {
   return <span aria-hidden="true">↗</span>;
 }
 
-function WaitlistForm() {
+type WaitlistStatus =
+  | "idle"
+  | "submitting"
+  | "joined"
+  | "already_joined"
+  | "error";
+
+function WaitlistForm({
+  idPrefix,
+  placement,
+  tone = "light",
+}: {
+  idPrefix: string;
+  placement: "hero" | "footer";
+  tone?: "light" | "dark";
+}) {
   const [email, setEmail] = useState("");
   const [error, setError] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  const [status, setStatus] = useState<WaitlistStatus>("idle");
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
+    const form = event.currentTarget;
+    const normalizedEmail = email.trim();
+    if (
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail) ||
+      normalizedEmail.length > 254
+    ) {
       setError("Enter a valid email address.");
+      setStatus("error");
       return;
     }
 
     setError("");
-    // Connect a real waitlist API or database integration here.
-    setSubmitted(true);
+    setStatus("submitting");
+
+    const query = new URLSearchParams(window.location.search);
+    const formData = new FormData(form);
+
+    try {
+      const response = await fetch("/api/waitlist", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: normalizedEmail,
+          website: formData.get("website"),
+          placement,
+          utmSource: query.get("utm_source"),
+          utmMedium: query.get("utm_medium"),
+          utmCampaign: query.get("utm_campaign"),
+        }),
+      });
+      const result = (await response.json()) as {
+        status?: "joined" | "already_joined";
+        error?: string;
+      };
+
+      if (!response.ok || !result.status) {
+        throw new Error(
+          result.error ?? "We couldn’t save your email. Please try again.",
+        );
+      }
+
+      setStatus(result.status);
+    } catch (submissionError) {
+      setError(
+        submissionError instanceof Error
+          ? submissionError.message
+          : "We couldn’t save your email. Please try again.",
+      );
+      setStatus("error");
+    }
   }
 
-  if (submitted) {
+  if (status === "joined" || status === "already_joined") {
     return (
-      <div className="form-success" role="status" aria-live="polite">
+      <div
+        className={`form-success form-success--${tone}`}
+        role="status"
+        aria-live="polite"
+      >
         <div>
-          <strong>You’re on the list.</strong>
-          <p>We’ll share thoughtful updates as the research develops.</p>
+          <strong>
+            {status === "joined" ? "You’re on the list." : "You’re already in."}
+          </strong>
+          <p>We’ll share thoughtful updates as Frame develops.</p>
         </div>
         <button
           type="button"
           onClick={() => {
-            setSubmitted(false);
+            setStatus("idle");
             setEmail("");
           }}
         >
-          Add another email
+          Use another email
         </button>
       </div>
     );
   }
 
   return (
-    <form className="waitlist-form" onSubmit={handleSubmit} noValidate>
-      <div className="form-field">
-        <label htmlFor="waitlist-email">Email address</label>
+    <form
+      className={`waitlist-form waitlist-form--${tone}`}
+      onSubmit={handleSubmit}
+      noValidate
+    >
+      <div className="honeypot" aria-hidden="true">
+        <label htmlFor={`${idPrefix}-website`}>Website</label>
         <input
-          id="waitlist-email"
+          id={`${idPrefix}-website`}
+          name="website"
+          type="text"
+          tabIndex={-1}
+          autoComplete="off"
+        />
+      </div>
+      <div className="form-field">
+        <label htmlFor={`${idPrefix}-email`}>Email address</label>
+        <input
+          id={`${idPrefix}-email`}
           name="email"
           type="email"
           inputMode="email"
           autoComplete="email"
           placeholder="Email address"
           value={email}
-          onChange={(event) => setEmail(event.target.value)}
+          onChange={(event) => {
+            setEmail(event.target.value);
+            if (status === "error") {
+              setError("");
+              setStatus("idle");
+            }
+          }}
+          disabled={status === "submitting"}
           aria-invalid={Boolean(error)}
-          aria-describedby={error ? "email-error" : undefined}
+          aria-describedby={
+            error ? `${idPrefix}-error ${idPrefix}-note` : `${idPrefix}-note`
+          }
         />
         {error ? (
-          <p className="form-error" id="email-error">
+          <p className="form-error" id={`${idPrefix}-error`} role="alert">
             {error}
           </p>
         ) : null}
       </div>
-      <button className="button button--light" type="submit">
-        Join early access <Arrow />
+      <button
+        className={`button ${tone === "dark" ? "button--dark" : "button--light"}`}
+        type="submit"
+        disabled={status === "submitting"}
+      >
+        {status === "submitting" ? "Joining…" : "Join early access"}{" "}
+        {status === "submitting" ? null : <Arrow />}
       </button>
+      <p className="form-note" id={`${idPrefix}-note`}>
+        Product and research updates only. Unsubscribe any time.{" "}
+        <a href="/privacy">Privacy</a>
+      </p>
     </form>
   );
 }
@@ -139,9 +235,11 @@ export default function Home() {
               and recovery—then turns them into clear, personal insight.
             </p>
             <div className="hero-actions">
-              <a className="button button--dark" href="#early-access">
-                Join early access <Arrow />
-              </a>
+              <WaitlistForm
+                idPrefix="hero-waitlist"
+                placement="hero"
+                tone="dark"
+              />
               <a className="text-link" href="#how-it-works">
                 How it works <span aria-hidden="true">↓</span>
               </a>
@@ -153,13 +251,16 @@ export default function Home() {
             </ul>
           </div>
           <figure className="hero-image image-frame">
-            <img
+            <Image
               src="/frame-hero.png"
               alt="Frame screenless wearable positioned on the inner lower upper arm above the elbow"
               className="cover-image"
+              fill
+              sizes="(max-width: 980px) calc(100vw - 64px), 55vw"
+              quality={88}
+              unoptimized={process.env.NODE_ENV === "development"}
               loading="eager"
               fetchPriority="high"
-              decoding="async"
             />
             <figcaption>Product concept · final industrial design in development</figcaption>
           </figure>
@@ -204,12 +305,14 @@ export default function Home() {
             </p>
           </div>
           <figure className="wide-image image-frame">
-            <img
+            <Image
               src="/frame-ultrasound.png"
               alt="Generated cutaway showing a wearable ultrasound sensor observing the brachial artery beneath the skin"
               className="cover-image"
-              loading="lazy"
-              decoding="async"
+              fill
+              sizes="(max-width: 680px) calc(100vw - 36px), (max-width: 1244px) calc(100vw - 64px), 1180px"
+              quality={86}
+              unoptimized={process.env.NODE_ENV === "development"}
             />
             <figcaption>
               Simplified sensing concept · anatomy and final sensor configuration
@@ -252,12 +355,14 @@ export default function Home() {
       <section className="software-section section">
         <div className="container software-grid">
           <figure className="software-image image-frame">
-            <img
+            <Image
               src="/frame-app.png"
               alt="Generated Frame app experience showing an overnight pattern, baseline comparison, reliable coverage, and an interrupted period"
               className="cover-image"
-              loading="lazy"
-              decoding="async"
+              fill
+              sizes="(max-width: 980px) calc(100vw - 64px), 58vw"
+              quality={86}
+              unoptimized={process.env.NODE_ENV === "development"}
             />
           </figure>
           <div className="software-copy">
@@ -332,7 +437,7 @@ export default function Home() {
               Join for research updates, product progress, and future testing
               opportunities.
             </p>
-            <WaitlistForm />
+            <WaitlistForm idPrefix="footer-waitlist" placement="footer" />
             <a
               className="collaboration-link"
               href={`mailto:${content.contact.collaboration}?subject=Frame%20research%20collaboration`}
@@ -351,6 +456,7 @@ export default function Home() {
           <div className="footer-links">
             <a href="#product">Product</a>
             <a href="#research">Research</a>
+            <a href="/privacy">Privacy</a>
             <a href={`mailto:${content.contact.general}`}>Contact</a>
           </div>
         </div>

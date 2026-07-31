@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
@@ -25,9 +25,20 @@ export async function generateMetadata(): Promise<Metadata> {
   const baseUrl = `${protocol}://${host}`;
 
   return {
+    metadataBase: new URL(baseUrl),
     title: "Frame — Blood pressure in context",
     description:
       "Frame is developing a non-invasive ultrasound wearable to help people understand how their cardiovascular system responds to sleep, stress, exercise, and recovery.",
+    applicationName: "Frame",
+    category: "health technology",
+    alternates: {
+      canonical: "/",
+    },
+    formatDetection: {
+      email: false,
+      address: false,
+      telephone: false,
+    },
     icons: {
       icon: "/favicon.svg",
       shortcut: "/favicon.svg",
@@ -38,11 +49,12 @@ export async function generateMetadata(): Promise<Metadata> {
         "Frame is developing a screenless, non-invasive ultrasound wearable for blood pressure in context.",
       type: "website",
       siteName: "Frame",
+      url: baseUrl,
       images: [
         {
-          url: `${baseUrl}/og.png`,
-          width: 1731,
-          height: 909,
+          url: `${baseUrl}/og-launch.png`,
+          width: 1732,
+          height: 908,
           alt: "Frame — Blood pressure, in context.",
         },
       ],
@@ -52,10 +64,25 @@ export async function generateMetadata(): Promise<Metadata> {
       title: "See how your cardiovascular system responds to daily life.",
       description:
         "Frame is developing a screenless, non-invasive ultrasound wearable for blood pressure in context.",
-      images: [`${baseUrl}/og.png`],
+      images: [`${baseUrl}/og-launch.png`],
+    },
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+      },
     },
   };
 }
+
+export const viewport: Viewport = {
+  colorScheme: "light",
+  themeColor: "#f3efe6",
+};
 
 export default function RootLayout({
   children,
