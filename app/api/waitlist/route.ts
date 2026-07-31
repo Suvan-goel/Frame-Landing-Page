@@ -66,8 +66,21 @@ export async function POST(request: Request) {
 
   try {
     const supabase = await getSupabaseAdmin();
+    const { data: existingSignup, error: lookupError } = await supabase
+      .from("waitlist_signups")
+      .select("id")
+      .eq("email", normalizedEmail)
+      .maybeSingle();
+
+    if (lookupError) {
+      throw lookupError;
+    }
+    if (existingSignup) {
+      return jsonResponse({ status: "already_joined" });
+    }
+
     const { error } = await supabase.from("waitlist_signups").insert({
-      email,
+      email: normalizedEmail,
       placement: cleanAttribution(payload.placement) ?? "landing_page",
       utm_source: cleanAttribution(payload.utmSource),
       utm_medium: cleanAttribution(payload.utmMedium),
