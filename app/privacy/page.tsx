@@ -1,5 +1,6 @@
 /* eslint-disable @next/next/no-html-link-for-pages */
 import type { Metadata } from "next";
+import { BrandWordmark } from "../components/brand-wordmark";
 
 export const metadata: Metadata = {
   title: "Privacy — Frame",
@@ -15,7 +16,7 @@ export default function PrivacyPage() {
     <main className="legal-page">
       <article className="legal-shell">
         <a className="wordmark" href="/" aria-label="Frame home">
-          Frame<span>.</span>
+          <BrandWordmark priority />
         </a>
         <p className="eyebrow">Privacy</p>
         <h1>Privacy notice</h1>

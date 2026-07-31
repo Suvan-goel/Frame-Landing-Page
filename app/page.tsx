@@ -2,6 +2,7 @@
 
 import { FormEvent, useState } from "react";
 import Image from "next/image";
+import { BrandWordmark } from "./components/brand-wordmark";
 
 const COLLABORATION_EMAIL = "research@frame.health";
 
@@ -206,7 +207,7 @@ export default function Home() {
       <header className="nav-shell">
         <nav className="nav container" aria-label="Primary navigation">
           <a className="wordmark" href="#top" aria-label="Frame home">
-            Frame<span>.</span>
+            <BrandWordmark priority />
           </a>
           <div className="nav-links">
             {content.navigation.map((item) => (
@@ -457,8 +458,12 @@ export default function Home() {
 
       <footer className="footer">
         <div className="container footer-top">
-          <a className="wordmark wordmark--footer" href="#top">
-            Frame<span>.</span>
+          <a
+            className="wordmark wordmark--footer"
+            href="#top"
+            aria-label="Frame home"
+          >
+            <BrandWordmark variant="light" />
           </a>
           <div className="footer-links">
             <a href="#product">Product</a>

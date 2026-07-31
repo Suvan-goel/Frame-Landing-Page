@@ -8,6 +8,7 @@ import {
   getSupabaseAdmin,
   isWaitlistAdmin,
 } from "@/lib/supabase-admin.server";
+import { BrandWordmark } from "@/app/components/brand-wordmark";
 
 export const dynamic = "force-dynamic";
 
@@ -50,7 +51,7 @@ export default async function WaitlistAdminPage() {
         <header className="admin-header">
           <div>
             <a className="wordmark" href="/" aria-label="Frame home">
-              Frame<span>.</span>
+              <BrandWordmark />
             </a>
             <p className="eyebrow">Owner view</p>
             <h1>Waitlist</h1>

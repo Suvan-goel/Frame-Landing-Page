@@ -116,16 +116,17 @@ h2 {
 }
 
 .wordmark {
+  display: inline-flex;
+  width: 7.4rem;
+  align-items: center;
   justify-self: start;
-  font-family: var(--serif);
-  font-size: 1.72rem;
-  font-weight: 600;
-  letter-spacing: -0.045em;
-  line-height: 1;
+  line-height: 0;
 }
 
-.wordmark span {
-  color: var(--burgundy);
+.wordmark__image {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .nav-links {
@@ -885,7 +886,7 @@ h2 {
 }
 
 .wordmark--footer {
-  font-size: 2rem;
+  width: 8.6rem;
 }
 
 .footer-links {
