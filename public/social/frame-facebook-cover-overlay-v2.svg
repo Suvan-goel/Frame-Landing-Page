@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1702" height="630" viewBox="0 0 1702 630">
+  <style>
+    .serif {
+      font-family: "Iowan Old Style", "Baskerville", "Times New Roman", serif;
+      fill: #20211e;
+    }
+
+    .sans {
+      font-family: "Helvetica Neue", "Avenir Next", Arial, sans-serif;
+      fill: #20211e;
+    }
+  </style>
+
+  <g transform="translate(210 0)">
+    <text class="serif" x="0" y="128" font-size="44" font-weight="600" letter-spacing="-1.8">
+      Frame<tspan fill="#8d3e46">.</tspan>
+    </text>
+
+    <line x1="0" y1="161" x2="46" y2="161" stroke="#8d3e46" stroke-width="3"/>
+    <text class="sans" x="62" y="166" font-size="14" font-weight="600" letter-spacing="2.2">
+      RESEARCH-STAGE ULTRASOUND WEARABLE
+    </text>
+
+    <text class="serif" x="-3" y="288" font-size="95" font-weight="400" letter-spacing="-4.6">
+      Blood pressure,
+    </text>
+    <text class="serif" x="-3" y="376" font-size="95" font-weight="400" letter-spacing="-4.6">
+      in context<tspan fill="#8d3e46">.</tspan>
+    </text>
+
+    <text class="sans" x="0" y="430" font-size="22" font-weight="400" letter-spacing="-0.2" fill="#5c5b54">
+      See how your cardiovascular system
+    </text>
+    <text class="sans" x="0" y="463" font-size="22" font-weight="400" letter-spacing="-0.2" fill="#5c5b54">
+      responds to daily life.
+    </text>
+  </g>
+</svg>
