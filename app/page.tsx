@@ -5,6 +5,11 @@ import Image from "next/image";
 import { BrandWordmark } from "./components/brand-wordmark";
 
 const COLLABORATION_EMAIL = "support@framewearable.com";
+const WAITLIST_JOINED_STORAGE_KEY = "frame-waitlist-joined";
+const WAITLIST_PROMPT_SEEN_SESSION_KEY = "frame-waitlist-prompt-seen";
+const WAITLIST_JOINED_EVENT = "frame:waitlist-joined";
+const WAITLIST_PROMPT_DELAY_MS = 12_000;
+const WAITLIST_SCROLL_THRESHOLD = 0.4;
 
 const content = {
   navigation: [
@@ -104,6 +109,12 @@ function WaitlistForm({
       }
 
       setStatus(result.status);
+      try {
+        window.localStorage.setItem(WAITLIST_JOINED_STORAGE_KEY, "true");
+      } catch {
+        // A successful signup should not be affected by unavailable storage.
+      }
+      window.dispatchEvent(new Event(WAITLIST_JOINED_EVENT));
     } catch (submissionError) {
       setError(
         submissionError instanceof Error
@@ -206,10 +217,79 @@ function WaitlistPopup() {
 
   useEffect(() => {
     const dialog = dialogRef.current;
-    if (!dialog || dialog.open) return;
+    if (!dialog) return;
 
-    dialog.showModal();
-    dialog.querySelector<HTMLInputElement>('input[type="email"]')?.focus();
+    try {
+      if (
+        window.localStorage.getItem(WAITLIST_JOINED_STORAGE_KEY) === "true" ||
+        window.sessionStorage.getItem(WAITLIST_PROMPT_SEEN_SESSION_KEY) ===
+          "true"
+      ) {
+        return;
+      }
+    } catch {
+      // Continue with the prompt when browser storage is unavailable.
+    }
+
+    let timer: ReturnType<typeof window.setTimeout> | undefined;
+
+    function removePromptTriggers() {
+      if (timer !== undefined) window.clearTimeout(timer);
+      window.removeEventListener("scroll", handleScroll);
+    }
+
+    function showPrompt() {
+      if (dialog.open) return;
+
+      removePromptTriggers();
+      try {
+        window.sessionStorage.setItem(
+          WAITLIST_PROMPT_SEEN_SESSION_KEY,
+          "true",
+        );
+      } catch {
+        // The prompt remains dismissible when browser storage is unavailable.
+      }
+      dialog.showModal();
+      dialog.querySelector<HTMLInputElement>('input[type="email"]')?.focus();
+    }
+
+    function handleScroll() {
+      const scrollableDistance =
+        document.documentElement.scrollHeight - window.innerHeight;
+      if (
+        scrollableDistance > 0 &&
+        window.scrollY / scrollableDistance >= WAITLIST_SCROLL_THRESHOLD
+      ) {
+        showPrompt();
+      }
+    }
+
+    function handleJoined() {
+      removePromptTriggers();
+      if (dialog.open) dialog.close();
+    }
+
+    function handleStorage(event: StorageEvent) {
+      if (
+        event.key === WAITLIST_JOINED_STORAGE_KEY &&
+        event.newValue === "true"
+      ) {
+        handleJoined();
+      }
+    }
+
+    timer = window.setTimeout(showPrompt, WAITLIST_PROMPT_DELAY_MS);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    window.addEventListener(WAITLIST_JOINED_EVENT, handleJoined);
+    window.addEventListener("storage", handleStorage);
+    handleScroll();
+
+    return () => {
+      removePromptTriggers();
+      window.removeEventListener(WAITLIST_JOINED_EVENT, handleJoined);
+      window.removeEventListener("storage", handleStorage);
+    };
   }, []);
 
   return (

@@ -71,6 +71,11 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(page, /fetch\("\/api\/waitlist"/);
   assert.match(page, /dialog\.showModal\(\)/);
   assert.match(page, /placement="popup"/);
+  assert.match(page, /WAITLIST_PROMPT_DELAY_MS = 12_000/);
+  assert.match(page, /WAITLIST_SCROLL_THRESHOLD = 0\.4/);
+  assert.match(page, /window\.sessionStorage\.setItem/);
+  assert.match(page, /window\.localStorage\.setItem/);
+  assert.match(page, /window\.dispatchEvent\(new Event\(WAITLIST_JOINED_EVENT\)\)/);
   assert.doesNotMatch(page, /Connect a real waitlist API/);
   assert.match(layout, /url: `\$\{baseUrl\}\/og-launch\.png`/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
