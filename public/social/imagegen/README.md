@@ -1,4 +1,4 @@
-# Frame ImageGen campaign set — V1
+# Frame ImageGen campaign set — V3
 
 Generated with the built-in ImageGen workflow on 2026-08-01. These images use
 the current Frame concept render and on-arm image as strict design references.
@@ -17,26 +17,37 @@ capabilities may change.
 
 ## Deliverables
 
-- `frame-studio-preorder-feed-v1.png` — premium product-first studio source
-- `frame-morning-routine-feed-v1.png` — relatable at-home lifestyle source
-- `frame-morning-walk-feed-v1.png` — active everyday-context lifestyle source
-- `frame-sensor-detail-landscape-v1.png` — sensing-detail website source
-- `exports/*-1080x1350-v1.png` — exact 4:5 Meta feed exports
+- `frame-product-campaign-hero-feed-v3.png` — premium product campaign source
+- `frame-morning-routine-feed-v2.png` — corrected at-home lifestyle source
+- `frame-morning-walk-feed-v2.png` — corrected everyday-context source
+- `frame-sensor-campaign-macro-landscape-v3.png` — premium sensing macro source
+- `exports/frame-morning-*-1080x1350-v2.png` — corrected 4:5 Meta feed exports
+- `exports/frame-product-campaign-hero-feed-1080x1350-v3.png` — premium 4:5 export
+
+The V2 lifestyle images supersede the V1 lifestyle images. V2 places Frame on
+the distal upper arm, approximately 2–4 cm above the elbow crease and below the
+biceps muscle belly. The V1 files remain only for comparison and provenance.
+The V2 product-only images also supersede the abstract V1 studio and sensing
+images. They use practical tabletop arrangements with believable gravity and
+contact shadows.
+
+The V3 product-only images supersede V2. They retain believable physical
+staging while adding a seamless studio cyclorama, controlled rim lighting,
+richer blacks, tighter campaign composition, and professional material detail.
 
 ## Final prompt set
 
-### Premium studio
+### Premium campaign hero
 
-Create a photorealistic premium studio campaign photograph of the Frame
-upper-arm ultrasound wearable. Preserve exactly the fine black engineered-knit
-loop band, burgundy rectangular adjustment clasp and indicator, matte-charcoal
-elongated inner sensor pod, two gold charging contacts, burgundy positioning
-marker, proportions, construction, and material textures. Arrange one Frame in
-an elegant three-quarter loop on warm travertine, with a cream paper backdrop,
-subtle burgundy accent, soft directional light, realistic shadow, and generous
-upper-left copy space. Vertical 4:5, premium health-tech editorial quality. No
-text, logo, watermark, packaging, people, screens, extra devices, invented
-buttons, LEDs, plates, or sensors; do not turn it into a watch or cuff.
+Create an elite photorealistic Frame campaign hero on a seamless warm-cream
+studio cyclorama with a restrained burgundy lighting falloff. Preserve the exact
+knit band, clasp and indicator, charcoal sensor, two contacts, marker,
+proportions, and finishes. Rest the band as a low grounded oval with the clasp
+in the near foreground and sensor visible through the opening. Use an 85mm
+three-quarter product perspective, a large diffused key, controlled rim light,
+negative fill for rich blacks, realistic contact shadow, and intentional upper
+copy space. No generic catalog styling, wood, plinth, props, levitation, text,
+logo, watermark, or invented hardware.
 
 ### Morning routine
 
@@ -46,7 +57,9 @@ clasp shape, orientation, materials, marker, and discreet inner sensor pod. Show
 a relatable health-conscious adult in a sleeveless charcoal top making tea in a
 warm contemporary breakfast nook. Use natural skin texture, soft early-morning
 window light, shallow depth of field, and clean upper-left copy space. Vertical
-4:5, aspirational but credible. No text, logo, watermark, phone, app screen,
+4:5, aspirational but credible. Place the band on the distal upper arm, about
+3 cm above the elbow crease, fully below the biceps muscle belly with a visible
+strip of bare skin above the elbow joint. No text, logo, watermark, phone, app screen,
 clinical props, cuff, watch screen, invented hardware, or exaggerated retouching.
 
 ### Morning walk
@@ -56,20 +69,20 @@ easy outdoor morning walk. Preserve the exact knit band, burgundy clasp,
 positioning marker, inner sensor pod, dimensions, orientation, and screenless
 design. Show a fit but relatable adult man in his late 40s or early 50s wearing a
 cream sleeveless top on a quiet tree-lined city path, with Frame sharp on the
-upper arm. Use soft golden backlight, subtle filmic realism, and a calm optimistic
+distal upper arm about 3 cm above the elbow crease, below the biceps muscle belly.
+Keep a visible strip of bare skin above the elbow joint. Use soft golden
+backlight, subtle filmic realism, and a calm optimistic
 mood. Vertical composition suitable for a 4:5 crop. No text, logo, watermark,
 phone, watch, medical props, intense workout pose, invented hardware, or visual
 medical-outcome claims.
 
-### Sensor detail
+### Premium sensor macro
 
-Create an ultra-realistic macro product photograph focused on Frame's inner
-sensing surface and engineered textile. Preserve exactly one matte-charcoal
-elongated sensor pod, exactly two gold contacts, the burgundy marker and clasp,
-the fine black knit, edge binding, proportions, and finishes. Open one band into
-a graceful arc with the underside facing camera on a seamless warm-cream paper
-sweep. Place the product across the right two-thirds with large clean left-side
-copy space. Wide 3:2, controlled softbox and rim lighting, subtle grounded shadow.
-No text, logo, watermark, people, anatomy cutaway, glowing waves, app screen,
-packaging, or invented sensors, contacts, plates, holes, buttons, lights, buckles,
-or screens.
+Create a high-impact commercial macro of Frame laid completely flat on seamless
+warm-cream studio paper, sensor side up. Preserve exactly one charcoal sensor
+pod, exactly two gold contacts, the burgundy marker and clasp, knit, binding,
+proportions, and finishes. Use a tight landscape 3:2 crop, near top-down 100mm
+macro perspective, cross-polarized key, narrow rim light, rich negative fill,
+precise material micro-contrast, and minimal unused space. Keep the product
+physically supported and grounded. No floating fabric, generic e-commerce
+lighting, text, logo, watermark, anatomy, glow, props, or invented hardware.

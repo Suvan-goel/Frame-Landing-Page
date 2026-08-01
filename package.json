@@ -12,7 +12,8 @@
     "test": "npm run build && node --test tests/rendered-html.test.mjs",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate",
-    "creative:v2": "node scripts/generate-frame-creatives-v2.mjs"
+    "creative:v2": "node scripts/generate-frame-creatives-v2.mjs",
+    "creative:facebook": "node scripts/generate-frame-facebook-ads-v1.mjs"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.111.0",

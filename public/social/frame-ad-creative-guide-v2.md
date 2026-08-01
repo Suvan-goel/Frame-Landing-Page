@@ -13,6 +13,30 @@ burgundy adjustment clasp, matte-charcoal inner sensor pod, soft acoustic
 contact window, charging contacts, and positioning marker. Do not reuse the
 older fixed-loop band or its shiny metal-looking contact plate.
 
+## Wearing position
+
+- Place Frame on the distal upper arm, approximately 2–4 cm above the elbow
+  crease.
+- The band must sit below the biceps muscle belly with a visible strip of bare
+  skin between the band and the elbow joint.
+- Never depict Frame across the biceps, elbow joint, forearm, or wrist.
+
+## Product-only staging
+
+- Ground the product with believable gravity, contact points, and shadows.
+- Prefer practical tabletop, flat-lay, or straightforward catalog arrangements.
+- Avoid levitation, edge-balancing, dramatic ribbon shapes, sculptural plinths,
+  or other abstract positions that obscure how the flexible band behaves.
+
+## Product-photography quality bar
+
+- Use seamless brand-toned surfaces, deliberate campaign composition, and
+  controlled material-specific lighting.
+- Preserve deep neutral blacks, crisp knit texture, soft highlight rolloff, and
+  clear separation between the band and background.
+- Avoid pale wood, generic marketplace lighting, loose framing, washed-out
+  materials, and excessive empty space that lacks a clear copy purpose.
+
 ## Current campaign exports
 
 - Feed, 4:5: `frame-meta-feed-ad-v2.png`

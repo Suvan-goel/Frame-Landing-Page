@@ -738,11 +738,11 @@ export default function Home() {
 
       <section className="final-cta" id="early-access">
         <div className="container final-grid">
-          <div>
+          <div className="final-cta__copy">
             <p className="eyebrow">Early access</p>
             <h2>Help shape a new way to understand cardiovascular health.</h2>
           </div>
-          <div>
+          <div className="final-cta__form">
             <p>
               We’re inviting a small group of early users. Your response helps
               us understand who Frame can serve best.
