@@ -528,11 +528,9 @@ export default function Home() {
               and recovery-then turns them into clear, personal insight.
             </p>
             <div className="hero-actions">
-              <WaitlistForm
-                idPrefix="hero-waitlist"
-                placement="hero"
-                tone="dark"
-              />
+              <a className="button button--dark" href="#early-access">
+                Apply for early access <Arrow />
+              </a>
               <a className="text-link" href="#how-it-works">
                 How it works <span aria-hidden="true">↓</span>
               </a>
@@ -549,7 +547,7 @@ export default function Home() {
                 src="/frame-on-arm-editorial-v3.png"
                 alt="Frame wearable concept fitted around a person's upper arm"
                 fill
-                sizes="(max-width: 680px) 88vw, (max-width: 980px) 50vw, 27vw"
+                sizes="(max-width: 680px) 100vw, (max-width: 980px) 56vw, 34vw"
                 quality={88}
                 unoptimized
                 loading="eager"
@@ -560,7 +558,7 @@ export default function Home() {
                 src="/frame-product-concept-realistic-v3-transparent.png"
                 alt="Refined Frame upper-arm wearable concept with an adjustable charcoal knit band, burgundy clasp, and integrated ultrasound sensor"
                 fill
-                sizes="(max-width: 680px) 72vw, (max-width: 980px) 44vw, 23vw"
+                sizes="(max-width: 680px) 72vw, (max-width: 980px) 40vw, 26vw"
                 quality={88}
                 unoptimized
                 loading="eager"

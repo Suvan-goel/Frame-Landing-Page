@@ -51,6 +51,8 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /maxlength="500"/i);
   assert.match(html, /All fields are required\./);
   assert.match(html, /Apply for early access/);
+  assert.match(html, /class="button button--dark" href="#early-access"/);
+  assert.match(html, /<section class="final-cta" id="early-access">/);
   assert.match(html, /Frame early access/);
   assert.match(html, /Tell us how Frame could fit into your life\./);
   assert.match(html, /No spam\./);
@@ -104,18 +106,22 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.deepEqual(
     [
       "frame-app-studio.png",
+      "frame-app-studio-v4.png",
       "frame-on-arm-editorial-v3.png",
       "frame-product-concept-realistic-v3-transparent.png",
       "frame-sensing-concept-realistic-v2.png",
+      "frame-sensing-concept-realistic-v3-transparent.png",
       "og-launch-v2.png",
     ].filter(
       (file) => publicFiles.includes(file),
     ),
     [
       "frame-app-studio.png",
+      "frame-app-studio-v4.png",
       "frame-on-arm-editorial-v3.png",
       "frame-product-concept-realistic-v3-transparent.png",
       "frame-sensing-concept-realistic-v2.png",
+      "frame-sensing-concept-realistic-v3-transparent.png",
       "og-launch-v2.png",
     ],
   );
