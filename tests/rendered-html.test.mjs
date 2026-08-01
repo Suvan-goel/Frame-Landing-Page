@@ -46,7 +46,7 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /name="lastName"/);
   assert.match(html, /name="motivation"/);
   assert.match(html, /Why do you want Frame\?/);
-  assert.match(html, /Minimum\s*(?:<!-- -->)?100(?:<!-- -->)? characters\./);
+  assert.match(html, /Minimum\s*(?:<!-- -->)?30(?:<!-- -->)? characters\./);
   assert.match(html, /Apply for early access/);
   assert.match(html, /Frame early access/);
   assert.match(html, /Tell us why Frame matters to you\./);

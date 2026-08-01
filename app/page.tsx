@@ -11,7 +11,7 @@ const WAITLIST_PROMPT_SEEN_SESSION_KEY = "frame-waitlist-prompt-seen";
 const WAITLIST_JOINED_EVENT = "frame:waitlist-joined";
 const WAITLIST_PROMPT_DELAY_MS = 12_000;
 const WAITLIST_SCROLL_THRESHOLD = 0.4;
-const MIN_MOTIVATION_LENGTH = 100;
+const MIN_MOTIVATION_LENGTH = 30;
 const MAX_MOTIVATION_LENGTH = 1_500;
 
 const content = {
