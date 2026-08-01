@@ -330,14 +330,30 @@ h2 {
   height: 510px;
   overflow: hidden;
   background: var(--cream);
-  -webkit-mask-image: radial-gradient(ellipse 96% 98% at 52% 50%, #000 79%, transparent 100%);
-  mask-image: radial-gradient(ellipse 96% 98% at 52% 50%, #000 79%, transparent 100%);
+  -webkit-mask-image: radial-gradient(
+    ellipse 58% 60% at 52% 50%,
+    #000 28%,
+    rgba(0, 0, 0, 0.96) 40%,
+    rgba(0, 0, 0, 0.72) 55%,
+    rgba(0, 0, 0, 0.38) 70%,
+    rgba(0, 0, 0, 0.12) 83%,
+    transparent 94%
+  );
+  mask-image: radial-gradient(
+    ellipse 58% 60% at 52% 50%,
+    #000 28%,
+    rgba(0, 0, 0, 0.96) 40%,
+    rgba(0, 0, 0, 0.72) 55%,
+    rgba(0, 0, 0, 0.38) 70%,
+    rgba(0, 0, 0, 0.12) 83%,
+    transparent 94%
+  );
 }
 
 .hero-lifestyle::after {
   position: absolute;
   inset: -1px;
-  box-shadow: inset 0 0 30px 12px var(--cream);
+  box-shadow: inset 0 0 74px 34px var(--cream);
   content: "";
   pointer-events: none;
 }
@@ -730,16 +746,26 @@ h2 {
 }
 
 .final-cta {
-  padding: 112px 0;
+  padding: clamp(96px, 8vw, 128px) 0;
   background: var(--burgundy);
   color: var(--paper);
 }
 
 .final-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.1fr) minmax(350px, 0.7fr);
-  gap: 80px;
-  align-items: end;
+  grid-template-columns: minmax(0, 1.1fr) minmax(390px, 0.85fr);
+  gap: clamp(64px, 6vw, 96px);
+  align-items: start;
+}
+
+.final-cta__copy {
+  max-width: 660px;
+  padding-top: 4px;
+}
+
+.final-cta__form {
+  padding-left: clamp(32px, 3vw, 48px);
+  border-left: 1px solid rgba(250, 248, 242, 0.24);
 }
 
 .final-cta .eyebrow {
@@ -747,13 +773,28 @@ h2 {
 }
 
 .final-cta h2 {
-  max-width: 760px;
+  max-width: 650px;
+  line-height: 0.98;
 }
 
-.final-grid > div:last-child > p {
-  margin: 0 0 28px;
+.final-cta__form > p {
+  max-width: 470px;
+  margin: 0 0 26px;
   color: rgba(250, 248, 242, 0.75);
+  font-size: 0.92rem;
   line-height: 1.72;
+}
+
+.final-cta .waitlist-form--light .form-field input,
+.final-cta .waitlist-form--light .form-field textarea {
+  border-color: rgba(255, 255, 255, 0.44);
+  background: rgba(255, 255, 255, 0.025);
+  transition: border-color 160ms ease, background 160ms ease;
+}
+
+.final-cta .waitlist-form--light .form-field input:focus,
+.final-cta .waitlist-form--light .form-field textarea:focus {
+  background: rgba(255, 255, 255, 0.06);
 }
 
 .waitlist-form {
@@ -1395,6 +1436,16 @@ h2 {
   .final-grid {
     grid-template-columns: 1fr;
     gap: 60px;
+  }
+
+  .final-cta__copy {
+    max-width: 720px;
+  }
+
+  .final-cta__form {
+    max-width: 620px;
+    padding-left: 0;
+    border-left: 0;
   }
 
   .software-copy {

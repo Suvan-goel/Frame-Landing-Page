@@ -41,7 +41,7 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /frame-product-concept-realistic-v3-transparent\.png/);
   assert.match(html, /frame-on-arm-editorial-v3\.png/);
   assert.match(html, /frame-sensing-concept-realistic-v3-transparent\.png/);
-  assert.match(html, /frame-app-studio-v4\.png/);
+  assert.match(html, /frame-app-studio-v5\.png/);
   assert.match(html, /We’ll only contact you about Frame\./);
   assert.match(html, /name="firstName"/);
   assert.match(html, /name="lastName"/);
@@ -81,7 +81,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(page, /src="\/frame-product-concept-realistic-v3-transparent\.png"/);
   assert.match(page, /src="\/frame-on-arm-editorial-v3\.png"/);
   assert.match(page, /src="\/frame-sensing-concept-realistic-v3-transparent\.png"/);
-  assert.match(page, /src="\/frame-app-studio-v4\.png"/);
+  assert.match(page, /src="\/frame-app-studio-v5\.png"/);
   assert.doesNotMatch(page, /<svg|ProductDiagram|CrossSection|PatternTimeline/);
   assert.match(page, /fetch\("\/api\/waitlist"/);
   assert.match(page, /dialog\.showModal\(\)/);
@@ -106,7 +106,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.deepEqual(
     [
       "frame-app-studio.png",
-      "frame-app-studio-v4.png",
+      "frame-app-studio-v5.png",
       "frame-on-arm-editorial-v3.png",
       "frame-product-concept-realistic-v3-transparent.png",
       "frame-sensing-concept-realistic-v2.png",
@@ -117,7 +117,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     ),
     [
       "frame-app-studio.png",
-      "frame-app-studio-v4.png",
+      "frame-app-studio-v5.png",
       "frame-on-arm-editorial-v3.png",
       "frame-product-concept-realistic-v3-transparent.png",
       "frame-sensing-concept-realistic-v2.png",
