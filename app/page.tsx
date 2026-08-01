@@ -322,7 +322,7 @@ function WaitlistForm({
         <textarea
           id={`${idPrefix}-motivation`}
           name="motivation"
-          placeholder="Tell us what you want to understand or improve—and why it matters."
+          placeholder="Tell us what you expect Frame to solve for you that existing products cannot"
           value={motivation}
           onChange={(event) => {
             setMotivation(event.target.value);
