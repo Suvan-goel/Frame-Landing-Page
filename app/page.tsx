@@ -551,17 +551,6 @@ export default function Home() {
                 quality={88}
                 unoptimized
                 loading="eager"
-              />
-            </div>
-            <div className="hero-product">
-              <Image
-                src="/frame-product-concept-realistic-v3-transparent.png"
-                alt="Refined Frame upper-arm wearable concept with an adjustable charcoal knit band, burgundy clasp, and integrated ultrasound sensor"
-                fill
-                sizes="(max-width: 680px) 72vw, (max-width: 980px) 40vw, 26vw"
-                quality={88}
-                unoptimized
-                loading="eager"
                 fetchPriority="high"
               />
             </div>
@@ -582,6 +571,19 @@ export default function Home() {
               between-without treating every temporary rise as harmful.
             </p>
           </div>
+          <figure className="product-concept-showcase">
+            <div className="product-concept-showcase__media">
+              <Image
+                src="/frame-product-concept-realistic-v3-transparent.png"
+                alt="Refined Frame upper-arm wearable concept with an adjustable charcoal knit band, burgundy clasp, and integrated ultrasound sensor"
+                fill
+                sizes="(max-width: 680px) calc(100vw - 56px), (max-width: 980px) 76vw, 760px"
+                quality={88}
+                unoptimized
+              />
+            </div>
+            <figcaption>Product concept · final industrial design in development</figcaption>
+          </figure>
           <div className="insight-list" aria-label="The four concepts behind Frame">
             {content.insights.map(([title, description], index) => (
               <article key={title}>
