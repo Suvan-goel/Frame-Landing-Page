@@ -531,18 +531,30 @@ export default function Home() {
               <li>Screenless</li>
             </ul>
           </div>
-          <figure className="hero-image image-frame">
-            <Image
-              src="/frame-product-concept-realistic-v3-transparent.png"
-              alt="Refined Frame upper-arm wearable concept with an adjustable charcoal knit band, burgundy clasp, and integrated ultrasound sensor"
-              className="cover-image"
-              fill
-              sizes="(max-width: 980px) calc(100vw - 64px), 55vw"
-              quality={88}
-              unoptimized
-              loading="eager"
-              fetchPriority="high"
-            />
+          <figure className="hero-visuals">
+            <div className="hero-lifestyle">
+              <Image
+                src="/frame-on-arm-concept-realistic-v2.png"
+                alt="Frame wearable concept fitted around a person's upper arm"
+                fill
+                sizes="(max-width: 680px) 72vw, (max-width: 980px) 62vw, 38vw"
+                quality={88}
+                unoptimized
+                loading="eager"
+              />
+            </div>
+            <div className="hero-product">
+              <Image
+                src="/frame-product-concept-realistic-v3-transparent.png"
+                alt="Refined Frame upper-arm wearable concept with an adjustable charcoal knit band, burgundy clasp, and integrated ultrasound sensor"
+                fill
+                sizes="(max-width: 680px) 74vw, (max-width: 980px) 58vw, 38vw"
+                quality={88}
+                unoptimized
+                loading="eager"
+                fetchPriority="high"
+              />
+            </div>
             <figcaption>Product concept · final industrial design in development</figcaption>
           </figure>
         </div>
@@ -589,7 +601,7 @@ export default function Home() {
             <figure className="wide-image">
               <div className="wide-image-media image-frame">
                 <Image
-                  src="/frame-sensing-concept-realistic-v2.png"
+                  src="/frame-sensing-concept-realistic-v3-transparent.png"
                   alt="Exploded sensing concept showing the refined Frame ultrasound contact module above skin, tissue, and an artery"
                   className="cover-image"
                   fill
