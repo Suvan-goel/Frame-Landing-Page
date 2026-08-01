@@ -13,6 +13,14 @@ burgundy adjustment clasp, matte-charcoal inner sensor pod, soft acoustic
 contact window, charging contacts, and positioning marker. Do not reuse the
 older fixed-loop band or its shiny metal-looking contact plate.
 
+## Wearing position
+
+- Place Frame on the distal upper arm, approximately 2–4 cm above the elbow
+  crease.
+- The band must sit below the biceps muscle belly with a visible strip of bare
+  skin between the band and the elbow joint.
+- Never depict Frame across the biceps, elbow joint, forearm, or wrist.
+
 ## Current campaign exports
 
 - Feed, 4:5: `frame-meta-feed-ad-v2.png`

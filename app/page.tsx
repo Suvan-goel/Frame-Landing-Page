@@ -546,10 +546,10 @@ export default function Home() {
           <figure className="hero-visuals">
             <div className="hero-lifestyle">
               <Image
-                src="/frame-on-arm-concept-realistic-v2.png"
+                src="/frame-on-arm-editorial-v3.png"
                 alt="Frame wearable concept fitted around a person's upper arm"
                 fill
-                sizes="(max-width: 680px) 72vw, (max-width: 980px) 62vw, 38vw"
+                sizes="(max-width: 680px) 88vw, (max-width: 980px) 50vw, 27vw"
                 quality={88}
                 unoptimized
                 loading="eager"
@@ -560,7 +560,7 @@ export default function Home() {
                 src="/frame-product-concept-realistic-v3-transparent.png"
                 alt="Refined Frame upper-arm wearable concept with an adjustable charcoal knit band, burgundy clasp, and integrated ultrasound sensor"
                 fill
-                sizes="(max-width: 680px) 74vw, (max-width: 980px) 58vw, 38vw"
+                sizes="(max-width: 680px) 72vw, (max-width: 980px) 44vw, 23vw"
                 quality={88}
                 unoptimized
                 loading="eager"

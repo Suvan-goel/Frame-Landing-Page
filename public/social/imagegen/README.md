@@ -1,4 +1,4 @@
-# Frame ImageGen campaign set — V1
+# Frame ImageGen campaign set — V2
 
 Generated with the built-in ImageGen workflow on 2026-08-01. These images use
 the current Frame concept render and on-arm image as strict design references.
@@ -18,10 +18,15 @@ capabilities may change.
 ## Deliverables
 
 - `frame-studio-preorder-feed-v1.png` — premium product-first studio source
-- `frame-morning-routine-feed-v1.png` — relatable at-home lifestyle source
-- `frame-morning-walk-feed-v1.png` — active everyday-context lifestyle source
+- `frame-morning-routine-feed-v2.png` — corrected at-home lifestyle source
+- `frame-morning-walk-feed-v2.png` — corrected everyday-context source
 - `frame-sensor-detail-landscape-v1.png` — sensing-detail website source
-- `exports/*-1080x1350-v1.png` — exact 4:5 Meta feed exports
+- `exports/frame-morning-*-1080x1350-v2.png` — corrected 4:5 Meta feed exports
+- `exports/frame-studio-preorder-feed-1080x1350-v1.png` — studio 4:5 export
+
+The V2 lifestyle images supersede the V1 lifestyle images. V2 places Frame on
+the distal upper arm, approximately 2–4 cm above the elbow crease and below the
+biceps muscle belly. The V1 files remain only for comparison and provenance.
 
 ## Final prompt set
 
@@ -46,7 +51,9 @@ clasp shape, orientation, materials, marker, and discreet inner sensor pod. Show
 a relatable health-conscious adult in a sleeveless charcoal top making tea in a
 warm contemporary breakfast nook. Use natural skin texture, soft early-morning
 window light, shallow depth of field, and clean upper-left copy space. Vertical
-4:5, aspirational but credible. No text, logo, watermark, phone, app screen,
+4:5, aspirational but credible. Place the band on the distal upper arm, about
+3 cm above the elbow crease, fully below the biceps muscle belly with a visible
+strip of bare skin above the elbow joint. No text, logo, watermark, phone, app screen,
 clinical props, cuff, watch screen, invented hardware, or exaggerated retouching.
 
 ### Morning walk
@@ -56,7 +63,9 @@ easy outdoor morning walk. Preserve the exact knit band, burgundy clasp,
 positioning marker, inner sensor pod, dimensions, orientation, and screenless
 design. Show a fit but relatable adult man in his late 40s or early 50s wearing a
 cream sleeveless top on a quiet tree-lined city path, with Frame sharp on the
-upper arm. Use soft golden backlight, subtle filmic realism, and a calm optimistic
+distal upper arm about 3 cm above the elbow crease, below the biceps muscle belly.
+Keep a visible strip of bare skin above the elbow joint. Use soft golden
+backlight, subtle filmic realism, and a calm optimistic
 mood. Vertical composition suitable for a 4:5 crop. No text, logo, watermark,
 phone, watch, medical props, intense workout pose, invented hardware, or visual
 medical-outcome claims.
