@@ -668,7 +668,7 @@ export default function Home() {
         <div className="container software-grid">
           <figure className="software-image image-frame">
             <Image
-              src="/frame-app-studio-v3.png"
+              src="/frame-app-studio-v4.png"
               alt="Refined Frame companion app in an accurately proportioned iPhone 17 mockup, showing 82 percent reliable overnight coverage, a motion interruption, and a late meal timing pattern"
               className="cover-image"
               fill
