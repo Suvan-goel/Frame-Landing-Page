@@ -1,0 +1,282 @@
+import { mkdir } from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+import sharp from "sharp";
+
+const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const publicDir = path.join(projectRoot, "public");
+const imagegenDir = path.join(publicDir, "social", "imagegen");
+const outputDir = path.join(publicDir, "social", "facebook");
+const wordmarkPath = path.join(publicDir, "frame-wordmark.png");
+
+const colors = {
+  cream: "#f3efe6",
+  paper: "#faf8f2",
+  ink: "#20211e",
+  soft: "#5c5b54",
+  burgundy: "#8d3e46",
+};
+
+const disclosure =
+  "Research-stage concept · Not intended to diagnose or treat · Final design may change.";
+
+const concepts = {
+  product: {
+    source: path.join(
+      imagegenDir,
+      "exports",
+      "frame-product-campaign-hero-feed-1080x1350-v3.png",
+    ),
+    version: "v3",
+    eyebrow: "RESEARCH-STAGE ULTRASOUND WEARABLE",
+    headline: ["See what influences", "your blood pressure"],
+    subhead: ["Explore patterns across sleep, stress,", "movement, and recovery."],
+    card: "none",
+    showImageCta: false,
+    squarePosition: "centre",
+    storyPosition: "south",
+  },
+  routine: {
+    source: path.join(
+      imagegenDir,
+      "exports",
+      "frame-morning-routine-feed-1080x1350-v2.png",
+    ),
+    eyebrow: "PERSONAL, NOT GENERIC",
+    headline: ["Your baseline", "is personal."],
+    subhead: ["Explore patterns through rest,", "response, and recovery."],
+    card: "left",
+    cardWidth: 410,
+    squarePosition: "north",
+    storyPosition: "north",
+  },
+  movement: {
+    source: path.join(
+      imagegenDir,
+      "exports",
+      "frame-morning-walk-feed-1080x1350-v2.png",
+    ),
+    eyebrow: "CONTEXT BEFORE JUDGEMENT",
+    headline: ["Patterns over", "moments."],
+    subhead: ["One reading is a moment.", "Daily life is the context."],
+    card: "right",
+    cardWidth: 420,
+    squarePosition: "north",
+    storyPosition: "centre",
+  },
+};
+
+const formats = {
+  feed: { width: 1080, height: 1350 },
+  square: { width: 1080, height: 1080 },
+  story: { width: 1080, height: 1920 },
+};
+
+function escapeXml(value) {
+  return value
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;");
+}
+
+function textLines(lines, { x, y, size, lineHeight, className, anchor = "start" }) {
+  return lines
+    .map(
+      (line, index) =>
+        `<text x="${x}" y="${y + index * lineHeight}" class="${className}" text-anchor="${anchor}">${escapeXml(line)}</text>`,
+    )
+    .join("");
+}
+
+function feedOrSquareOverlay(concept, format) {
+  const { width, height } = formats[format];
+  const isSquare = format === "square";
+  const cardWidth = concept.cardWidth ?? 530;
+  const cardX = concept.card === "right" ? width - cardWidth - 48 : 48;
+  const cardY = 44;
+  const cardHeight = isSquare ? 560 : 590;
+  const textX = concept.card === "right" ? cardX + 34 : 78;
+  const headlineY = isSquare ? 218 : 236;
+  const headlineSize = isSquare ? 57 : 61;
+  const subheadY = headlineY + 2 * Math.round(headlineSize * 0.98) + 30;
+  const ctaY = subheadY + 2 * 32 + 34;
+  const wordmarkX = concept.card === "none" ? 72 : cardX + 30;
+  const wordmarkY = 67;
+  const cta = concept.showImageCta === false
+    ? ""
+    : `<rect x="${textX}" y="${ctaY}" width="326" height="62" rx="3" fill="${colors.ink}"/>
+      <text x="${textX + 24}" y="${ctaY + 40}" class="cta">Apply for early access  →</text>`;
+
+  const card =
+    concept.card === "none"
+      ? `<defs>
+          <linearGradient id="topWash" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stop-color="${colors.cream}" stop-opacity="0.98"/>
+            <stop offset="0.72" stop-color="${colors.cream}" stop-opacity="0.90"/>
+            <stop offset="1" stop-color="${colors.cream}" stop-opacity="0"/>
+          </linearGradient>
+        </defs>
+        <rect x="0" y="0" width="${width}" height="610" fill="url(#topWash)"/>`
+      : `<defs>
+          <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="160%">
+            <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#20211e" flood-opacity="0.14"/>
+          </filter>
+        </defs>
+        <rect x="${cardX}" y="${cardY}" width="${cardWidth}" height="${cardHeight}" rx="16"
+          fill="${colors.cream}" fill-opacity="0.96" stroke="#20211e" stroke-opacity="0.08" filter="url(#cardShadow)"/>`;
+
+  return Buffer.from(`
+    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+      <style>
+        .eyebrow { font: 650 17px Arial, sans-serif; fill: ${colors.burgundy}; letter-spacing: 2.6px; }
+        .headline { font: 400 ${headlineSize}px Georgia, 'Times New Roman', serif; fill: ${colors.ink}; letter-spacing: -2px; }
+        .subhead { font: 430 23px Arial, sans-serif; fill: ${colors.soft}; }
+        .cta { font: 650 22px Arial, sans-serif; fill: ${colors.paper}; }
+        .disclosure { font: 520 14px Arial, sans-serif; fill: ${colors.soft}; letter-spacing: .1px; }
+      </style>
+      ${card}
+      <line x1="${textX}" y1="158" x2="${textX + 44}" y2="158" stroke="${colors.burgundy}" stroke-width="4"/>
+      <text x="${textX + 62}" y="164" class="eyebrow">${escapeXml(concept.eyebrow)}</text>
+      ${textLines(concept.headline, {
+        x: textX,
+        y: headlineY,
+        size: headlineSize,
+        lineHeight: Math.round(headlineSize * 0.98),
+        className: "headline",
+      })}
+      ${textLines(concept.subhead, {
+        x: textX,
+        y: subheadY,
+        size: 23,
+        lineHeight: 31,
+        className: "subhead",
+      })}
+      ${cta}
+      <rect x="0" y="${height - 50}" width="${width}" height="50" fill="${colors.cream}" fill-opacity="0.96"/>
+      <text x="54" y="${height - 19}" class="disclosure">${escapeXml(disclosure)}</text>
+      <metadata data-wordmark-x="${wordmarkX}" data-wordmark-y="${wordmarkY}"/>
+    </svg>
+  `);
+}
+
+function storyOverlay(concept) {
+  const { width, height } = formats.story;
+  const textX = 80;
+  const headlineY = 438;
+  const headlineSize = 76;
+  const subheadY = 620;
+  const ctaY = 735;
+  const cta = concept.showImageCta === false
+    ? ""
+    : `<rect x="${textX}" y="${ctaY}" width="382" height="68" rx="3" fill="${colors.ink}"/>
+      <text x="${textX + 28}" y="${ctaY + 44}" class="cta">Apply for early access  →</text>`;
+
+  return Buffer.from(`
+    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+      <style>
+        .eyebrow { font: 650 19px Arial, sans-serif; fill: ${colors.burgundy}; letter-spacing: 3px; }
+        .headline { font: 400 ${headlineSize}px Georgia, 'Times New Roman', serif; fill: ${colors.ink}; letter-spacing: -2.6px; }
+        .subhead { font: 430 27px Arial, sans-serif; fill: ${colors.soft}; }
+        .cta { font: 650 25px Arial, sans-serif; fill: ${colors.paper}; }
+        .disclosure { font: 520 15px Arial, sans-serif; fill: ${colors.soft}; }
+      </style>
+      <rect x="0" y="0" width="${width}" height="880" fill="${colors.cream}"/>
+      <line x1="${textX}" y1="354" x2="${textX + 50}" y2="354" stroke="${colors.burgundy}" stroke-width="4"/>
+      <text x="${textX + 70}" y="361" class="eyebrow">${escapeXml(concept.eyebrow)}</text>
+      ${textLines(concept.headline, {
+        x: textX,
+        y: headlineY,
+        size: headlineSize,
+        lineHeight: 76,
+        className: "headline",
+      })}
+      ${textLines(concept.subhead, {
+        x: textX,
+        y: subheadY,
+        size: 27,
+        lineHeight: 38,
+        className: "subhead",
+      })}
+      ${cta}
+      <text x="${textX}" y="851" class="disclosure">${escapeXml(disclosure)}</text>
+    </svg>
+  `);
+}
+
+async function resizedWordmark(width = 174) {
+  return sharp(wordmarkPath).resize({ width }).png().toBuffer();
+}
+
+async function renderFeedOrSquare(name, concept, format) {
+  const { width, height } = formats[format];
+  const base = await sharp(concept.source)
+    .resize(width, height, {
+      fit: "cover",
+      position: format === "square" ? concept.squarePosition : "centre",
+    })
+    .png()
+    .toBuffer();
+  const wordmark = await resizedWordmark();
+  const wordmarkX =
+    concept.card === "right"
+      ? width - concept.cardWidth - 48 + 30
+      : concept.card === "none"
+        ? 72
+        : 78;
+
+  await sharp(base)
+    .composite([
+      { input: feedOrSquareOverlay(concept, format), left: 0, top: 0 },
+      { input: wordmark, left: wordmarkX, top: 67 },
+    ])
+    .png({ compressionLevel: 9 })
+    .toFile(
+      path.join(
+        outputDir,
+        `frame-facebook-${name}-${format}-${concept.version ?? "v1"}.png`,
+      ),
+    );
+}
+
+async function renderStory(name, concept) {
+  const { width, height } = formats.story;
+  const photo = await sharp(concept.source)
+    .resize(width, 1040, { fit: "cover", position: concept.storyPosition })
+    .png()
+    .toBuffer();
+  const wordmark = await resizedWordmark(190);
+
+  await sharp({
+    create: {
+      width,
+      height,
+      channels: 3,
+      background: colors.cream,
+    },
+  })
+    .composite([
+      { input: photo, left: 0, top: 880 },
+      { input: storyOverlay(concept), left: 0, top: 0 },
+      { input: wordmark, left: 80, top: 250 },
+    ])
+    .png({ compressionLevel: 9 })
+    .toFile(
+      path.join(
+        outputDir,
+        `frame-facebook-${name}-story-${concept.version ?? "v1"}.png`,
+      ),
+    );
+}
+
+await mkdir(outputDir, { recursive: true });
+
+await Promise.all(
+  Object.entries(concepts).flatMap(([name, concept]) => [
+    renderFeedOrSquare(name, concept, "feed"),
+    renderFeedOrSquare(name, concept, "square"),
+    renderStory(name, concept),
+  ]),
+);
+
+console.log(`Generated ${Object.keys(concepts).length * 3} Facebook ad creatives in ${outputDir}.`);

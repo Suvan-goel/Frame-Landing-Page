@@ -27,16 +27,16 @@ const content = {
     ["Confidence", "What was measured reliably-and what was not."],
   ],
   principles: [
-    ["Personal, not generic", "Compared with your own baseline and context."],
-    ["Context before judgement", "A temporary rise is not automatically bad."],
-    ["Patterns over moments", "Repeated associations matter more than one event."],
-    ["Honest gaps", "No reliable signal means no fabricated number."],
+    ["Personal, not generic", "Interpreted against your own baseline and daily context."],
+    ["Context before judgment", "A temporary rise is not automatically a concern."],
+    ["Patterns over moments", "Repeated associations matter more than any single event."],
+    ["Honest gaps", "When a signal is unreliable, Frame does not invent an answer."],
   ],
   stages: [
-    "Bench validation",
-    "Human feasibility",
-    "Sleep and rest validation",
-    "Expanded daily-life coverage",
+    "Bench testing",
+    "Human feasibility testing",
+    "Sleep and rest testing",
+    "Daily-life testing",
   ],
   contact: {
     general: "support@framewearable.com",
@@ -322,7 +322,7 @@ function WaitlistForm({
         <textarea
           id={`${idPrefix}-motivation`}
           name="motivation"
-          placeholder="Tell us what you want to understand or improve—and why it matters."
+          placeholder="Tell us what you expect Frame to solve for you that existing products cannot"
           value={motivation}
           onChange={(event) => {
             setMotivation(event.target.value);
@@ -528,11 +528,9 @@ export default function Home() {
               and recovery-then turns them into clear, personal insight.
             </p>
             <div className="hero-actions">
-              <WaitlistForm
-                idPrefix="hero-waitlist"
-                placement="hero"
-                tone="dark"
-              />
+              <a className="button button--dark" href="#early-access">
+                Apply for early access <Arrow />
+              </a>
               <a className="text-link" href="#how-it-works">
                 How it works <span aria-hidden="true">↓</span>
               </a>
@@ -546,10 +544,10 @@ export default function Home() {
           <figure className="hero-visuals">
             <div className="hero-lifestyle">
               <Image
-                src="/frame-on-arm-concept-realistic-v2.png"
+                src="/frame-on-arm-editorial-v3.png"
                 alt="Frame wearable concept fitted around a person's upper arm"
                 fill
-                sizes="(max-width: 680px) 72vw, (max-width: 980px) 62vw, 38vw"
+                sizes="(max-width: 680px) 100vw, (max-width: 980px) 56vw, 34vw"
                 quality={88}
                 unoptimized
                 loading="eager"
@@ -560,7 +558,7 @@ export default function Home() {
                 src="/frame-product-concept-realistic-v3-transparent.png"
                 alt="Refined Frame upper-arm wearable concept with an adjustable charcoal knit band, burgundy clasp, and integrated ultrasound sensor"
                 fill
-                sizes="(max-width: 680px) 74vw, (max-width: 980px) 58vw, 38vw"
+                sizes="(max-width: 680px) 72vw, (max-width: 980px) 40vw, 26vw"
                 quality={88}
                 unoptimized
                 loading="eager"
@@ -700,7 +698,8 @@ export default function Home() {
           <div className="principles-copy">
             <p className="eyebrow">Product principles</p>
             <h2>
-              Continuous monitoring does not mean continuous guessing.
+              Continuous monitoring should create context, not continuous
+              conclusions.
             </h2>
             <div className="principle-list">
               {content.principles.map(([title, description]) => (
@@ -715,13 +714,17 @@ export default function Home() {
             <span className="status-label">Research-stage technology</span>
             <h3>Building the evidence before making the promise.</h3>
             <p>
-              Frame is currently testing sensing location, long-duration
-              contact, calibration, motion tolerance, comfort, and measurement
-              accuracy.
+              Frame is evaluating sensing location, extended wear, calibration,
+              motion tolerance, comfort, and measurement accuracy before making
+              broader claims.
             </p>
             <ol>
               {content.stages.map((stage, index) => (
-                <li key={stage}>
+                <li
+                  className={index === 0 ? "is-current" : undefined}
+                  aria-current={index === 0 ? "step" : undefined}
+                  key={stage}
+                >
                   <span>{index + 1}</span>
                   {stage}
                   {index === 0 ? <small>Current focus</small> : null}
@@ -730,9 +733,9 @@ export default function Home() {
             </ol>
             <a
               className="text-link"
-              href={`mailto:${content.contact.collaboration}?subject=Working%20on%20Frame`}
+              href={`mailto:${content.contact.collaboration}?subject=Frame%20research%20collaboration`}
             >
-              Work on Frame <Arrow />
+              Explore research collaboration <Arrow />
             </a>
           </aside>
         </div>
@@ -740,11 +743,11 @@ export default function Home() {
 
       <section className="final-cta" id="early-access">
         <div className="container final-grid">
-          <div>
+          <div className="final-cta__copy">
             <p className="eyebrow">Early access</p>
             <h2>Help shape a new way to understand cardiovascular health.</h2>
           </div>
-          <div>
+          <div className="final-cta__form">
             <p>
               We’re inviting a small group of early users. Your response helps
               us understand who Frame can serve best.

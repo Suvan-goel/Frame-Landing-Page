@@ -35,13 +35,18 @@ test("server-renders the Frame landing page", async () => {
     /See how your cardiovascular system responds to daily life\./,
   );
   assert.match(html, /Currently in development/);
-  assert.match(html, /Continuous monitoring does not mean continuous guessing\./);
+  assert.match(
+    html,
+    /Continuous monitoring should create context, not continuous\s*(?:<!-- -->)?conclusions\./,
+  );
   assert.match(html, /Research-stage technology/);
+  assert.match(html, /aria-current="step"/);
+  assert.match(html, /Explore research collaboration/);
   assert.match(html, /Frame is under development and is not currently available for sale\./);
   assert.match(html, /frame-product-concept-realistic-v3-transparent\.png/);
-  assert.match(html, /frame-on-arm-concept-realistic-v2\.png/);
+  assert.match(html, /frame-on-arm-editorial-v3\.png/);
   assert.match(html, /frame-sensing-concept-realistic-v3-transparent\.png/);
-  assert.match(html, /frame-app-studio-v2\.png/);
+  assert.match(html, /frame-app-studio-v5\.png/);
   assert.match(html, /We’ll only contact you about Frame\./);
   assert.match(html, /name="firstName"/);
   assert.match(html, /name="lastName"/);
@@ -51,6 +56,8 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /maxlength="500"/i);
   assert.match(html, /All fields are required\./);
   assert.match(html, /Apply for early access/);
+  assert.match(html, /class="button button--dark" href="#early-access"/);
+  assert.match(html, /<section class="final-cta" id="early-access">/);
   assert.match(html, /Frame early access/);
   assert.match(html, /Tell us how Frame could fit into your life\./);
   assert.match(html, /No spam\./);
@@ -77,9 +84,9 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   ]);
 
   assert.match(page, /src="\/frame-product-concept-realistic-v3-transparent\.png"/);
-  assert.match(page, /src="\/frame-on-arm-concept-realistic-v2\.png"/);
+  assert.match(page, /src="\/frame-on-arm-editorial-v3\.png"/);
   assert.match(page, /src="\/frame-sensing-concept-realistic-v3-transparent\.png"/);
-  assert.match(page, /src="\/frame-app-studio-v2\.png"/);
+  assert.match(page, /src="\/frame-app-studio-v5\.png"/);
   assert.doesNotMatch(page, /<svg|ProductDiagram|CrossSection|PatternTimeline/);
   assert.match(page, /fetch\("\/api\/waitlist"/);
   assert.match(page, /dialog\.showModal\(\)/);
@@ -104,18 +111,22 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.deepEqual(
     [
       "frame-app-studio.png",
-      "frame-on-arm-concept-realistic-v2.png",
+      "frame-app-studio-v5.png",
+      "frame-on-arm-editorial-v3.png",
       "frame-product-concept-realistic-v3-transparent.png",
       "frame-sensing-concept-realistic-v2.png",
+      "frame-sensing-concept-realistic-v3-transparent.png",
       "og-launch-v2.png",
     ].filter(
       (file) => publicFiles.includes(file),
     ),
     [
       "frame-app-studio.png",
-      "frame-on-arm-concept-realistic-v2.png",
+      "frame-app-studio-v5.png",
+      "frame-on-arm-editorial-v3.png",
       "frame-product-concept-realistic-v3-transparent.png",
       "frame-sensing-concept-realistic-v2.png",
+      "frame-sensing-concept-realistic-v3-transparent.png",
       "og-launch-v2.png",
     ],
   );
