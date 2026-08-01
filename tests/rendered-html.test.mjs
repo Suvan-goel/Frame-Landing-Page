@@ -38,8 +38,9 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /Continuous monitoring does not mean continuous guessing\./);
   assert.match(html, /Research-stage technology/);
   assert.match(html, /Frame is under development and is not currently available for sale\./);
-  assert.match(html, /frame-product-concept-realistic-v2\.png/);
-  assert.match(html, /frame-sensing-concept-realistic-v2\.png/);
+  assert.match(html, /frame-product-concept-realistic-v3-transparent\.png/);
+  assert.match(html, /frame-on-arm-concept-realistic-v2\.png/);
+  assert.match(html, /frame-sensing-concept-realistic-v3-transparent\.png/);
   assert.match(html, /frame-app-studio\.png/);
   assert.match(html, /Product and research updates only\./);
   assert.match(html, /name="firstName"/);
@@ -72,8 +73,9 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     readdir(new URL("../public/", import.meta.url)),
   ]);
 
-  assert.match(page, /src="\/frame-product-concept-realistic-v2\.png"/);
-  assert.match(page, /src="\/frame-sensing-concept-realistic-v2\.png"/);
+  assert.match(page, /src="\/frame-product-concept-realistic-v3-transparent\.png"/);
+  assert.match(page, /src="\/frame-on-arm-concept-realistic-v2\.png"/);
+  assert.match(page, /src="\/frame-sensing-concept-realistic-v3-transparent\.png"/);
   assert.match(page, /src="\/frame-app-studio\.png"/);
   assert.doesNotMatch(page, /<svg|ProductDiagram|CrossSection|PatternTimeline/);
   assert.match(page, /fetch\("\/api\/waitlist"/);
@@ -97,7 +99,8 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.deepEqual(
     [
       "frame-app-studio.png",
-      "frame-product-concept-realistic-v2.png",
+      "frame-on-arm-concept-realistic-v2.png",
+      "frame-product-concept-realistic-v3-transparent.png",
       "frame-sensing-concept-realistic-v2.png",
       "og-launch-v2.png",
     ].filter(
@@ -105,7 +108,8 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     ),
     [
       "frame-app-studio.png",
-      "frame-product-concept-realistic-v2.png",
+      "frame-on-arm-concept-realistic-v2.png",
+      "frame-product-concept-realistic-v3-transparent.png",
       "frame-sensing-concept-realistic-v2.png",
       "og-launch-v2.png",
     ],
