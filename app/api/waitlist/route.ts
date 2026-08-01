@@ -5,7 +5,7 @@ export const dynamic = "force-dynamic";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_BODY_BYTES = 4_096;
 const MAX_NAME_LENGTH = 60;
-const MIN_MOTIVATION_LENGTH = 100;
+const MIN_MOTIVATION_LENGTH = 30;
 const MAX_MOTIVATION_LENGTH = 1_500;
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
