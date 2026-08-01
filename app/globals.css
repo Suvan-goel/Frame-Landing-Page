@@ -554,8 +554,8 @@ h2 {
 
 .software-grid {
   display: grid;
-  grid-template-columns: minmax(0, 1.15fr) minmax(330px, 0.85fr);
-  gap: clamp(64px, 7vw, 96px);
+  grid-template-columns: minmax(360px, 0.88fr) minmax(560px, 1.12fr);
+  gap: clamp(32px, 3vw, 48px);
   align-items: center;
 }
 
@@ -565,6 +565,7 @@ h2 {
 }
 
 .software-image img {
+  object-position: right center;
   filter: drop-shadow(0 24px 32px rgba(32, 33, 30, 0.12));
 }
 
