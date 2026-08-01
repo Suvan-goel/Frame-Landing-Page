@@ -6,7 +6,7 @@ const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_BODY_BYTES = 4_096;
 const MAX_NAME_LENGTH = 60;
 const MIN_MOTIVATION_LENGTH = 30;
-const MAX_MOTIVATION_LENGTH = 1_500;
+const MAX_MOTIVATION_LENGTH = 500;
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return Response.json(body, {
@@ -99,8 +99,7 @@ export async function POST(request: Request) {
   ) {
     return jsonResponse(
       {
-        error:
-          "Write a few sentences about the problem you want Frame to solve.",
+        error: `Write between ${MIN_MOTIVATION_LENGTH} and ${MAX_MOTIVATION_LENGTH} characters about how you would use Frame.`,
       },
       400,
     );

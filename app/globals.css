@@ -763,6 +763,33 @@ h2 {
   max-width: 560px;
 }
 
+.waitlist-form__intro {
+  margin-bottom: 2px;
+}
+
+.waitlist-form__intro strong {
+  display: block;
+  font-family: var(--serif);
+  font-size: 1.25rem;
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  line-height: 1.25;
+}
+
+.waitlist-form__intro p {
+  margin: 5px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.73rem;
+  line-height: 1.55;
+}
+
+.form-required-note {
+  margin: 0 0 -5px;
+  color: var(--ink-soft);
+  font-size: 0.61rem;
+  line-height: 1.4;
+}
+
 .honeypot {
   position: absolute;
   left: -10000px;
@@ -800,12 +827,12 @@ h2 {
 }
 
 .form-field input {
-  height: 52px;
+  height: 50px;
   padding: 0 15px;
 }
 
 .form-field textarea {
-  min-height: 132px;
+  min-height: 118px;
   padding: 14px 15px;
   line-height: 1.55;
   resize: vertical;
@@ -813,6 +840,10 @@ h2 {
 
 .waitlist-form--light .form-field label {
   color: rgba(250, 248, 242, 0.78);
+}
+
+.waitlist-form--light .form-required-note {
+  color: rgba(250, 248, 242, 0.68);
 }
 
 .waitlist-form--dark .form-field label {

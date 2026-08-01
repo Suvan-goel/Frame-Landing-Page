@@ -12,7 +12,7 @@ const WAITLIST_JOINED_EVENT = "frame:waitlist-joined";
 const WAITLIST_PROMPT_DELAY_MS = 12_000;
 const WAITLIST_SCROLL_THRESHOLD = 0.4;
 const MIN_MOTIVATION_LENGTH = 30;
-const MAX_MOTIVATION_LENGTH = 1_500;
+const MAX_MOTIVATION_LENGTH = 500;
 
 const content = {
   navigation: [
@@ -101,11 +101,10 @@ function WaitlistForm({
     ) {
       nextErrors.email = "Enter a valid email address.";
     }
-    if (
-      normalizedMotivation.length < MIN_MOTIVATION_LENGTH ||
-      normalizedMotivation.length > MAX_MOTIVATION_LENGTH
-    ) {
+    if (normalizedMotivation.length < MIN_MOTIVATION_LENGTH) {
       nextErrors.motivation = `Write at least ${MIN_MOTIVATION_LENGTH} characters so we can understand the problem you want Frame to solve.`;
+    } else if (normalizedMotivation.length > MAX_MOTIVATION_LENGTH) {
+      nextErrors.motivation = `Keep your response to ${MAX_MOTIVATION_LENGTH} characters or fewer.`;
     }
 
     if (Object.keys(nextErrors).length) {
@@ -212,6 +211,16 @@ function WaitlistForm({
           autoComplete="off"
         />
       </div>
+      {placement === "hero" ? (
+        <div className="waitlist-form__intro">
+          <strong>Tell us how Frame could fit into your life.</strong>
+          <p>
+            We’re inviting a small group of early users. Your response helps us
+            understand who Frame can serve best.
+          </p>
+        </div>
+      ) : null}
+      <p className="form-required-note">All fields are required.</p>
       <div className="form-name-fields">
         <div className="form-field">
           <label htmlFor={`${idPrefix}-first-name`}>First name</label>
@@ -308,12 +317,12 @@ function WaitlistForm({
       </div>
       <div className="form-field form-field--motivation">
         <label htmlFor={`${idPrefix}-motivation`}>
-          Why do you want Frame?
+          How would you use Frame?
         </label>
         <textarea
           id={`${idPrefix}-motivation`}
           name="motivation"
-          placeholder="In a few sentences, tell us what problem you want Frame to solve and why that matters to you."
+          placeholder="In 1–2 sentences, tell us what you want to better understand about your health or recovery—and what you would do with that insight."
           value={motivation}
           onChange={(event) => {
             setMotivation(event.target.value);
@@ -329,7 +338,7 @@ function WaitlistForm({
           }`}
         />
         <div className="field-hint" id={`${idPrefix}-motivation-hint`}>
-          <span>Minimum {MIN_MOTIVATION_LENGTH} characters.</span>
+          <span>Minimum {MIN_MOTIVATION_LENGTH} characters</span>
           <span>
             {motivation.trim().length}/{MAX_MOTIVATION_LENGTH}
           </span>
@@ -358,8 +367,8 @@ function WaitlistForm({
         {status === "submitting" ? null : <Arrow />}
       </button>
       <p className="form-note" id={`${idPrefix}-note`}>
-        Please don’t include private medical information. Product and research
-        updates only. Unsubscribe any time.{" "}
+        We’ll only contact you about Frame. No spam. Please don’t include
+        private medical information. Unsubscribe any time.{" "}
         <a href="/privacy">Privacy</a>
       </p>
     </form>
@@ -466,9 +475,12 @@ function WaitlistPopup() {
           Close <span aria-hidden="true">×</span>
         </button>
         <p className="eyebrow">Frame early access</p>
-        <h2 id="waitlist-popup-title">Tell us why Frame matters to you.</h2>
+        <h2 id="waitlist-popup-title">
+          Tell us how Frame could fit into your life.
+        </h2>
         <p id="waitlist-popup-description">
-          We review every response for future product and testing opportunities.
+          We’re inviting a small group of early users. Your response helps us
+          understand who Frame can serve best.
         </p>
         <WaitlistForm
           idPrefix="popup-waitlist"
@@ -734,8 +746,8 @@ export default function Home() {
           </div>
           <div>
             <p>
-              Tell us what you want Frame to help you understand. We review
-              every response for future product and testing opportunities.
+              We’re inviting a small group of early users. Your response helps
+              us understand who Frame can serve best.
             </p>
             <WaitlistForm idPrefix="footer-waitlist" placement="footer" />
             <a
