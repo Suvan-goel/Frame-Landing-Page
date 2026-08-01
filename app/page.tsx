@@ -5,11 +5,14 @@ import Image from "next/image";
 import { BrandWordmark } from "./components/brand-wordmark";
 
 const COLLABORATION_EMAIL = "support@framewearable.com";
+const INSTAGRAM_URL = "https://www.instagram.com/framewearable/";
 const WAITLIST_JOINED_STORAGE_KEY = "frame-waitlist-joined";
 const WAITLIST_PROMPT_SEEN_SESSION_KEY = "frame-waitlist-prompt-seen";
 const WAITLIST_JOINED_EVENT = "frame:waitlist-joined";
 const WAITLIST_PROMPT_DELAY_MS = 12_000;
 const WAITLIST_SCROLL_THRESHOLD = 0.4;
+const MIN_MOTIVATION_LENGTH = 100;
+const MAX_MOTIVATION_LENGTH = 1_500;
 
 const content = {
   navigation: [
@@ -45,12 +48,9 @@ function Arrow() {
   return <span aria-hidden="true">↗</span>;
 }
 
-type WaitlistStatus =
-  | "idle"
-  | "submitting"
-  | "joined"
-  | "already_joined"
-  | "error";
+type WaitlistStatus = "idle" | "submitting" | "joined" | "updated" | "error";
+type WaitlistField = "firstName" | "lastName" | "email" | "motivation";
+type WaitlistErrors = Partial<Record<WaitlistField, string>>;
 
 function WaitlistForm({
   idPrefix,
@@ -61,24 +61,61 @@ function WaitlistForm({
   placement: "hero" | "footer" | "popup";
   tone?: "light" | "dark";
 }) {
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
-  const [error, setError] = useState("");
+  const [motivation, setMotivation] = useState("");
+  const [errors, setErrors] = useState<WaitlistErrors>({});
+  const [submissionError, setSubmissionError] = useState("");
   const [status, setStatus] = useState<WaitlistStatus>("idle");
+
+  function clearFieldError(field: WaitlistField) {
+    setErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+    setSubmissionError("");
+    if (status === "error") setStatus("idle");
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const form = event.currentTarget;
+    const normalizedFirstName = firstName.trim().replace(/\s+/g, " ");
+    const normalizedLastName = lastName.trim().replace(/\s+/g, " ");
     const normalizedEmail = email.trim();
+    const normalizedMotivation = motivation.trim();
+    const nextErrors: WaitlistErrors = {};
+
+    if (!normalizedFirstName || normalizedFirstName.length > 60) {
+      nextErrors.firstName = "Enter your first name.";
+    }
+    if (!normalizedLastName || normalizedLastName.length > 60) {
+      nextErrors.lastName = "Enter your last name.";
+    }
     if (
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail) ||
       normalizedEmail.length > 254
     ) {
-      setError("Enter a valid email address.");
+      nextErrors.email = "Enter a valid email address.";
+    }
+    if (
+      normalizedMotivation.length < MIN_MOTIVATION_LENGTH ||
+      normalizedMotivation.length > MAX_MOTIVATION_LENGTH
+    ) {
+      nextErrors.motivation = `Write at least ${MIN_MOTIVATION_LENGTH} characters so we can understand the problem you want Frame to solve.`;
+    }
+
+    if (Object.keys(nextErrors).length) {
+      setErrors(nextErrors);
       setStatus("error");
       return;
     }
 
-    setError("");
+    setErrors({});
+    setSubmissionError("");
     setStatus("submitting");
 
     const query = new URLSearchParams(window.location.search);
@@ -89,7 +126,10 @@ function WaitlistForm({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
+          firstName: normalizedFirstName,
+          lastName: normalizedLastName,
           email: normalizedEmail,
+          motivation: normalizedMotivation,
           website: formData.get("website"),
           placement,
           utmSource: query.get("utm_source"),
@@ -98,13 +138,13 @@ function WaitlistForm({
         }),
       });
       const result = (await response.json()) as {
-        status?: "joined" | "already_joined";
+        status?: "joined" | "updated";
         error?: string;
       };
 
       if (!response.ok || !result.status) {
         throw new Error(
-          result.error ?? "We couldn’t save your email. Please try again.",
+          result.error ?? "We couldn’t save your application. Please try again.",
         );
       }
 
@@ -115,17 +155,17 @@ function WaitlistForm({
         // A successful signup should not be affected by unavailable storage.
       }
       window.dispatchEvent(new Event(WAITLIST_JOINED_EVENT));
-    } catch (submissionError) {
-      setError(
-        submissionError instanceof Error
-          ? submissionError.message
-          : "We couldn’t save your email. Please try again.",
+    } catch (error) {
+      setSubmissionError(
+        error instanceof Error
+          ? error.message
+          : "We couldn’t save your application. Please try again.",
       );
       setStatus("error");
     }
   }
 
-  if (status === "joined" || status === "already_joined") {
+  if (status === "joined" || status === "updated") {
     return (
       <div
         className={`form-success form-success--${tone}`}
@@ -134,18 +174,23 @@ function WaitlistForm({
       >
         <div>
           <strong>
-            {status === "joined" ? "You’re on the list." : "You’re already in."}
+            {status === "joined"
+              ? "Application received."
+              : "Your application is updated."}
           </strong>
-          <p>We’ll share thoughtful updates as Frame develops.</p>
+          <p>Thanks, {firstName.trim()}. We review every response thoughtfully.</p>
         </div>
         <button
           type="button"
           onClick={() => {
             setStatus("idle");
+            setFirstName("");
+            setLastName("");
             setEmail("");
+            setMotivation("");
           }}
         >
-          Use another email
+          Submit another response
         </button>
       </div>
     );
@@ -167,6 +212,68 @@ function WaitlistForm({
           autoComplete="off"
         />
       </div>
+      <div className="form-name-fields">
+        <div className="form-field">
+          <label htmlFor={`${idPrefix}-first-name`}>First name</label>
+          <input
+            id={`${idPrefix}-first-name`}
+            name="firstName"
+            type="text"
+            autoComplete="given-name"
+            value={firstName}
+            onChange={(event) => {
+              setFirstName(event.target.value);
+              clearFieldError("firstName");
+            }}
+            disabled={status === "submitting"}
+            required
+            maxLength={60}
+            aria-invalid={Boolean(errors.firstName)}
+            aria-describedby={
+              errors.firstName ? `${idPrefix}-first-name-error` : undefined
+            }
+          />
+          {errors.firstName ? (
+            <p
+              className="form-error"
+              id={`${idPrefix}-first-name-error`}
+              role="alert"
+            >
+              {errors.firstName}
+            </p>
+          ) : null}
+        </div>
+        <div className="form-field">
+          <label htmlFor={`${idPrefix}-last-name`}>Last name</label>
+          <input
+            id={`${idPrefix}-last-name`}
+            name="lastName"
+            type="text"
+            autoComplete="family-name"
+            value={lastName}
+            onChange={(event) => {
+              setLastName(event.target.value);
+              clearFieldError("lastName");
+            }}
+            disabled={status === "submitting"}
+            required
+            maxLength={60}
+            aria-invalid={Boolean(errors.lastName)}
+            aria-describedby={
+              errors.lastName ? `${idPrefix}-last-name-error` : undefined
+            }
+          />
+          {errors.lastName ? (
+            <p
+              className="form-error"
+              id={`${idPrefix}-last-name-error`}
+              role="alert"
+            >
+              {errors.lastName}
+            </p>
+          ) : null}
+        </div>
+      </div>
       <div className="form-field">
         <label htmlFor={`${idPrefix}-email`}>Email address</label>
         <input
@@ -179,33 +286,80 @@ function WaitlistForm({
           value={email}
           onChange={(event) => {
             setEmail(event.target.value);
-            if (status === "error") {
-              setError("");
-              setStatus("idle");
-            }
+            clearFieldError("email");
           }}
           disabled={status === "submitting"}
-          aria-invalid={Boolean(error)}
+          required
+          maxLength={254}
+          aria-invalid={Boolean(errors.email)}
           aria-describedby={
-            error ? `${idPrefix}-error ${idPrefix}-note` : `${idPrefix}-note`
+            errors.email ? `${idPrefix}-email-error` : undefined
           }
         />
-        {error ? (
-          <p className="form-error" id={`${idPrefix}-error`} role="alert">
-            {error}
+        {errors.email ? (
+          <p
+            className="form-error"
+            id={`${idPrefix}-email-error`}
+            role="alert"
+          >
+            {errors.email}
           </p>
         ) : null}
       </div>
+      <div className="form-field form-field--motivation">
+        <label htmlFor={`${idPrefix}-motivation`}>
+          Why do you want Frame?
+        </label>
+        <textarea
+          id={`${idPrefix}-motivation`}
+          name="motivation"
+          placeholder="In a few sentences, tell us what problem you want Frame to solve and why that matters to you."
+          value={motivation}
+          onChange={(event) => {
+            setMotivation(event.target.value);
+            clearFieldError("motivation");
+          }}
+          disabled={status === "submitting"}
+          required
+          minLength={MIN_MOTIVATION_LENGTH}
+          maxLength={MAX_MOTIVATION_LENGTH}
+          aria-invalid={Boolean(errors.motivation)}
+          aria-describedby={`${idPrefix}-motivation-hint${
+            errors.motivation ? ` ${idPrefix}-motivation-error` : ""
+          }`}
+        />
+        <div className="field-hint" id={`${idPrefix}-motivation-hint`}>
+          <span>Minimum {MIN_MOTIVATION_LENGTH} characters.</span>
+          <span>
+            {motivation.trim().length}/{MAX_MOTIVATION_LENGTH}
+          </span>
+        </div>
+        {errors.motivation ? (
+          <p
+            className="form-error"
+            id={`${idPrefix}-motivation-error`}
+            role="alert"
+          >
+            {errors.motivation}
+          </p>
+        ) : null}
+      </div>
+      {submissionError ? (
+        <p className="form-error form-error--submission" role="alert">
+          {submissionError}
+        </p>
+      ) : null}
       <button
         className={`button ${tone === "dark" ? "button--dark" : "button--light"}`}
         type="submit"
         disabled={status === "submitting"}
       >
-        {status === "submitting" ? "Joining…" : "Join early access"}{" "}
+        {status === "submitting" ? "Submitting…" : "Apply for early access"}{" "}
         {status === "submitting" ? null : <Arrow />}
       </button>
       <p className="form-note" id={`${idPrefix}-note`}>
-        Product and research updates only. Unsubscribe any time.{" "}
+        Please don’t include private medical information. Product and research
+        updates only. Unsubscribe any time.{" "}
         <a href="/privacy">Privacy</a>
       </p>
     </form>
@@ -231,10 +385,8 @@ function WaitlistPopup() {
       // Continue with the prompt when browser storage is unavailable.
     }
 
-    let timer: ReturnType<typeof window.setTimeout> | undefined;
-
     function removePromptTriggers() {
-      if (timer !== undefined) window.clearTimeout(timer);
+      window.clearTimeout(timer);
       window.removeEventListener("scroll", handleScroll);
     }
 
@@ -251,7 +403,7 @@ function WaitlistPopup() {
         // The prompt remains dismissible when browser storage is unavailable.
       }
       dialog.showModal();
-      dialog.querySelector<HTMLInputElement>('input[type="email"]')?.focus();
+      dialog.querySelector<HTMLInputElement>('input[name="firstName"]')?.focus();
     }
 
     function handleScroll() {
@@ -279,7 +431,7 @@ function WaitlistPopup() {
       }
     }
 
-    timer = window.setTimeout(showPrompt, WAITLIST_PROMPT_DELAY_MS);
+    const timer = window.setTimeout(showPrompt, WAITLIST_PROMPT_DELAY_MS);
     window.addEventListener("scroll", handleScroll, { passive: true });
     window.addEventListener(WAITLIST_JOINED_EVENT, handleJoined);
     window.addEventListener("storage", handleStorage);
@@ -314,10 +466,9 @@ function WaitlistPopup() {
           Close <span aria-hidden="true">×</span>
         </button>
         <p className="eyebrow">Frame early access</p>
-        <h2 id="waitlist-popup-title">See what’s coming next.</h2>
+        <h2 id="waitlist-popup-title">Tell us why Frame matters to you.</h2>
         <p id="waitlist-popup-description">
-          Join the waitlist for product progress, research updates, and future
-          testing opportunities.
+          We review every response for future product and testing opportunities.
         </p>
         <WaitlistForm
           idPrefix="popup-waitlist"
@@ -346,7 +497,7 @@ export default function Home() {
             ))}
           </div>
           <a className="nav-cta" href="#early-access">
-            Join early access
+            Apply for early access
           </a>
         </nav>
       </header>
@@ -382,8 +533,8 @@ export default function Home() {
           </div>
           <figure className="hero-image image-frame">
             <Image
-              src="/frame-product-studio.png"
-              alt="Frame screenless cardiovascular wearable in charcoal knit with an integrated ultrasound sensor"
+              src="/frame-product-concept-realistic-v2.png"
+              alt="Refined Frame upper-arm wearable concept with an adjustable charcoal knit band, burgundy clasp, and integrated ultrasound sensor"
               className="cover-image"
               fill
               sizes="(max-width: 980px) calc(100vw - 64px), 55vw"
@@ -438,8 +589,8 @@ export default function Home() {
             <figure className="wide-image">
               <div className="wide-image-media image-frame">
                 <Image
-                  src="/frame-sensing-studio.png"
-                  alt="Exploded sensing concept showing the Frame ultrasound sensor above skin, tissue, and an artery"
+                  src="/frame-sensing-concept-realistic-v2.png"
+                  alt="Exploded sensing concept showing the refined Frame ultrasound contact module above skin, tissue, and an artery"
                   className="cover-image"
                   fill
                   sizes="(max-width: 680px) calc(100vw - 72px), (max-width: 980px) 40vw, 480px"
@@ -571,8 +722,8 @@ export default function Home() {
           </div>
           <div>
             <p>
-              Join for research updates, product progress, and future testing
-              opportunities.
+              Tell us what you want Frame to help you understand. We review
+              every response for future product and testing opportunities.
             </p>
             <WaitlistForm idPrefix="footer-waitlist" placement="footer" />
             <a
@@ -597,6 +748,14 @@ export default function Home() {
           <div className="footer-links">
             <a href="#product">Product</a>
             <a href="#research">Research</a>
+            <a
+              href={INSTAGRAM_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Frame on Instagram (opens in a new tab)"
+            >
+              Instagram <Arrow />
+            </a>
             <a href="/privacy">Privacy</a>
             <a href={`mailto:${content.contact.general}`}>Contact</a>
           </div>

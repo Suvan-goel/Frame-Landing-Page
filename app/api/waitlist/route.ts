@@ -4,6 +4,9 @@ export const dynamic = "force-dynamic";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_BODY_BYTES = 4_096;
+const MAX_NAME_LENGTH = 60;
+const MIN_MOTIVATION_LENGTH = 100;
+const MAX_MOTIVATION_LENGTH = 1_500;
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return Response.json(body, {
@@ -21,6 +24,20 @@ function cleanAttribution(value: unknown) {
   return cleaned || null;
 }
 
+function cleanName(value: unknown) {
+  if (typeof value !== "string") return "";
+  return value.trim().replace(/\s+/g, " ");
+}
+
+function cleanMotivation(value: unknown) {
+  if (typeof value !== "string") return "";
+  return value
+    .trim()
+    .replace(/\r\n?/g, "\n")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n");
+}
+
 export async function POST(request: Request) {
   const contentLength = Number(request.headers.get("content-length") ?? "0");
   if (contentLength > MAX_BODY_BYTES) {
@@ -33,7 +50,10 @@ export async function POST(request: Request) {
   }
 
   let payload: {
+    firstName?: unknown;
+    lastName?: unknown;
     email?: unknown;
+    motivation?: unknown;
     website?: unknown;
     placement?: unknown;
     utmSource?: unknown;
@@ -44,7 +64,7 @@ export async function POST(request: Request) {
   try {
     payload = (await request.json()) as typeof payload;
   } catch {
-    return jsonResponse({ error: "Enter a valid email address." }, 400);
+    return jsonResponse({ error: "Complete every application field." }, 400);
   }
 
   // A filled honeypot is treated as success so automated submissions do not
@@ -55,6 +75,16 @@ export async function POST(request: Request) {
 
   const email = typeof payload.email === "string" ? payload.email.trim() : "";
   const normalizedEmail = email.toLowerCase();
+  const firstName = cleanName(payload.firstName);
+  const lastName = cleanName(payload.lastName);
+  const motivation = cleanMotivation(payload.motivation);
+
+  if (!firstName || firstName.length > MAX_NAME_LENGTH) {
+    return jsonResponse({ error: "Enter your first name." }, 400);
+  }
+  if (!lastName || lastName.length > MAX_NAME_LENGTH) {
+    return jsonResponse({ error: "Enter your last name." }, 400);
+  }
   if (
     !email ||
     email.length > 254 ||
@@ -62,6 +92,18 @@ export async function POST(request: Request) {
     normalizedEmail.includes("..")
   ) {
     return jsonResponse({ error: "Enter a valid email address." }, 400);
+  }
+  if (
+    motivation.length < MIN_MOTIVATION_LENGTH ||
+    motivation.length > MAX_MOTIVATION_LENGTH
+  ) {
+    return jsonResponse(
+      {
+        error:
+          "Write a few sentences about the problem you want Frame to solve.",
+      },
+      400,
+    );
   }
 
   try {
@@ -76,11 +118,24 @@ export async function POST(request: Request) {
       throw lookupError;
     }
     if (existingSignup) {
-      return jsonResponse({ status: "already_joined" });
+      const { error: updateError } = await supabase
+        .from("waitlist_signups")
+        .update({
+          first_name: firstName,
+          last_name: lastName,
+          motivation,
+        })
+        .eq("id", existingSignup.id);
+
+      if (updateError) throw updateError;
+      return jsonResponse({ status: "updated" });
     }
 
     const { error } = await supabase.from("waitlist_signups").insert({
+      first_name: firstName,
+      last_name: lastName,
       email: normalizedEmail,
+      motivation,
       placement: cleanAttribution(payload.placement) ?? "landing_page",
       utm_source: cleanAttribution(payload.utmSource),
       utm_medium: cleanAttribution(payload.utmMedium),
@@ -88,7 +143,17 @@ export async function POST(request: Request) {
     });
 
     if (error?.code === "23505") {
-      return jsonResponse({ status: "already_joined" });
+      const { error: updateError } = await supabase
+        .from("waitlist_signups")
+        .update({
+          first_name: firstName,
+          last_name: lastName,
+          motivation,
+        })
+        .eq("email", normalizedEmail);
+
+      if (updateError) throw updateError;
+      return jsonResponse({ status: "updated" });
     }
     if (error) {
       throw error;
@@ -98,7 +163,7 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Waitlist signup failed", error);
     return jsonResponse(
-      { error: "We couldn’t save your email. Please try again shortly." },
+      { error: "We couldn’t save your application. Please try again shortly." },
       503,
     );
   }

@@ -53,10 +53,10 @@ export async function generateMetadata(): Promise<Metadata> {
       url: baseUrl,
       images: [
         {
-          url: `${baseUrl}/og-launch.png`,
+          url: `${baseUrl}/og-launch-v2.png`,
           width: 1732,
           height: 908,
-          alt: "Frame - Blood pressure, in context.",
+          alt: "Frame - See how your blood pressure responds to daily life.",
         },
       ],
     },
@@ -65,7 +65,7 @@ export async function generateMetadata(): Promise<Metadata> {
       title: "See how your cardiovascular system responds to daily life.",
       description:
         "Frame is developing a screenless, non-invasive ultrasound wearable for blood pressure in context.",
-      images: [`${baseUrl}/og-launch.png`],
+      images: [`${baseUrl}/og-launch-v2.png`],
     },
     robots: {
       index: true,

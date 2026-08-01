@@ -7,7 +7,10 @@ import {
 export const dynamic = "force-dynamic";
 
 type WaitlistExportRow = {
+  first_name: string | null;
+  last_name: string | null;
   email: string;
+  motivation: string | null;
   placement: string;
   utm_source: string | null;
   utm_medium: string | null;
@@ -35,7 +38,9 @@ export async function GET() {
   const supabase = await getSupabaseAdmin();
   const { data, error } = await supabase
     .from("waitlist_signups")
-    .select("email,placement,utm_source,utm_medium,utm_campaign,created_at")
+    .select(
+      "first_name,last_name,email,motivation,placement,utm_source,utm_medium,utm_campaign,created_at",
+    )
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
     .returns<WaitlistExportRow[]>();
@@ -50,9 +55,22 @@ export async function GET() {
   const signups = data ?? [];
 
   const rows = [
-    ["email", "placement", "utm_source", "utm_medium", "utm_campaign", "created_at"],
+    [
+      "first_name",
+      "last_name",
+      "email",
+      "motivation",
+      "placement",
+      "utm_source",
+      "utm_medium",
+      "utm_campaign",
+      "created_at",
+    ],
     ...signups.map((signup) => [
+      signup.first_name,
+      signup.last_name,
       signup.email,
+      signup.motivation,
       signup.placement,
       signup.utm_source,
       signup.utm_medium,

@@ -20,7 +20,7 @@ export default function PrivacyPage() {
         </a>
         <p className="eyebrow">Privacy</p>
         <h1>Privacy notice</h1>
-        <p className="legal-updated">Effective July 30, 2026</p>
+        <p className="legal-updated">Effective August 1, 2026</p>
 
         <p className="legal-intro">
           This notice explains how Frame Health Technologies handles information
@@ -30,9 +30,12 @@ export default function PrivacyPage() {
         <section>
           <h2>Information we collect</h2>
           <p>
-            If you join the waitlist, we collect your email address, the time of
-            signup, where on the page you signed up, and any campaign labels
-            included in the link you used. Our hosting providers may also
+            If you apply for early access, we collect your first and last name,
+            email address, and the response you provide about why you want Frame
+            and the problem you hope it will solve. Please do not include
+            private medical information in that response. We also collect the
+            time of signup, where on the page you signed up, and any campaign
+            labels included in the link you used. Our hosting providers may
             process limited technical information, such as IP address and
             browser details, to operate and secure the site.
           </p>
@@ -42,10 +45,11 @@ export default function PrivacyPage() {
           <h2>How we use it</h2>
           <p>
             We use this information to send research updates, share product
-            progress, invite suitable participants to future testing, understand
+            progress, understand the needs people hope Frame can address, review
+            suitability for early product access or future testing, understand
             which launch efforts are useful, and protect the waitlist from
-            abuse. Joining the waitlist does not enroll you in a study or make
-            you a research participant.
+            abuse. Applying for early access does not enroll you in a study or
+            make you a research participant.
           </p>
         </section>
 

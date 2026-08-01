@@ -14,7 +14,10 @@ export const dynamic = "force-dynamic";
 
 type WaitlistSignup = {
   id: number;
+  first_name: string | null;
+  last_name: string | null;
   email: string;
+  motivation: string | null;
   placement: string;
   utm_source: string | null;
   utm_medium: string | null;
@@ -32,7 +35,7 @@ export default async function WaitlistAdminPage() {
   const { data, error } = await supabase
     .from("waitlist_signups")
     .select(
-      "id,email,placement,utm_source,utm_medium,utm_campaign,created_at",
+      "id,first_name,last_name,email,motivation,placement,utm_source,utm_medium,utm_campaign,created_at",
     )
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
@@ -75,21 +78,33 @@ export default async function WaitlistAdminPage() {
             <table className="admin-table">
               <thead>
                 <tr>
-                  <th>Email</th>
-                  <th>Location</th>
-                  <th>Campaign</th>
+                  <th>Lead</th>
+                  <th>Why Frame</th>
+                  <th>Source</th>
                   <th>Joined</th>
                 </tr>
               </thead>
               <tbody>
                 {signups.map((signup) => (
                   <tr key={signup.id}>
-                    <td>{signup.email}</td>
-                    <td>{signup.placement.replaceAll("_", " ")}</td>
-                    <td>
-                      {[signup.utm_source, signup.utm_medium, signup.utm_campaign]
-                        .filter(Boolean)
-                        .join(" / ") || "—"}
+                    <td className="admin-lead">
+                      <strong>
+                        {[signup.first_name, signup.last_name]
+                          .filter(Boolean)
+                          .join(" ") || "Unqualified signup"}
+                      </strong>
+                      <a href={`mailto:${signup.email}`}>{signup.email}</a>
+                    </td>
+                    <td className="admin-motivation">
+                      {signup.motivation || "No qualification response"}
+                    </td>
+                    <td className="admin-source">
+                      <span>{signup.placement.replaceAll("_", " ")}</span>
+                      <small>
+                        {[signup.utm_source, signup.utm_medium, signup.utm_campaign]
+                          .filter(Boolean)
+                          .join(" / ") || "Direct"}
+                      </small>
                     </td>
                     <td>
                       <time dateTime={signup.created_at}>
