@@ -582,8 +582,22 @@ h2 {
 }
 
 .software-image img {
-  object-position: right center;
+  object-position: center;
   filter: drop-shadow(0 24px 32px rgba(32, 33, 30, 0.12));
+}
+
+@media (min-width: 981px) {
+  .software-grid {
+    align-items: stretch;
+  }
+
+  .software-image {
+    aspect-ratio: auto;
+  }
+
+  .software-copy {
+    align-self: center;
+  }
 }
 
 .software-copy h2,
