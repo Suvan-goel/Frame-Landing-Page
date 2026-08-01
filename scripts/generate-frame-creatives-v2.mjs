@@ -7,7 +7,10 @@ import sharp from "sharp";
 const projectRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const publicDir = path.join(projectRoot, "public");
 const socialDir = path.join(publicDir, "social");
-const productPath = path.join(publicDir, "frame-product-concept-realistic-v2.png");
+const productPath = path.join(
+  publicDir,
+  "frame-product-concept-realistic-v3-transparent.png",
+);
 
 const colors = {
   cream: "#f3efe6",

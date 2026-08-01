@@ -533,7 +533,7 @@ export default function Home() {
           </div>
           <figure className="hero-image image-frame">
             <Image
-              src="/frame-product-concept-realistic-v2.png"
+              src="/frame-product-concept-realistic-v3-transparent.png"
               alt="Refined Frame upper-arm wearable concept with an adjustable charcoal knit band, burgundy clasp, and integrated ultrasound sensor"
               className="cover-image"
               fill

@@ -4,7 +4,7 @@ Use the refined Frame V2 industrial design for every new paid-social creative.
 
 ## Canonical product design
 
-- Product render: `../frame-product-concept-realistic-v2.png`
+- Transparent product render: `../frame-product-concept-realistic-v3-transparent.png`
 - On-arm reference: `../frame-on-arm-concept-realistic-v2.png`
 - Sensing reference: `../frame-sensing-concept-realistic-v2.png`
 
