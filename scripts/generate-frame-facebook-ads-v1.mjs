@@ -297,7 +297,7 @@ async function renderTransparentProductFeedOrSquare(name, concept, format) {
   const { width, height } = formats[format];
   const placement =
     format === "square"
-      ? { width: 530, left: 520, top: 490 }
+      ? { width: 600, left: 440, top: 430 }
       : { width: 720, left: 330, top: 560 };
   const product = await sharp(concept.source)
     .resize({ width: placement.width })
