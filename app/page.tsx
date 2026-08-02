@@ -748,6 +748,12 @@ export default function Home() {
           <div className="final-cta__copy">
             <p className="eyebrow">Early access</p>
             <h2>Help shape a new way to understand cardiovascular health.</h2>
+            <a
+              className="collaboration-link"
+              href={`mailto:${content.contact.collaboration}?subject=Frame%20research%20collaboration`}
+            >
+              Interested in research or engineering collaboration? <Arrow />
+            </a>
           </div>
           <div className="final-cta__form">
             <p>
@@ -755,12 +761,6 @@ export default function Home() {
               us understand who Frame can serve best.
             </p>
             <WaitlistForm idPrefix="footer-waitlist" placement="footer" />
-            <a
-              className="collaboration-link"
-              href={`mailto:${content.contact.collaboration}?subject=Frame%20research%20collaboration`}
-            >
-              Interested in research or engineering collaboration? <Arrow />
-            </a>
           </div>
         </div>
       </section>

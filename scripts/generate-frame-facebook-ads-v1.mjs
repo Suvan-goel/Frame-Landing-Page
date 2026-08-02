@@ -28,10 +28,12 @@ const concepts = {
       "exports",
       "frame-product-campaign-hero-feed-1080x1350-v3.png",
     ),
-    version: "v3",
+    version: "v4",
     eyebrow: "RESEARCH-STAGE ULTRASOUND WEARABLE",
     headline: ["See what influences", "your blood pressure"],
     subhead: ["Explore patterns across sleep, stress,", "movement, and recovery."],
+    headlineSizes: { feed: 68, square: 63, story: 84 },
+    subheadSizes: { feed: 26, square: 26, story: 30 },
     card: "none",
     showImageCta: false,
     squarePosition: "centre",
@@ -98,9 +100,11 @@ function feedOrSquareOverlay(concept, format) {
   const cardHeight = isSquare ? 560 : 590;
   const textX = concept.card === "right" ? cardX + 34 : 78;
   const headlineY = isSquare ? 218 : 236;
-  const headlineSize = isSquare ? 57 : 61;
+  const headlineSize = concept.headlineSizes?.[format] ?? (isSquare ? 57 : 61);
+  const subheadSize = concept.subheadSizes?.[format] ?? 23;
   const subheadY = headlineY + 2 * Math.round(headlineSize * 0.98) + 30;
-  const ctaY = subheadY + 2 * 32 + 34;
+  const subheadLineHeight = Math.round(subheadSize * 1.34);
+  const ctaY = subheadY + 2 * subheadLineHeight + 34;
   const wordmarkX = concept.card === "none" ? 72 : cardX + 30;
   const wordmarkY = 67;
   const cta = concept.showImageCta === false
@@ -131,7 +135,7 @@ function feedOrSquareOverlay(concept, format) {
       <style>
         .eyebrow { font: 650 17px Arial, sans-serif; fill: ${colors.burgundy}; letter-spacing: 2.6px; }
         .headline { font: 400 ${headlineSize}px Georgia, 'Times New Roman', serif; fill: ${colors.ink}; letter-spacing: -2px; }
-        .subhead { font: 430 23px Arial, sans-serif; fill: ${colors.soft}; }
+        .subhead { font: 430 ${subheadSize}px Arial, sans-serif; fill: ${colors.soft}; }
         .cta { font: 650 22px Arial, sans-serif; fill: ${colors.paper}; }
         .disclosure { font: 520 14px Arial, sans-serif; fill: ${colors.soft}; letter-spacing: .1px; }
       </style>
@@ -148,8 +152,8 @@ function feedOrSquareOverlay(concept, format) {
       ${textLines(concept.subhead, {
         x: textX,
         y: subheadY,
-        size: 23,
-        lineHeight: 31,
+        size: subheadSize,
+        lineHeight: subheadLineHeight,
         className: "subhead",
       })}
       ${cta}
@@ -164,7 +168,8 @@ function storyOverlay(concept) {
   const { width, height } = formats.story;
   const textX = 80;
   const headlineY = 438;
-  const headlineSize = 76;
+  const headlineSize = concept.headlineSizes?.story ?? 76;
+  const subheadSize = concept.subheadSizes?.story ?? 27;
   const subheadY = 620;
   const ctaY = 735;
   const cta = concept.showImageCta === false
@@ -177,7 +182,7 @@ function storyOverlay(concept) {
       <style>
         .eyebrow { font: 650 19px Arial, sans-serif; fill: ${colors.burgundy}; letter-spacing: 3px; }
         .headline { font: 400 ${headlineSize}px Georgia, 'Times New Roman', serif; fill: ${colors.ink}; letter-spacing: -2.6px; }
-        .subhead { font: 430 27px Arial, sans-serif; fill: ${colors.soft}; }
+        .subhead { font: 430 ${subheadSize}px Arial, sans-serif; fill: ${colors.soft}; }
         .cta { font: 650 25px Arial, sans-serif; fill: ${colors.paper}; }
         .disclosure { font: 520 15px Arial, sans-serif; fill: ${colors.soft}; }
       </style>
@@ -188,14 +193,14 @@ function storyOverlay(concept) {
         x: textX,
         y: headlineY,
         size: headlineSize,
-        lineHeight: 76,
+        lineHeight: headlineSize,
         className: "headline",
       })}
       ${textLines(concept.subhead, {
         x: textX,
         y: subheadY,
-        size: 27,
-        lineHeight: 38,
+        size: subheadSize,
+        lineHeight: Math.round(subheadSize * 1.4),
         className: "subhead",
       })}
       ${cta}
