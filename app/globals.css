@@ -796,37 +796,10 @@ h2 {
   line-height: 1.58;
 }
 
-.research-status {
-  margin-top: 24px;
-  padding: 14px 16px;
-  border-left: 2px solid #b96d72;
-  background: rgba(220, 228, 219, 0.07);
-}
-
-.research-status span,
-.research-status strong {
-  display: block;
-}
-
-.research-status span {
-  color: #a9b9ae;
-  font-size: 0.54rem;
-  font-weight: 650;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-}
-
-.research-status strong {
-  margin-top: 6px;
-  color: var(--cream);
-  font-size: 0.74rem;
-  font-weight: 560;
-}
-
 .research-panel .text-link {
   margin-top: 24px;
   border-color: rgba(243, 239, 230, 0.24);
-  color: var(--cream);
+  color: #a9b9ae;
 }
 
 .final-cta {

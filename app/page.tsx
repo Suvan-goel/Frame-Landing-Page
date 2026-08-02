@@ -362,7 +362,7 @@ function WaitlistForm({
         type="submit"
         disabled={status === "submitting"}
       >
-        {status === "submitting" ? "Submitting…" : "Apply for early access"}{" "}
+        {status === "submitting" ? "Submitting…" : "Sign me up!"}{" "}
         {status === "submitting" ? null : <Arrow />}
       </button>
       <p className="form-note" id={`${idPrefix}-note`}>
@@ -728,10 +728,6 @@ export default function Home() {
                   <p>{description}</p>
                 </article>
               ))}
-            </div>
-            <div className="research-status" aria-label="Current research focus">
-              <span>Current focus</span>
-              <strong>Validating sensing and extended wear</strong>
             </div>
             <a
               className="text-link"
