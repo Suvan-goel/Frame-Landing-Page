@@ -549,7 +549,6 @@ h2 {
   gap: clamp(56px, 7vw, 92px);
   align-items: center;
   padding-top: 56px;
-  border-top: 1px solid var(--line);
 }
 
 .wide-image {

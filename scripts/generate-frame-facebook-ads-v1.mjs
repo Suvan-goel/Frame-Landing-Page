@@ -99,6 +99,28 @@ const concepts = {
   },
 };
 
+const favoriteProductConcept = {
+  source: path.join(
+    imagegenDir,
+    "exports",
+    "frame-product-campaign-hero-feed-1080x1350-v3.png",
+  ),
+  version: "v1",
+  eyebrow: "CONTINUOUSLY TRACK YOUR BLOOD PRESSURE",
+  headline: ["See what influences", "your blood pressure"],
+  subhead: ["Explore patterns across sleep, stress,", "movement, and recovery."],
+  wordmarkWidths: { feed: 200 },
+  eyebrowSizes: { feed: 25 },
+  headlineSizes: { feed: 76 },
+  headlineYPositions: { feed: 256 },
+  headlineLineHeightMultipliers: { feed: 1.12 },
+  subheadSizes: { feed: 34 },
+  subheadLineHeightMultipliers: { feed: 1.48 },
+  disclosureSizes: { feed: 22 },
+  card: "none",
+  showImageCta: false,
+};
+
 const formats = {
   feed: { width: 1080, height: 1350 },
   square: { width: 1080, height: 1080 },
@@ -413,12 +435,15 @@ async function renderStory(name, concept) {
 
 await mkdir(outputDir, { recursive: true });
 
-await Promise.all(
-  Object.entries(concepts).flatMap(([name, concept]) => [
+await Promise.all([
+  ...Object.entries(concepts).flatMap(([name, concept]) => [
     renderFeedOrSquare(name, concept, "feed"),
     renderFeedOrSquare(name, concept, "square"),
     renderStory(name, concept),
   ]),
-);
+  renderFeedOrSquare("product-favorite", favoriteProductConcept, "feed"),
+]);
 
-console.log(`Generated ${Object.keys(concepts).length * 3} Facebook ad creatives in ${outputDir}.`);
+console.log(
+  `Generated ${Object.keys(concepts).length * 3 + 1} Facebook ad creatives in ${outputDir}.`,
+);

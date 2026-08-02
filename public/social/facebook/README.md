@@ -10,6 +10,7 @@ The device is shown on the lower upper arm, approximately 2–4 cm above the elb
 | --- | --- | --- | --- |
 | Product | `frame-facebook-product-feed-v8.png` | `frame-facebook-product-square-v8.png` | `frame-facebook-product-story-v8.png` |
 | Upright product | `frame-facebook-product-upright-feed-v3.png` | `frame-facebook-product-upright-square-v3.png` | `frame-facebook-product-upright-story-v3.png` |
+| Favourite product variant | `frame-facebook-product-favorite-feed-v1.png` | — | — |
 | Routine | `frame-facebook-routine-feed-v1.png` | `frame-facebook-routine-square-v1.png` | `frame-facebook-routine-story-v1.png` |
 | Movement | `frame-facebook-movement-feed-v1.png` | `frame-facebook-movement-square-v1.png` | `frame-facebook-movement-story-v1.png` |
 
