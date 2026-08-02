@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import test from "node:test";
+import { formatName } from "../lib/name-format.ts";
 
 async function render(path = "/", init) {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -48,20 +49,35 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /frame-on-arm-editorial-v7-product-transparent\.png/);
   assert.match(html, /frame-sensing-concept-realistic-v3-transparent\.png/);
   assert.match(html, /frame-app-studio-v5\.png/);
+  assert.equal(html.match(/href="\/interest"/g)?.length, 3);
+  assert.doesNotMatch(html, /What would be the main reason you would want Frame\?/);
+  assert.doesNotMatch(html, /<dialog/i);
+  assert.match(html, /<section class="final-cta" id="early-access">/);
+  assert.doesNotMatch(html, /id="footer-waitlist-/);
+  assert.match(html, /href="https:\/\/www\.instagram\.com\/framewearable\/"/);
+  assert.match(html, /Frame on Instagram \(opens in a new tab\)/);
+  assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
+});
+
+test("server-renders the dedicated interest page", async () => {
+  const response = await render("/interest");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+
+  assert.match(html, /Register your interest/);
   assert.match(html, /What would be the main reason you would want Frame\?/);
   assert.match(html, /Monitor high or borderline blood pressure without repeated cuff readings/);
   assert.match(html, /Understand my blood pressure while sleeping/);
   assert.match(html, /name="mainReason"/);
   assert.match(html, /type="radio"/);
   assert.match(html, /aria-label="Step 1 of 5"/);
-  assert.match(html, /<button class="button button--dark" type="button">Interested<\/button>/);
-  assert.match(html, /<section class="final-cta" id="early-access">/);
-  assert.match(html, /Frame early access/);
-  assert.match(html, /aria-label="Close interest form"/);
-  assert.doesNotMatch(html, /id="footer-waitlist-/);
-  assert.match(html, /href="https:\/\/www\.instagram\.com\/framewearable\/"/);
-  assert.match(html, /Frame on Instagram \(opens in a new tab\)/);
-  assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
+  assert.match(html, /aria-label="Back to Frame"/);
+  assert.doesNotMatch(html, /<dialog/i);
+});
+
+test("formats submitted names for the confirmation message", () => {
+  assert.equal(formatName("sUVAN goEL"), "Suvan Goel");
+  assert.equal(formatName("  mARY-jANE  o'NEILL "), "Mary-Jane O'Neill");
 });
 
 test("uses generated raster visuals and keeps the page editable", async () => {
@@ -74,6 +90,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     privacy,
     demographicsMigration,
     interestFlow,
+    interestPage,
     publicFiles,
   ] =
     await Promise.all([
@@ -97,6 +114,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
       new URL("../app/components/interest-flow.tsx", import.meta.url),
       "utf8",
     ),
+    readFile(new URL("../app/interest/page.tsx", import.meta.url), "utf8"),
     readdir(new URL("../public/", import.meta.url)),
   ]);
 
@@ -111,7 +129,9 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(page, /src="\/frame-app-studio-v5\.png"/);
   assert.doesNotMatch(page, /<svg|ProductDiagram|CrossSection|PatternTimeline/);
   assert.match(interestFlow, /fetch\("\/api\/waitlist"/);
-  assert.match(interestFlow, /dialog\.showModal\(\)/);
+  assert.doesNotMatch(interestFlow, /<dialog|showModal\(|OPEN_INTEREST_FLOW_EVENT/);
+  assert.match(interestPage, /<InterestFlow \/>/);
+  assert.match(interestPage, /canonical: "\/interest"/);
   assert.match(interestFlow, /MIN_SITUATION_LENGTH = 50/);
   assert.match(interestFlow, /MAX_SITUATION_LENGTH = 750/);
   assert.match(interestFlow, /type="radio"/);
@@ -123,8 +143,16 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(interestFlow, /name="age"/);
   assert.match(interestFlow, /name="gender"/);
   assert.match(interestFlow, /name="email"/);
-  assert.doesNotMatch(page, /<WaitlistPopup \/>/);
+  assert.doesNotMatch(page, /InterestFlow|InterestTrigger|<WaitlistPopup \/>/);
+  assert.match(page, /href="\/interest"/);
   assert.doesNotMatch(page, /Interested\?/);
+  assert.match(interestFlow, /Your interest has been registered!/);
+  assert.match(
+    interestFlow,
+    /We genuinely read all responses and[\s\S]*your input is invaluable for Frame&apos;s development\./,
+  );
+  assert.match(interestFlow, /formatName\(firstName\)/);
+  assert.match(api, /return formatName\(value\)/);
   assert.match(api, /MIN_SITUATION_LENGTH = 50/);
   assert.match(api, /MAIN_REASON_VALUES/);
   assert.match(api, /MONITORING_METHOD_VALUES/);

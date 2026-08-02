@@ -2,7 +2,6 @@
 
 import Image from "next/image";
 import { BrandWordmark } from "./components/brand-wordmark";
-import { InterestFlow, InterestTrigger } from "./components/interest-flow";
 
 const COLLABORATION_EMAIL = "support@framewearable.com";
 const INSTAGRAM_URL = "https://www.instagram.com/framewearable/";
@@ -43,7 +42,6 @@ function Arrow() {
 export default function Home() {
   return (
     <main>
-      <InterestFlow />
       <header className="nav-shell">
         <nav className="nav container" aria-label="Primary navigation">
           <a className="wordmark" href="#top" aria-label="Frame home">
@@ -56,9 +54,9 @@ export default function Home() {
               </a>
             ))}
           </div>
-          <InterestTrigger className="nav-cta" placement="navigation">
+          <a className="nav-cta" href="/interest">
             Interested
-          </InterestTrigger>
+          </a>
         </nav>
       </header>
 
@@ -76,9 +74,9 @@ export default function Home() {
               and recovery-then turns them into clear, personal insight.
             </p>
             <div className="hero-actions">
-              <InterestTrigger className="button button--dark" placement="hero">
+              <a className="button button--dark" href="/interest">
                 Interested
-              </InterestTrigger>
+              </a>
               <a className="text-link" href="#how-it-works">
                 How it works <span aria-hidden="true">↓</span>
               </a>
@@ -316,9 +314,9 @@ export default function Home() {
               Tell us what you want to understand, how you monitor today, and
               whether you would be open to a short conversation with our team.
             </p>
-            <InterestTrigger className="button button--light" placement="footer">
+            <a className="button button--light" href="/interest">
               Interested
-            </InterestTrigger>
+            </a>
           </div>
         </div>
       </section>

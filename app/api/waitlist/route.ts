@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase-admin.server";
+import { formatName } from "@/lib/name-format";
 
 export const dynamic = "force-dynamic";
 
@@ -51,7 +52,7 @@ function cleanAttribution(value: unknown) {
 
 function cleanName(value: unknown) {
   if (typeof value !== "string") return "";
-  return value.trim().replace(/\s+/g, " ");
+  return formatName(value);
 }
 
 function cleanLongText(value: unknown) {

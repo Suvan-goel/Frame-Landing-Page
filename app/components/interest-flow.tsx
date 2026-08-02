@@ -1,8 +1,9 @@
 "use client";
 
 import { FormEvent, useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { formatName } from "@/lib/name-format";
 
-const OPEN_INTEREST_FLOW_EVENT = "frame:open-interest-flow";
 const WAITLIST_JOINED_STORAGE_KEY = "frame-waitlist-joined";
 const MIN_SITUATION_LENGTH = 50;
 const MAX_SITUATION_LENGTH = 750;
@@ -52,7 +53,6 @@ const GENDER_OPTIONS = [
   ["prefer_not_to_say", "Prefer not to say"],
 ] as const;
 
-type InterestPlacement = "navigation" | "hero" | "footer";
 type WaitlistStatus = "idle" | "submitting" | "joined" | "updated" | "error";
 type FieldName =
   | "mainReason"
@@ -65,30 +65,6 @@ type FieldName =
   | "gender"
   | "email";
 type FieldErrors = Partial<Record<FieldName, string>>;
-
-export function InterestTrigger({
-  className,
-  placement,
-  children = "Interested",
-}: {
-  className: string;
-  placement: InterestPlacement;
-  children?: React.ReactNode;
-}) {
-  return (
-    <button
-      className={className}
-      type="button"
-      onClick={() =>
-        window.dispatchEvent(
-          new CustomEvent(OPEN_INTEREST_FLOW_EVENT, { detail: { placement } }),
-        )
-      }
-    >
-      {children}
-    </button>
-  );
-}
 
 function ChoiceList({
   idPrefix,
@@ -135,10 +111,8 @@ function ChoiceList({
 }
 
 export function InterestFlow() {
-  const dialogRef = useRef<HTMLDialogElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const [step, setStep] = useState(0);
-  const [placement, setPlacement] = useState<InterestPlacement>("hero");
   const [mainReason, setMainReason] = useState("");
   const [recentSituation, setRecentSituation] = useState("");
   const [monitoringMethod, setMonitoringMethod] = useState("");
@@ -153,21 +127,7 @@ export function InterestFlow() {
   const [status, setStatus] = useState<WaitlistStatus>("idle");
 
   useEffect(() => {
-    function openFlow(event: Event) {
-      const dialog = dialogRef.current;
-      if (!dialog) return;
-      const detail = (event as CustomEvent<{ placement?: InterestPlacement }>).detail;
-      if (detail?.placement) setPlacement(detail.placement);
-      if (!dialog.open) dialog.showModal();
-      window.setTimeout(() => headingRef.current?.focus(), 0);
-    }
-
-    window.addEventListener(OPEN_INTEREST_FLOW_EVENT, openFlow);
-    return () => window.removeEventListener(OPEN_INTEREST_FLOW_EVENT, openFlow);
-  }, []);
-
-  useEffect(() => {
-    if (dialogRef.current?.open) headingRef.current?.focus();
+    headingRef.current?.focus();
   }, [step, status]);
 
   function clearError(field: FieldName) {
@@ -281,13 +241,13 @@ export function InterestFlow() {
           recentSituation: recentSituation.trim(),
           monitoringMethod,
           interviewWillingness,
-          firstName: firstName.trim().replace(/\s+/g, " "),
-          lastName: lastName.trim().replace(/\s+/g, " "),
+          firstName: formatName(firstName),
+          lastName: formatName(lastName),
           age: Number(age.trim()),
           gender,
           email: email.trim(),
           website: formData.get("website"),
-          placement,
+          placement: "interest_page",
           utmSource: query.get("utm_source"),
           utmMedium: query.get("utm_medium"),
           utmCampaign: query.get("utm_campaign"),
@@ -329,40 +289,35 @@ export function InterestFlow() {
   ];
 
   return (
-    <dialog
-      className="interest-flow"
-      ref={dialogRef}
-      aria-labelledby="interest-flow-title"
-      onClick={(event) => {
-        if (event.target === event.currentTarget) event.currentTarget.close();
-      }}
-    >
+    <main className="interest-flow" aria-labelledby="interest-flow-title">
       <div className="interest-flow__shell">
         <header className="interest-flow__header">
-          <span className="interest-flow__wordmark">Frame</span>
-          <button
+          <Link className="interest-flow__wordmark" href="/" aria-label="Frame home">
+            Frame
+          </Link>
+          <Link
             className="interest-flow__close"
-            type="button"
-            aria-label="Close interest form"
-            onClick={() => dialogRef.current?.close()}
+            href="/"
+            aria-label="Back to Frame"
           >
-            Close <span aria-hidden="true">×</span>
-          </button>
+            Back to Frame <span aria-hidden="true">×</span>
+          </Link>
         </header>
 
         {status === "joined" || status === "updated" ? (
           <div className="interest-flow__success" role="status" aria-live="polite">
             <p className="eyebrow">Thank you</p>
             <h2 id="interest-flow-title" ref={headingRef} tabIndex={-1}>
-              {status === "joined" ? "Your interest is registered." : "Your response is updated."}
+              Your interest has been registered!
             </h2>
             <p>
-              Thanks, {firstName.trim()}. We review every response and will be in touch when there is a strong fit.
+              Thanks, {formatName(firstName)}. We genuinely read all responses and
+              your input is invaluable for Frame&apos;s development.
             </p>
             <div className="interest-flow__success-actions">
-              <button className="button button--dark" type="button" onClick={() => dialogRef.current?.close()}>
+              <Link className="button button--dark" href="/">
                 Back to Frame
-              </button>
+              </Link>
               <button className="interest-flow__text-button" type="button" onClick={resetFlow}>
                 Submit another response
               </button>
@@ -519,6 +474,6 @@ export function InterestFlow() {
           </form>
         )}
       </div>
-    </dialog>
+    </main>
   );
 }
