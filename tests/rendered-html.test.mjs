@@ -145,7 +145,12 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(interestFlow, /name="email"/);
   assert.doesNotMatch(page, /InterestFlow|InterestTrigger|<WaitlistPopup \/>/);
   assert.match(page, /href="\/interest"/);
-  assert.doesNotMatch(page, /Interested\?/);
+  assert.match(page, /Interested\?/);
+  assert.match(page, /Register your interest\./);
+  assert.match(
+    page,
+    /Do you think Frame sounds interesting\?[\s\S]*keep you up to date with Frame&apos;s development!/
+  );
   assert.match(interestFlow, /Your interest has been registered!/);
   assert.match(
     interestFlow,

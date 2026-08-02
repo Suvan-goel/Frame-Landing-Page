@@ -75,7 +75,7 @@ export default function Home() {
             </p>
             <div className="hero-actions">
               <a className="button button--dark" href="/interest">
-                Interested
+                Interested?
               </a>
               <a className="text-link" href="#how-it-works">
                 How it works <span aria-hidden="true">↓</span>
@@ -311,11 +311,12 @@ export default function Home() {
           </div>
           <div className="final-cta__form final-cta__action">
             <p>
-              Tell us what you want to understand, how you monitor today, and
-              whether you would be open to a short conversation with our team.
+              Do you think Frame sounds interesting? Help us out by answering
+              some short questions and sharing your contact details so we can
+              keep you up to date with Frame&apos;s development!
             </p>
             <a className="button button--light" href="/interest">
-              Interested
+              Register your interest.
             </a>
           </div>
         </div>
