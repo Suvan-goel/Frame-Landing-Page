@@ -51,6 +51,8 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /We’ll only contact you about Frame\./);
   assert.match(html, /name="firstName"/);
   assert.match(html, /name="lastName"/);
+  assert.match(html, /name="gender"/);
+  assert.match(html, /name="age"/);
   assert.match(html, /name="motivation"/);
   assert.match(html, /How would you use Frame\?/);
   assert.match(html, /Minimum\s*(?:<!-- -->)?30(?:<!-- -->)? characters/);
@@ -70,7 +72,16 @@ test("server-renders the Frame landing page", async () => {
 });
 
 test("uses generated raster visuals and keeps the page editable", async () => {
-  const [page, layout, css, api, supabase, privacy, publicFiles] =
+  const [
+    page,
+    layout,
+    css,
+    api,
+    supabase,
+    privacy,
+    demographicsMigration,
+    publicFiles,
+  ] =
     await Promise.all([
     readFile(new URL("../app/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
@@ -81,6 +92,13 @@ test("uses generated raster visuals and keeps the page editable", async () => {
       "utf8",
     ),
     readFile(new URL("../app/privacy/page.tsx", import.meta.url), "utf8"),
+    readFile(
+      new URL(
+        "../supabase/migrations/20260802000000_add_waitlist_demographics.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
     readdir(new URL("../public/", import.meta.url)),
   ]);
 
@@ -100,7 +118,12 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(page, /WAITLIST_PROMPT_DELAY_MS = 12_000/);
   assert.match(page, /WAITLIST_SCROLL_THRESHOLD = 0\.4/);
   assert.match(page, /MAX_MOTIVATION_LENGTH = 500/);
+  assert.match(page, /MIN_AGE = 18/);
+  assert.doesNotMatch(page, /Interested\?\s*<Arrow \/>/);
+  assert.doesNotMatch(page, /Sign me up![\s\S]{0,80}<Arrow \/>/);
   assert.match(api, /MAX_MOTIVATION_LENGTH = 500/);
+  assert.match(api, /GENDER_VALUES/);
+  assert.match(api, /age < MIN_AGE \|\| age > MAX_AGE/);
   assert.match(page, /window\.sessionStorage\.setItem/);
   assert.match(page, /window\.localStorage\.setItem/);
   assert.match(page, /window\.dispatchEvent\(new Event\(WAITLIST_JOINED_EVENT\)\)/);
@@ -110,9 +133,13 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(api, /from\("waitlist_signups"\)\.insert/);
   assert.match(api, /first_name: firstName/);
   assert.match(api, /last_name: lastName/);
+  assert.match(api, /gender/);
+  assert.match(api, /age/);
   assert.match(api, /motivation/);
   assert.match(supabase, /SUPABASE_SECRET_KEY/);
   assert.doesNotMatch(page, /SUPABASE_SECRET_KEY|createClient/);
+  assert.match(demographicsMigration, /add column if not exists gender text/);
+  assert.match(demographicsMigration, /add column if not exists age smallint/);
   assert.match(privacy, /We do not sell your information\./);
   assert.deepEqual(
     [
@@ -147,4 +174,34 @@ test("rejects incomplete waitlist applications before storage", async () => {
 
   assert.equal(response.status, 400);
   assert.match(await response.text(), /first name/i);
+});
+
+test("requires valid demographic information before storage", async () => {
+  const baseApplication = {
+    firstName: "Ada",
+    lastName: "Lovelace",
+    email: "ada@example.com",
+    motivation:
+      "I want to understand how my cardiovascular patterns change over time.",
+  };
+
+  const missingGender = await render("/api/waitlist", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ ...baseApplication, age: 36 }),
+  });
+  assert.equal(missingGender.status, 400);
+  assert.match(await missingGender.text(), /gender/i);
+
+  const invalidAge = await render("/api/waitlist", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      ...baseApplication,
+      gender: "prefer_not_to_say",
+      age: 17,
+    }),
+  });
+  assert.equal(invalidAge.status, 400);
+  assert.match(await invalidAge.text(), /age between 18 and 120/i);
 });
