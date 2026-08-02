@@ -90,8 +90,8 @@ export default function Home() {
           <figure className="hero-visuals">
             <div className="hero-lifestyle">
               <Image
-                src="/frame-on-arm-editorial-v7-product-transparent.png"
-                alt="Frame wearable concept fitted around a person's upper arm"
+                src="/frame-hero-man-transparent-v2.png"
+                alt="Man wearing the Frame wearable concept on his upper arm"
                 fill
                 sizes="(max-width: 680px) 100vw, (max-width: 980px) 56vw, 34vw"
                 quality={88}
