@@ -1157,7 +1157,6 @@ h2 {
   justify-content: space-between;
   gap: 24px;
   padding-top: 24px;
-  border-top: 1px solid var(--line);
 }
 
 .interest-flow__actions .button {
