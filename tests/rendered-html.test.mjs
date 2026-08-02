@@ -131,6 +131,10 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   );
   assert.match(css, /\.hero-visuals\s*\{[\s\S]*?top: 12px;/);
   assert.doesNotMatch(css, /\.hero-lifestyle\s*\{[^}]*transform:/);
+  assert.match(
+    css,
+    /\.hero-lifestyle img\s*\{[^}]*height: 94%;[^}]*transform: translateX\(-48px\);/,
+  );
   assert.match(page, /src="\/frame-sensing-concept-realistic-v3-transparent\.png"/);
   assert.match(page, /src="\/frame-app-studio-v5\.png"/);
   assert.doesNotMatch(page, /<svg|ProductDiagram|CrossSection|PatternTimeline/);
