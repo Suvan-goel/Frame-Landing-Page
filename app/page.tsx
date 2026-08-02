@@ -22,8 +22,8 @@ const content = {
   ],
   insights: [
     ["Baseline", "What is normal for you during comparable periods."],
-    ["Response", "How your cardiovascular system changes around meaningful events."],
     ["Recovery", "How quickly you return toward your usual pattern."],
+    ["Response", "How your cardiovascular system changes around meaningful events."],
     ["Confidence", "What was measured reliably-and what was not."],
   ],
   principles: [
@@ -571,6 +571,17 @@ export default function Home() {
             </p>
           </div>
           <div className="context-content">
+            <div className="insight-list" aria-label="Baseline and recovery">
+              {content.insights.slice(0, 2).map(([title, description], index) => (
+                <article key={title}>
+                  <span>0{index + 1}</span>
+                  <div>
+                    <h3>{title}</h3>
+                    <p>{description}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
             <figure className="product-concept-showcase">
               <div className="product-concept-showcase__media">
                 <Image
@@ -585,10 +596,10 @@ export default function Home() {
               </div>
               <figcaption>Product concept · final industrial design in development</figcaption>
             </figure>
-            <div className="insight-list" aria-label="The four concepts behind Frame">
-              {content.insights.map(([title, description], index) => (
+            <div className="insight-list" aria-label="Response and confidence">
+              {content.insights.slice(2).map(([title, description], index) => (
                 <article key={title}>
-                  <span>0{index + 1}</span>
+                  <span>0{index + 3}</span>
                   <div>
                     <h3>{title}</h3>
                     <p>{description}</p>
