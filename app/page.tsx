@@ -543,7 +543,7 @@ export default function Home() {
           <figure className="hero-visuals">
             <div className="hero-lifestyle">
               <Image
-                src="/frame-on-arm-editorial-v3.png"
+                src="/frame-on-arm-editorial-v4-transparent.png"
                 alt="Frame wearable concept fitted around a person's upper arm"
                 fill
                 sizes="(max-width: 680px) 100vw, (max-width: 980px) 56vw, 34vw"
