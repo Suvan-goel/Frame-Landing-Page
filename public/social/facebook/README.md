@@ -8,7 +8,7 @@ The device is shown on the lower upper arm, approximately 2–4 cm above the elb
 
 | Concept | Feed (4:5) | Square (1:1) | Story/Reels (9:16) |
 | --- | --- | --- | --- |
-| Product | `frame-facebook-product-feed-v3.png` | `frame-facebook-product-square-v3.png` | `frame-facebook-product-story-v3.png` |
+| Product | `frame-facebook-product-feed-v6.png` | `frame-facebook-product-square-v6.png` | `frame-facebook-product-story-v6.png` |
 | Routine | `frame-facebook-routine-feed-v1.png` | `frame-facebook-routine-square-v1.png` | `frame-facebook-routine-story-v1.png` |
 | Movement | `frame-facebook-movement-feed-v1.png` | `frame-facebook-movement-square-v1.png` | `frame-facebook-movement-story-v1.png` |
 
@@ -59,7 +59,7 @@ Primary text:
 - Use the 4:5 versions for Facebook and Instagram feeds, 1:1 for flexible placements, and 9:16 for Stories/Reels.
 - The 9:16 layouts keep the key message and CTA away from the top and bottom interface zones.
 - Keep the research-stage disclosure visible. Do not replace it with diagnostic, treatment, guaranteed-outcome, or currently-for-sale claims.
-- Product v3 intentionally has no simulated button in the artwork. Select Meta’s native `Sign Up` CTA in Ads Manager; that is the actual clickable control.
+- Product v6 uses mobile-first type sizing and more generous vertical spacing, and intentionally has no simulated button in the artwork. Select Meta’s native `Sign Up` CTA in Ads Manager; that is the actual clickable control.
 
 ## Regeneration
 

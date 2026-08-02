@@ -19,7 +19,7 @@ const colors = {
 };
 
 const disclosure =
-  "Research-stage concept · Not intended to diagnose or treat · Final design may change.";
+  "Research-stage concept · Not for diagnosis or treatment · Final design may change.";
 
 const concepts = {
   product: {
@@ -28,10 +28,19 @@ const concepts = {
       "exports",
       "frame-product-campaign-hero-feed-1080x1350-v3.png",
     ),
-    version: "v3",
+    version: "v6",
     eyebrow: "RESEARCH-STAGE ULTRASOUND WEARABLE",
     headline: ["See what influences", "your blood pressure"],
     subhead: ["Explore patterns across sleep, stress,", "movement, and recovery."],
+    wordmarkWidths: { feed: 200, square: 200, story: 220 },
+    eyebrowSizes: { feed: 25, square: 25, story: 26 },
+    headlineSizes: { feed: 76, square: 70, story: 92 },
+    headlineYPositions: { feed: 256, square: 238, story: 462 },
+    headlineLineHeightMultipliers: { feed: 1.12, square: 1.1, story: 1.08 },
+    subheadSizes: { feed: 34, square: 32, story: 34 },
+    subheadYPositions: { story: 664 },
+    subheadLineHeightMultipliers: { feed: 1.48, square: 1.46, story: 1.46 },
+    disclosureSizes: { feed: 22, square: 22, story: 22 },
     card: "none",
     showImageCta: false,
     squarePosition: "centre",
@@ -97,10 +106,20 @@ function feedOrSquareOverlay(concept, format) {
   const cardY = 44;
   const cardHeight = isSquare ? 560 : 590;
   const textX = concept.card === "right" ? cardX + 34 : 78;
-  const headlineY = isSquare ? 218 : 236;
-  const headlineSize = isSquare ? 57 : 61;
-  const subheadY = headlineY + 2 * Math.round(headlineSize * 0.98) + 30;
-  const ctaY = subheadY + 2 * 32 + 34;
+  const headlineY =
+    concept.headlineYPositions?.[format] ?? (isSquare ? 218 : 236);
+  const headlineSize = concept.headlineSizes?.[format] ?? (isSquare ? 57 : 61);
+  const subheadSize = concept.subheadSizes?.[format] ?? 23;
+  const eyebrowSize = concept.eyebrowSizes?.[format] ?? 17;
+  const disclosureSize = concept.disclosureSizes?.[format] ?? 14;
+  const headlineLineHeight = Math.round(
+    headlineSize * (concept.headlineLineHeightMultipliers?.[format] ?? 0.98),
+  );
+  const subheadY = headlineY + 2 * headlineLineHeight + 30;
+  const subheadLineHeight = Math.round(
+    subheadSize * (concept.subheadLineHeightMultipliers?.[format] ?? 1.34),
+  );
+  const ctaY = subheadY + 2 * subheadLineHeight + 34;
   const wordmarkX = concept.card === "none" ? 72 : cardX + 30;
   const wordmarkY = 67;
   const cta = concept.showImageCta === false
@@ -129,11 +148,11 @@ function feedOrSquareOverlay(concept, format) {
   return Buffer.from(`
     <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
       <style>
-        .eyebrow { font: 650 17px Arial, sans-serif; fill: ${colors.burgundy}; letter-spacing: 2.6px; }
+        .eyebrow { font: 650 ${eyebrowSize}px Arial, sans-serif; fill: ${colors.burgundy}; letter-spacing: 2.6px; }
         .headline { font: 400 ${headlineSize}px Georgia, 'Times New Roman', serif; fill: ${colors.ink}; letter-spacing: -2px; }
-        .subhead { font: 430 23px Arial, sans-serif; fill: ${colors.soft}; }
+        .subhead { font: 430 ${subheadSize}px Arial, sans-serif; fill: ${colors.soft}; }
         .cta { font: 650 22px Arial, sans-serif; fill: ${colors.paper}; }
-        .disclosure { font: 520 14px Arial, sans-serif; fill: ${colors.soft}; letter-spacing: .1px; }
+        .disclosure { font: 520 ${disclosureSize}px Arial, sans-serif; fill: ${colors.soft}; letter-spacing: .1px; }
       </style>
       ${card}
       <line x1="${textX}" y1="158" x2="${textX + 44}" y2="158" stroke="${colors.burgundy}" stroke-width="4"/>
@@ -142,14 +161,14 @@ function feedOrSquareOverlay(concept, format) {
         x: textX,
         y: headlineY,
         size: headlineSize,
-        lineHeight: Math.round(headlineSize * 0.98),
+        lineHeight: headlineLineHeight,
         className: "headline",
       })}
       ${textLines(concept.subhead, {
         x: textX,
         y: subheadY,
-        size: 23,
-        lineHeight: 31,
+        size: subheadSize,
+        lineHeight: subheadLineHeight,
         className: "subhead",
       })}
       ${cta}
@@ -163,9 +182,18 @@ function feedOrSquareOverlay(concept, format) {
 function storyOverlay(concept) {
   const { width, height } = formats.story;
   const textX = 80;
-  const headlineY = 438;
-  const headlineSize = 76;
-  const subheadY = 620;
+  const headlineY = concept.headlineYPositions?.story ?? 438;
+  const headlineSize = concept.headlineSizes?.story ?? 76;
+  const subheadSize = concept.subheadSizes?.story ?? 27;
+  const headlineLineHeight = Math.round(
+    headlineSize * (concept.headlineLineHeightMultipliers?.story ?? 1),
+  );
+  const subheadLineHeight = Math.round(
+    subheadSize * (concept.subheadLineHeightMultipliers?.story ?? 1.4),
+  );
+  const eyebrowSize = concept.eyebrowSizes?.story ?? 19;
+  const disclosureSize = concept.disclosureSizes?.story ?? 15;
+  const subheadY = concept.subheadYPositions?.story ?? 620;
   const ctaY = 735;
   const cta = concept.showImageCta === false
     ? ""
@@ -175,11 +203,11 @@ function storyOverlay(concept) {
   return Buffer.from(`
     <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
       <style>
-        .eyebrow { font: 650 19px Arial, sans-serif; fill: ${colors.burgundy}; letter-spacing: 3px; }
+        .eyebrow { font: 650 ${eyebrowSize}px Arial, sans-serif; fill: ${colors.burgundy}; letter-spacing: 3px; }
         .headline { font: 400 ${headlineSize}px Georgia, 'Times New Roman', serif; fill: ${colors.ink}; letter-spacing: -2.6px; }
-        .subhead { font: 430 27px Arial, sans-serif; fill: ${colors.soft}; }
+        .subhead { font: 430 ${subheadSize}px Arial, sans-serif; fill: ${colors.soft}; }
         .cta { font: 650 25px Arial, sans-serif; fill: ${colors.paper}; }
-        .disclosure { font: 520 15px Arial, sans-serif; fill: ${colors.soft}; }
+        .disclosure { font: 520 ${disclosureSize}px Arial, sans-serif; fill: ${colors.soft}; }
       </style>
       <rect x="0" y="0" width="${width}" height="880" fill="${colors.cream}"/>
       <line x1="${textX}" y1="354" x2="${textX + 50}" y2="354" stroke="${colors.burgundy}" stroke-width="4"/>
@@ -188,14 +216,14 @@ function storyOverlay(concept) {
         x: textX,
         y: headlineY,
         size: headlineSize,
-        lineHeight: 76,
+        lineHeight: headlineLineHeight,
         className: "headline",
       })}
       ${textLines(concept.subhead, {
         x: textX,
         y: subheadY,
-        size: 27,
-        lineHeight: 38,
+        size: subheadSize,
+        lineHeight: subheadLineHeight,
         className: "subhead",
       })}
       ${cta}
@@ -217,7 +245,7 @@ async function renderFeedOrSquare(name, concept, format) {
     })
     .png()
     .toBuffer();
-  const wordmark = await resizedWordmark();
+  const wordmark = await resizedWordmark(concept.wordmarkWidths?.[format] ?? 174);
   const wordmarkX =
     concept.card === "right"
       ? width - concept.cardWidth - 48 + 30
@@ -245,7 +273,7 @@ async function renderStory(name, concept) {
     .resize(width, 1040, { fit: "cover", position: concept.storyPosition })
     .png()
     .toBuffer();
-  const wordmark = await resizedWordmark(190);
+  const wordmark = await resizedWordmark(concept.wordmarkWidths?.story ?? 190);
 
   await sharp({
     create: {

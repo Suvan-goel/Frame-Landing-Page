@@ -32,11 +32,10 @@ const content = {
     ["Patterns over moments", "Repeated associations matter more than any single event."],
     ["Honest gaps", "When a signal is unreliable, Frame does not invent an answer."],
   ],
-  stages: [
-    "Bench testing",
-    "Human feasibility testing",
-    "Sleep and rest testing",
-    "Daily-life testing",
+  researchStandards: [
+    ["Signal integrity", "Report confidence and coverage alongside every measurement."],
+    ["Human validation", "Evaluate comfort, motion tolerance, and repeatability in real use."],
+    ["Responsible claims", "Only communicate conclusions supported by evidence."],
   ],
   contact: {
     general: "support@framewearable.com",
@@ -551,17 +550,6 @@ export default function Home() {
                 quality={88}
                 unoptimized
                 loading="eager"
-              />
-            </div>
-            <div className="hero-product">
-              <Image
-                src="/frame-product-concept-realistic-v3-transparent.png"
-                alt="Refined Frame upper-arm wearable concept with an adjustable charcoal knit band, burgundy clasp, and integrated ultrasound sensor"
-                fill
-                sizes="(max-width: 680px) 72vw, (max-width: 980px) 40vw, 26vw"
-                quality={88}
-                unoptimized
-                loading="eager"
                 fetchPriority="high"
               />
             </div>
@@ -582,6 +570,20 @@ export default function Home() {
               between-without treating every temporary rise as harmful.
             </p>
           </div>
+          <figure className="product-concept-showcase">
+            <div className="product-concept-showcase__media">
+              <Image
+                src="/frame-product-concept-realistic-v3-transparent.png"
+                alt="Refined Frame upper-arm wearable concept with an adjustable charcoal knit band, burgundy clasp, and integrated ultrasound sensor"
+                width={1254}
+                height={1254}
+                sizes="(max-width: 680px) 84vw, 480px"
+                quality={88}
+                unoptimized
+              />
+            </div>
+            <figcaption>Product concept · final industrial design in development</figcaption>
+          </figure>
           <div className="insight-list" aria-label="The four concepts behind Frame">
             {content.insights.map(([title, description], index) => (
               <article key={title}>
@@ -710,32 +712,30 @@ export default function Home() {
               ))}
             </div>
           </div>
-          <aside className="research-card">
-            <span className="status-label">Research-stage technology</span>
-            <h3>Building the evidence before making the promise.</h3>
+          <aside className="research-panel">
+            <span className="status-label">Research approach</span>
+            <h3>Evidence before claims.</h3>
             <p>
-              Frame is evaluating sensing location, extended wear, calibration,
-              motion tolerance, comfort, and measurement accuracy before making
-              broader claims.
+              Frame is evaluating signal quality, wearability, and measurement
+              accuracy before making broader claims.
             </p>
-            <ol>
-              {content.stages.map((stage, index) => (
-                <li
-                  className={index === 0 ? "is-current" : undefined}
-                  aria-current={index === 0 ? "step" : undefined}
-                  key={stage}
-                >
-                  <span>{index + 1}</span>
-                  {stage}
-                  {index === 0 ? <small>Current focus</small> : null}
-                </li>
+            <div className="research-standards" aria-label="Frame research standards">
+              {content.researchStandards.map(([title, description]) => (
+                <article key={title}>
+                  <h4>{title}</h4>
+                  <p>{description}</p>
+                </article>
               ))}
-            </ol>
+            </div>
+            <div className="research-status" aria-label="Current research focus">
+              <span>Current focus</span>
+              <strong>Validating sensing and extended wear</strong>
+            </div>
             <a
               className="text-link"
               href={`mailto:${content.contact.collaboration}?subject=Frame%20research%20collaboration`}
             >
-              Explore research collaboration <Arrow />
+              Research and engineering inquiries <Arrow />
             </a>
           </aside>
         </div>
@@ -746,6 +746,12 @@ export default function Home() {
           <div className="final-cta__copy">
             <p className="eyebrow">Early access</p>
             <h2>Help shape a new way to understand cardiovascular health.</h2>
+            <a
+              className="collaboration-link"
+              href={`mailto:${content.contact.collaboration}?subject=Frame%20research%20collaboration`}
+            >
+              Interested in research or engineering collaboration? <Arrow />
+            </a>
           </div>
           <div className="final-cta__form">
             <p>
@@ -753,12 +759,6 @@ export default function Home() {
               us understand who Frame can serve best.
             </p>
             <WaitlistForm idPrefix="footer-waitlist" placement="footer" />
-            <a
-              className="collaboration-link"
-              href={`mailto:${content.contact.collaboration}?subject=Frame%20research%20collaboration`}
-            >
-              Interested in research or engineering collaboration? <Arrow />
-            </a>
           </div>
         </div>
       </section>

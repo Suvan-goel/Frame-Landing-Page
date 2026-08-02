@@ -39,9 +39,11 @@ test("server-renders the Frame landing page", async () => {
     html,
     /Continuous monitoring should create context, not continuous\s*(?:<!-- -->)?conclusions\./,
   );
-  assert.match(html, /Research-stage technology/);
-  assert.match(html, /aria-current="step"/);
-  assert.match(html, /Explore research collaboration/);
+  assert.match(html, /Research approach/);
+  assert.match(html, /Evidence before claims\./);
+  assert.match(html, /Signal integrity/);
+  assert.match(html, /Validating sensing and extended wear/);
+  assert.match(html, /Research and engineering inquiries/);
   assert.match(html, /Frame is under development and is not currently available for sale\./);
   assert.match(html, /frame-product-concept-realistic-v3-transparent\.png/);
   assert.match(html, /frame-on-arm-editorial-v3\.png/);
