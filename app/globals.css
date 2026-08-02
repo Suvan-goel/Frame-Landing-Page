@@ -373,11 +373,11 @@ h2 {
   display: block;
   width: auto;
   max-width: 100%;
-  height: 89.25%;
+  height: 93.7125%;
   object-fit: contain;
   object-position: right bottom;
   filter: none;
-  transform: translateX(-144px);
+  transform: translate(-144px, 76px);
 }
 
 .hero-visuals figcaption {
