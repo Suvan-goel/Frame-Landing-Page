@@ -205,9 +205,13 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(api, /GENDER_VALUES/);
   assert.match(api, /age < MIN_AGE \|\| age > MAX_AGE/);
   assert.match(interestFlow, /window\.localStorage\.setItem/);
-  assert.match(interestFlow, /result\.status === "joined"/);
+  assert.doesNotMatch(interestFlow, /result\.status === "joined"/);
   assert.match(interestFlow, /trackMetaLead\(\)/);
-  assert.match(metaPixel, /window\.fbq\("track", "Lead"/);
+  assert.match(
+    metaPixel,
+    /window\.fbq\("trackSingle", META_PIXEL_ID, "Lead"/,
+  );
+  assert.match(metaPixel, /frame-meta-lead-recorded-v1/);
   assert.match(metaPixel, /1068997465474786/);
   assert.doesNotMatch(page, /Connect a real waitlist API/);
   assert.match(layout, /url: `\$\{baseUrl\}\/og-launch-v2\.png`/);

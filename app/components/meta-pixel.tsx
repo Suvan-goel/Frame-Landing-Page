@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 
 export const META_PIXEL_ID = "1068997465474786";
+const META_LEAD_RECORDED_STORAGE_KEY = "frame-meta-lead-recorded-v1";
 
 declare global {
   interface Window {
@@ -49,7 +50,23 @@ export function trackMetaLead() {
     return;
   }
 
-  window.fbq("track", "Lead", {
+  try {
+    if (
+      window.localStorage.getItem(META_LEAD_RECORDED_STORAGE_KEY) === "true"
+    ) {
+      return;
+    }
+  } catch {
+    // Tracking should still work when browser storage is unavailable.
+  }
+
+  window.fbq("trackSingle", META_PIXEL_ID, "Lead", {
     content_name: "Frame early access application",
   });
+
+  try {
+    window.localStorage.setItem(META_LEAD_RECORDED_STORAGE_KEY, "true");
+  } catch {
+    // A sent conversion should not be affected by unavailable storage.
+  }
 }
