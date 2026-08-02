@@ -1,6 +1,10 @@
 import type { Metadata, Viewport } from "next";
 import { headers } from "next/headers";
 import { Geist, Geist_Mono } from "next/font/google";
+import {
+  MetaPixelNoScript,
+  MetaPixelScript,
+} from "./components/meta-pixel";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -92,7 +96,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
+      <head>
+        <MetaPixelScript />
+      </head>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
+        <MetaPixelNoScript />
         {children}
       </body>
     </html>
