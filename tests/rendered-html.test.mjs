@@ -125,6 +125,10 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     /\.product-concept-showcase__media img\s*\{[\s\S]*?width: min\(22vw, 240px\);/,
   );
   assert.match(page, /src="\/frame-hero-man-transparent-v2\.png"/);
+  assert.match(
+    css,
+    /\.hero-lifestyle\s*\{[\s\S]*?transform: scale\(0\.88\);[\s\S]*?transform-origin: right bottom;/,
+  );
   assert.match(page, /src="\/frame-sensing-concept-realistic-v3-transparent\.png"/);
   assert.match(page, /src="\/frame-app-studio-v5\.png"/);
   assert.doesNotMatch(page, /<svg|ProductDiagram|CrossSection|PatternTimeline/);
