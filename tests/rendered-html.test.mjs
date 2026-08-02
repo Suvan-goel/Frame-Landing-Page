@@ -45,7 +45,7 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /Research and engineering inquiries/);
   assert.match(html, /Frame is under development and is not currently available for sale\./);
   assert.match(html, /frame-product-concept-realistic-v3-transparent\.png/);
-  assert.match(html, /frame-on-arm-editorial-v6-balanced-transparent\.png/);
+  assert.match(html, /frame-on-arm-editorial-v7-product-transparent\.png/);
   assert.match(html, /frame-sensing-concept-realistic-v3-transparent\.png/);
   assert.match(html, /frame-app-studio-v5\.png/);
   assert.match(html, /We’ll only contact you about Frame\./);
@@ -90,7 +90,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     css,
     /\.product-concept-showcase__media img\s*\{[\s\S]*?width: min\(52vw, 480px\);/,
   );
-  assert.match(page, /src="\/frame-on-arm-editorial-v6-balanced-transparent\.png"/);
+  assert.match(page, /src="\/frame-on-arm-editorial-v7-product-transparent\.png"/);
   assert.match(page, /src="\/frame-sensing-concept-realistic-v3-transparent\.png"/);
   assert.match(page, /src="\/frame-app-studio-v5\.png"/);
   assert.doesNotMatch(page, /<svg|ProductDiagram|CrossSection|PatternTimeline/);
@@ -118,7 +118,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     [
       "frame-app-studio.png",
       "frame-app-studio-v5.png",
-      "frame-on-arm-editorial-v6-balanced-transparent.png",
+      "frame-on-arm-editorial-v7-product-transparent.png",
       "frame-product-concept-realistic-v3-transparent.png",
       "frame-sensing-concept-realistic-v2.png",
       "frame-sensing-concept-realistic-v3-transparent.png",
@@ -129,7 +129,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     [
       "frame-app-studio.png",
       "frame-app-studio-v5.png",
-      "frame-on-arm-editorial-v6-balanced-transparent.png",
+      "frame-on-arm-editorial-v7-product-transparent.png",
       "frame-product-concept-realistic-v3-transparent.png",
       "frame-sensing-concept-realistic-v2.png",
       "frame-sensing-concept-realistic-v3-transparent.png",
