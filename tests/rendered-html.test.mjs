@@ -46,7 +46,7 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /Research and engineering inquiries/);
   assert.match(html, /Frame is under development and is not currently available for sale\./);
   assert.match(html, /frame-product-concept-realistic-v3-transparent\.png/);
-  assert.match(html, /frame-on-arm-editorial-v7-product-transparent\.png/);
+  assert.match(html, /frame-hero-man-transparent-v2\.png/);
   assert.match(html, /frame-sensing-concept-realistic-v3-transparent\.png/);
   assert.match(html, /frame-app-studio-v5\.png/);
   assert.equal(html.match(/href="\/interest"/g)?.length, 3);
@@ -124,7 +124,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     css,
     /\.product-concept-showcase__media img\s*\{[\s\S]*?width: min\(22vw, 240px\);/,
   );
-  assert.match(page, /src="\/frame-on-arm-editorial-v7-product-transparent\.png"/);
+  assert.match(page, /src="\/frame-hero-man-transparent-v2\.png"/);
   assert.match(page, /src="\/frame-sensing-concept-realistic-v3-transparent\.png"/);
   assert.match(page, /src="\/frame-app-studio-v5\.png"/);
   assert.doesNotMatch(page, /<svg|ProductDiagram|CrossSection|PatternTimeline/);
@@ -132,7 +132,11 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.doesNotMatch(interestFlow, /<dialog|showModal\(|OPEN_INTEREST_FLOW_EVENT/);
   assert.match(interestPage, /<InterestFlow \/>/);
   assert.match(interestPage, /canonical: "\/interest"/);
-  assert.match(interestFlow, /MIN_SITUATION_LENGTH = 50/);
+  assert.match(interestFlow, /MIN_SITUATION_LENGTH = 20/);
+  assert.match(
+    interestFlow,
+    /What would frame solve for you that existing wearables or blood pressure monitors don't\?/,
+  );
   assert.match(interestFlow, /MAX_SITUATION_LENGTH = 750/);
   assert.match(interestFlow, /type="radio"/);
   assert.match(interestFlow, /name="recentSituation"/);
@@ -145,7 +149,12 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(interestFlow, /name="email"/);
   assert.doesNotMatch(page, /InterestFlow|InterestTrigger|<WaitlistPopup \/>/);
   assert.match(page, /href="\/interest"/);
-  assert.doesNotMatch(page, /Interested\?/);
+  assert.match(page, /Interested\?/);
+  assert.match(page, /Register your interest\./);
+  assert.match(
+    page,
+    /Do you think Frame sounds interesting\?[\s\S]*keep you up to date with Frame&apos;s development!/
+  );
   assert.match(interestFlow, /Your interest has been registered!/);
   assert.match(
     interestFlow,
@@ -153,7 +162,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   );
   assert.match(interestFlow, /formatName\(firstName\)/);
   assert.match(api, /return formatName\(value\)/);
-  assert.match(api, /MIN_SITUATION_LENGTH = 50/);
+  assert.match(api, /MIN_SITUATION_LENGTH = 20/);
   assert.match(api, /MAIN_REASON_VALUES/);
   assert.match(api, /MONITORING_METHOD_VALUES/);
   assert.match(api, /INTERVIEW_WILLINGNESS_VALUES/);
@@ -184,7 +193,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     [
       "frame-app-studio.png",
       "frame-app-studio-v5.png",
-      "frame-on-arm-editorial-v7-product-transparent.png",
+      "frame-hero-man-transparent-v2.png",
       "frame-product-concept-realistic-v3-transparent.png",
       "frame-sensing-concept-realistic-v2.png",
       "frame-sensing-concept-realistic-v3-transparent.png",
@@ -195,7 +204,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     [
       "frame-app-studio.png",
       "frame-app-studio-v5.png",
-      "frame-on-arm-editorial-v7-product-transparent.png",
+      "frame-hero-man-transparent-v2.png",
       "frame-product-concept-realistic-v3-transparent.png",
       "frame-sensing-concept-realistic-v2.png",
       "frame-sensing-concept-realistic-v3-transparent.png",

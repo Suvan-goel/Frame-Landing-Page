@@ -5,7 +5,7 @@ import Link from "next/link";
 import { formatName } from "@/lib/name-format";
 
 const WAITLIST_JOINED_STORAGE_KEY = "frame-waitlist-joined";
-const MIN_SITUATION_LENGTH = 50;
+const MIN_SITUATION_LENGTH = 20;
 const MAX_SITUATION_LENGTH = 750;
 const MIN_AGE = 18;
 const MAX_AGE = 120;
@@ -149,7 +149,7 @@ export function InterestFlow() {
     if (currentStep === 1) {
       const length = recentSituation.trim().length;
       if (length < MIN_SITUATION_LENGTH) {
-        nextErrors.recentSituation = `Write at least ${MIN_SITUATION_LENGTH} characters about a real moment when Frame would have helped.`;
+        nextErrors.recentSituation = `Write at least ${MIN_SITUATION_LENGTH} characters about what Frame would solve for you.`;
       } else if (length > MAX_SITUATION_LENGTH) {
         nextErrors.recentSituation = `Keep your response to ${MAX_SITUATION_LENGTH} characters or fewer.`;
       }
@@ -282,7 +282,7 @@ export function InterestFlow() {
 
   const titles = [
     "What would be the main reason you would want Frame?",
-    "Think of the last time Frame would have been useful. What was happening?",
+    "What would frame solve for you that existing wearables or blood pressure monitors don't?",
     "How do you currently monitor your blood pressure?",
     "Would you be willing to speak with us for 20 minutes?",
     "A little about you.",
@@ -359,7 +359,7 @@ export function InterestFlow() {
               {step === 1 ? (
                 <div className="interest-flow__text-response form-field">
                   <label htmlFor="interest-recent-situation" className="sr-only">
-                    Describe the last time Frame would have been useful
+                    What would frame solve for you that existing wearables or blood pressure monitors don&apos;t?
                   </label>
                   <textarea
                     id="interest-recent-situation"
@@ -369,7 +369,7 @@ export function InterestFlow() {
                       setRecentSituation(event.target.value);
                       clearError("recentSituation");
                     }}
-                    placeholder="For example: My cuff reading was unusually high after a bad night of sleep…"
+                    placeholder="For example: Help me understand why my blood pressure changes throughout the day…"
                     minLength={MIN_SITUATION_LENGTH}
                     maxLength={MAX_SITUATION_LENGTH}
                     aria-invalid={Boolean(errors.recentSituation)}
@@ -377,7 +377,7 @@ export function InterestFlow() {
                     autoFocus
                   />
                   <div className="field-hint" id="interest-recent-situation-hint">
-                    <span>Describe a real moment · minimum {MIN_SITUATION_LENGTH} characters</span>
+                    <span>Describe what Frame would solve · minimum {MIN_SITUATION_LENGTH} characters</span>
                     <span>{recentSituation.trim().length}/{MAX_SITUATION_LENGTH}</span>
                   </div>
                   {errors.recentSituation ? <p className="form-error" role="alert">{errors.recentSituation}</p> : null}

@@ -6,7 +6,7 @@ export const dynamic = "force-dynamic";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_BODY_BYTES = 8_192;
 const MAX_NAME_LENGTH = 60;
-const MIN_SITUATION_LENGTH = 50;
+const MIN_SITUATION_LENGTH = 20;
 const MAX_SITUATION_LENGTH = 750;
 const MIN_AGE = 18;
 const MAX_AGE = 120;
@@ -134,7 +134,7 @@ export async function POST(request: Request) {
   ) {
     return jsonResponse(
       {
-        error: `Write between ${MIN_SITUATION_LENGTH} and ${MAX_SITUATION_LENGTH} characters about a real moment when Frame would have helped.`,
+        error: `Write between ${MIN_SITUATION_LENGTH} and ${MAX_SITUATION_LENGTH} characters about what Frame would solve for you.`,
       },
       400,
     );

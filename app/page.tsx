@@ -64,7 +64,7 @@ export default function Home() {
         <div className="hero-grid container">
           <div className="hero-copy">
             <div className="hero-meta">
-              <p className="eyebrow">Blood pressure, in context.</p>
+              <p className="eyebrow">MEASURE YOUR BLOOD PRESSURE CONTINUOUSLY</p>
               <span>Currently in development</span>
             </div>
             <h1>See how your cardiovascular system responds to daily life.</h1>
@@ -75,7 +75,7 @@ export default function Home() {
             </p>
             <div className="hero-actions">
               <a className="button button--dark" href="/interest">
-                Interested
+                Interested?
               </a>
               <a className="text-link" href="#how-it-works">
                 How it works <span aria-hidden="true">↓</span>
@@ -90,8 +90,8 @@ export default function Home() {
           <figure className="hero-visuals">
             <div className="hero-lifestyle">
               <Image
-                src="/frame-on-arm-editorial-v7-product-transparent.png"
-                alt="Frame wearable concept fitted around a person's upper arm"
+                src="/frame-hero-man-transparent-v2.png"
+                alt="Man wearing the Frame wearable concept on his upper arm"
                 fill
                 sizes="(max-width: 680px) 100vw, (max-width: 980px) 56vw, 34vw"
                 quality={88}
@@ -302,20 +302,21 @@ export default function Home() {
           <div className="final-cta__copy">
             <p className="eyebrow">Early access</p>
             <h2>Help shape a new way to understand cardiovascular health.</h2>
+          </div>
+          <div className="final-cta__form final-cta__action">
+            <p>
+              Do you think Frame sounds interesting? Help us out by answering
+              some short questions and sharing your contact details so we can
+              keep you up to date with Frame&apos;s development!
+            </p>
+            <a className="button button--light" href="/interest">
+              Register your interest.
+            </a>
             <a
               className="collaboration-link"
               href={`mailto:${content.contact.collaboration}?subject=Frame%20research%20collaboration`}
             >
               Interested in research or engineering collaboration? <Arrow />
-            </a>
-          </div>
-          <div className="final-cta__form final-cta__action">
-            <p>
-              Tell us what you want to understand, how you monitor today, and
-              whether you would be open to a short conversation with our team.
-            </p>
-            <a className="button button--light" href="/interest">
-              Interested
             </a>
           </div>
         </div>
