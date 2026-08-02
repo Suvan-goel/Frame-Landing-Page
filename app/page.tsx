@@ -559,7 +559,7 @@ export default function Home() {
       </section>
 
       <section className="context-section section" id="product">
-        <div className="container narrow">
+        <div className="container context-container">
           <div className="context-intro">
             <p className="eyebrow">Why context matters</p>
             <h2>A single reading cannot show a pattern.</h2>
@@ -570,30 +570,32 @@ export default function Home() {
               between-without treating every temporary rise as harmful.
             </p>
           </div>
-          <figure className="product-concept-showcase">
-            <div className="product-concept-showcase__media">
-              <Image
-                src="/frame-product-concept-realistic-v3-transparent.png"
-                alt="Refined Frame upper-arm wearable concept with an adjustable charcoal knit band, burgundy clasp, and integrated ultrasound sensor"
-                width={1254}
-                height={1254}
-                sizes="(max-width: 680px) 84vw, 480px"
-                quality={88}
-                unoptimized
-              />
+          <div className="context-content">
+            <div className="insight-list" aria-label="The four concepts behind Frame">
+              {content.insights.map(([title, description], index) => (
+                <article key={title}>
+                  <span>0{index + 1}</span>
+                  <div>
+                    <h3>{title}</h3>
+                    <p>{description}</p>
+                  </div>
+                </article>
+              ))}
             </div>
-            <figcaption>Product concept · final industrial design in development</figcaption>
-          </figure>
-          <div className="insight-list" aria-label="The four concepts behind Frame">
-            {content.insights.map(([title, description], index) => (
-              <article key={title}>
-                <span>0{index + 1}</span>
-                <div>
-                  <h3>{title}</h3>
-                  <p>{description}</p>
-                </div>
-              </article>
-            ))}
+            <figure className="product-concept-showcase">
+              <div className="product-concept-showcase__media">
+                <Image
+                  src="/frame-product-concept-realistic-v3-transparent.png"
+                  alt="Refined Frame upper-arm wearable concept with an adjustable charcoal knit band, burgundy clasp, and integrated ultrasound sensor"
+                  width={1254}
+                  height={1254}
+                  sizes="(max-width: 680px) 84vw, (max-width: 980px) 480px, 42vw"
+                  quality={88}
+                  unoptimized
+                />
+              </div>
+              <figcaption>Product concept · final industrial design in development</figcaption>
+            </figure>
           </div>
         </div>
       </section>
