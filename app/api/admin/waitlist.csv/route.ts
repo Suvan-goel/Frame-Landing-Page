@@ -20,6 +20,39 @@ type WaitlistExportRow = {
   created_at: string;
 };
 
+function parseQualificationResponse(motivation: string | null) {
+  const fallback = {
+    mainReason: null,
+    recentSituation: motivation,
+    monitoringMethod: null,
+    interviewWillingness: null,
+  };
+  if (!motivation?.startsWith("{")) return fallback;
+
+  try {
+    const parsed = JSON.parse(motivation) as Record<string, unknown>;
+    if (parsed.version !== 2) return fallback;
+    return {
+      mainReason:
+        typeof parsed.mainReason === "string" ? parsed.mainReason : null,
+      recentSituation:
+        typeof parsed.recentSituation === "string"
+          ? parsed.recentSituation
+          : null,
+      monitoringMethod:
+        typeof parsed.monitoringMethod === "string"
+          ? parsed.monitoringMethod
+          : null,
+      interviewWillingness:
+        typeof parsed.interviewWillingness === "string"
+          ? parsed.interviewWillingness
+          : null,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
 function csvCell(value: string | number | null) {
   let safeValue = value === null ? "" : String(value);
   if (/^[=+\-@]/.test(safeValue)) {
@@ -63,6 +96,10 @@ export async function GET() {
       "email",
       "gender",
       "age",
+      "main_reason",
+      "recent_situation",
+      "monitoring_method",
+      "interview_willingness",
       "motivation",
       "placement",
       "utm_source",
@@ -70,19 +107,26 @@ export async function GET() {
       "utm_campaign",
       "created_at",
     ],
-    ...signups.map((signup) => [
-      signup.first_name,
-      signup.last_name,
-      signup.email,
-      signup.gender,
-      signup.age,
-      signup.motivation,
-      signup.placement,
-      signup.utm_source,
-      signup.utm_medium,
-      signup.utm_campaign,
-      signup.created_at,
-    ]),
+    ...signups.map((signup) => {
+      const qualification = parseQualificationResponse(signup.motivation);
+      return [
+        signup.first_name,
+        signup.last_name,
+        signup.email,
+        signup.gender,
+        signup.age,
+        qualification.mainReason,
+        qualification.recentSituation,
+        qualification.monitoringMethod,
+        qualification.interviewWillingness,
+        signup.motivation,
+        signup.placement,
+        signup.utm_source,
+        signup.utm_medium,
+        signup.utm_campaign,
+        signup.created_at,
+      ];
+    }),
   ];
   const csv = rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
 

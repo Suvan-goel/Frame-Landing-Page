@@ -31,10 +31,12 @@ export default function PrivacyPage() {
           <h2>Information we collect</h2>
           <p>
             If you apply for early access, we collect your first and last name,
-            email address, age, gender, and the response you provide about why
-            you want Frame and the problem you hope it will solve. Please do not
-            include private medical information in that response. We also
-            collect the time of signup, where on the page you signed up, and any
+            email address, age, gender, your main reason for wanting Frame, a
+            recent situation in which it would have been useful, how you
+            currently monitor your blood pressure, and whether you would be open
+            to a 20-minute conversation with us. Please do not include private
+            medical information in your written response. We also collect the
+            time of signup, where on the page you started the flow, and any
             campaign labels included in the link you used. Our hosting providers
             may process limited technical information, such as IP address and
             browser details, to operate and secure the site.

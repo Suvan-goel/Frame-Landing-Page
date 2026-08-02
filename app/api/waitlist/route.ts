@@ -3,10 +3,10 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin.server";
 export const dynamic = "force-dynamic";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MAX_BODY_BYTES = 4_096;
+const MAX_BODY_BYTES = 8_192;
 const MAX_NAME_LENGTH = 60;
-const MIN_MOTIVATION_LENGTH = 30;
-const MAX_MOTIVATION_LENGTH = 500;
+const MIN_SITUATION_LENGTH = 50;
+const MAX_SITUATION_LENGTH = 750;
 const MIN_AGE = 18;
 const MAX_AGE = 120;
 const GENDER_VALUES = new Set([
@@ -16,6 +16,22 @@ const GENDER_VALUES = new Set([
   "another_identity",
   "prefer_not_to_say",
 ]);
+const MAIN_REASON_VALUES = new Set([
+  "monitor_high_or_borderline",
+  "understand_sleep",
+  "understand_daily_factors",
+  "understand_unexplained_changes",
+  "track_response_and_recovery",
+  "something_else",
+]);
+const MONITORING_METHOD_VALUES = new Set([
+  "upper_arm_regularly",
+  "upper_arm_occasionally",
+  "wearable_or_cuffless",
+  "medical_appointments_only",
+  "not_currently_monitoring",
+]);
+const INTERVIEW_WILLINGNESS_VALUES = new Set(["yes", "possibly", "no"]);
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return Response.json(body, {
@@ -38,7 +54,7 @@ function cleanName(value: unknown) {
   return value.trim().replace(/\s+/g, " ");
 }
 
-function cleanMotivation(value: unknown) {
+function cleanLongText(value: unknown) {
   if (typeof value !== "string") return "";
   return value
     .trim()
@@ -64,7 +80,10 @@ export async function POST(request: Request) {
     email?: unknown;
     gender?: unknown;
     age?: unknown;
-    motivation?: unknown;
+    mainReason?: unknown;
+    recentSituation?: unknown;
+    monitoringMethod?: unknown;
+    interviewWillingness?: unknown;
     website?: unknown;
     placement?: unknown;
     utmSource?: unknown;
@@ -90,7 +109,47 @@ export async function POST(request: Request) {
   const lastName = cleanName(payload.lastName);
   const gender = typeof payload.gender === "string" ? payload.gender : "";
   const age = typeof payload.age === "number" ? payload.age : Number.NaN;
-  const motivation = cleanMotivation(payload.motivation);
+  const mainReason =
+    typeof payload.mainReason === "string" ? payload.mainReason : "";
+  const recentSituation = cleanLongText(payload.recentSituation);
+  const monitoringMethod =
+    typeof payload.monitoringMethod === "string"
+      ? payload.monitoringMethod
+      : "";
+  const interviewWillingness =
+    typeof payload.interviewWillingness === "string"
+      ? payload.interviewWillingness
+      : "";
+
+  if (!MAIN_REASON_VALUES.has(mainReason)) {
+    return jsonResponse(
+      { error: "Choose the one main reason that matters most to you." },
+      400,
+    );
+  }
+  if (
+    recentSituation.length < MIN_SITUATION_LENGTH ||
+    recentSituation.length > MAX_SITUATION_LENGTH
+  ) {
+    return jsonResponse(
+      {
+        error: `Write between ${MIN_SITUATION_LENGTH} and ${MAX_SITUATION_LENGTH} characters about a real moment when Frame would have helped.`,
+      },
+      400,
+    );
+  }
+  if (!MONITORING_METHOD_VALUES.has(monitoringMethod)) {
+    return jsonResponse(
+      { error: "Choose how you currently monitor your blood pressure." },
+      400,
+    );
+  }
+  if (!INTERVIEW_WILLINGNESS_VALUES.has(interviewWillingness)) {
+    return jsonResponse(
+      { error: "Choose whether you would be willing to speak with us." },
+      400,
+    );
+  }
 
   if (!firstName || firstName.length > MAX_NAME_LENGTH) {
     return jsonResponse({ error: "Enter your first name." }, 400);
@@ -115,18 +174,13 @@ export async function POST(request: Request) {
       400,
     );
   }
-  if (
-    motivation.length < MIN_MOTIVATION_LENGTH ||
-    motivation.length > MAX_MOTIVATION_LENGTH
-  ) {
-    return jsonResponse(
-      {
-        error: `Write between ${MIN_MOTIVATION_LENGTH} and ${MAX_MOTIVATION_LENGTH} characters about how you would use Frame.`,
-      },
-      400,
-    );
-  }
-
+  const qualificationRecord = JSON.stringify({
+    version: 2,
+    mainReason,
+    recentSituation,
+    monitoringMethod,
+    interviewWillingness,
+  });
   try {
     const supabase = await getSupabaseAdmin();
     const { data: existingSignup, error: lookupError } = await supabase
@@ -146,7 +200,7 @@ export async function POST(request: Request) {
           last_name: lastName,
           gender,
           age,
-          motivation,
+          motivation: qualificationRecord,
         })
         .eq("id", existingSignup.id);
 
@@ -160,7 +214,7 @@ export async function POST(request: Request) {
       email: normalizedEmail,
       gender,
       age,
-      motivation,
+      motivation: qualificationRecord,
       placement: cleanAttribution(payload.placement) ?? "landing_page",
       utm_source: cleanAttribution(payload.utmSource),
       utm_medium: cleanAttribution(payload.utmMedium),
@@ -175,7 +229,7 @@ export async function POST(request: Request) {
           last_name: lastName,
           gender,
           age,
-          motivation,
+          motivation: qualificationRecord,
         })
         .eq("email", normalizedEmail);
 

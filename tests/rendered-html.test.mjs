@@ -48,24 +48,17 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /frame-on-arm-editorial-v7-product-transparent\.png/);
   assert.match(html, /frame-sensing-concept-realistic-v3-transparent\.png/);
   assert.match(html, /frame-app-studio-v5\.png/);
-  assert.match(html, /We’ll only contact you about Frame\./);
-  assert.match(html, /name="firstName"/);
-  assert.match(html, /name="lastName"/);
-  assert.match(html, /name="gender"/);
-  assert.match(html, /name="age"/);
-  assert.match(html, /name="motivation"/);
-  assert.match(html, /How would you use Frame\?/);
-  assert.match(html, /Minimum\s*(?:<!-- -->)?30(?:<!-- -->)? characters/);
-  assert.match(html, /maxlength="500"/i);
-  assert.match(html, /All fields are required\./);
-  assert.match(html, /Apply for early access/);
-  assert.match(html, /class="button button--dark" href="#early-access"/);
+  assert.match(html, /What would be the main reason you would want Frame\?/);
+  assert.match(html, /Monitor high or borderline blood pressure without repeated cuff readings/);
+  assert.match(html, /Understand my blood pressure while sleeping/);
+  assert.match(html, /name="mainReason"/);
+  assert.match(html, /type="radio"/);
+  assert.match(html, /aria-label="Step 1 of 5"/);
+  assert.match(html, /<button class="button button--dark" type="button">Interested<\/button>/);
   assert.match(html, /<section class="final-cta" id="early-access">/);
   assert.match(html, /Frame early access/);
-  assert.match(html, /Tell us how Frame could fit into your life\./);
-  assert.match(html, /No spam\./);
-  assert.match(html, /aria-label="Close waitlist signup"/);
-  assert.match(html, /href="\/privacy"/);
+  assert.match(html, /aria-label="Close interest form"/);
+  assert.doesNotMatch(html, /id="footer-waitlist-/);
   assert.match(html, /href="https:\/\/www\.instagram\.com\/framewearable\/"/);
   assert.match(html, /Frame on Instagram \(opens in a new tab\)/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
@@ -80,6 +73,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     supabase,
     privacy,
     demographicsMigration,
+    interestFlow,
     publicFiles,
   ] =
     await Promise.all([
@@ -99,6 +93,10 @@ test("uses generated raster visuals and keeps the page editable", async () => {
       ),
       "utf8",
     ),
+    readFile(
+      new URL("../app/components/interest-flow.tsx", import.meta.url),
+      "utf8",
+    ),
     readdir(new URL("../public/", import.meta.url)),
   ]);
 
@@ -112,21 +110,28 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(page, /src="\/frame-sensing-concept-realistic-v3-transparent\.png"/);
   assert.match(page, /src="\/frame-app-studio-v5\.png"/);
   assert.doesNotMatch(page, /<svg|ProductDiagram|CrossSection|PatternTimeline/);
-  assert.match(page, /fetch\("\/api\/waitlist"/);
-  assert.match(page, /dialog\.showModal\(\)/);
-  assert.match(page, /placement="popup"/);
-  assert.match(page, /WAITLIST_PROMPT_DELAY_MS = 12_000/);
-  assert.match(page, /WAITLIST_SCROLL_THRESHOLD = 0\.4/);
-  assert.match(page, /MAX_MOTIVATION_LENGTH = 500/);
-  assert.match(page, /MIN_AGE = 18/);
-  assert.doesNotMatch(page, /Interested\?\s*<Arrow \/>/);
-  assert.doesNotMatch(page, /Sign me up![\s\S]{0,80}<Arrow \/>/);
-  assert.match(api, /MAX_MOTIVATION_LENGTH = 500/);
+  assert.match(interestFlow, /fetch\("\/api\/waitlist"/);
+  assert.match(interestFlow, /dialog\.showModal\(\)/);
+  assert.match(interestFlow, /MIN_SITUATION_LENGTH = 50/);
+  assert.match(interestFlow, /MAX_SITUATION_LENGTH = 750/);
+  assert.match(interestFlow, /type="radio"/);
+  assert.match(interestFlow, /name="recentSituation"/);
+  assert.match(interestFlow, /name="monitoringMethod"/);
+  assert.match(interestFlow, /name="interviewWillingness"/);
+  assert.match(interestFlow, /name="firstName"/);
+  assert.match(interestFlow, /name="lastName"/);
+  assert.match(interestFlow, /name="age"/);
+  assert.match(interestFlow, /name="gender"/);
+  assert.match(interestFlow, /name="email"/);
+  assert.doesNotMatch(page, /<WaitlistPopup \/>/);
+  assert.doesNotMatch(page, /Interested\?/);
+  assert.match(api, /MIN_SITUATION_LENGTH = 50/);
+  assert.match(api, /MAIN_REASON_VALUES/);
+  assert.match(api, /MONITORING_METHOD_VALUES/);
+  assert.match(api, /INTERVIEW_WILLINGNESS_VALUES/);
   assert.match(api, /GENDER_VALUES/);
   assert.match(api, /age < MIN_AGE \|\| age > MAX_AGE/);
-  assert.match(page, /window\.sessionStorage\.setItem/);
-  assert.match(page, /window\.localStorage\.setItem/);
-  assert.match(page, /window\.dispatchEvent\(new Event\(WAITLIST_JOINED_EVENT\)\)/);
+  assert.match(interestFlow, /window\.localStorage\.setItem/);
   assert.doesNotMatch(page, /Connect a real waitlist API/);
   assert.match(layout, /url: `\$\{baseUrl\}\/og-launch-v2\.png`/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
@@ -136,6 +141,12 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(api, /gender/);
   assert.match(api, /age/);
   assert.match(api, /motivation/);
+  assert.match(api, /const qualificationRecord = JSON\.stringify/);
+  assert.match(api, /mainReason,/);
+  assert.match(api, /recentSituation,/);
+  assert.match(api, /monitoringMethod,/);
+  assert.match(api, /interviewWillingness,/);
+  assert.match(api, /motivation: qualificationRecord/);
   assert.match(supabase, /SUPABASE_SECRET_KEY/);
   assert.doesNotMatch(page, /SUPABASE_SECRET_KEY|createClient/);
   assert.match(demographicsMigration, /add column if not exists gender text/);
@@ -165,7 +176,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   );
 });
 
-test("rejects incomplete waitlist applications before storage", async () => {
+test("rejects incomplete interest responses before storage", async () => {
   const response = await render("/api/waitlist", {
     method: "POST",
     headers: { "content-type": "application/json" },
@@ -173,16 +184,19 @@ test("rejects incomplete waitlist applications before storage", async () => {
   });
 
   assert.equal(response.status, 400);
-  assert.match(await response.text(), /first name/i);
+  assert.match(await response.text(), /main reason/i);
 });
 
 test("requires valid demographic information before storage", async () => {
   const baseApplication = {
+    mainReason: "understand_sleep",
+    recentSituation:
+      "After a restless night, my cuff reading was unusually high and I wanted more context.",
+    monitoringMethod: "upper_arm_occasionally",
+    interviewWillingness: "possibly",
     firstName: "Ada",
     lastName: "Lovelace",
     email: "ada@example.com",
-    motivation:
-      "I want to understand how my cardiovascular patterns change over time.",
   };
 
   const missingGender = await render("/api/waitlist", {

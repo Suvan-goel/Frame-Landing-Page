@@ -27,6 +27,65 @@ type WaitlistSignup = {
   created_at: string;
 };
 
+const mainReasonLabels: Record<string, string> = {
+  monitor_high_or_borderline: "Monitor high or borderline blood pressure",
+  understand_sleep: "Understand blood pressure while sleeping",
+  understand_daily_factors: "Understand food, alcohol, stress and exercise",
+  understand_unexplained_changes: "Understand unexplained changes",
+  track_response_and_recovery: "Track response and recovery",
+  something_else: "Something else",
+};
+
+const monitoringLabels: Record<string, string> = {
+  upper_arm_regularly: "Upper-arm cuff regularly",
+  upper_arm_occasionally: "Upper-arm cuff occasionally",
+  wearable_or_cuffless: "Wearable or cuffless device",
+  medical_appointments_only: "Medical appointments only",
+  not_currently_monitoring: "Does not currently monitor",
+};
+
+type QualificationResponse = {
+  mainReason: string | null;
+  recentSituation: string | null;
+  monitoringMethod: string | null;
+  interviewWillingness: string | null;
+};
+
+function parseQualificationResponse(
+  motivation: string | null,
+): QualificationResponse {
+  const fallback = {
+    mainReason: null,
+    recentSituation: motivation,
+    monitoringMethod: null,
+    interviewWillingness: null,
+  };
+  if (!motivation?.startsWith("{")) return fallback;
+
+  try {
+    const parsed = JSON.parse(motivation) as Record<string, unknown>;
+    if (parsed.version !== 2) return fallback;
+    return {
+      mainReason:
+        typeof parsed.mainReason === "string" ? parsed.mainReason : null,
+      recentSituation:
+        typeof parsed.recentSituation === "string"
+          ? parsed.recentSituation
+          : null,
+      monitoringMethod:
+        typeof parsed.monitoringMethod === "string"
+          ? parsed.monitoringMethod
+          : null,
+      interviewWillingness:
+        typeof parsed.interviewWillingness === "string"
+          ? parsed.interviewWillingness
+          : null,
+    };
+  } catch {
+    return fallback;
+  }
+}
+
 export default async function WaitlistAdminPage() {
   const user = await requireChatGPTUser("/admin/waitlist");
   if (!(await isWaitlistAdmin(user.email))) {
@@ -81,13 +140,20 @@ export default async function WaitlistAdminPage() {
               <thead>
                 <tr>
                   <th>Lead</th>
-                  <th>Why Frame</th>
+                  <th>Main reason</th>
+                  <th>Recent situation</th>
+                  <th>Current monitoring</th>
+                  <th>20-min call</th>
                   <th>Source</th>
                   <th>Joined</th>
                 </tr>
               </thead>
               <tbody>
-                {signups.map((signup) => (
+                {signups.map((signup) => {
+                  const qualification = parseQualificationResponse(
+                    signup.motivation,
+                  );
+                  return (
                   <tr key={signup.id}>
                     <td className="admin-lead">
                       <strong>
@@ -105,8 +171,27 @@ export default async function WaitlistAdminPage() {
                           .join(" · ") || "Demographics not provided"}
                       </small>
                     </td>
+                    <td>
+                      {qualification.mainReason
+                        ? mainReasonLabels[qualification.mainReason] ??
+                          qualification.mainReason
+                        : "Legacy signup"}
+                    </td>
                     <td className="admin-motivation">
-                      {signup.motivation || "No qualification response"}
+                      {qualification.recentSituation ||
+                        "No qualification response"}
+                    </td>
+                    <td>
+                      {qualification.monitoringMethod
+                        ? monitoringLabels[qualification.monitoringMethod] ??
+                          qualification.monitoringMethod
+                        : "—"}
+                    </td>
+                    <td>
+                      {qualification.interviewWillingness
+                        ? qualification.interviewWillingness[0].toUpperCase() +
+                          qualification.interviewWillingness.slice(1)
+                        : "—"}
                     </td>
                     <td className="admin-source">
                       <span>{signup.placement.replaceAll("_", " ")}</span>
@@ -126,7 +211,8 @@ export default async function WaitlistAdminPage() {
                       </time>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
