@@ -86,6 +86,11 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   ]);
 
   assert.match(page, /src="\/frame-product-concept-realistic-v3-transparent\.png"/);
+  assert.match(page, /width=\{1254\}\s+height=\{1254\}/);
+  assert.match(
+    css,
+    /\.product-concept-showcase__media img\s*\{[\s\S]*?width: min\(52vw, 480px\);/,
+  );
   assert.match(page, /src="\/frame-on-arm-editorial-v3\.png"/);
   assert.match(page, /src="\/frame-sensing-concept-realistic-v3-transparent\.png"/);
   assert.match(page, /src="\/frame-app-studio-v5\.png"/);
