@@ -571,17 +571,6 @@ export default function Home() {
             </p>
           </div>
           <div className="context-content">
-            <div className="insight-list" aria-label="The four concepts behind Frame">
-              {content.insights.map(([title, description], index) => (
-                <article key={title}>
-                  <span>0{index + 1}</span>
-                  <div>
-                    <h3>{title}</h3>
-                    <p>{description}</p>
-                  </div>
-                </article>
-              ))}
-            </div>
             <figure className="product-concept-showcase">
               <div className="product-concept-showcase__media">
                 <Image
@@ -596,6 +585,17 @@ export default function Home() {
               </div>
               <figcaption>Product concept · final industrial design in development</figcaption>
             </figure>
+            <div className="insight-list" aria-label="The four concepts behind Frame">
+              {content.insights.map(([title, description], index) => (
+                <article key={title}>
+                  <span>0{index + 1}</span>
+                  <div>
+                    <h3>{title}</h3>
+                    <p>{description}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
         </div>
       </section>
