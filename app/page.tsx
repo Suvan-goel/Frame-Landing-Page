@@ -92,7 +92,8 @@ export default function Home() {
               <Image
                 src="/frame-hero-man-transparent-v2.png"
                 alt="Man wearing the Frame wearable concept on his upper arm"
-                fill
+                width={1092}
+                height={1440}
                 sizes="(max-width: 680px) 100vw, (max-width: 980px) 56vw, 34vw"
                 quality={88}
                 unoptimized
