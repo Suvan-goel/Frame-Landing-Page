@@ -248,8 +248,8 @@ function WaitlistForm({
         <div className="waitlist-form__intro">
           <strong>Tell us how Frame could fit into your life.</strong>
           <p>
-            We’re inviting a small group of early users. Your response helps us
-            understand who Frame can serve best.
+            Want to keep up-to-date with Frame&apos;s development and be
+            notified as soon as we launch? Register here
           </p>
         </div>
       ) : null}
@@ -580,8 +580,8 @@ function WaitlistPopup() {
           Tell us how Frame could fit into your life.
         </h2>
         <p id="waitlist-popup-description">
-          We’re inviting a small group of early users. Your response helps us
-          understand who Frame can serve best.
+          Want to keep up-to-date with Frame&apos;s development and be notified
+          as soon as we launch? Register here
         </p>
         <WaitlistForm
           idPrefix="popup-waitlist"
@@ -866,8 +866,8 @@ export default function Home() {
           </div>
           <div className="final-cta__form">
             <p>
-              We’re inviting a small group of early users. Your response helps
-              us understand who Frame can serve best.
+              Want to keep up-to-date with Frame&apos;s development and be
+              notified as soon as we launch? Register here
             </p>
             <WaitlistForm idPrefix="footer-waitlist" placement="footer" />
           </div>

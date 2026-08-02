@@ -28,22 +28,22 @@ const concepts = {
       "exports",
       "frame-product-campaign-hero-feed-1080x1350-v3.png",
     ),
-    version: "v6",
-    eyebrow: "RESEARCH-STAGE ULTRASOUND WEARABLE",
-    headline: ["See what influences", "your blood pressure"],
-    subhead: ["Explore patterns across sleep, stress,", "movement, and recovery."],
-    wordmarkWidths: { feed: 200, square: 200, story: 220 },
+    version: "v8",
+    eyebrow: "CONTINUOUSLY TRACK YOUR BLOOD PRESSURE",
+    headline: ["See how your", "blood pressure responds", "to daily life."],
+    subhead: ["Frame helps you explore patterns across", "sleep, diet, movement and stress"],
+    wordmarkWidths: { feed: 210, square: 210, story: 230 },
     eyebrowSizes: { feed: 25, square: 25, story: 26 },
-    headlineSizes: { feed: 76, square: 70, story: 92 },
-    headlineYPositions: { feed: 256, square: 238, story: 462 },
-    headlineLineHeightMultipliers: { feed: 1.12, square: 1.1, story: 1.08 },
-    subheadSizes: { feed: 34, square: 32, story: 34 },
-    subheadYPositions: { story: 664 },
-    subheadLineHeightMultipliers: { feed: 1.48, square: 1.46, story: 1.46 },
+    headlineSizes: { feed: 72, square: 66, story: 88 },
+    headlineYPositions: { feed: 260, square: 245, story: 458 },
+    headlineLineHeightMultipliers: { feed: 1.15, square: 1.15, story: 1.13 },
+    subheadSizes: { feed: 33, square: 31, story: 34 },
+    subheadYPositions: { story: 750 },
+    subheadLineHeightMultipliers: { feed: 1.5, square: 1.5, story: 1.5 },
     disclosureSizes: { feed: 22, square: 22, story: 22 },
     card: "none",
     showImageCta: false,
-    squarePosition: "centre",
+    squarePosition: "north",
     storyPosition: "south",
   },
   "product-upright": {
@@ -52,18 +52,18 @@ const concepts = {
       "frame-product-concept-realistic-v3-transparent.png",
     ),
     layout: "transparent-product",
-    version: "v1",
-    eyebrow: "RESEARCH-STAGE ULTRASOUND WEARABLE",
-    headline: ["See what influences", "your blood pressure"],
-    subhead: ["Explore patterns across sleep, stress,", "movement, and recovery."],
-    wordmarkWidths: { feed: 200, square: 200, story: 220 },
+    version: "v3",
+    eyebrow: "CONTINUOUSLY TRACK YOUR BLOOD PRESSURE",
+    headline: ["See how your", "blood pressure responds", "to daily life."],
+    subhead: ["Frame helps you explore patterns across", "sleep, diet, movement and stress"],
+    wordmarkWidths: { feed: 210, square: 210, story: 230 },
     eyebrowSizes: { feed: 25, square: 25, story: 26 },
-    headlineSizes: { feed: 76, square: 70, story: 92 },
-    headlineYPositions: { feed: 256, square: 238, story: 462 },
-    headlineLineHeightMultipliers: { feed: 1.12, square: 1.1, story: 1.08 },
-    subheadSizes: { feed: 34, square: 32, story: 34 },
-    subheadYPositions: { story: 664 },
-    subheadLineHeightMultipliers: { feed: 1.48, square: 1.46, story: 1.46 },
+    headlineSizes: { feed: 72, square: 66, story: 88 },
+    headlineYPositions: { feed: 260, square: 245, story: 458 },
+    headlineLineHeightMultipliers: { feed: 1.15, square: 1.15, story: 1.13 },
+    subheadSizes: { feed: 33, square: 31, story: 34 },
+    subheadYPositions: { story: 750 },
+    subheadLineHeightMultipliers: { feed: 1.5, square: 1.5, story: 1.5 },
     disclosureSizes: { feed: 22, square: 22, story: 22 },
     card: "none",
     showImageCta: false,
@@ -138,7 +138,9 @@ function feedOrSquareOverlay(concept, format) {
   const headlineLineHeight = Math.round(
     headlineSize * (concept.headlineLineHeightMultipliers?.[format] ?? 0.98),
   );
-  const subheadY = headlineY + 2 * headlineLineHeight + 30;
+  const subheadY =
+    concept.subheadYPositions?.[format] ??
+    headlineY + concept.headline.length * headlineLineHeight + 30;
   const subheadLineHeight = Math.round(
     subheadSize * (concept.subheadLineHeightMultipliers?.[format] ?? 1.34),
   );
@@ -297,8 +299,8 @@ async function renderTransparentProductFeedOrSquare(name, concept, format) {
   const { width, height } = formats[format];
   const placement =
     format === "square"
-      ? { width: 600, left: 440, top: 430 }
-      : { width: 720, left: 330, top: 560 };
+      ? { width: 500, left: 550, top: 550 }
+      : { width: 660, left: 390, top: 620 };
   const product = await sharp(concept.source)
     .resize({ width: placement.width })
     .png()
