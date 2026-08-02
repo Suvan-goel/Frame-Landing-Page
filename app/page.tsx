@@ -576,8 +576,9 @@ export default function Home() {
               <Image
                 src="/frame-product-concept-realistic-v3-transparent.png"
                 alt="Refined Frame upper-arm wearable concept with an adjustable charcoal knit band, burgundy clasp, and integrated ultrasound sensor"
-                fill
-                sizes="(max-width: 680px) calc(100vw - 56px), (max-width: 980px) 76vw, 760px"
+                width={1254}
+                height={1254}
+                sizes="(max-width: 680px) 84vw, 480px"
                 quality={88}
                 unoptimized
               />
