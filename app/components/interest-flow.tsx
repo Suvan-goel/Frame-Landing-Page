@@ -300,7 +300,7 @@ export function InterestFlow() {
             href="/"
             aria-label="Back to Frame"
           >
-            Back to Frame <span aria-hidden="true">×</span>
+            <span aria-hidden="true">←</span> Back to Frame
           </Link>
         </header>
 

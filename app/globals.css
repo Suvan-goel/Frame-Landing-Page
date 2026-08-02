@@ -940,7 +940,7 @@ h2 {
 }
 
 .interest-flow__close span {
-  font-size: 1.2rem;
+  font-size: 0.88rem;
   font-weight: 300;
   line-height: 1;
 }
@@ -2180,6 +2180,7 @@ h2 {
 @media (max-width: 680px) {
   .container,
   .narrow,
+  .hero-grid.container,
   .context-container.container {
     width: calc(100% - 40px);
   }
