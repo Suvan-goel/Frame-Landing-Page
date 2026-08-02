@@ -281,8 +281,8 @@ export function InterestFlow() {
   }
 
   const titles = [
-    "What would be the main reason you would want Frame?",
-    "What would frame solve for you that existing wearables or blood pressure monitors don't?",
+    "What is the main reason you want Frame?",
+    "What would frame solve for you that existing wearables don't?",
     "How do you currently monitor your blood pressure?",
     "Would you be willing to speak with us for 20 minutes?",
     "A little about you.",
@@ -359,7 +359,7 @@ export function InterestFlow() {
               {step === 1 ? (
                 <div className="interest-flow__text-response form-field">
                   <label htmlFor="interest-recent-situation" className="sr-only">
-                    What would frame solve for you that existing wearables or blood pressure monitors don&apos;t?
+                    What would frame solve for you that existing wearables don&apos;t?
                   </label>
                   <textarea
                     id="interest-recent-situation"

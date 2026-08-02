@@ -3,7 +3,6 @@
 import Image from "next/image";
 import { BrandWordmark } from "./components/brand-wordmark";
 
-const COLLABORATION_EMAIL = "support@framewearable.com";
 const INSTAGRAM_URL = "https://www.instagram.com/framewearable/";
 
 const content = {
@@ -29,10 +28,6 @@ const content = {
     ["Human validation", "Evaluate comfort, motion tolerance, and repeatability in real use."],
     ["Responsible claims", "Only communicate conclusions supported by evidence."],
   ],
-  contact: {
-    general: "support@framewearable.com",
-    collaboration: COLLABORATION_EMAIL,
-  },
 } as const;
 
 function Arrow() {
@@ -290,7 +285,7 @@ export default function Home() {
             </div>
             <a
               className="text-link"
-              href={`mailto:${content.contact.collaboration}?subject=Frame%20research%20collaboration`}
+              href="/contact?topic=research"
             >
               Research and engineering inquiries <Arrow />
             </a>
@@ -315,7 +310,7 @@ export default function Home() {
             </a>
             <a
               className="collaboration-link"
-              href={`mailto:${content.contact.collaboration}?subject=Frame%20research%20collaboration`}
+              href="/contact?topic=research"
             >
               Interested in research or engineering collaboration? <Arrow />
             </a>
@@ -344,7 +339,7 @@ export default function Home() {
               Instagram <Arrow />
             </a>
             <a href="/privacy">Privacy</a>
-            <a href={`mailto:${content.contact.general}`}>Contact</a>
+            <a href="/contact">Contact</a>
           </div>
         </div>
         <div className="container footer-bottom">

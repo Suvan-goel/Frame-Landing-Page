@@ -50,12 +50,14 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /frame-sensing-concept-realistic-v3-transparent\.png/);
   assert.match(html, /frame-app-studio-v5\.png/);
   assert.equal(html.match(/href="\/interest"/g)?.length, 3);
-  assert.doesNotMatch(html, /What would be the main reason you would want Frame\?/);
+  assert.doesNotMatch(html, /What is the main reason you want Frame\?/);
   assert.doesNotMatch(html, /<dialog/i);
   assert.match(html, /<section class="final-cta" id="early-access">/);
   assert.doesNotMatch(html, /id="footer-waitlist-/);
   assert.match(html, /href="https:\/\/www\.instagram\.com\/framewearable\/"/);
   assert.match(html, /Frame on Instagram \(opens in a new tab\)/);
+  assert.equal(html.match(/href="\/contact(?:\?topic=research)?"/g)?.length, 3);
+  assert.doesNotMatch(html, /mailto:support@framewearable\.com/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
 
@@ -65,7 +67,7 @@ test("server-renders the dedicated interest page", async () => {
   const html = await response.text();
 
   assert.match(html, /Register your interest/);
-  assert.match(html, /What would be the main reason you would want Frame\?/);
+  assert.match(html, /What is the main reason you want Frame\?/);
   assert.match(html, /Monitor high or borderline blood pressure without repeated cuff readings/);
   assert.match(html, /Understand my blood pressure while sleeping/);
   assert.match(html, /name="mainReason"/);
@@ -73,6 +75,22 @@ test("server-renders the dedicated interest page", async () => {
   assert.match(html, /aria-label="Step 1 of 5"/);
   assert.match(html, /aria-label="Back to Frame"/);
   assert.doesNotMatch(html, /<dialog/i);
+});
+
+test("server-renders the contact page", async () => {
+  const response = await render("/contact");
+  assert.equal(response.status, 200);
+  const html = await response.text();
+
+  assert.match(html, /<title>Contact Frame<\/title>/i);
+  assert.match(html, /Start a conversation\./);
+  assert.match(html, /How can we help\?/);
+  assert.match(html, /name="name"/);
+  assert.match(html, /name="email"/);
+  assert.match(html, /name="topic"/);
+  assert.match(html, /name="message"/);
+  assert.match(html, /support@framewearable\.com/);
+  assert.match(html, /aria-label="Frame home"/);
 });
 
 test("formats submitted names for the confirmation message", () => {
@@ -133,7 +151,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.doesNotMatch(css, /\.hero-lifestyle\s*\{[^}]*transform:/);
   assert.match(
     css,
-    /\.hero-lifestyle img\s*\{[^}]*height: 85%;[^}]*transform: translateX\(-96px\);/,
+    /\.hero-lifestyle img\s*\{[^}]*height: 98\.398125%;[^}]*transform: translate\(-144px, 76px\);/,
   );
   assert.match(page, /src="\/frame-sensing-concept-realistic-v3-transparent\.png"/);
   assert.match(page, /src="\/frame-app-studio-v5\.png"/);
@@ -145,7 +163,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(interestFlow, /MIN_SITUATION_LENGTH = 20/);
   assert.match(
     interestFlow,
-    /What would frame solve for you that existing wearables or blood pressure monitors don't\?/,
+    /What would frame solve for you that existing wearables don't\?/,
   );
   assert.match(interestFlow, /MAX_SITUATION_LENGTH = 750/);
   assert.match(interestFlow, /type="radio"/);
@@ -265,4 +283,31 @@ test("requires valid demographic information before storage", async () => {
   });
   assert.equal(invalidAge.status, 400);
   assert.match(await invalidAge.text(), /age between 18 and 120/i);
+});
+
+test("validates contact messages before sending email", async () => {
+  const response = await render("/api/contact", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ name: "A" }),
+  });
+
+  assert.equal(response.status, 400);
+  assert.match(await response.text(), /enter your name/i);
+
+  const [contactForm, contactApi, privacy, sitemap] = await Promise.all([
+    readFile(new URL("../app/components/contact-form.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/contact/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/privacy/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/sitemap.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(contactForm, /fetch\("\/api\/contact"/);
+  assert.match(contactApi, /const CONTACT_EMAIL = "support@framewearable\.com"/);
+  assert.match(contactApi, /https:\/\/api\.resend\.com\/emails/);
+  assert.match(contactApi, /reply_to: email/);
+  assert.match(privacy, /href="\/contact\?topic=privacy"/);
+  assert.doesNotMatch(privacy, /mailto:support@framewearable\.com/);
+  assert.match(sitemap, /https:\/\/framewearable\.com/);
+  assert.match(sitemap, /`\$\{siteUrl\}\/contact`/);
 });
