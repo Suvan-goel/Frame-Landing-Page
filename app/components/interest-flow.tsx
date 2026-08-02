@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { formatName } from "@/lib/name-format";
+import { trackMetaLead } from "./meta-pixel";
 
 const WAITLIST_JOINED_STORAGE_KEY = "frame-waitlist-joined";
 const MIN_SITUATION_LENGTH = 20;
@@ -265,6 +266,9 @@ export function InterestFlow() {
       }
 
       setStatus(result.status);
+      if (result.status === "joined") {
+        trackMetaLead();
+      }
       try {
         window.localStorage.setItem(WAITLIST_JOINED_STORAGE_KEY, "true");
       } catch {

@@ -56,6 +56,18 @@ export default function PrivacyPage() {
         </section>
 
         <section>
+          <h2>Advertising measurement</h2>
+          <p>
+            We use the Meta Pixel to understand whether a visit or completed
+            application came from a Meta ad and to measure and improve our
+            campaigns. The Pixel may use browser identifiers and similar
+            technologies, which Meta processes under its own privacy policy. We
+            do not send your name, email address, age, gender, or written
+            responses to Meta through the Pixel.
+          </p>
+        </section>
+
+        <section>
           <h2>Sharing and retention</h2>
           <p>
             We do not sell your information. We share it only with service

@@ -49,6 +49,9 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /frame-hero-man-transparent-v2\.png/);
   assert.match(html, /frame-sensing-concept-realistic-v3-transparent\.png/);
   assert.match(html, /frame-app-studio-v5\.png/);
+  assert.match(html, /1068997465474786/);
+  assert.match(html, /fbq\('track', 'PageView'\)/);
+  assert.match(html, /facebook\.com\/tr\?id=1068997465474786&amp;ev=PageView/);
   assert.equal(html.match(/href="\/interest"/g)?.length, 3);
   assert.doesNotMatch(html, /What would be the main reason you would want Frame\?/);
   assert.doesNotMatch(html, /<dialog/i);
@@ -91,6 +94,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     demographicsMigration,
     interestFlow,
     interestPage,
+    metaPixel,
     publicFiles,
   ] =
     await Promise.all([
@@ -115,6 +119,10 @@ test("uses generated raster visuals and keeps the page editable", async () => {
       "utf8",
     ),
     readFile(new URL("../app/interest/page.tsx", import.meta.url), "utf8"),
+    readFile(
+      new URL("../app/components/meta-pixel.tsx", import.meta.url),
+      "utf8",
+    ),
     readdir(new URL("../public/", import.meta.url)),
   ]);
 
@@ -179,6 +187,10 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(api, /GENDER_VALUES/);
   assert.match(api, /age < MIN_AGE \|\| age > MAX_AGE/);
   assert.match(interestFlow, /window\.localStorage\.setItem/);
+  assert.match(interestFlow, /result\.status === "joined"/);
+  assert.match(interestFlow, /trackMetaLead\(\)/);
+  assert.match(metaPixel, /window\.fbq\("track", "Lead"/);
+  assert.match(metaPixel, /1068997465474786/);
   assert.doesNotMatch(page, /Connect a real waitlist API/);
   assert.match(layout, /url: `\$\{baseUrl\}\/og-launch-v2\.png`/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
@@ -199,6 +211,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(demographicsMigration, /add column if not exists gender text/);
   assert.match(demographicsMigration, /add column if not exists age smallint/);
   assert.match(privacy, /We do not sell your information\./);
+  assert.match(privacy, /We use the Meta Pixel/);
   assert.deepEqual(
     [
       "frame-app-studio.png",
