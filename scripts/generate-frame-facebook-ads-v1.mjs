@@ -46,6 +46,29 @@ const concepts = {
     squarePosition: "centre",
     storyPosition: "south",
   },
+  "product-upright": {
+    source: path.join(
+      publicDir,
+      "frame-product-concept-realistic-v3-transparent.png",
+    ),
+    layout: "transparent-product",
+    version: "v1",
+    eyebrow: "RESEARCH-STAGE ULTRASOUND WEARABLE",
+    headline: ["See what influences", "your blood pressure"],
+    subhead: ["Explore patterns across sleep, stress,", "movement, and recovery."],
+    wordmarkWidths: { feed: 200, square: 200, story: 220 },
+    eyebrowSizes: { feed: 25, square: 25, story: 26 },
+    headlineSizes: { feed: 76, square: 70, story: 92 },
+    headlineYPositions: { feed: 256, square: 238, story: 462 },
+    headlineLineHeightMultipliers: { feed: 1.12, square: 1.1, story: 1.08 },
+    subheadSizes: { feed: 34, square: 32, story: 34 },
+    subheadYPositions: { story: 664 },
+    subheadLineHeightMultipliers: { feed: 1.48, square: 1.46, story: 1.46 },
+    disclosureSizes: { feed: 22, square: 22, story: 22 },
+    card: "none",
+    showImageCta: false,
+    topWashHeights: { feed: 0, square: 0 },
+  },
   routine: {
     source: path.join(
       imagegenDir,
@@ -122,6 +145,7 @@ function feedOrSquareOverlay(concept, format) {
   const ctaY = subheadY + 2 * subheadLineHeight + 34;
   const wordmarkX = concept.card === "none" ? 72 : cardX + 30;
   const wordmarkY = 67;
+  const topWashHeight = concept.topWashHeights?.[format] ?? 610;
   const cta = concept.showImageCta === false
     ? ""
     : `<rect x="${textX}" y="${ctaY}" width="326" height="62" rx="3" fill="${colors.ink}"/>
@@ -136,7 +160,7 @@ function feedOrSquareOverlay(concept, format) {
             <stop offset="1" stop-color="${colors.cream}" stop-opacity="0"/>
           </linearGradient>
         </defs>
-        <rect x="0" y="0" width="${width}" height="610" fill="url(#topWash)"/>`
+        <rect x="0" y="0" width="${width}" height="${topWashHeight}" fill="url(#topWash)"/>`
       : `<defs>
           <filter id="cardShadow" x="-20%" y="-20%" width="140%" height="160%">
             <feDropShadow dx="0" dy="12" stdDeviation="18" flood-color="#20211e" flood-opacity="0.14"/>
@@ -236,7 +260,91 @@ async function resizedWordmark(width = 174) {
   return sharp(wordmarkPath).resize({ width }).png().toBuffer();
 }
 
+function transparentProductBackdrop(format) {
+  const { width, height } = formats[format];
+  const isStory = format === "story";
+  const glowY = isStory ? 1320 : format === "square" ? 760 : 910;
+  const shadowY = isStory ? 1650 : format === "square" ? 930 : 1170;
+  const shadowRx = isStory ? 350 : format === "square" ? 235 : 300;
+  const shadowRy = isStory ? 54 : format === "square" ? 38 : 46;
+
+  return Buffer.from(`
+    <svg width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg">
+      <defs>
+        <radialGradient id="productGlow" cx="62%" cy="52%" r="58%">
+          <stop offset="0" stop-color="#c6888c" stop-opacity="0.28"/>
+          <stop offset="0.5" stop-color="#e8d5cf" stop-opacity="0.32"/>
+          <stop offset="1" stop-color="${colors.cream}" stop-opacity="0"/>
+        </radialGradient>
+        <linearGradient id="paperLight" x1="0" y1="0" x2="0.85" y2="1">
+          <stop offset="0" stop-color="${colors.paper}"/>
+          <stop offset="0.58" stop-color="${colors.cream}"/>
+          <stop offset="1" stop-color="#e9e1d7"/>
+        </linearGradient>
+        <filter id="floorBlur" x="-40%" y="-100%" width="180%" height="300%">
+          <feGaussianBlur stdDeviation="22"/>
+        </filter>
+      </defs>
+      <rect width="${width}" height="${height}" fill="url(#paperLight)"/>
+      <ellipse cx="700" cy="${glowY}" rx="560" ry="520" fill="url(#productGlow)"/>
+      <ellipse cx="690" cy="${shadowY}" rx="${shadowRx}" ry="${shadowRy}"
+        fill="#20211e" fill-opacity="0.18" filter="url(#floorBlur)" transform="rotate(-12 690 ${shadowY})"/>
+    </svg>
+  `);
+}
+
+async function renderTransparentProductFeedOrSquare(name, concept, format) {
+  const { width, height } = formats[format];
+  const placement =
+    format === "square"
+      ? { width: 530, left: 520, top: 490 }
+      : { width: 720, left: 330, top: 560 };
+  const product = await sharp(concept.source)
+    .resize({ width: placement.width })
+    .png()
+    .toBuffer();
+  const wordmark = await resizedWordmark(concept.wordmarkWidths?.[format] ?? 174);
+
+  await sharp(transparentProductBackdrop(format))
+    .composite([
+      { input: product, left: placement.left, top: placement.top },
+      { input: feedOrSquareOverlay(concept, format), left: 0, top: 0 },
+      { input: wordmark, left: 72, top: 67 },
+    ])
+    .png({ compressionLevel: 9 })
+    .toFile(
+      path.join(
+        outputDir,
+        `frame-facebook-${name}-${format}-${concept.version ?? "v1"}.png`,
+      ),
+    );
+}
+
+async function renderTransparentProductStory(name, concept) {
+  const { width, height } = formats.story;
+  const product = await sharp(concept.source).resize({ width: 850 }).png().toBuffer();
+  const wordmark = await resizedWordmark(concept.wordmarkWidths?.story ?? 190);
+
+  await sharp(transparentProductBackdrop("story"))
+    .composite([
+      { input: product, left: 155, top: 970 },
+      { input: storyOverlay(concept), left: 0, top: 0 },
+      { input: wordmark, left: 80, top: 250 },
+    ])
+    .png({ compressionLevel: 9 })
+    .toFile(
+      path.join(
+        outputDir,
+        `frame-facebook-${name}-story-${concept.version ?? "v1"}.png`,
+      ),
+    );
+}
+
 async function renderFeedOrSquare(name, concept, format) {
+  if (concept.layout === "transparent-product") {
+    return renderTransparentProductFeedOrSquare(name, concept, format);
+  }
+
   const { width, height } = formats[format];
   const base = await sharp(concept.source)
     .resize(width, height, {
@@ -268,6 +376,10 @@ async function renderFeedOrSquare(name, concept, format) {
 }
 
 async function renderStory(name, concept) {
+  if (concept.layout === "transparent-product") {
+    return renderTransparentProductStory(name, concept);
+  }
+
   const { width, height } = formats.story;
   const photo = await sharp(concept.source)
     .resize(width, 1040, { fit: "cover", position: concept.storyPosition })

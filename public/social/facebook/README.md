@@ -9,6 +9,7 @@ The device is shown on the lower upper arm, approximately 2–4 cm above the elb
 | Concept | Feed (4:5) | Square (1:1) | Story/Reels (9:16) |
 | --- | --- | --- | --- |
 | Product | `frame-facebook-product-feed-v6.png` | `frame-facebook-product-square-v6.png` | `frame-facebook-product-story-v6.png` |
+| Upright product | `frame-facebook-product-upright-feed-v1.png` | `frame-facebook-product-upright-square-v1.png` | `frame-facebook-product-upright-story-v1.png` |
 | Routine | `frame-facebook-routine-feed-v1.png` | `frame-facebook-routine-square-v1.png` | `frame-facebook-routine-story-v1.png` |
 | Movement | `frame-facebook-movement-feed-v1.png` | `frame-facebook-movement-square-v1.png` | `frame-facebook-movement-story-v1.png` |
 
