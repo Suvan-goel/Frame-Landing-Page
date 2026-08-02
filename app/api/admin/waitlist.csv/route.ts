@@ -10,6 +10,8 @@ type WaitlistExportRow = {
   first_name: string | null;
   last_name: string | null;
   email: string;
+  gender: string | null;
+  age: number | null;
   motivation: string | null;
   placement: string;
   utm_source: string | null;
@@ -18,8 +20,8 @@ type WaitlistExportRow = {
   created_at: string;
 };
 
-function csvCell(value: string | null) {
-  let safeValue = value ?? "";
+function csvCell(value: string | number | null) {
+  let safeValue = value === null ? "" : String(value);
   if (/^[=+\-@]/.test(safeValue)) {
     safeValue = `'${safeValue}`;
   }
@@ -39,7 +41,7 @@ export async function GET() {
   const { data, error } = await supabase
     .from("waitlist_signups")
     .select(
-      "first_name,last_name,email,motivation,placement,utm_source,utm_medium,utm_campaign,created_at",
+      "first_name,last_name,email,gender,age,motivation,placement,utm_source,utm_medium,utm_campaign,created_at",
     )
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
@@ -59,6 +61,8 @@ export async function GET() {
       "first_name",
       "last_name",
       "email",
+      "gender",
+      "age",
       "motivation",
       "placement",
       "utm_source",
@@ -70,6 +74,8 @@ export async function GET() {
       signup.first_name,
       signup.last_name,
       signup.email,
+      signup.gender,
+      signup.age,
       signup.motivation,
       signup.placement,
       signup.utm_source,

@@ -8,8 +8,8 @@ The device is shown on the lower upper arm, approximately 2–4 cm above the elb
 
 | Concept | Feed (4:5) | Square (1:1) | Story/Reels (9:16) |
 | --- | --- | --- | --- |
-| Product | `frame-facebook-product-feed-v6.png` | `frame-facebook-product-square-v6.png` | `frame-facebook-product-story-v6.png` |
-| Upright product | `frame-facebook-product-upright-feed-v1.png` | `frame-facebook-product-upright-square-v1.png` | `frame-facebook-product-upright-story-v1.png` |
+| Product | `frame-facebook-product-feed-v8.png` | `frame-facebook-product-square-v8.png` | `frame-facebook-product-story-v8.png` |
+| Upright product | `frame-facebook-product-upright-feed-v3.png` | `frame-facebook-product-upright-square-v3.png` | `frame-facebook-product-upright-story-v3.png` |
 | Routine | `frame-facebook-routine-feed-v1.png` | `frame-facebook-routine-square-v1.png` | `frame-facebook-routine-story-v1.png` |
 | Movement | `frame-facebook-movement-feed-v1.png` | `frame-facebook-movement-square-v1.png` | `frame-facebook-movement-story-v1.png` |
 
@@ -21,13 +21,13 @@ Dimensions:
 
 ## Ads Manager copy
 
-### 1. Product-first — “See what influences your blood pressure”
+### 1. Product-first — “See how your blood pressure responds to daily life.”
 
 Primary text:
 
-> Blood pressure changes across sleep, rest, stress, movement, and recovery. Frame is developing a screenless ultrasound wearable to help explore those patterns across everyday life. Apply for early access. Research-stage concept; not intended to diagnose or treat.
+> See how your blood pressure responds to daily life. Frame helps you explore patterns across sleep, diet, movement and stress. Apply for early access. Research-stage concept; not intended to diagnose or treat.
 
-- Headline: `See what influences your blood pressure`
+- Headline: `See how your blood pressure responds to daily life.`
 - Description: `Join Frame’s early-access program.`
 - CTA button: `Sign Up`
 - Best use: cold prospecting and product introduction
@@ -60,7 +60,7 @@ Primary text:
 - Use the 4:5 versions for Facebook and Instagram feeds, 1:1 for flexible placements, and 9:16 for Stories/Reels.
 - The 9:16 layouts keep the key message and CTA away from the top and bottom interface zones.
 - Keep the research-stage disclosure visible. Do not replace it with diagnostic, treatment, guaranteed-outcome, or currently-for-sale claims.
-- Product v6 uses mobile-first type sizing and more generous vertical spacing, and intentionally has no simulated button in the artwork. Select Meta’s native `Sign Up` CTA in Ads Manager; that is the actual clickable control.
+- Product v8 and upright product v3 use the same approved copy with larger mobile-first typography and more generous vertical rhythm, and intentionally have no simulated button in the artwork. Select Meta’s native `Sign Up` CTA in Ads Manager; that is the actual clickable control.
 
 ## Regeneration
 

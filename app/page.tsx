@@ -13,6 +13,15 @@ const WAITLIST_PROMPT_DELAY_MS = 12_000;
 const WAITLIST_SCROLL_THRESHOLD = 0.4;
 const MIN_MOTIVATION_LENGTH = 30;
 const MAX_MOTIVATION_LENGTH = 500;
+const MIN_AGE = 18;
+const MAX_AGE = 120;
+const GENDER_OPTIONS = [
+  ["woman", "Woman"],
+  ["man", "Man"],
+  ["non_binary", "Non-binary"],
+  ["another_identity", "Another identity"],
+  ["prefer_not_to_say", "Prefer not to say"],
+] as const;
 
 const content = {
   navigation: [
@@ -48,7 +57,13 @@ function Arrow() {
 }
 
 type WaitlistStatus = "idle" | "submitting" | "joined" | "updated" | "error";
-type WaitlistField = "firstName" | "lastName" | "email" | "motivation";
+type WaitlistField =
+  | "firstName"
+  | "lastName"
+  | "email"
+  | "gender"
+  | "age"
+  | "motivation";
 type WaitlistErrors = Partial<Record<WaitlistField, string>>;
 
 function WaitlistForm({
@@ -63,6 +78,8 @@ function WaitlistForm({
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
+  const [gender, setGender] = useState("");
+  const [age, setAge] = useState("");
   const [motivation, setMotivation] = useState("");
   const [errors, setErrors] = useState<WaitlistErrors>({});
   const [submissionError, setSubmissionError] = useState("");
@@ -85,6 +102,8 @@ function WaitlistForm({
     const normalizedFirstName = firstName.trim().replace(/\s+/g, " ");
     const normalizedLastName = lastName.trim().replace(/\s+/g, " ");
     const normalizedEmail = email.trim();
+    const normalizedAge = age.trim();
+    const parsedAge = Number(normalizedAge);
     const normalizedMotivation = motivation.trim();
     const nextErrors: WaitlistErrors = {};
 
@@ -99,6 +118,17 @@ function WaitlistForm({
       normalizedEmail.length > 254
     ) {
       nextErrors.email = "Enter a valid email address.";
+    }
+    if (!GENDER_OPTIONS.some(([value]) => value === gender)) {
+      nextErrors.gender = "Select a gender option.";
+    }
+    if (
+      !/^\d{1,3}$/.test(normalizedAge) ||
+      !Number.isInteger(parsedAge) ||
+      parsedAge < MIN_AGE ||
+      parsedAge > MAX_AGE
+    ) {
+      nextErrors.age = `Enter an age between ${MIN_AGE} and ${MAX_AGE}.`;
     }
     if (normalizedMotivation.length < MIN_MOTIVATION_LENGTH) {
       nextErrors.motivation = `Write at least ${MIN_MOTIVATION_LENGTH} characters so we can understand the problem you want Frame to solve.`;
@@ -127,6 +157,8 @@ function WaitlistForm({
           firstName: normalizedFirstName,
           lastName: normalizedLastName,
           email: normalizedEmail,
+          gender,
+          age: parsedAge,
           motivation: normalizedMotivation,
           website: formData.get("website"),
           placement,
@@ -185,6 +217,8 @@ function WaitlistForm({
             setFirstName("");
             setLastName("");
             setEmail("");
+            setGender("");
+            setAge("");
             setMotivation("");
           }}
         >
@@ -214,8 +248,8 @@ function WaitlistForm({
         <div className="waitlist-form__intro">
           <strong>Tell us how Frame could fit into your life.</strong>
           <p>
-            We’re inviting a small group of early users. Your response helps us
-            understand who Frame can serve best.
+            Want to keep up-to-date with Frame&apos;s development and be
+            notified as soon as we launch? Register here
           </p>
         </div>
       ) : null}
@@ -314,6 +348,75 @@ function WaitlistForm({
           </p>
         ) : null}
       </div>
+      <div className="form-demographic-fields">
+        <div className="form-field">
+          <label htmlFor={`${idPrefix}-gender`}>Gender</label>
+          <select
+            id={`${idPrefix}-gender`}
+            name="gender"
+            value={gender}
+            onChange={(event) => {
+              setGender(event.target.value);
+              clearFieldError("gender");
+            }}
+            disabled={status === "submitting"}
+            required
+            aria-invalid={Boolean(errors.gender)}
+            aria-describedby={
+              errors.gender ? `${idPrefix}-gender-error` : undefined
+            }
+          >
+            <option value="" disabled>
+              Select an option
+            </option>
+            {GENDER_OPTIONS.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+          {errors.gender ? (
+            <p
+              className="form-error"
+              id={`${idPrefix}-gender-error`}
+              role="alert"
+            >
+              {errors.gender}
+            </p>
+          ) : null}
+        </div>
+        <div className="form-field">
+          <label htmlFor={`${idPrefix}-age`}>Age</label>
+          <input
+            id={`${idPrefix}-age`}
+            name="age"
+            type="number"
+            inputMode="numeric"
+            placeholder="Age"
+            value={age}
+            onChange={(event) => {
+              setAge(event.target.value);
+              clearFieldError("age");
+            }}
+            disabled={status === "submitting"}
+            required
+            min={MIN_AGE}
+            max={MAX_AGE}
+            step={1}
+            aria-invalid={Boolean(errors.age)}
+            aria-describedby={errors.age ? `${idPrefix}-age-error` : undefined}
+          />
+          {errors.age ? (
+            <p
+              className="form-error"
+              id={`${idPrefix}-age-error`}
+              role="alert"
+            >
+              {errors.age}
+            </p>
+          ) : null}
+        </div>
+      </div>
       <div className="form-field form-field--motivation">
         <label htmlFor={`${idPrefix}-motivation`}>
           How would you use Frame?
@@ -362,8 +465,7 @@ function WaitlistForm({
         type="submit"
         disabled={status === "submitting"}
       >
-        {status === "submitting" ? "Submitting…" : "Sign me up!"}{" "}
-        {status === "submitting" ? null : <Arrow />}
+        {status === "submitting" ? "Submitting…" : "Sign me up!"}
       </button>
       <p className="form-note" id={`${idPrefix}-note`}>
         We’ll only contact you about Frame. No spam. Please don’t include
@@ -478,8 +580,8 @@ function WaitlistPopup() {
           Tell us how Frame could fit into your life.
         </h2>
         <p id="waitlist-popup-description">
-          We’re inviting a small group of early users. Your response helps us
-          understand who Frame can serve best.
+          Want to keep up-to-date with Frame&apos;s development and be notified
+          as soon as we launch? Register here
         </p>
         <WaitlistForm
           idPrefix="popup-waitlist"
@@ -528,7 +630,7 @@ export default function Home() {
             </p>
             <div className="hero-actions">
               <a className="button button--dark" href="#early-access">
-                Interested? <Arrow />
+                Interested?
               </a>
               <a className="text-link" href="#how-it-works">
                 How it works <span aria-hidden="true">↓</span>
@@ -764,8 +866,8 @@ export default function Home() {
           </div>
           <div className="final-cta__form">
             <p>
-              We’re inviting a small group of early users. Your response helps
-              us understand who Frame can serve best.
+              Want to keep up-to-date with Frame&apos;s development and be
+              notified as soon as we launch? Register here
             </p>
             <WaitlistForm idPrefix="footer-waitlist" placement="footer" />
           </div>

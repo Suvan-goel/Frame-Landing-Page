@@ -7,6 +7,15 @@ const MAX_BODY_BYTES = 4_096;
 const MAX_NAME_LENGTH = 60;
 const MIN_MOTIVATION_LENGTH = 30;
 const MAX_MOTIVATION_LENGTH = 500;
+const MIN_AGE = 18;
+const MAX_AGE = 120;
+const GENDER_VALUES = new Set([
+  "woman",
+  "man",
+  "non_binary",
+  "another_identity",
+  "prefer_not_to_say",
+]);
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return Response.json(body, {
@@ -53,6 +62,8 @@ export async function POST(request: Request) {
     firstName?: unknown;
     lastName?: unknown;
     email?: unknown;
+    gender?: unknown;
+    age?: unknown;
     motivation?: unknown;
     website?: unknown;
     placement?: unknown;
@@ -77,6 +88,8 @@ export async function POST(request: Request) {
   const normalizedEmail = email.toLowerCase();
   const firstName = cleanName(payload.firstName);
   const lastName = cleanName(payload.lastName);
+  const gender = typeof payload.gender === "string" ? payload.gender : "";
+  const age = typeof payload.age === "number" ? payload.age : Number.NaN;
   const motivation = cleanMotivation(payload.motivation);
 
   if (!firstName || firstName.length > MAX_NAME_LENGTH) {
@@ -92,6 +105,15 @@ export async function POST(request: Request) {
     normalizedEmail.includes("..")
   ) {
     return jsonResponse({ error: "Enter a valid email address." }, 400);
+  }
+  if (!GENDER_VALUES.has(gender)) {
+    return jsonResponse({ error: "Select a gender option." }, 400);
+  }
+  if (!Number.isInteger(age) || age < MIN_AGE || age > MAX_AGE) {
+    return jsonResponse(
+      { error: `Enter an age between ${MIN_AGE} and ${MAX_AGE}.` },
+      400,
+    );
   }
   if (
     motivation.length < MIN_MOTIVATION_LENGTH ||
@@ -122,6 +144,8 @@ export async function POST(request: Request) {
         .update({
           first_name: firstName,
           last_name: lastName,
+          gender,
+          age,
           motivation,
         })
         .eq("id", existingSignup.id);
@@ -134,6 +158,8 @@ export async function POST(request: Request) {
       first_name: firstName,
       last_name: lastName,
       email: normalizedEmail,
+      gender,
+      age,
       motivation,
       placement: cleanAttribution(payload.placement) ?? "landing_page",
       utm_source: cleanAttribution(payload.utmSource),
@@ -147,6 +173,8 @@ export async function POST(request: Request) {
         .update({
           first_name: firstName,
           last_name: lastName,
+          gender,
+          age,
           motivation,
         })
         .eq("email", normalizedEmail);

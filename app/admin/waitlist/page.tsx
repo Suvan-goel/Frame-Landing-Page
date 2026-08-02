@@ -17,6 +17,8 @@ type WaitlistSignup = {
   first_name: string | null;
   last_name: string | null;
   email: string;
+  gender: string | null;
+  age: number | null;
   motivation: string | null;
   placement: string;
   utm_source: string | null;
@@ -35,7 +37,7 @@ export default async function WaitlistAdminPage() {
   const { data, error } = await supabase
     .from("waitlist_signups")
     .select(
-      "id,first_name,last_name,email,motivation,placement,utm_source,utm_medium,utm_campaign,created_at",
+      "id,first_name,last_name,email,gender,age,motivation,placement,utm_source,utm_medium,utm_campaign,created_at",
     )
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
@@ -94,6 +96,14 @@ export default async function WaitlistAdminPage() {
                           .join(" ") || "Unqualified signup"}
                       </strong>
                       <a href={`mailto:${signup.email}`}>{signup.email}</a>
+                      <small>
+                        {[
+                          signup.gender?.replaceAll("_", " "),
+                          signup.age ? `Age ${signup.age}` : null,
+                        ]
+                          .filter(Boolean)
+                          .join(" · ") || "Demographics not provided"}
+                      </small>
                     </td>
                     <td className="admin-motivation">
                       {signup.motivation || "No qualification response"}
