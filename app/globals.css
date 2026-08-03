@@ -10,6 +10,11 @@
   --sage-soft: #dce3db;
   --serif: "Iowan Old Style", "Baskerville", "Times New Roman", serif;
   --sans: var(--font-geist-sans), "Helvetica Neue", Arial, sans-serif;
+  --headline-page: clamp(3.3rem, 4.3vw, 4.5rem);
+  --headline-section: clamp(2.65rem, 4.1vw, 4.25rem);
+  --headline-cta: clamp(2.65rem, 4vw, 4.25rem);
+  --headline-flow: clamp(2.45rem, 4.5vw, 3.85rem);
+  --headline-panel: clamp(2.25rem, 3.6vw, 3.15rem);
 }
 
 * {
@@ -271,7 +276,7 @@ h2 {
 .hero h1 {
   max-width: 620px;
   margin: 24px 0 0;
-  font-size: clamp(3.3rem, 4.3vw, 4.5rem);
+  font-size: var(--headline-page);
   line-height: 0.96;
 }
 
@@ -527,7 +532,7 @@ h2 {
   grid-column: 1;
   max-width: 760px;
   margin: 0;
-  font-size: clamp(2.9rem, 4.5vw, 4.65rem);
+  font-size: var(--headline-section);
   line-height: 1;
 }
 
@@ -613,7 +618,7 @@ h2 {
 .section-heading h2 {
   grid-column: 1;
   margin: 0;
-  font-size: clamp(2.9rem, 4.5vw, 4.65rem);
+  font-size: var(--headline-section);
   line-height: 1;
 }
 
@@ -733,7 +738,7 @@ h2 {
 .principles-copy h2,
 .final-cta h2 {
   margin: 24px 0 0;
-  font-size: clamp(2.65rem, 4vw, 4.25rem);
+  font-size: var(--headline-cta);
   line-height: 1;
 }
 
@@ -1045,7 +1050,7 @@ h2 {
   max-width: 760px;
   margin: 0;
   font-family: var(--serif);
-  font-size: clamp(2.45rem, 4.5vw, 3.85rem);
+  font-size: var(--headline-flow);
   font-weight: 400;
   letter-spacing: -0.045em;
   line-height: 1.02;
@@ -1607,7 +1612,7 @@ h2 {
 .contact-page__intro h1 {
   max-width: 540px;
   margin: 22px 0 0;
-  font-size: clamp(3.7rem, 5.7vw, 5.75rem);
+  font-size: var(--headline-page);
   line-height: 0.93;
 }
 
@@ -1669,7 +1674,7 @@ h2 {
 .contact-form__success h2 {
   margin: 18px 0 0;
   font-family: var(--serif);
-  font-size: clamp(2.25rem, 3.6vw, 3.15rem);
+  font-size: var(--headline-panel);
   font-weight: 400;
   letter-spacing: -0.045em;
   line-height: 0.98;
@@ -1844,7 +1849,7 @@ h2 {
   max-width: 430px;
   margin: 22px 0 0;
   font-family: var(--serif);
-  font-size: clamp(2.5rem, 5.4vw, 3.6rem);
+  font-size: var(--headline-flow);
   font-weight: 400;
   letter-spacing: -0.045em;
   line-height: 0.98;
@@ -1953,7 +1958,7 @@ h2 {
 .admin-header h1 {
   margin: 20px 0 0;
   font-family: var(--serif);
-  font-size: clamp(3.4rem, 7.2vw, 5.85rem);
+  font-size: var(--headline-page);
   font-weight: 400;
   letter-spacing: -0.055em;
   line-height: 0.95;
@@ -2292,6 +2297,14 @@ h2 {
 }
 
 @media (max-width: 680px) {
+  :root {
+    --headline-page: clamp(2.85rem, 12.4vw, 3.4rem);
+    --headline-section: clamp(2.3rem, 9.8vw, 2.9rem);
+    --headline-cta: clamp(2.5rem, 10.4vw, 3.15rem);
+    --headline-flow: clamp(2.2rem, 10vw, 2.8rem);
+    --headline-panel: clamp(2.2rem, 10vw, 2.8rem);
+  }
+
   .container,
   .narrow,
   .hero-grid.container,
@@ -2320,7 +2333,7 @@ h2 {
 
   .contact-page__intro h1 {
     margin-top: 20px;
-    font-size: clamp(3.05rem, 14.4vw, 3.85rem);
+    font-size: var(--headline-page);
   }
 
   .contact-page__intro > p:not(.eyebrow) {
@@ -2432,7 +2445,7 @@ h2 {
 
   .interest-flow__content h2,
   .interest-flow__success h2 {
-    font-size: clamp(2.2rem, 10vw, 2.8rem);
+    font-size: var(--headline-flow);
   }
 
   .interest-flow__choices,
@@ -2509,7 +2522,7 @@ h2 {
   .hero h1 {
     order: 2;
     margin-top: 26px;
-    font-size: clamp(2.85rem, 12.4vw, 3.4rem);
+    font-size: var(--headline-page);
     line-height: 0.96;
   }
 
@@ -2601,7 +2614,7 @@ h2 {
 
   .context-intro h2,
   .section-heading h2 {
-    font-size: clamp(2.5rem, 10.8vw, 3.15rem);
+    font-size: var(--headline-section);
     line-height: 1.02;
   }
 
@@ -2702,7 +2715,7 @@ h2 {
   .software-copy h2,
   .principles-copy h2,
   .final-cta h2 {
-    font-size: clamp(2.5rem, 10.4vw, 3.15rem);
+    font-size: var(--headline-cta);
     line-height: 1.02;
   }
 
@@ -2788,7 +2801,7 @@ h2 {
   }
 
   .waitlist-popup h2 {
-    font-size: clamp(2.45rem, 11.7vw, 3.05rem);
+    font-size: var(--headline-flow);
   }
 
   .footer-top {
@@ -2870,6 +2883,10 @@ h2 {
 }
 
 @media (max-width: 380px) {
+  :root {
+    --headline-page: clamp(2.6rem, 12.1vw, 2.9rem);
+  }
+
   .nav {
     column-gap: 7px;
   }
@@ -2879,7 +2896,7 @@ h2 {
   }
 
   .hero h1 {
-    font-size: clamp(2.6rem, 12.1vw, 2.9rem);
+    font-size: var(--headline-page);
   }
 
   .hero-visuals {
@@ -3026,7 +3043,7 @@ h2 {
 .founding-hero h1 {
   max-width: 690px;
   margin: 22px 0 26px;
-  font-size: clamp(3.6rem, 5.6vw, 6rem);
+  font-size: var(--headline-page);
   line-height: 0.91;
 }
 
@@ -3108,7 +3125,7 @@ h2 {
 .founding-support h2,
 .founding-faq h2 {
   margin: 18px 0 24px;
-  font-size: clamp(2.8rem, 4.5vw, 5rem);
+  font-size: var(--headline-section);
   line-height: 0.98;
 }
 
@@ -3172,15 +3189,6 @@ h2 {
   gap: 22px;
   padding: 25px 0;
   border-top: 1px solid var(--line);
-  opacity: 0.56;
-}
-
-.founding-roadmap li.is-current {
-  opacity: 1;
-}
-
-.founding-roadmap li.is-completed {
-  opacity: 0.76;
 }
 
 .founding-roadmap li.is-current div {
@@ -3213,6 +3221,11 @@ h2 {
   color: var(--ink-soft);
 }
 
+.founding-roadmap li.is-proposed h3,
+.founding-roadmap li.is-proposed small {
+  color: #55564f;
+}
+
 .founding-support {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -3226,7 +3239,7 @@ h2 {
 }
 
 .founding-support ul {
-  margin: 40px 0 0;
+  margin: 34px 0 0;
   padding: 0;
   list-style: none;
 }
@@ -3236,6 +3249,10 @@ h2 {
   border-top: 1px solid var(--line);
   font-family: var(--serif);
   font-size: 1.25rem;
+}
+
+.founding-support li:first-child {
+  border-top-color: rgba(32, 33, 30, 0.28);
 }
 
 .founding-conditional__grid {
@@ -3327,7 +3344,7 @@ h2 {
 
 .founding-final-cta h2 {
   margin: 20px auto;
-  font-size: clamp(3rem, 5.4vw, 6rem);
+  font-size: var(--headline-cta);
   line-height: 0.96;
 }
 
@@ -3356,7 +3373,7 @@ h2 {
 
 .checkout-page__layout > aside h2 {
   margin: 18px 0 22px;
-  font-size: clamp(2.25rem, 4vw, 3.85rem);
+  font-size: var(--headline-flow);
   line-height: 0.98;
 }
 
@@ -3381,7 +3398,7 @@ h2 {
 
 .checkout-summary__heading h1 {
   margin: 13px 0 30px;
-  font-size: clamp(2.2rem, 3.6vw, 3.15rem);
+  font-size: var(--headline-panel);
   line-height: 1;
 }
 
@@ -3513,7 +3530,7 @@ h2 {
 .contributor-success h1,
 .contributor-auth-card h1 {
   margin: 18px 0 25px;
-  font-size: clamp(2.7rem, 5.4vw, 5.2rem);
+  font-size: var(--headline-page);
   line-height: 0.95;
 }
 
@@ -3698,7 +3715,7 @@ h2 {
 
 .contributor-onboarding-intro h1 {
   margin: 18px 0 24px;
-  font-size: clamp(2.8rem, 5.4vw, 4.85rem);
+  font-size: var(--headline-page);
   line-height: 0.96;
 }
 
@@ -3870,7 +3887,7 @@ h2 {
 .hub-intro h1,
 .hub-section-heading h1 {
   margin: 16px 0 24px;
-  font-size: clamp(2.9rem, 5.4vw, 5.4rem);
+  font-size: var(--headline-page);
   line-height: 0.94;
 }
 
@@ -4137,7 +4154,7 @@ h2 {
 
 .contributor-hub-loading h1 {
   max-width: 780px;
-  font-size: clamp(2.7rem, 5.4vw, 5.4rem);
+  font-size: var(--headline-page);
 }
 
 .home-contributor-section {
@@ -4154,7 +4171,7 @@ h2 {
 
 .home-contributor-grid h2 {
   margin: 17px 0 0;
-  font-size: clamp(2.8rem, 4.5vw, 4.75rem);
+  font-size: var(--headline-section);
   line-height: 0.96;
 }
 
@@ -4368,7 +4385,7 @@ h2 {
   }
 
   .founding-hero h1 {
-    font-size: clamp(3rem, 14.4vw, 4.2rem);
+    font-size: var(--headline-page);
   }
 
   .founding-actions,
@@ -4410,7 +4427,7 @@ h2 {
   .founding-stage h2,
   .founding-support h2,
   .founding-faq h2 {
-    font-size: clamp(2.5rem, 11.7vw, 3.4rem);
+    font-size: var(--headline-section);
   }
 
   .founding-final-cta {
@@ -4469,7 +4486,7 @@ h2 {
 
   .hub-intro h1,
   .hub-section-heading h1 {
-    font-size: clamp(2.7rem, 13.5vw, 3.8rem);
+    font-size: var(--headline-page);
   }
 
   .hub-notice {

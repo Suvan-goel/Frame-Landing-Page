@@ -6,6 +6,7 @@ import {
   currentBenefits,
   getRoadmapStageStatus,
   isFoundingContributorsEnabled,
+  NEXT_ROADMAP_STAGE_LABEL,
   roadmapStages,
 } from "@/lib/contributor-membership";
 
@@ -38,8 +39,8 @@ const faq = [
     "No. The membership does not purchase, reserve, pre-order, deposit toward, or contribute to the price of a Frame device.",
   ],
   [
-    "Does Frame currently work?",
-    "There is no finished Frame product. The proposed technology has not yet been fully developed or clinically validated.",
+    "What works today?",
+    "Published research supports ultrasound-based measurement of arterial signals and blood-pressure estimation. Frame has completed early proof-of-concept work and is now developing an integrated prototype.",
   ],
   [
     "Will Frame definitely launch?",
@@ -124,19 +125,21 @@ export default function FoundingContributorsPage() {
       <section className="founding-stage">
         <div className="founding-stage__intro">
           <p className="eyebrow">Where Frame is today</p>
-          <h2>Building an integrated engineering prototype.</h2>
+          <h2>Now building an integrated prototype.</h2>
           <p>
-            Frame has completed the initial technical proof-of-concept and measurement-validation stages and is now focused on combining sensing, electronics, software, and data processing into a working prototype. This work comes before wearability and safety testing, regulatory work, or any finished product.
+            Frame has completed its initial technical proof-of-concept and measurement-validation phases. We’re now combining sensing, electronics, software, and data processing into a working prototype. Wearability, safety, and regulatory work still lie ahead.
           </p>
         </div>
         <ol className="founding-roadmap">
           {roadmapStages.map(([label, title, description]) => {
             const status = getRoadmapStageStatus(label);
             const statusLabel = status === "current"
-              ? "Current stage"
+              ? "Current"
               : status === "completed"
-                ? "Completed stage"
-                : "Proposed stage";
+                ? "Completed"
+                : label === NEXT_ROADMAP_STAGE_LABEL
+                  ? "Next proposed stage"
+                  : "Proposed";
 
             return (
               <li
@@ -158,19 +161,19 @@ export default function FoundingContributorsPage() {
 
       <section className="founding-support">
         <div>
-          <p className="eyebrow">How your contribution helps</p>
-          <h2>Supporting the work behind the questions.</h2>
+          <p className="eyebrow">What membership revenue supports</p>
+          <h2>Supporting Frame’s next stage.</h2>
         </div>
         <div>
           <p>
-            Membership revenue supports operation of the Founding Contributor programme and Frame’s early research, prototyping, validation, and development. How funds are allocated may change as the project develops.
+            Membership revenue supports Frame’s development and the operation of the Founding Contributor programme. Current priorities include the work below, but allocations may change as the project develops.
           </p>
           <ul>
-            <li>Prototype components and equipment</li>
-            <li>Engineering and technical research</li>
-            <li>Measurement validation</li>
-            <li>Regulatory and legal work</li>
-            <li>Operation of the contributor community</li>
+            <li>Prototype components, equipment, and testing</li>
+            <li>Sensing, electronics, and software engineering</li>
+            <li>Measurement and signal validation</li>
+            <li>Safety, regulatory, and legal preparation</li>
+            <li>Operation of the contributor programme and community</li>
           </ul>
         </div>
       </section>

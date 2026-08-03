@@ -118,7 +118,15 @@ test("server-renders the Founding Contributor funnel and disclosures", async () 
   assert.match(membership, /Follow Frame’s development from the inside\./);
   assert.match(membership, /Monthly development updates with access to the full archive/);
   assert.match(membership, /Priority consideration for voluntary research opportunities/);
-  assert.match(membership, /Building an integrated engineering prototype\./);
+  assert.match(membership, /Now building an integrated prototype\./);
+  assert.match(membership, /Initial measurement validation/);
+  assert.match(membership, /Investigated whether ultrasound could capture useful arterial information\./);
+  assert.match(membership, /Next proposed stage/);
+  assert.match(membership, /What membership revenue supports/);
+  assert.match(membership, /Supporting Frame’s next stage\./);
+  assert.match(membership, /Sensing, electronics, and software engineering/);
+  assert.match(membership, /Operation of the contributor programme and community/);
+  assert.doesNotMatch(membership, /How your contribution helps/);
   assert.match(membership, /<li class="is-completed"><span>01<\/span>/);
   assert.match(membership, /<li class="is-completed"><span>02<\/span>/);
   assert.match(membership, /<li class="is-current" aria-current="step"><span>03<\/span>/);
