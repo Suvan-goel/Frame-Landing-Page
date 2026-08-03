@@ -1,6 +1,7 @@
 /* eslint-disable @next/next/no-html-link-for-pages */
 import type { Metadata } from "next";
 import { SiteHeader } from "../components/site-header";
+import { isFoundingContributorSalesPageEnabled } from "@/lib/contributor-sales-page.server";
 
 export const metadata: Metadata = {
   title: "Privacy — Frame",
@@ -11,7 +12,10 @@ export const metadata: Metadata = {
   },
 };
 
-export default function PrivacyPage() {
+export default async function PrivacyPage() {
+  const showLocalContributorAreas =
+    await isFoundingContributorSalesPageEnabled();
+
   return (
     <main className="legal-page">
       <SiteHeader />
@@ -23,8 +27,10 @@ export default function PrivacyPage() {
         <p className="legal-intro">
           This notice explains how Frame Health Technologies handles information
           submitted through the Frame website, including its research and
-          early-access waitlist, contact form, and Founding Contributor
-          membership experience.
+          early-access waitlist and contact form.
+          {showLocalContributorAreas
+            ? " It also covers the locally tested Founding Contributor membership experience."
+            : null}
         </p>
 
         <section>
@@ -36,24 +42,26 @@ export default function PrivacyPage() {
           </p>
         </section>
 
-        <section>
-          <h2>Founding Contributor membership</h2>
-          <p>
-            If you purchase a membership, we collect the name and email address
-            associated with your purchase, payment status and amount, the terms
-            version you accepted, membership and access dates, and your
-            contributor number. Stripe processes your payment details. Frame
-            does not receive or store your full card number.
-          </p>
-          <p>
-            The private contributor hub uses passwordless authentication. If
-            you complete your contributor profile or participate in the hub, we may also
-            collect your preferred name, country, interests, programme
-            feedback, questions, advisory votes, event participation, and
-            optional research applications. Please do not submit diagnoses,
-            symptoms, test results, or other medical information.
-          </p>
-        </section>
+        {showLocalContributorAreas ? (
+          <section>
+            <h2>Founding Contributor membership</h2>
+            <p>
+              If you purchase a membership, we collect the name and email address
+              associated with your purchase, payment status and amount, the terms
+              version you accepted, membership and access dates, and your
+              contributor number. Stripe processes your payment details. Frame
+              does not receive or store your full card number.
+            </p>
+            <p>
+              The private contributor hub uses passwordless authentication. If
+              you complete your contributor profile or participate in the hub, we may also
+              collect your preferred name, country, interests, programme
+              feedback, questions, advisory votes, event participation, and
+              optional research applications. Please do not submit diagnoses,
+              symptoms, test results, or other medical information.
+            </p>
+          </section>
+        ) : null}
 
         <section>
           <h2>Information we collect</h2>
@@ -92,9 +100,10 @@ export default function PrivacyPage() {
             campaigns. The Pixel may use browser identifiers and similar
             technologies, which Meta processes under its own privacy policy. We
             do not send your name, email address, age, gender, or written
-            responses to Meta through the Pixel. The Pixel is not initialized
-            on checkout review, payment-success, member sign-in, contributor-profile,
-            private contributor-hub, or administration routes.
+            responses to Meta through the Pixel.
+            {showLocalContributorAreas
+              ? " The Pixel is not initialized on checkout review, payment-success, member sign-in, contributor-profile, private contributor-hub, or administration routes."
+              : null}
           </p>
         </section>
 
@@ -102,15 +111,17 @@ export default function PrivacyPage() {
           <h2>Sharing and retention</h2>
           <p>
             We do not sell your information. We share it only with service
-            providers that help us host, secure, operate the website, process
-            payments, authenticate members, and deliver messages, or when
-            required by law. These providers currently include Stripe for
-            payments, Supabase for authentication and data storage, Resend for
-            transactional email, and our website hosting provider. We keep
-            submitted information while Frame is in development, for the period
-            needed to provide a membership and meet legal or accounting duties,
-            or until you ask us to delete information we are not required to
-            retain.
+            providers that help us host, secure, operate the website, store
+            submissions, and deliver messages, or when required by law. These
+            providers currently include Supabase for data storage, Resend for
+            email delivery, and our website hosting provider.
+            {showLocalContributorAreas
+              ? " The local membership flow also uses Stripe for payments and Supabase for member authentication."
+              : null}
+            {" "}We keep submitted information while Frame is in development,
+            for the period needed to provide the relevant service and meet
+            legal or accounting duties, or until you ask us to delete
+            information we are not required to retain.
           </p>
         </section>
 

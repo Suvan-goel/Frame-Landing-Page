@@ -1,6 +1,10 @@
 /** Cloudflare Worker entry point for the vinext-starter template. */
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
+import {
+  isContributorLocalOnlyPath,
+  isLoopbackHost,
+} from "../lib/contributor-local-only";
 
 interface Env {
   ASSETS: Fetcher;
@@ -28,6 +32,28 @@ interface ExecutionContext {
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+    const isLocalRequest = isLoopbackHost(url.host);
+    const optimizedImageSource =
+      url.pathname === "/_vinext/image" ? url.searchParams.get("url") : null;
+    const isContributorRequest =
+      isContributorLocalOnlyPath(url.pathname) ||
+      (optimizedImageSource
+        ? isContributorLocalOnlyPath(
+            new URL(optimizedImageSource, url).pathname,
+          )
+        : false);
+
+    if (isContributorRequest && !isLocalRequest) {
+      return new Response("Not found", {
+        status: 404,
+        headers: {
+          "Cache-Control": "no-store",
+          "Content-Type": "text/plain; charset=utf-8",
+          "X-Content-Type-Options": "nosniff",
+          "X-Robots-Tag": "noindex, nofollow",
+        },
+      });
+    }
 
     if (url.pathname === "/_vinext/image") {
       const allowedWidths = [...DEFAULT_DEVICE_SIZES, ...DEFAULT_IMAGE_SIZES];
@@ -40,7 +66,13 @@ const worker = {
       }, allowedWidths);
     }
 
-    return handler.fetch(request, env, ctx);
+    const appHeaders = new Headers(request.headers);
+    appHeaders.set(
+      "x-frame-contributor-local-request",
+      isLocalRequest ? "1" : "0",
+    );
+
+    return handler.fetch(new Request(request, { headers: appHeaders }), env, ctx);
   },
 };
 

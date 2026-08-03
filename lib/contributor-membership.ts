@@ -54,7 +54,3 @@ export function addMembershipYear(date: Date) {
 export function formatContributorNumber(value: number | string) {
   return `FC-${String(value).padStart(4, "0")}`;
 }
-
-export function isFoundingContributorsEnabled() {
-  return process.env.NEXT_PUBLIC_FOUNDING_CONTRIBUTORS_ENABLED === "true";
-}

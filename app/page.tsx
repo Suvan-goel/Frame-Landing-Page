@@ -2,10 +2,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { BrandWordmark } from "./components/brand-wordmark";
 import { MobileNavigation } from "./components/mobile-navigation";
+import { isFoundingContributorSalesPageEnabled } from "@/lib/contributor-sales-page.server";
 
 const INSTAGRAM_URL = "https://www.instagram.com/framewearable/";
-const FOUNDING_CONTRIBUTORS_ENABLED =
-  process.env.NEXT_PUBLIC_FOUNDING_CONTRIBUTORS_ENABLED === "true";
 
 const content = {
   navigation: [
@@ -36,8 +35,10 @@ function Arrow() {
   return <span aria-hidden="true">↗</span>;
 }
 
-export default function Home() {
-  const mobileNavigation = FOUNDING_CONTRIBUTORS_ENABLED
+export default async function Home() {
+  const showLocalContributorAreas =
+    await isFoundingContributorSalesPageEnabled();
+  const mobileNavigation = showLocalContributorAreas
     ? [
         ...content.navigation,
         { label: "Contributors", href: "/founding-contributors" },
@@ -57,7 +58,7 @@ export default function Home() {
                 {item.label}
               </a>
             ))}
-            {FOUNDING_CONTRIBUTORS_ENABLED ? (
+            {showLocalContributorAreas ? (
               <a href="/founding-contributors">Contributors</a>
             ) : null}
           </div>
@@ -302,7 +303,7 @@ export default function Home() {
         </div>
       </section>
 
-      {FOUNDING_CONTRIBUTORS_ENABLED ? (
+      {showLocalContributorAreas ? (
         <section className="home-contributor-section">
           <div className="container home-contributor-grid">
             <div>
@@ -360,7 +361,7 @@ export default function Home() {
           <div className="footer-links">
             <a href="#product">Product</a>
             <a href="#research">Research</a>
-            {FOUNDING_CONTRIBUTORS_ENABLED ? (
+            {showLocalContributorAreas ? (
               <a href="/founding-contributors">Founding Contributors</a>
             ) : null}
             <a

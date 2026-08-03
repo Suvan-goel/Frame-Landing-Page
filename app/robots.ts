@@ -10,9 +10,8 @@ export default function robots(): MetadataRoute.Robots {
       disallow: [
         "/admin/",
         "/api/",
-        "/contributors/",
-        "/founding-contributors/review",
-        "/founding-contributors/success",
+        "/contributors",
+        "/founding-contributors",
       ],
     },
     sitemap: `${siteUrl}/sitemap.xml`,

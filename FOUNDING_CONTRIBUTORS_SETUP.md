@@ -1,23 +1,23 @@
 # Frame Founding Contributors — private test setup
 
-This branch is designed to remain private until the payment, access, refund, and legal checks below are complete.
+The Founding Contributor membership is locked to local development. Its pages,
+homepage and waitlist sections, member and policy areas, admin area, APIs,
+webhook, and social image return not found on every non-loopback host.
 
-## 1. Keep the public entry points disabled
+## 1. Local-only access
 
-Leave this unset or false while testing:
+Open the membership only through `localhost`, `127.0.0.1`, or `[::1]`.
+There is deliberately no public feature flag: changing hosted environment
+variables cannot publish it.
 
-```text
-NEXT_PUBLIC_FOUNDING_CONTRIBUTORS_ENABLED=false
-```
-
-When this flag is false, the membership page, review page, and checkout API return not found. The homepage link, homepage membership section, waitlist-success offer, sitemap entry, and public indexing also remain disabled. Existing members can still sign in, and payment-success links continue to resolve so an emergency sales shutdown does not strand recent purchasers.
-
-`CONTRIBUTOR_PREVIEW_MODE=true` makes the sales pages and sample membership data available only on `localhost`, `127.0.0.1`, or `[::1]`. Set it to false in every shared or production environment.
+`CONTRIBUTOR_PREVIEW_MODE=true` enables sample membership data and simulated
+checkout responses on those local hosts. Keep it false in every shared or
+production environment. It does not override the local-only boundary.
 
 ## 2. Prepare Supabase
 
 1. Apply `supabase/migrations/20260803000000_add_founding_contributors.sql` to the existing Frame Supabase project.
-2. Add the production site origin and `/contributors/auth/confirm` to Supabase Auth’s permitted redirect URLs.
+2. Add the local development origin and `/contributors/auth/confirm` to Supabase Auth’s permitted redirect URLs.
 3. Configure:
 
 ```text
@@ -41,10 +41,10 @@ STRIPE_SECRET_KEY=sk_test_...
 STRIPE_FOUNDING_CONTRIBUTOR_PRICE_ID=price_...
 ```
 
-5. Create a webhook endpoint at:
+5. Forward Stripe test webhooks to the local endpoint:
 
 ```text
-https://<private-test-origin>/api/stripe/webhook
+http://localhost:<local-port>/api/stripe/webhook
 ```
 
 Subscribe it to:
@@ -105,10 +105,11 @@ Do not enable live payments or the public feature flag until all of these are co
 - Have the Membership Terms, Refund Policy, Product Status Disclosure, and Privacy Notice reviewed and approved.
 - Decide the live tax approach and change `automatic_tax` deliberately if required.
 - Confirm consumer cancellation/refund handling for every country in scope.
-- Test live-domain Supabase redirects, email delivery, Stripe webhooks, refunds, and disputes.
-- Replace every `sk_test_`, `price_` test reference, and `whsec_` test secret with the correct live-mode values in the live environment only.
+- Test local Supabase redirects, email delivery, Stripe webhooks, refunds, and disputes.
 - Set `CONTRIBUTOR_PREVIEW_MODE=false`.
-- Run the full smoke test once more on the private live-configured environment.
-- Only then set `NEXT_PUBLIC_FOUNDING_CONTRIBUTORS_ENABLED=true` and deploy with explicit approval.
+- Run the full smoke test once more locally.
+- Do not remove the local-only route guard or publish any contributor entry
+  point without the owner’s explicit instruction. Public launch requires a
+  separate reviewed code change; it cannot be enabled by configuration.
 
 No member cap is enforced. The contributor number is an uncapped database identity sequence.

@@ -1,3 +1,8 @@
+import {
+  isLocalContributorRequest,
+  isLoopbackHost,
+} from "./contributor-local-only";
+
 export type FrameRuntimeEnv = {
   SUPABASE_URL?: string;
   SUPABASE_SECRET_KEY?: string;
@@ -6,7 +11,6 @@ export type FrameRuntimeEnv = {
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
   STRIPE_FOUNDING_CONTRIBUTOR_PRICE_ID?: string;
-  NEXT_PUBLIC_FOUNDING_CONTRIBUTORS_ENABLED?: string;
   CONTRIBUTOR_PREVIEW_MODE?: string;
 };
 
@@ -24,34 +28,12 @@ export async function getRuntimeValue(key: keyof FrameRuntimeEnv) {
   return runtimeEnv[key] ?? process.env[key];
 }
 
-function isLoopbackHost(host: string | null) {
-  const normalized = host?.trim().toLowerCase() ?? "";
-  return (
-    normalized === "localhost" ||
-    normalized.startsWith("localhost:") ||
-    normalized === "127.0.0.1" ||
-    normalized.startsWith("127.0.0.1:") ||
-    normalized === "[::1]" ||
-    normalized.startsWith("[::1]:")
-  );
+export function isFoundingContributorSalesEnabled(host: string | null) {
+  return isLoopbackHost(host);
 }
 
-export async function isFoundingContributorSalesEnabled(host: string | null) {
-  if (
-    (await getRuntimeValue("NEXT_PUBLIC_FOUNDING_CONTRIBUTORS_ENABLED")) ===
-    "true"
-  ) {
-    return true;
-  }
-
-  return (
-    isLoopbackHost(host) &&
-    (await getRuntimeValue("CONTRIBUTOR_PREVIEW_MODE")) === "true"
-  );
-}
-
-export async function isFoundingContributorSalesRequestEnabled(request: Request) {
-  return isFoundingContributorSalesEnabled(new URL(request.url).host);
+export function isFoundingContributorSalesRequestEnabled(request: Request) {
+  return isLocalContributorRequest(request);
 }
 
 export async function isLocalContributorPreview(request: Request) {

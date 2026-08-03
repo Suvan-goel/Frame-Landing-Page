@@ -11,8 +11,6 @@ const MIN_SITUATION_LENGTH = 20;
 const MAX_SITUATION_LENGTH = 750;
 const MIN_AGE = 18;
 const MAX_AGE = 120;
-const FOUNDING_CONTRIBUTORS_ENABLED =
-  process.env.NEXT_PUBLIC_FOUNDING_CONTRIBUTORS_ENABLED === "true";
 
 const MAIN_REASON_OPTIONS = [
   [
@@ -114,7 +112,11 @@ function ChoiceList({
   );
 }
 
-export function InterestFlow() {
+export function InterestFlow({
+  showFoundingContributorOffer,
+}: {
+  showFoundingContributorOffer: boolean;
+}) {
   const headingRef = useRef<HTMLHeadingElement>(null);
   const [step, setStep] = useState(0);
   const [mainReason, setMainReason] = useState("");
@@ -321,7 +323,7 @@ export function InterestFlow() {
                 Submit another response
               </button>
             </div>
-            {FOUNDING_CONTRIBUTORS_ENABLED ? (
+            {showFoundingContributorOffer ? (
               <aside className="interest-flow__membership-offer">
                 <p className="eyebrow">Want to go further?</p>
                 <h3>Become a Founding Contributor</h3>

@@ -3,13 +3,13 @@ import { readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 import { formatName } from "../lib/name-format.ts";
 
-async function render(path = "/", init) {
+async function render(path = "/", init, origin = "http://localhost") {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
 
   return worker.fetch(
-    new Request(`http://localhost${path}`, init ?? {
+    new Request(`${origin}${path}`, init ?? {
       headers: { accept: "text/html" },
     }),
     {
@@ -22,22 +22,6 @@ async function render(path = "/", init) {
       passThroughOnException() {},
     },
   );
-}
-
-async function withRuntimeEnv(values, run) {
-  const previous = new Map(
-    Object.keys(values).map((key) => [key, process.env[key]]),
-  );
-  for (const [key, value] of Object.entries(values)) process.env[key] = value;
-
-  try {
-    return await run();
-  } finally {
-    for (const [key, value] of previous) {
-      if (value === undefined) delete process.env[key];
-      else process.env[key] = value;
-    }
-  }
 }
 
 test("server-renders the Frame landing page", async () => {
@@ -110,17 +94,14 @@ test("server-renders the contact page", async () => {
   assert.match(html, /aria-label="Frame home"/);
 });
 
-test("server-renders the Founding Contributor funnel and disclosures", async () => {
-  const salesEnabled = { NEXT_PUBLIC_FOUNDING_CONTRIBUTORS_ENABLED: "true" };
+test("server-renders the Founding Contributor funnel locally", async () => {
   const [membershipResponse, reviewResponse, successResponse, signInResponse] =
-    await withRuntimeEnv(salesEnabled, () =>
-      Promise.all([
-        render("/founding-contributors"),
-        render("/founding-contributors/review"),
-        render("/founding-contributors/success"),
-        render("/contributors/sign-in"),
-      ]),
-    );
+    await Promise.all([
+      render("/founding-contributors"),
+      render("/founding-contributors/review"),
+      render("/founding-contributors/success"),
+      render("/contributors/sign-in"),
+    ]);
 
   assert.equal(membershipResponse.status, 200);
   const membership = await membershipResponse.text();
@@ -169,21 +150,55 @@ test("server-renders the Founding Contributor funnel and disclosures", async () 
   assert.match(await signInResponse.text(), /Sign in to the contributor hub/);
 });
 
-test("server-enforces the Founding Contributor sales launch switch", async () => {
-  const [membershipResponse, reviewResponse, checkoutResponse] = await Promise.all([
-    render("/founding-contributors"),
-    render("/founding-contributors/review"),
-    render("/api/founding-contributors/checkout", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ acknowledged: true }),
-    }),
-  ]);
+test("keeps every Founding Contributor surface local-only", async () => {
+  const publicOrigin = "https://framewearable.com";
+  const restrictedPaths = [
+    "/founding-contributors",
+    "/founding-contributors/review",
+    "/founding-contributors/success",
+    "/contributors",
+    "/contributors/sign-in",
+    "/contributors/onboarding",
+    "/contributors/auth/confirm",
+    "/contributors/product-status",
+    "/contributors/refunds",
+    "/contributors/terms",
+    "/admin/contributors",
+    "/api/founding-contributors/checkout",
+    "/api/founding-contributors/status",
+    "/api/contributors/me",
+    "/api/contributors/onboarding",
+    "/api/contributors/questions",
+    "/api/contributors/votes",
+    "/api/stripe/webhook",
+    "/og-founding-contributors.png",
+    "/contributors%2Fterms",
+    "/_vinext/image?url=%2Fog-founding-contributors.png&w=1200&q=75",
+  ];
+  const responses = await Promise.all(
+    restrictedPaths.map((path) => render(path, undefined, publicOrigin)),
+  );
 
-  assert.equal(membershipResponse.status, 404);
-  assert.equal(reviewResponse.status, 404);
-  assert.equal(checkoutResponse.status, 404);
-  assert.match(await checkoutResponse.text(), /not found/i);
+  for (const [index, response] of responses.entries()) {
+    assert.equal(response.status, 404, restrictedPaths[index]);
+    assert.equal(response.headers.get("x-robots-tag"), "noindex, nofollow");
+    assert.match(await response.text(), /not found/i);
+  }
+
+  const [homeResponse, privacyResponse, sitemapResponse] = await Promise.all([
+    render("/", undefined, publicOrigin),
+    render("/privacy", undefined, publicOrigin),
+    render("/sitemap.xml", undefined, publicOrigin),
+  ]);
+  const publicHome = await homeResponse.text();
+  const publicPrivacy = await privacyResponse.text();
+  const publicSitemap = await sitemapResponse.text();
+
+  assert.equal(homeResponse.status, 200);
+  assert.doesNotMatch(publicHome, /Founding Contributors/);
+  assert.doesNotMatch(publicHome, /href="\/founding-contributors/);
+  assert.doesNotMatch(publicPrivacy, /Founding Contributor|contributor hub|membership/i);
+  assert.doesNotMatch(publicSitemap, /founding-contributors/);
 });
 
 test("renders draft contributor policies and keeps member routes private", async () => {
@@ -293,7 +308,8 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.doesNotMatch(page, /<svg|ProductDiagram|CrossSection|PatternTimeline/);
   assert.match(interestFlow, /fetch\("\/api\/waitlist"/);
   assert.doesNotMatch(interestFlow, /<dialog|showModal\(|OPEN_INTEREST_FLOW_EVENT/);
-  assert.match(interestPage, /<InterestFlow \/>/);
+  assert.match(interestPage, /showFoundingContributorOffer=/);
+  assert.match(interestPage, /isFoundingContributorSalesPageEnabled\(\)/);
   assert.match(interestPage, /canonical: "\/interest"/);
   assert.match(interestFlow, /MIN_SITUATION_LENGTH = 20/);
   assert.match(
@@ -421,15 +437,11 @@ test("rejects incomplete interest responses before storage", async () => {
 });
 
 test("requires explicit membership acknowledgment before checkout", async () => {
-  const response = await withRuntimeEnv(
-    { NEXT_PUBLIC_FOUNDING_CONTRIBUTORS_ENABLED: "true" },
-    () =>
-      render("/api/founding-contributors/checkout", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ acknowledged: false }),
-      }),
-  );
+  const response = await render("/api/founding-contributors/checkout", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ acknowledged: false }),
+  });
 
   assert.equal(response.status, 400);
   assert.match(await response.text(), /not ordering or reserving a Frame device/i);

@@ -7,7 +7,6 @@ import {
   conditionalBenefits,
   currentBenefits,
   getRoadmapStageStatus,
-  isFoundingContributorsEnabled,
   NEXT_ROADMAP_STAGE_LABEL,
   roadmapStages,
 } from "@/lib/contributor-membership";
@@ -17,9 +16,7 @@ export const metadata: Metadata = {
   description:
     "Join Frame’s private development community with a one-time $99 Founding Contributor Membership.",
   alternates: { canonical: "/founding-contributors" },
-  robots: isFoundingContributorsEnabled()
-    ? { index: true, follow: true }
-    : { index: false, follow: false },
+  robots: { index: false, follow: false },
   openGraph: {
     title: "Become a Frame Founding Contributor",
     description:
