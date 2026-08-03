@@ -1,9 +1,10 @@
-"use client";
-
 import Image from "next/image";
 import { BrandWordmark } from "./components/brand-wordmark";
+import { MobileNavigation } from "./components/mobile-navigation";
 
 const INSTAGRAM_URL = "https://www.instagram.com/framewearable/";
+const FOUNDING_CONTRIBUTORS_ENABLED =
+  process.env.NEXT_PUBLIC_FOUNDING_CONTRIBUTORS_ENABLED === "true";
 
 const content = {
   navigation: [
@@ -15,7 +16,7 @@ const content = {
     ["Baseline", "What is normal for you during comparable periods."],
     ["Recovery", "How quickly you return toward your usual pattern."],
     ["Response", "How your cardiovascular system changes around meaningful events."],
-    ["Confidence", "What was measured reliably-and what was not."],
+    ["Confidence", "What was measured reliably, and what was not."],
   ],
   principles: [
     ["Personal, not generic", "Interpreted against your own baseline and daily context."],
@@ -35,6 +36,13 @@ function Arrow() {
 }
 
 export default function Home() {
+  const mobileNavigation = FOUNDING_CONTRIBUTORS_ENABLED
+    ? [
+        ...content.navigation,
+        { label: "Contributors", href: "/founding-contributors" },
+      ]
+    : content.navigation;
+
   return (
     <main>
       <header className="nav-shell">
@@ -48,10 +56,14 @@ export default function Home() {
                 {item.label}
               </a>
             ))}
+            {FOUNDING_CONTRIBUTORS_ENABLED ? (
+              <a href="/founding-contributors">Contributors</a>
+            ) : null}
           </div>
           <a className="nav-cta" href="/interest">
             Interested
           </a>
+          <MobileNavigation items={mobileNavigation} />
         </nav>
       </header>
 
@@ -66,7 +78,7 @@ export default function Home() {
             <p className="hero-intro">
               Frame is developing a non-invasive upper-arm wearable that uses
               ultrasound to track blood-pressure patterns through sleep, rest,
-              and recovery-then turns them into clear, personal insight.
+              and recovery, then turns them into clear, personal insight.
             </p>
             <div className="hero-actions">
               <a className="button button--dark" href="/interest">
@@ -85,12 +97,11 @@ export default function Home() {
           <figure className="hero-visuals">
             <div className="hero-lifestyle">
               <Image
-                src="/frame-hero-man-transparent-v2.png"
+                src="/frame-hero-man-transparent-v2.webp"
                 alt="Man wearing the Frame wearable concept on his upper arm"
                 width={1092}
                 height={1440}
                 sizes="(max-width: 680px) 100vw, (max-width: 980px) 56vw, 34vw"
-                quality={88}
                 unoptimized
                 loading="eager"
                 fetchPriority="high"
@@ -110,7 +121,7 @@ export default function Home() {
               Blood pressure changes with sleep, movement, stress, exercise,
               food, posture, and recovery. Most people only see an occasional
               snapshot. Frame aims to help make sense of what happens in
-              between-without treating every temporary rise as harmful.
+              between, without treating every temporary rise as harmful.
             </p>
           </div>
           <div className="context-content">
@@ -128,12 +139,11 @@ export default function Home() {
             <figure className="product-concept-showcase">
               <div className="product-concept-showcase__media">
                 <Image
-                  src="/frame-product-concept-realistic-v3-transparent.png"
+                  src="/frame-product-concept-realistic-v3-transparent.webp"
                   alt="Refined Frame upper-arm wearable concept with an adjustable charcoal knit band, burgundy clasp, and integrated ultrasound sensor"
                   width={1254}
                   height={1254}
                   sizes="(max-width: 680px) 84vw, (max-width: 980px) 480px, 42vw"
-                  quality={88}
                   unoptimized
                 />
               </div>
@@ -169,12 +179,11 @@ export default function Home() {
             <figure className="wide-image">
               <div className="wide-image-media image-frame">
                 <Image
-                  src="/frame-sensing-concept-realistic-v3-transparent.png"
+                  src="/frame-sensing-concept-realistic-v3-transparent.webp"
                   alt="Exploded sensing concept showing the refined Frame ultrasound contact module above skin, tissue, and an artery"
                   className="cover-image"
                   fill
                   sizes="(max-width: 680px) calc(100vw - 72px), (max-width: 980px) 40vw, 480px"
-                  quality={86}
                   unoptimized
                 />
               </div>
@@ -224,12 +233,11 @@ export default function Home() {
         <div className="container software-grid">
           <figure className="software-image image-frame">
             <Image
-              src="/frame-app-studio-v5.png"
+              src="/frame-app-studio-v5.webp"
               alt="Refined Frame companion app in an accurately proportioned iPhone 17 mockup, showing 82 percent reliable overnight coverage, a motion interruption, and a late meal timing pattern"
               className="cover-image"
               fill
               sizes="(max-width: 980px) calc(100vw - 64px), 58vw"
-              quality={86}
               unoptimized
             />
           </figure>
@@ -293,6 +301,27 @@ export default function Home() {
         </div>
       </section>
 
+      {FOUNDING_CONTRIBUTORS_ENABLED ? (
+        <section className="home-contributor-section">
+          <div className="container home-contributor-grid">
+            <div>
+              <p className="eyebrow">Founding Contributors</p>
+              <h2>Join the work, not a product preorder.</h2>
+            </div>
+            <div>
+              <p>
+                A one-time $99 membership for 12 months of private development
+                updates, founder Q&amp;A, briefings, advisory votes, and optional
+                research opportunities. No device is included or guaranteed.
+              </p>
+              <a className="button button--dark" href="/founding-contributors?source=homepage">
+                Explore the membership
+              </a>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       <section className="final-cta" id="early-access">
         <div className="container final-grid">
           <div className="final-cta__copy">
@@ -330,6 +359,9 @@ export default function Home() {
           <div className="footer-links">
             <a href="#product">Product</a>
             <a href="#research">Research</a>
+            {FOUNDING_CONTRIBUTORS_ENABLED ? (
+              <a href="/founding-contributors">Founding Contributors</a>
+            ) : null}
             <a
               href={INSTAGRAM_URL}
               target="_blank"
