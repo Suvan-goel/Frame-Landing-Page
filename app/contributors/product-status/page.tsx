@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BrandWordmark } from "../../components/brand-wordmark";
+import { SiteHeader } from "../../components/site-header";
 
 export const metadata: Metadata = {
   title: "Important Product Status Disclosure — Frame",
@@ -11,8 +11,8 @@ export const metadata: Metadata = {
 export default function ProductStatusPage() {
   return (
     <main className="legal-page">
+      <SiteHeader backHref="/founding-contributors/review" backLabel="Membership review" />
       <article className="legal-shell">
-        <Link className="wordmark" href="/" aria-label="Frame home"><BrandWordmark priority /></Link>
         <p className="eyebrow">Important information</p>
         <h1>Product Status Disclosure</h1>
         <p className="legal-intro">

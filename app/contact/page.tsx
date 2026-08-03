@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { BrandWordmark } from "../components/brand-wordmark";
 import { ContactForm } from "../components/contact-form";
+import { SiteHeader } from "../components/site-header";
 
 export const metadata: Metadata = {
   title: "Contact Frame",
@@ -15,14 +14,7 @@ export const metadata: Metadata = {
 export default function ContactPage() {
   return (
     <main className="contact-page">
-      <header className="contact-page__header">
-        <Link className="contact-page__wordmark" href="/" aria-label="Frame home">
-          <BrandWordmark priority />
-        </Link>
-        <Link className="contact-page__back" href="/">
-          <span aria-hidden="true">←</span> Back to home
-        </Link>
-      </header>
+      <SiteHeader />
 
       <div className="contact-page__layout">
         <section className="contact-page__intro" aria-labelledby="contact-title">

@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { SiteHeader } from "./site-header";
 import { formatName } from "@/lib/name-format";
 import { trackMetaLead } from "./meta-pixel";
 
@@ -300,20 +301,8 @@ export function InterestFlow() {
 
   return (
     <main className="interest-flow" aria-labelledby="interest-flow-title">
+      <SiteHeader />
       <div className="interest-flow__shell">
-        <header className="interest-flow__header">
-          <Link className="interest-flow__wordmark" href="/" aria-label="Frame home">
-            Frame
-          </Link>
-          <Link
-            className="interest-flow__close"
-            href="/"
-            aria-label="Back to home"
-          >
-            <span aria-hidden="true">←</span> Back to home
-          </Link>
-        </header>
-
         {status === "joined" || status === "updated" ? (
           <div className="interest-flow__success" role="status" aria-live="polite">
             <p className="eyebrow">Thank you</p>

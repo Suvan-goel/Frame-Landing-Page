@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BrandWordmark } from "../../components/brand-wordmark";
+import { SiteHeader } from "../../components/site-header";
 
 export const metadata: Metadata = {
   title: "Founding Contributor Refund Policy — Frame",
@@ -11,8 +11,8 @@ export const metadata: Metadata = {
 export default function ContributorRefundsPage() {
   return (
     <main className="legal-page">
+      <SiteHeader backHref="/founding-contributors/review" backLabel="Membership review" />
       <article className="legal-shell">
-        <Link className="wordmark" href="/" aria-label="Frame home"><BrandWordmark priority /></Link>
         <div className="legal-draft-banner" role="note">Draft for testing — legal review required</div>
         <p className="eyebrow">Founding Contributor Membership</p>
         <h1>Refund Policy</h1>

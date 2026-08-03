@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { ContributorAuthConfirm } from "@/app/components/contributor-auth-confirm";
+import { ContributorHeader } from "@/app/components/contributor-chrome";
 
 export const metadata: Metadata = {
   title: "Signing in — Frame Founding Contributors",
@@ -7,5 +8,10 @@ export const metadata: Metadata = {
 };
 
 export default function ContributorAuthConfirmPage() {
-  return <ContributorAuthConfirm />;
+  return (
+    <>
+      <ContributorHeader memberLink={false} />
+      <ContributorAuthConfirm />
+    </>
+  );
 }

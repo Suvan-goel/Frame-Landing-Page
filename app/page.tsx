@@ -47,7 +47,7 @@ export default function Home() {
     <main>
       <header className="nav-shell">
         <nav className="nav container" aria-label="Primary navigation">
-          <a className="wordmark" href="#top" aria-label="Frame home">
+          <a className="wordmark" href="/" aria-label="Frame home">
             <BrandWordmark priority />
           </a>
           <div className="nav-links">
@@ -351,7 +351,7 @@ export default function Home() {
         <div className="container footer-top">
           <a
             className="wordmark wordmark--footer"
-            href="#top"
+            href="/"
             aria-label="Frame home"
           >
             <BrandWordmark variant="light" />

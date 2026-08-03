@@ -1,9 +1,9 @@
-/* eslint-disable @next/next/no-html-link-for-pages */
 import { BrandWordmark } from "./brand-wordmark";
+import { SiteHeader } from "./site-header";
 
 export function ContributorHeader({
   backHref = "/",
-  backLabel = "← Back to home",
+  backLabel = "Back to home",
   memberLink = true,
 }: {
   backHref?: string;
@@ -11,15 +11,13 @@ export function ContributorHeader({
   memberLink?: boolean;
 }) {
   return (
-    <header className="contributor-header">
-      <a className="contributor-header__wordmark" href="/" aria-label="Frame home">
-        <BrandWordmark priority />
-      </a>
-      <nav aria-label="Contributor navigation">
-        {memberLink ? <a href="/contributors/sign-in">Member sign in</a> : null}
-        <a href={backHref}>{backLabel}</a>
-      </nav>
-    </header>
+    <SiteHeader
+      backHref={backHref}
+      backLabel={backLabel}
+      links={memberLink
+        ? [{ href: "/contributors/sign-in", label: "Member sign in" }]
+        : []}
+    />
   );
 }
 

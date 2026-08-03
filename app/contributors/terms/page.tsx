@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { BrandWordmark } from "../../components/brand-wordmark";
+import { SiteHeader } from "../../components/site-header";
 import { CONTRIBUTOR_TERMS_VERSION } from "@/lib/contributor-membership";
 
 export const metadata: Metadata = {
@@ -12,8 +12,8 @@ export const metadata: Metadata = {
 export default function ContributorTermsPage() {
   return (
     <main className="legal-page">
+      <SiteHeader backHref="/founding-contributors/review" backLabel="Membership review" />
       <article className="legal-shell">
-        <Link className="wordmark" href="/" aria-label="Frame home"><BrandWordmark priority /></Link>
         <div className="legal-draft-banner" role="note">
           Draft for testing — not approved for live sales
         </div>
