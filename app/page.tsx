@@ -96,7 +96,7 @@ export default function Home() {
                 fetchPriority="high"
               />
             </div>
-            <figcaption>Product concept · final industrial design in development</figcaption>
+            <figcaption>Product concept. Final design in development.</figcaption>
           </figure>
         </div>
       </section>
@@ -137,7 +137,7 @@ export default function Home() {
                   unoptimized
                 />
               </div>
-              <figcaption>Product concept · final industrial design in development</figcaption>
+              <figcaption>Product concept · final design in development</figcaption>
             </figure>
             <div className="insight-list" aria-label="Response and confidence">
               {content.insights.slice(2).map(([title, description], index) => (
