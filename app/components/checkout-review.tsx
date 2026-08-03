@@ -68,9 +68,10 @@ export function CheckoutReview() {
         <ul>
           <li><span>Community access</span><strong>12 months</strong></li>
           <li><span>Founding status</span><strong>Permanent</strong></li>
-          <li><span>Automatic renewal</span><strong>None</strong></li>
+          <li><span>Renews automatically</span><strong>No</strong></li>
           <li><span>Frame device included</span><strong>No</strong></li>
-          <li><span>Product reservation or pre-order</span><strong>No</strong></li>
+          <li><span>Device reservation or pre-order</span><strong>No</strong></li>
+          <li><span>Membership refund period</span><strong>14 days</strong></li>
         </ul>
       </div>
 
@@ -82,9 +83,12 @@ export function CheckoutReview() {
             checked={acknowledged}
             onChange={(event) => { setAcknowledged(event.target.checked); setError(""); }}
           />
-          <strong>
-            I understand that I am purchasing a Founding Contributor Membership, not ordering, reserving, pre-ordering, or paying toward a Frame device. No product launch, authorization, performance level, price, or delivery date is guaranteed.
-          </strong>
+          <span className="checkout-checkbox__copy">
+            <strong>I understand this is a membership, not a Frame device order.</strong>
+            <span>
+              I am not ordering, reserving, pre-ordering, or paying toward a device. No product launch, authorization, performance level, price, or delivery date is guaranteed.
+            </span>
+          </span>
         </label>
       </fieldset>
 
@@ -96,11 +100,22 @@ export function CheckoutReview() {
             checked={marketingOptIn}
             onChange={(event) => setMarketingOptIn(event.target.checked)}
           />
-          <strong>
-            Send me occasional Frame news and future product announcements outside the updates required to deliver my membership.
-          </strong>
+          <span className="checkout-checkbox__copy">
+            <strong>
+              Send me occasional Frame news and future product announcements, in addition to essential membership updates.
+            </strong>
+            <span>You can unsubscribe at any time.</span>
+          </span>
         </label>
       </fieldset>
+
+      {error ? <p className="form-error checkout-review__error" role="alert">{error}</p> : null}
+      <button className="button button--dark checkout-review__submit" type="submit" disabled={submitting}>
+        {submitting ? "Opening secure checkout…" : "Continue to secure checkout — $99"}
+      </button>
+      <p className="checkout-review__footnote">
+        Payment details are entered on Stripe’s secure checkout. Frame does not receive or store your card number. Automatic tax is disabled during testing.
+      </p>
 
       <div className="checkout-review__policies">
         <Link href="/contributors/terms">Membership Terms</Link>
@@ -108,14 +123,6 @@ export function CheckoutReview() {
         <Link href="/privacy">Privacy Policy</Link>
         <Link href="/contributors/product-status">Important Product Status Disclosure</Link>
       </div>
-
-      {error ? <p className="form-error checkout-review__error" role="alert">{error}</p> : null}
-      <button className="button button--dark checkout-review__submit" type="submit" disabled={submitting}>
-        {submitting ? "Opening secure payment…" : "Continue to secure payment"}
-      </button>
-      <p className="checkout-review__footnote">
-        Payment details are entered on Stripe’s secure checkout. Frame does not receive or store your card number. Automatic tax is disabled during testing.
-      </p>
     </form>
   );
 }

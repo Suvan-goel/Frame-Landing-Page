@@ -17,7 +17,7 @@ export default function ContributorReviewPage() {
           <p className="eyebrow">Before payment</p>
           <h2>Know exactly what you’re joining.</h2>
           <p>
-            The review is intentionally separate from payment so the present-day membership and Frame’s product status are clear before card details are requested.
+            Review the membership, current product status, and required terms before continuing. Your card details won’t be requested until the next step.
           </p>
         </aside>
         <CheckoutReview />

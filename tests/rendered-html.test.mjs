@@ -134,8 +134,13 @@ test("server-renders the Founding Contributor funnel and disclosures", async () 
   assert.equal(reviewResponse.status, 200);
   const review = await reviewResponse.text();
   assert.match(review, /Frame Founding Contributor Membership/);
+  assert.match(review, /Your card details won’t be requested until the next step/);
   assert.match(review, /Required acknowledgment/);
+  assert.match(review, /this is a membership, not a Frame device order/);
   assert.match(review, /not ordering, reserving, pre-ordering/);
+  assert.match(review, /Membership refund period/);
+  assert.match(review, /14 days/);
+  assert.match(review, /Continue to secure checkout — \$99/);
   assert.match(review, /Automatic tax is disabled during testing/);
   assert.doesNotMatch(review, /facebook\.com\/tr\?id=/);
 
@@ -267,7 +272,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(interestFlow, /name="email"/);
   assert.doesNotMatch(page, /InterestFlow|InterestTrigger|<WaitlistPopup \/>/);
   assert.match(page, /href="\/interest"/);
-  assert.match(page, /Interested\?/);
+  assert.match(page, /I&apos;m interested/);
   assert.match(page, /Register your interest\./);
   assert.match(
     page,

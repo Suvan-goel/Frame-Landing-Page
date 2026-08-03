@@ -3527,6 +3527,9 @@ h2 {
 }
 
 .checkout-page__layout > aside {
+  position: sticky;
+  top: 110px;
+  align-self: start;
   padding-top: 12px;
 }
 
@@ -3556,7 +3559,7 @@ h2 {
 }
 
 .checkout-summary__heading h1 {
-  margin: 13px 0 30px;
+  margin: 13px 0 26px;
   font-size: var(--headline-panel);
   line-height: 1;
 }
@@ -3565,7 +3568,7 @@ h2 {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  padding: 22px 0;
+  padding: 19px 0;
   border-block: 1px solid var(--line);
 }
 
@@ -3581,7 +3584,7 @@ h2 {
 }
 
 .checkout-summary ul {
-  margin: 20px 0 38px;
+  margin: 17px 0 32px;
   padding: 0;
   list-style: none;
 }
@@ -3590,7 +3593,7 @@ h2 {
   display: flex;
   justify-content: space-between;
   gap: 25px;
-  padding: 9px 0;
+  padding: 7px 0;
   color: var(--ink-soft);
   font-size: 0.84rem;
 }
@@ -3638,15 +3641,36 @@ h2 {
   background: rgba(141, 62, 70, 0.045);
 }
 
-.checkout-checkbox strong {
+.checkout-checkbox__copy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.checkout-checkbox__copy strong {
   min-width: 0;
   font-weight: 560;
   overflow-wrap: normal;
 }
 
-.checkout-review__marketing .checkout-checkbox strong {
+.checkout-checkbox__copy > span {
   color: var(--ink-soft);
+}
+
+.checkout-review__marketing {
+  color: var(--ink-soft);
+}
+
+.checkout-review__marketing .checkout-checkbox {
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.checkout-review__marketing .checkout-checkbox__copy strong {
   font-weight: 500;
+}
+
+.checkout-review__marketing .checkout-checkbox__copy > span {
+  font-size: 0.74rem;
 }
 
 .checkout-checkbox input,
@@ -3662,8 +3686,8 @@ h2 {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 20px;
-  padding: 22px 0;
-  border-top: 1px solid var(--line);
+  margin-top: 30px;
+  padding-top: 0;
   font-size: 0.75rem;
   text-decoration: underline;
   text-underline-offset: 3px;
@@ -4434,6 +4458,10 @@ h2 {
   .founding-hero__copy {
     max-width: none;
     transform: none;
+  }
+
+  .checkout-page__layout > aside {
+    position: static;
   }
 
   .founding-hero__visual {

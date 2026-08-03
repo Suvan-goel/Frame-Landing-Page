@@ -61,7 +61,7 @@ export default function Home() {
             ) : null}
           </div>
           <a className="nav-cta" href="/interest">
-            Interested
+            I&apos;m interested
           </a>
           <MobileNavigation items={mobileNavigation} />
         </nav>
@@ -82,7 +82,7 @@ export default function Home() {
             </p>
             <div className="hero-actions">
               <a className="button button--dark" href="/interest">
-                Interested?
+                I&apos;m interested
               </a>
               <a className="text-link" href="#how-it-works">
                 How it works <span aria-hidden="true">↓</span>
