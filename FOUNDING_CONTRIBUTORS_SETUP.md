@@ -10,9 +10,9 @@ Leave this unset or false while testing:
 NEXT_PUBLIC_FOUNDING_CONTRIBUTORS_ENABLED=false
 ```
 
-The direct membership routes still exist for private review, but the homepage link, homepage membership section, waitlist-success offer, sitemap entry, and public indexing remain disabled.
+When this flag is false, the membership page, review page, and checkout API return not found. The homepage link, homepage membership section, waitlist-success offer, sitemap entry, and public indexing also remain disabled. Existing members can still sign in, and payment-success links continue to resolve so an emergency sales shutdown does not strand recent purchasers.
 
-`CONTRIBUTOR_PREVIEW_MODE=true` only returns sample membership data on `localhost` or `127.0.0.1`. Set it to false in every shared or production environment.
+`CONTRIBUTOR_PREVIEW_MODE=true` makes the sales pages and sample membership data available only on `localhost`, `127.0.0.1`, or `[::1]`. Set it to false in every shared or production environment.
 
 ## 2. Prepare Supabase
 

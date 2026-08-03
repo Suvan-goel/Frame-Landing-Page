@@ -28,6 +28,11 @@ type ContributorRow = {
   onboarding_completed_at: string | null;
 };
 
+type ContributorPaymentRow = {
+  amount_total: number;
+  currency: string;
+};
+
 export type AuthenticatedContributor = {
   row: ContributorRow;
   accessToken: string;
@@ -96,7 +101,10 @@ export async function getAuthenticatedContributor(
   return { row: contributor as ContributorRow, accessToken };
 }
 
-function membershipFromRow(row: ContributorRow): ContributorMembership {
+function membershipFromRow(
+  row: ContributorRow,
+  payment: ContributorPaymentRow,
+): ContributorMembership {
   return {
     id: row.id,
     email: row.email,
@@ -107,8 +115,8 @@ function membershipFromRow(row: ContributorRow): ContributorMembership {
     paidAt: row.paid_at,
     accessStartsAt: row.access_starts_at,
     accessExpiresAt: row.access_expires_at,
-    amountPaidCents: 9_900,
-    currency: "usd",
+    amountPaidCents: payment.amount_total,
+    currency: payment.currency,
     futureDiscountEligible: row.future_discount_eligible,
     termsVersion: row.terms_version,
     onboardingCompletedAt: row.onboarding_completed_at,
@@ -127,8 +135,16 @@ export async function loadContributorDashboard(
 
   const supabase = await getSupabaseAdmin();
   const contributorId = authenticated.row.id;
-  const [profileResult, updatesResult, questionsResult, eventsResult, votesResult, responsesResult, researchResult] =
+  const [paymentResult, profileResult, updatesResult, questionsResult, eventsResult, votesResult, responsesResult, researchResult] =
     await Promise.all([
+      supabase
+        .from("contributor_payments")
+        .select("amount_total,currency")
+        .eq("contributor_id", contributorId)
+        .not("payment_status", "like", "duplicate_%")
+        .order("paid_at", { ascending: true })
+        .limit(1)
+        .maybeSingle(),
       supabase
         .from("contributor_profiles")
         .select("preferred_name,country,learning_goal,product_areas,founders_wall_opt_in")
@@ -166,6 +182,7 @@ export async function loadContributorDashboard(
     ]);
 
   const firstError = [
+    paymentResult.error,
     profileResult.error,
     updatesResult.error,
     questionsResult.error,
@@ -175,6 +192,9 @@ export async function loadContributorDashboard(
     researchResult.error,
   ].find(Boolean);
   if (firstError) throw firstError;
+  if (!paymentResult.data) {
+    throw new Error("The contributor payment record was not found.");
+  }
 
   const selectedOptions = new Map(
     (responsesResult.data ?? []).map((response) => [response.vote_id, response.option_id]),
@@ -225,7 +245,10 @@ export async function loadContributorDashboard(
   );
 
   return {
-    membership: membershipFromRow(authenticated.row),
+    membership: membershipFromRow(
+      authenticated.row,
+      paymentResult.data as ContributorPaymentRow,
+    ),
     profile: {
       preferredName:
         profileResult.data?.preferred_name ?? authenticated.row.preferred_name ?? "",

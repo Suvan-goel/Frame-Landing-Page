@@ -13,12 +13,17 @@ type ContributorAdminRow = {
   preferred_name: string | null;
   email: string;
   membership_status: string;
-  amount_paid_cents: number;
-  currency: string;
   paid_at: string;
   access_expires_at: string;
   onboarding_completed_at: string | null;
   future_discount_eligible: boolean;
+};
+
+type ContributorPaymentAdminRow = {
+  contributor_id: string;
+  amount_total: number;
+  currency: string;
+  paid_at: string | null;
 };
 
 export default async function ContributorAdminPage() {
@@ -26,18 +31,46 @@ export default async function ContributorAdminPage() {
   if (!(await isWaitlistAdmin(user.email))) notFound();
 
   const supabase = await getSupabaseAdmin();
-  const [members, questions, updates, votes, events, research] = await Promise.all([
-    supabase.from("contributors").select("id,contributor_number,full_name,preferred_name,email,membership_status,amount_paid_cents,currency,paid_at,access_expires_at,onboarding_completed_at,future_discount_eligible").order("contributor_number", { ascending: false }).limit(500).returns<ContributorAdminRow[]>(),
+  const members = await supabase
+    .from("contributors")
+    .select("id,contributor_number,full_name,preferred_name,email,membership_status,paid_at,access_expires_at,onboarding_completed_at,future_discount_eligible")
+    .order("contributor_number", { ascending: false })
+    .limit(500)
+    .returns<ContributorAdminRow[]>();
+  if (members.error) throw new Error("The contributor dashboard is temporarily unavailable.");
+
+  const rows = members.data ?? [];
+  const contributorIds = rows.map((member) => member.id);
+  const paymentQuery = contributorIds.length
+    ? supabase
+        .from("contributor_payments")
+        .select("contributor_id,amount_total,currency,paid_at")
+        .in("contributor_id", contributorIds)
+        .not("payment_status", "like", "duplicate_%")
+        .order("paid_at", { ascending: true })
+        .returns<ContributorPaymentAdminRow[]>()
+    : Promise.resolve({ data: [] as ContributorPaymentAdminRow[], error: null });
+  const [payments, questions, updates, votes, events, research] = await Promise.all([
+    paymentQuery,
     supabase.from("contributor_questions").select("id", { count: "exact", head: true }).is("answered_at", null),
     supabase.from("contributor_updates").select("id", { count: "exact", head: true }).eq("is_published", true),
     supabase.from("contributor_votes").select("id", { count: "exact", head: true }).eq("is_published", true),
     supabase.from("contributor_events").select("id", { count: "exact", head: true }).eq("is_published", true),
     supabase.from("contributor_research_opportunities").select("id", { count: "exact", head: true }).eq("is_published", true),
   ]);
-  if (members.error) throw new Error("The contributor dashboard is temporarily unavailable.");
-  const rows = members.data ?? [];
+  if (payments.error) throw new Error("Contributor payment records are temporarily unavailable.");
+
+  const paymentByContributor = new Map<string, ContributorPaymentAdminRow>();
+  for (const payment of payments.data ?? []) {
+    if (!paymentByContributor.has(payment.contributor_id)) {
+      paymentByContributor.set(payment.contributor_id, payment);
+    }
+  }
   const activeMembers = rows.filter((member) => member.membership_status === "active");
-  const grossCents = rows.reduce((total, member) => total + member.amount_paid_cents, 0);
+  const grossCents = rows.reduce(
+    (total, member) => total + (paymentByContributor.get(member.id)?.amount_total ?? 0),
+    0,
+  );
 
   return (
     <main className="admin-page">
@@ -68,7 +101,11 @@ export default async function ContributorAdminPage() {
             {rows.map((member) => <tr key={member.id}>
               <td className="admin-lead"><strong>#{String(member.contributor_number).padStart(4, "0")} · {member.preferred_name || member.full_name}</strong><a href={`mailto:${member.email}`}>{member.email}</a></td>
               <td><span className={`admin-status admin-status--${member.membership_status}`}>{member.membership_status}</span></td>
-              <td>{new Intl.NumberFormat("en-US", { style: "currency", currency: member.currency.toUpperCase(), maximumFractionDigits: 0 }).format(member.amount_paid_cents / 100)}<br /><small>{new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" }).format(new Date(member.paid_at))}</small></td>
+              <td>{(() => {
+                const payment = paymentByContributor.get(member.id);
+                if (!payment) return "Missing payment record";
+                return <>{new Intl.NumberFormat("en-US", { style: "currency", currency: payment.currency.toUpperCase(), maximumFractionDigits: 0 }).format(payment.amount_total / 100)}<br /><small>{new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" }).format(new Date(payment.paid_at ?? member.paid_at))}</small></>;
+              })()}</td>
               <td>{new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" }).format(new Date(member.access_expires_at))}</td>
               <td>{member.onboarding_completed_at ? "Complete" : "Pending"}</td><td>{member.future_discount_eligible ? "Eligible" : "No"}</td>
             </tr>)}

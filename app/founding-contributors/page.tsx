@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Image from "next/image";
+import { notFound } from "next/navigation";
 import { ContributorFooter, ContributorHeader } from "../components/contributor-chrome";
+import { isFoundingContributorSalesPageEnabled } from "@/lib/contributor-sales-page.server";
 import {
   conditionalBenefits,
   currentBenefits,
@@ -33,6 +35,8 @@ export const metadata: Metadata = {
   },
 };
 
+export const dynamic = "force-dynamic";
+
 const faq = [
   [
     "Am I purchasing a Frame device?",
@@ -64,7 +68,9 @@ const faq = [
   ],
 ] as const;
 
-export default function FoundingContributorsPage() {
+export default async function FoundingContributorsPage() {
+  if (!(await isFoundingContributorSalesPageEnabled())) notFound();
+
   return (
     <main className="founding-page">
       <ContributorHeader />

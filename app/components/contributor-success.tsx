@@ -20,6 +20,14 @@ function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-GB", { dateStyle: "long" }).format(new Date(value));
 }
 
+function formatMoney(cents: number, currency: string) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currency.toUpperCase(),
+    maximumFractionDigits: 0,
+  }).format(cents / 100);
+}
+
 export function ContributorSuccess() {
   const [result, setResult] = useState<StatusResult>({ status: "loading" });
 
@@ -113,7 +121,7 @@ export function ContributorSuccess() {
         Welcome, {membership.fullName}. Your Founding Contributor status and 12 months of private community access are now active.
       </p>
       <dl>
-        <div><dt>Payment</dt><dd>$99 · one-time payment</dd></div>
+        <div><dt>Payment</dt><dd>{formatMoney(membership.amountPaidCents, membership.currency)} · one-time payment</dd></div>
         <div><dt>Membership started</dt><dd>{formatDate(membership.paidAt)}</dd></div>
         <div><dt>Access through</dt><dd>{formatDate(membership.accessExpiresAt)}</dd></div>
         <div><dt>Renewal</dt><dd>No automatic renewal</dd></div>

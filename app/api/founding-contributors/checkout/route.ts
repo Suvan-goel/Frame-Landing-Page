@@ -2,7 +2,10 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin.server";
 import {
   CONTRIBUTOR_TERMS_VERSION,
 } from "@/lib/contributor-membership";
-import { isLocalContributorPreview } from "@/lib/runtime-env.server";
+import {
+  isFoundingContributorSalesRequestEnabled,
+  isLocalContributorPreview,
+} from "@/lib/runtime-env.server";
 import { getStripe, getStripePriceId } from "@/lib/stripe.server";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +29,10 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
 }
 
 export async function POST(request: Request) {
+  if (!(await isFoundingContributorSalesRequestEnabled(request))) {
+    return jsonResponse({ error: "Not found." }, 404);
+  }
+
   const contentLength = Number(request.headers.get("content-length") ?? "0");
   if (contentLength > MAX_BODY_BYTES) {
     return jsonResponse({ error: "Request is too large." }, 413);

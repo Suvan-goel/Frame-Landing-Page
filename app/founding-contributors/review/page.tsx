@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 import { CheckoutReview } from "../../components/checkout-review";
 import { ContributorHeader } from "../../components/contributor-chrome";
+import { isFoundingContributorSalesPageEnabled } from "@/lib/contributor-sales-page.server";
 
 export const metadata: Metadata = {
   title: "Review your Founding Contributor Membership — Frame",
@@ -8,7 +10,11 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function ContributorReviewPage() {
+export const dynamic = "force-dynamic";
+
+export default async function ContributorReviewPage() {
+  if (!(await isFoundingContributorSalesPageEnabled())) notFound();
+
   return (
     <main className="checkout-page">
       <ContributorHeader backHref="/founding-contributors" backLabel="Back to membership details" />

@@ -39,7 +39,7 @@ export async function GET(request: Request) {
     const supabase = await getSupabaseAdmin();
     const paymentResult = await supabase
       .from("contributor_payments")
-      .select("contributor_id,payment_status")
+      .select("contributor_id,payment_status,amount_total,currency")
       .eq("stripe_checkout_session_id", sessionId)
       .maybeSingle();
     if (paymentResult.error) throw paymentResult.error;
@@ -63,8 +63,8 @@ export async function GET(request: Request) {
           fullName: memberResult.data.full_name,
           paidAt: memberResult.data.paid_at,
           accessExpiresAt: memberResult.data.access_expires_at,
-          amountPaidCents: 9_900,
-          currency: "usd",
+          amountPaidCents: paymentResult.data.amount_total,
+          currency: paymentResult.data.currency,
         },
       });
     }

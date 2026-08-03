@@ -24,6 +24,22 @@ async function render(path = "/", init) {
   );
 }
 
+async function withRuntimeEnv(values, run) {
+  const previous = new Map(
+    Object.keys(values).map((key) => [key, process.env[key]]),
+  );
+  for (const [key, value] of Object.entries(values)) process.env[key] = value;
+
+  try {
+    return await run();
+  } finally {
+    for (const [key, value] of previous) {
+      if (value === undefined) delete process.env[key];
+      else process.env[key] = value;
+    }
+  }
+}
+
 test("server-renders the Frame landing page", async () => {
   const response = await render();
   assert.equal(response.status, 200);
@@ -95,13 +111,16 @@ test("server-renders the contact page", async () => {
 });
 
 test("server-renders the Founding Contributor funnel and disclosures", async () => {
+  const salesEnabled = { NEXT_PUBLIC_FOUNDING_CONTRIBUTORS_ENABLED: "true" };
   const [membershipResponse, reviewResponse, successResponse, signInResponse] =
-    await Promise.all([
-      render("/founding-contributors"),
-      render("/founding-contributors/review"),
-      render("/founding-contributors/success"),
-      render("/contributors/sign-in"),
-    ]);
+    await withRuntimeEnv(salesEnabled, () =>
+      Promise.all([
+        render("/founding-contributors"),
+        render("/founding-contributors/review"),
+        render("/founding-contributors/success"),
+        render("/contributors/sign-in"),
+      ]),
+    );
 
   assert.equal(membershipResponse.status, 200);
   const membership = await membershipResponse.text();
@@ -148,6 +167,23 @@ test("server-renders the Founding Contributor funnel and disclosures", async () 
   assert.match(await successResponse.text(), /activating your membership/i);
   assert.equal(signInResponse.status, 200);
   assert.match(await signInResponse.text(), /Sign in to the contributor hub/);
+});
+
+test("server-enforces the Founding Contributor sales launch switch", async () => {
+  const [membershipResponse, reviewResponse, checkoutResponse] = await Promise.all([
+    render("/founding-contributors"),
+    render("/founding-contributors/review"),
+    render("/api/founding-contributors/checkout", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ acknowledged: true }),
+    }),
+  ]);
+
+  assert.equal(membershipResponse.status, 404);
+  assert.equal(reviewResponse.status, 404);
+  assert.equal(checkoutResponse.status, 404);
+  assert.match(await checkoutResponse.text(), /not found/i);
 });
 
 test("renders draft contributor policies and keeps member routes private", async () => {
@@ -385,14 +421,43 @@ test("rejects incomplete interest responses before storage", async () => {
 });
 
 test("requires explicit membership acknowledgment before checkout", async () => {
-  const response = await render("/api/founding-contributors/checkout", {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify({ acknowledged: false }),
-  });
+  const response = await withRuntimeEnv(
+    { NEXT_PUBLIC_FOUNDING_CONTRIBUTORS_ENABLED: "true" },
+    () =>
+      render("/api/founding-contributors/checkout", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ acknowledged: false }),
+      }),
+  );
 
   assert.equal(response.status, 400);
   assert.match(await response.text(), /not ordering or reserving a Frame device/i);
+});
+
+test("uses recorded payment data in contributor and owner views", async () => {
+  const [access, status, success, admin, checkout, membershipPage, reviewPage] =
+    await Promise.all([
+      readFile(new URL("../lib/contributor-access.server.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/founding-contributors/status/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/components/contributor-success.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../app/admin/contributors/page.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/founding-contributors/checkout/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/founding-contributors/page.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../app/founding-contributors/review/page.tsx", import.meta.url), "utf8"),
+    ]);
+
+  assert.match(access, /from\("contributor_payments"\)/);
+  assert.match(access, /amountPaidCents: payment\.amount_total/);
+  assert.match(access, /currency: payment\.currency/);
+  assert.match(status, /amountPaidCents: paymentResult\.data\.amount_total/);
+  assert.match(status, /currency: paymentResult\.data\.currency/);
+  assert.match(success, /formatMoney\(membership\.amountPaidCents, membership\.currency\)/);
+  assert.match(admin, /from\("contributor_payments"\)/);
+  assert.doesNotMatch(admin, /amount_paid_cents/);
+  assert.match(checkout, /isFoundingContributorSalesRequestEnabled\(request\)/);
+  assert.match(membershipPage, /isFoundingContributorSalesPageEnabled\(\)/);
+  assert.match(reviewPage, /isFoundingContributorSalesPageEnabled\(\)/);
 });
 
 test("rejects unverified Stripe webhooks", async () => {
