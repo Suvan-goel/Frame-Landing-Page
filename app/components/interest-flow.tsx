@@ -266,9 +266,7 @@ export function InterestFlow() {
       }
 
       setStatus(result.status);
-      if (result.status === "joined") {
-        trackMetaLead();
-      }
+      trackMetaLead();
       try {
         window.localStorage.setItem(WAITLIST_JOINED_STORAGE_KEY, "true");
       } catch {
