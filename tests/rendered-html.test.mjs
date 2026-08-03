@@ -171,7 +171,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(interestFlow, /MIN_SITUATION_LENGTH = 20/);
   assert.match(
     interestFlow,
-    /What would you want Frame to help you understand or do that you can’t easily do today\?/,
+    /What would you want Frame to help you understand or do that you can’t easily today\?/,
   );
   assert.match(interestFlow, /MAX_SITUATION_LENGTH = 750/);
   assert.match(interestFlow, /type="radio"/);

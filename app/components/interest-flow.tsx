@@ -284,7 +284,7 @@ export function InterestFlow() {
 
   const titles = [
     "What is the main reason you want Frame?",
-    "What would you want Frame to help you understand or do that you can’t easily do today?",
+    "What would you want Frame to help you understand or do that you can’t easily today?",
     "How do you currently monitor your blood pressure?",
     "Would you be willing to speak with us for 20 minutes?",
     "A little about you.",
@@ -361,7 +361,7 @@ export function InterestFlow() {
               {step === 1 ? (
                 <div className="interest-flow__text-response form-field">
                   <label htmlFor="interest-recent-situation" className="sr-only">
-                    What would you want Frame to help you understand or do that you can&apos;t easily do today?
+                    What would you want Frame to help you understand or do that you can&apos;t easily today?
                   </label>
                   <textarea
                     id="interest-recent-situation"
