@@ -131,7 +131,7 @@ export function ContactForm() {
         </p>
         <div className="contact-form__success-actions">
           <Link className="button button--dark" href="/">
-            Back to Frame
+            <span aria-hidden="true">←</span> Back to home
           </Link>
           <button type="button" onClick={resetForm}>
             Send another message

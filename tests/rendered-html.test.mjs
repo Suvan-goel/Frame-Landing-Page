@@ -76,7 +76,7 @@ test("server-renders the dedicated interest page", async () => {
   assert.match(html, /name="mainReason"/);
   assert.match(html, /type="radio"/);
   assert.match(html, /aria-label="Step 1 of 5"/);
-  assert.match(html, /aria-label="Back to Frame"/);
+  assert.match(html, /aria-label="Back to home"/);
   assert.doesNotMatch(html, /<dialog/i);
 });
 

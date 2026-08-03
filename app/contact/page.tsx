@@ -20,7 +20,7 @@ export default function ContactPage() {
           <BrandWordmark priority />
         </Link>
         <Link className="contact-page__back" href="/">
-          Back to Frame <span aria-hidden="true">×</span>
+          <span aria-hidden="true">←</span> Back to home
         </Link>
       </header>
 

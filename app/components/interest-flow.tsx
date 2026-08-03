@@ -300,9 +300,9 @@ export function InterestFlow() {
           <Link
             className="interest-flow__close"
             href="/"
-            aria-label="Back to Frame"
+            aria-label="Back to home"
           >
-            <span aria-hidden="true">←</span> Back to Frame
+            <span aria-hidden="true">←</span> Back to home
           </Link>
         </header>
 
@@ -318,7 +318,7 @@ export function InterestFlow() {
             </p>
             <div className="interest-flow__success-actions">
               <Link className="button button--dark" href="/">
-                Back to Frame
+                <span aria-hidden="true">←</span> Back to home
               </Link>
               <button className="interest-flow__text-button" type="button" onClick={resetFlow}>
                 Submit another response

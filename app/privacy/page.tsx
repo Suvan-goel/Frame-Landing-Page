@@ -104,7 +104,7 @@ export default function PrivacyPage() {
         </p>
 
         <a className="text-link" href="/">
-          ← Back to Frame
+          <span aria-hidden="true">←</span> Back to home
         </a>
       </article>
     </main>
