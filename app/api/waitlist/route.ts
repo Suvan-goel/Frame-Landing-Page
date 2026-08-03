@@ -134,7 +134,7 @@ export async function POST(request: Request) {
   ) {
     return jsonResponse(
       {
-        error: `Write between ${MIN_SITUATION_LENGTH} and ${MAX_SITUATION_LENGTH} characters about what Frame would solve for you.`,
+        error: `Write between ${MIN_SITUATION_LENGTH} and ${MAX_SITUATION_LENGTH} characters about what you want Frame to help you understand or do.`,
       },
       400,
     );

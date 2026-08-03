@@ -171,7 +171,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(interestFlow, /MIN_SITUATION_LENGTH = 20/);
   assert.match(
     interestFlow,
-    /What would frame solve for you that existing wearables don't\?/,
+    /What would you want Frame to help you understand or do that you can’t easily do today\?/,
   );
   assert.match(interestFlow, /MAX_SITUATION_LENGTH = 750/);
   assert.match(interestFlow, /type="radio"/);
@@ -338,6 +338,7 @@ test("separates admin leads and hides Suvan test signups", async () => {
   assert.match(adminPage, /type LeadTab = "qualified" \| "unqualified"/);
   assert.match(adminPage, /Qualified leads/);
   assert.match(adminPage, /Unqualified leads/);
+  assert.match(adminPage, /What Frame should help with/);
   assert.match(adminPage, /isQualifiedSignup/);
   assert.match(
     adminPage,

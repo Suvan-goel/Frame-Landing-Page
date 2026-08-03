@@ -150,7 +150,7 @@ export function InterestFlow() {
     if (currentStep === 1) {
       const length = recentSituation.trim().length;
       if (length < MIN_SITUATION_LENGTH) {
-        nextErrors.recentSituation = `Write at least ${MIN_SITUATION_LENGTH} characters about what Frame would solve for you.`;
+        nextErrors.recentSituation = `Write at least ${MIN_SITUATION_LENGTH} characters about what you want Frame to help you understand or do.`;
       } else if (length > MAX_SITUATION_LENGTH) {
         nextErrors.recentSituation = `Keep your response to ${MAX_SITUATION_LENGTH} characters or fewer.`;
       }
@@ -284,7 +284,7 @@ export function InterestFlow() {
 
   const titles = [
     "What is the main reason you want Frame?",
-    "What would frame solve for you that existing wearables don't?",
+    "What would you want Frame to help you understand or do that you can’t easily do today?",
     "How do you currently monitor your blood pressure?",
     "Would you be willing to speak with us for 20 minutes?",
     "A little about you.",
@@ -361,7 +361,7 @@ export function InterestFlow() {
               {step === 1 ? (
                 <div className="interest-flow__text-response form-field">
                   <label htmlFor="interest-recent-situation" className="sr-only">
-                    What would frame solve for you that existing wearables don&apos;t?
+                    What would you want Frame to help you understand or do that you can&apos;t easily do today?
                   </label>
                   <textarea
                     id="interest-recent-situation"
@@ -379,7 +379,7 @@ export function InterestFlow() {
                     autoFocus
                   />
                   <div className="field-hint" id="interest-recent-situation-hint">
-                    <span>Describe what Frame would solve · minimum {MIN_SITUATION_LENGTH} characters</span>
+                    <span>Share a specific situation if you can · minimum {MIN_SITUATION_LENGTH} characters</span>
                     <span>{recentSituation.trim().length}/{MAX_SITUATION_LENGTH}</span>
                   </div>
                   {errors.recentSituation ? <p className="form-error" role="alert">{errors.recentSituation}</p> : null}

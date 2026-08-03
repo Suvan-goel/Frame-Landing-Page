@@ -208,7 +208,7 @@ export default async function WaitlistAdminPage({
                 <tr>
                   <th>Lead</th>
                   <th>Main reason</th>
-                  <th>Recent situation</th>
+                  <th>What Frame should help with</th>
                   <th>Current monitoring</th>
                   <th>20-min call</th>
                   <th>Source</th>
