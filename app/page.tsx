@@ -97,10 +97,10 @@ export default function Home() {
           <figure className="hero-visuals">
             <div className="hero-lifestyle">
               <Image
-                src="/frame-hero-man-transparent-v2.webp"
+                src="/frame-hero-man-transparent-v3.webp"
                 alt="Man wearing the Frame wearable concept on his upper arm"
-                width={1092}
-                height={1440}
+                width={1089}
+                height={1444}
                 sizes="(max-width: 680px) 100vw, (max-width: 980px) 56vw, 34vw"
                 unoptimized
                 loading="eager"

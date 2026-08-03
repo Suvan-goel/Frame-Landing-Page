@@ -46,7 +46,7 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /Research and engineering inquiries/);
   assert.match(html, /Frame is under development and is not currently available for sale\./);
   assert.match(html, /frame-product-concept-realistic-v3-transparent\.webp/);
-  assert.match(html, /frame-hero-man-transparent-v2\.webp/);
+  assert.match(html, /frame-hero-man-transparent-v3\.webp/);
   assert.match(html, /frame-sensing-concept-realistic-v3-transparent\.webp/);
   assert.match(html, /frame-app-studio-v5\.webp/);
   assert.doesNotMatch(html, /facebook\.com\/tr\?id=/);
@@ -237,10 +237,10 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     css,
     /\.product-concept-showcase__media img\s*\{[\s\S]*?width: min\(24vw, 270px\);/,
   );
-  assert.match(page, /src="\/frame-hero-man-transparent-v2\.webp"/);
+  assert.match(page, /src="\/frame-hero-man-transparent-v3\.webp"/);
   assert.match(
     page,
-    /src="\/frame-hero-man-transparent-v2\.webp"[\s\S]*?width=\{1092\}[\s\S]*?height=\{1440\}/,
+    /src="\/frame-hero-man-transparent-v3\.webp"[\s\S]*?width=\{1089\}[\s\S]*?height=\{1444\}/,
   );
   assert.match(css, /\.hero-visuals\s*\{[\s\S]*?top: 12px;/);
   assert.doesNotMatch(css, /\.hero-lifestyle\s*\{[^}]*transform:/);
@@ -342,8 +342,8 @@ test("uses generated raster visuals and keeps the page editable", async () => {
       "frame-app-studio.png",
       "frame-app-studio-v5.png",
       "frame-app-studio-v5.webp",
-      "frame-hero-man-transparent-v2.png",
-      "frame-hero-man-transparent-v2.webp",
+      "frame-hero-man-transparent-v3.png",
+      "frame-hero-man-transparent-v3.webp",
       "frame-product-concept-realistic-v3-transparent.png",
       "frame-product-concept-realistic-v3-transparent.webp",
       "frame-sensing-concept-realistic-v2.png",
@@ -357,8 +357,8 @@ test("uses generated raster visuals and keeps the page editable", async () => {
       "frame-app-studio.png",
       "frame-app-studio-v5.png",
       "frame-app-studio-v5.webp",
-      "frame-hero-man-transparent-v2.png",
-      "frame-hero-man-transparent-v2.webp",
+      "frame-hero-man-transparent-v3.png",
+      "frame-hero-man-transparent-v3.webp",
       "frame-product-concept-realistic-v3-transparent.png",
       "frame-product-concept-realistic-v3-transparent.webp",
       "frame-sensing-concept-realistic-v2.png",
