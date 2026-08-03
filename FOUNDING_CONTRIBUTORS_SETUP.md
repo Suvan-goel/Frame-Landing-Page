@@ -88,14 +88,14 @@ Test at least these cases in Stripe test mode:
 6. Welcome email arrives and its sign-in link works.
 7. Passwordless sign-in with the purchase email opens the hub.
 8. A different email cannot access that membership.
-9. Onboarding, question submission, and advisory vote submission.
+9. Contributor profile editing, question submission, and advisory vote submission.
 10. Duplicate purchase with the same email does not extend access or issue a second founding number, and initiates an automatic full refund without revoking the original membership.
 11. Full refund from Stripe revokes access, founding status, and future-discount eligibility.
 12. A dispute suspends access; a won dispute restores it.
 13. Member, review, success, admin, and API routes do not initialize the Meta Pixel.
 14. Desktop and mobile layout, keyboard navigation, and visible focus states.
 
-Use `/admin/contributors` to verify member status, access dates, onboarding, open questions, and published-content counts. Draft member content can be prepared in the Supabase table editor; only rows with `is_published=true` appear in the hub.
+Use `/admin/contributors` to verify member status, access dates, profile completion, open questions, and published-content counts. Draft member content can be prepared in the Supabase table editor; only rows with `is_published=true` appear in the hub.
 
 ## 6. Launch gates
 

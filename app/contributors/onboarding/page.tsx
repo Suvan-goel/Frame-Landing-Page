@@ -1,17 +1,22 @@
 import type { Metadata } from "next";
-import { ContributorHeader } from "@/app/components/contributor-chrome";
-import { ContributorOnboarding } from "@/app/components/contributor-onboarding";
+import { redirect } from "next/navigation";
 
 export const metadata: Metadata = {
-  title: "Contributor onboarding — Frame",
+  title: "Contributor profile — Frame",
   robots: { index: false, follow: false },
 };
 
-export default function ContributorOnboardingPage() {
-  return (
-    <>
-      <ContributorHeader backHref="/contributors" backLabel="Back to hub" memberLink={false} />
-      <ContributorOnboarding />
-    </>
+export const dynamic = "force-dynamic";
+
+export default async function ContributorOnboardingPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ preview?: string }>;
+}) {
+  const query = await searchParams;
+  redirect(
+    query.preview === "1"
+      ? "/contributors?preview=1&section=profile"
+      : "/contributors?section=profile",
   );
 }

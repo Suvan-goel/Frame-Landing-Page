@@ -127,8 +127,13 @@ export async function loadContributorDashboard(
 
   const supabase = await getSupabaseAdmin();
   const contributorId = authenticated.row.id;
-  const [updatesResult, questionsResult, eventsResult, votesResult, responsesResult, researchResult] =
+  const [profileResult, updatesResult, questionsResult, eventsResult, votesResult, responsesResult, researchResult] =
     await Promise.all([
+      supabase
+        .from("contributor_profiles")
+        .select("preferred_name,country,learning_goal,product_areas,founders_wall_opt_in")
+        .eq("contributor_id", contributorId)
+        .maybeSingle(),
       supabase
         .from("contributor_updates")
         .select("id,title,summary,body,category,published_at")
@@ -161,6 +166,7 @@ export async function loadContributorDashboard(
     ]);
 
   const firstError = [
+    profileResult.error,
     updatesResult.error,
     questionsResult.error,
     eventsResult.error,
@@ -220,6 +226,16 @@ export async function loadContributorDashboard(
 
   return {
     membership: membershipFromRow(authenticated.row),
+    profile: {
+      preferredName:
+        profileResult.data?.preferred_name ?? authenticated.row.preferred_name ?? "",
+      country: profileResult.data?.country ?? "",
+      learningGoal: profileResult.data?.learning_goal ?? "",
+      productAreas: Array.isArray(profileResult.data?.product_areas)
+        ? profileResult.data.product_areas
+        : [],
+      foundersWallOptIn: Boolean(profileResult.data?.founders_wall_opt_in),
+    },
     updates,
     questions,
     events,

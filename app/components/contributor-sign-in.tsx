@@ -29,15 +29,19 @@ export function ContributorSignIn() {
       return;
     }
 
-    const redirectTo = `${window.location.origin}/contributors/auth/confirm`;
+    const next = new URLSearchParams(window.location.search).get("next");
+    const redirectUrl = new URL("/contributors/auth/confirm", window.location.origin);
+    if (next === "profile") redirectUrl.searchParams.set("next", "profile");
     const result = await client.auth.signInWithOtp({
       email: email.trim(),
-      options: { emailRedirectTo: redirectTo, shouldCreateUser: false },
+      options: { emailRedirectTo: redirectUrl.toString(), shouldCreateUser: false },
     });
     setMessage(
       result.error
         ? "We could not send that sign-in link. Check that you used your membership email."
-        : "Check your inbox for a secure sign-in link. It will return you to the contributor hub.",
+        : next === "profile"
+          ? "Check your inbox for a secure sign-in link. It will return you to your profile in the contributor hub."
+          : "Check your inbox for a secure sign-in link. It will return you to the contributor hub.",
     );
     setSending(false);
   }

@@ -15,6 +15,14 @@ export type ContributorMembership = {
   onboardingCompletedAt: string | null;
 };
 
+export type ContributorProfile = {
+  preferredName: string;
+  country: string;
+  learningGoal: string;
+  productAreas: string[];
+  foundersWallOptIn: boolean;
+};
+
 export type ContributorUpdate = {
   id: string;
   title: string;
@@ -61,6 +69,7 @@ export type ContributorResearchOpportunity = {
 
 export type ContributorDashboard = {
   membership: ContributorMembership;
+  profile: ContributorProfile;
   updates: ContributorUpdate[];
   questions: ContributorQuestion[];
   events: ContributorEvent[];

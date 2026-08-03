@@ -47,7 +47,7 @@ export default function PrivacyPage() {
           </p>
           <p>
             The private contributor hub uses passwordless authentication. If
-            you complete onboarding or participate in the hub, we may also
+            you complete your contributor profile or participate in the hub, we may also
             collect your preferred name, country, interests, programme
             feedback, questions, advisory votes, event participation, and
             optional research applications. Please do not submit diagnoses,
@@ -93,7 +93,7 @@ export default function PrivacyPage() {
             technologies, which Meta processes under its own privacy policy. We
             do not send your name, email address, age, gender, or written
             responses to Meta through the Pixel. The Pixel is not initialized
-            on checkout review, payment-success, member sign-in, onboarding,
+            on checkout review, payment-success, member sign-in, contributor-profile,
             private contributor-hub, or administration routes.
           </p>
         </section>

@@ -46,7 +46,7 @@ export default async function ContributorAdminPage() {
           <div>
             <a className="wordmark" href="/" aria-label="Frame home"><BrandWordmark /></a>
             <p className="eyebrow">Owner view</p><h1>Founding Contributors</h1>
-            <p>Payments, access, onboarding, and member-content readiness.</p>
+            <p>Payments, access, profile completion, and member-content readiness.</p>
           </div>
           <div className="admin-actions"><a href="/admin/waitlist">Waitlist</a><a className="text-link" href={chatGPTSignOutPath("/")}>Sign out</a></div>
         </header>
@@ -54,7 +54,7 @@ export default async function ContributorAdminPage() {
         <section className="admin-metrics" aria-label="Contributor programme metrics">
           <article><span>Active members</span><strong>{activeMembers.length}</strong></article>
           <article><span>Gross payments</span><strong>{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(grossCents / 100)}</strong></article>
-          <article><span>Onboarded</span><strong>{rows.filter((member) => member.onboarding_completed_at).length}</strong></article>
+          <article><span>Profiles complete</span><strong>{rows.filter((member) => member.onboarding_completed_at).length}</strong></article>
           <article><span>Open questions</span><strong>{questions.count ?? 0}</strong></article>
         </section>
         <section className="admin-content-status">
@@ -64,7 +64,7 @@ export default async function ContributorAdminPage() {
         </section>
 
         {rows.length ? (
-          <div className="admin-table-shell"><table className="admin-table"><thead><tr><th>Contributor</th><th>Status</th><th>Payment</th><th>Access ends</th><th>Onboarding</th><th>Discount</th></tr></thead><tbody>
+          <div className="admin-table-shell"><table className="admin-table"><thead><tr><th>Contributor</th><th>Status</th><th>Payment</th><th>Access ends</th><th>Profile</th><th>Discount</th></tr></thead><tbody>
             {rows.map((member) => <tr key={member.id}>
               <td className="admin-lead"><strong>#{String(member.contributor_number).padStart(4, "0")} · {member.preferred_name || member.full_name}</strong><a href={`mailto:${member.email}`}>{member.email}</a></td>
               <td><span className={`admin-status admin-status--${member.membership_status}`}>{member.membership_status}</span></td>

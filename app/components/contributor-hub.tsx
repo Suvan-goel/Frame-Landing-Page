@@ -1,11 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useMemo, useState } from "react";
-import type { ContributorDashboard, ContributorVote } from "@/lib/contributor-types";
+import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
+import type {
+  ContributorDashboard,
+  ContributorProfile,
+  ContributorVote,
+} from "@/lib/contributor-types";
 import { getContributorAccessToken, getSupabaseBrowserClient } from "@/lib/supabase-browser";
+import { ContributorProfileForm } from "@/app/components/contributor-onboarding";
 
-type HubSection = "home" | "updates" | "questions" | "events" | "votes" | "research" | "membership";
+type HubSection = "home" | "updates" | "questions" | "events" | "votes" | "research" | "profile" | "membership";
 
 const sections: Array<{ id: HubSection; label: string }> = [
   { id: "home", label: "Home" },
@@ -14,8 +19,16 @@ const sections: Array<{ id: HubSection; label: string }> = [
   { id: "events", label: "Events" },
   { id: "votes", label: "Votes" },
   { id: "research", label: "Research" },
+  { id: "profile", label: "Profile" },
   { id: "membership", label: "Membership" },
 ];
+
+function requestedSection(): HubSection | null {
+  const requested = new URLSearchParams(window.location.search).get("section");
+  return sections.some((section) => section.id === requested)
+    ? (requested as HubSection)
+    : null;
+}
 
 function dateLabel(value: string, includeTime = false) {
   return new Intl.DateTimeFormat("en-GB", {
@@ -49,6 +62,7 @@ async function privateFetch(path: string, init?: RequestInit) {
 export function ContributorHub() {
   const [dashboard, setDashboard] = useState<ContributorDashboard | null>(null);
   const [active, setActive] = useState<HubSection>("home");
+  const sectionButtons = useRef<Partial<Record<HubSection, HTMLButtonElement | null>>>({});
   const [error, setError] = useState("");
   const [question, setQuestion] = useState("");
   const [questionStatus, setQuestionStatus] = useState("");
@@ -63,11 +77,18 @@ export function ContributorHub() {
         if (response.status === 401) throw new Error("AUTH_REQUIRED");
         if (!response.ok) throw new Error("LOAD_FAILED");
         const result = (await response.json()) as ContributorDashboard;
-        if (!cancelled) setDashboard(result);
+        if (!cancelled) {
+          setDashboard(result);
+          setActive(requestedSection() ?? "home");
+        }
       } catch (caught) {
         if (cancelled) return;
         if (caught instanceof Error && caught.message === "AUTH_REQUIRED") {
-          window.location.replace("/contributors/sign-in");
+          window.location.replace(
+            requestedSection() === "profile"
+              ? "/contributors/sign-in?next=profile"
+              : "/contributors/sign-in",
+          );
           return;
         }
         setError("The contributor hub is temporarily unavailable. Please try again.");
@@ -83,6 +104,35 @@ export function ContributorHub() {
     if (!dashboard) return "Contributor";
     return dashboard.membership.preferredName || dashboard.membership.fullName.split(/\s+/)[0];
   }, [dashboard]);
+
+  useEffect(() => {
+    sectionButtons.current[active]?.scrollIntoView({
+      block: "nearest",
+      inline: "center",
+    });
+  }, [active]);
+
+  function openSection(section: HubSection) {
+    setActive(section);
+    const url = new URL(window.location.href);
+    if (section === "home") url.searchParams.delete("section");
+    else url.searchParams.set("section", section);
+    window.history.replaceState(null, "", url);
+  }
+
+  function profileSaved(profile: ContributorProfile, completedAt: string) {
+    setDashboard((current) => current
+      ? {
+          ...current,
+          profile,
+          membership: {
+            ...current.membership,
+            preferredName: profile.preferredName,
+            onboardingCompletedAt: completedAt,
+          },
+        }
+      : current);
+  }
 
   async function submitQuestion(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -153,9 +203,12 @@ export function ContributorHub() {
           {sections.map((section) => (
             <button
               key={section.id}
+              ref={(button) => {
+                sectionButtons.current[section.id] = button;
+              }}
               className={active === section.id ? "is-active" : ""}
               type="button"
-              onClick={() => setActive(section.id)}
+              onClick={() => openSection(section.id)}
               aria-current={active === section.id ? "page" : undefined}
             >
               {section.label}
@@ -184,13 +237,13 @@ export function ContributorHub() {
             {!member.onboardingCompletedAt ? (
               <div className="hub-notice">
                 <div><strong>Complete your contributor profile</strong><p>Tell us what you want to learn and how you would like to contribute.</p></div>
-                <Link className="button button--primary" href="/contributors/onboarding">Start onboarding</Link>
+                <button className="button button--primary" type="button" onClick={() => openSection("profile")}>Complete profile</button>
               </div>
             ) : null}
             <div className="hub-summary-grid">
-              <button type="button" onClick={() => setActive("updates")}><span>Latest update</span><strong>{dashboard.updates[0]?.title ?? "Coming soon"}</strong></button>
-              <button type="button" onClick={() => setActive("events")}><span>Next briefing</span><strong>{dashboard.events[0] ? dateLabel(dashboard.events[0].startsAt, true) : "To be announced"}</strong></button>
-              <button type="button" onClick={() => setActive("votes")}><span>Open advisory votes</span><strong>{dashboard.votes.length}</strong></button>
+              <button type="button" onClick={() => openSection("updates")}><span>Latest update</span><strong>{dashboard.updates[0]?.title ?? "Coming soon"}</strong></button>
+              <button type="button" onClick={() => openSection("events")}><span>Next briefing</span><strong>{dashboard.events[0] ? dateLabel(dashboard.events[0].startsAt, true) : "To be announced"}</strong></button>
+              <button type="button" onClick={() => openSection("votes")}><span>Open advisory votes</span><strong>{dashboard.votes.length}</strong></button>
             </div>
             <div className="hub-roadmap">
               <div className="hub-section-heading"><p className="eyebrow">Development roadmap</p><h2>Where Frame is now</h2></div>
@@ -274,6 +327,24 @@ export function ContributorHub() {
                 <article className="hub-card" key={item.id}><span>Research opportunity</span><h2>{item.title}</h2><p>{item.description}</p><p><strong>Eligibility:</strong> {item.eligibility}</p>{item.applyUrl ? <a className="button button--primary" href={item.applyUrl} rel="noreferrer">View opportunity</a> : <span className="hub-muted">Applications opening soon</span>}</article>
               ))}
             </div>
+          </section>
+        ) : null}
+
+        {active === "profile" ? (
+          <section className="hub-section hub-profile">
+            <div className="hub-section-heading">
+              <p className="eyebrow">Your contributor profile</p>
+              <h1>{member.onboardingCompletedAt ? "Profile and preferences" : "Complete your profile"}</h1>
+              <p>
+                Tell us how to address you and where you would most like to contribute.
+                You can return here and change these details at any time.
+              </p>
+            </div>
+            <ContributorProfileForm
+              profile={dashboard.profile}
+              fullName={member.fullName}
+              onSaved={profileSaved}
+            />
           </section>
         ) : null}
 

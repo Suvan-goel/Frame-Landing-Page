@@ -29,6 +29,13 @@ export const contributorPreviewDashboard: ContributorDashboard = {
     termsVersion: "draft-2026-08-03-v1",
     onboardingCompletedAt: paidAt.toISOString(),
   },
+  profile: {
+    preferredName: "Alex",
+    country: "United Kingdom",
+    learningGoal: "Understand the development decisions and give useful feedback on the everyday experience.",
+    productAreas: ["comfort", "app_experience", "development_updates"],
+    foundersWallOptIn: true,
+  },
   updates: [
     {
       id: "briefing-01",

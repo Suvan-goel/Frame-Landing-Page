@@ -102,31 +102,36 @@ export function ContributorSuccess() {
 
   const membership = result.membership;
   const preview = typeof window !== "undefined" && new URLSearchParams(window.location.search).get("preview") === "1";
+  const hubHref = preview
+    ? "/contributors?preview=1&section=profile"
+    : "/contributors/sign-in?next=profile";
   return (
     <section className="contributor-success" role="status" aria-live="polite">
       <p className="eyebrow">Membership active · {membership.contributorNumber}</p>
       <h1>You’re now a Frame Founding Contributor.</h1>
       <p>
-        Welcome, {membership.fullName}. No Frame device has been purchased or reserved. Your membership and private community access are now active.
+        Welcome, {membership.fullName}. Your Founding Contributor status and 12 months of private community access are now active.
       </p>
       <dl>
-        <div><dt>Payment</dt><dd>$99 one time</dd></div>
+        <div><dt>Payment</dt><dd>$99 · one-time payment</dd></div>
         <div><dt>Membership started</dt><dd>{formatDate(membership.paidAt)}</dd></div>
-        <div><dt>Community access until</dt><dd>{formatDate(membership.accessExpiresAt)}</dd></div>
-        <div><dt>Automatic renewal</dt><dd>None</dd></div>
+        <div><dt>Access through</dt><dd>{formatDate(membership.accessExpiresAt)}</dd></div>
+        <div><dt>Renewal</dt><dd>No automatic renewal</dd></div>
       </dl>
+      <div className="contributor-success__steps-heading">
+        <p className="eyebrow">Start here</p>
+        <h2>Your next steps</h2>
+      </div>
       <ol className="contributor-success__steps">
-        <li><span>01</span><strong>Activate your member profile</strong></li>
-        <li><span>02</span><strong>Enter the private contributor hub</strong></li>
-        <li><span>03</span><strong>Read the first development briefing</strong></li>
-        <li><span>04</span><strong>Submit your first feedback response</strong></li>
+        <li><span>01</span><strong>Activate your contributor hub</strong></li>
+        <li><span>02</span><strong>Complete your profile inside the hub</strong></li>
+        <li><span>03</span><strong>Read the latest development briefing</strong></li>
+        <li><span>04</span><strong>Share your first feedback</strong></li>
       </ol>
       <div className="contributor-success__actions">
-        <Link className="button button--dark" href={preview ? "/contributors?preview=1" : "/contributors/sign-in"}>
-          {preview ? "Open the member hub preview" : "Activate member access"}
-        </Link>
-        <Link className="text-link" href="/contributors/refunds">View the refund policy</Link>
+        <Link className="button button--dark" href={hubHref}>Activate your contributor hub</Link>
       </div>
+      <Link className="contributor-success__refund-link" href="/contributors/refunds">View the refund policy</Link>
     </section>
   );
 }

@@ -163,7 +163,11 @@ test("renders draft contributor policies and keeps member routes private", async
   assert.match(await refunds.text(), /Full refund within 14 days/);
   assert.match(await productStatus.text(), /No finished Frame product currently exists/);
   assert.match(await hub.text(), /Loading your contributor hub/);
-  assert.match(await onboarding.text(), /Please do not share diagnoses, symptoms/);
+  assert.equal(onboarding.status, 307);
+  assert.equal(
+    onboarding.headers.get("location"),
+    "http://localhost/contributors?section=profile",
+  );
 });
 
 test("formats submitted names for the confirmation message", () => {
@@ -466,22 +470,33 @@ test("validates contact messages before sending email", async () => {
   assert.match(sitemap, /`\$\{siteUrl\}\/contact`/);
 });
 
-test("separates admin leads and hides Suvan test signups", async () => {
-  const [adminPage, css] = await Promise.all([
+test("separates, exports, and permanently deletes admin leads", async () => {
+  const [adminPage, leadHelpers, workbookRoute, deleteRoute, css] = await Promise.all([
     readFile(new URL("../app/admin/waitlist/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../lib/waitlist-leads.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/admin/waitlist.xlsx/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/admin/waitlist/[id]/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
 
-  assert.match(adminPage, /type LeadTab = "qualified" \| "unqualified"/);
+  assert.match(leadHelpers, /type LeadTab = "qualified" \| "unqualified"/);
   assert.match(adminPage, /Qualified leads/);
   assert.match(adminPage, /Unqualified leads/);
   assert.match(adminPage, /What Frame should help with/);
-  assert.match(adminPage, /isQualifiedSignup/);
+  assert.match(adminPage, /Export spreadsheet/);
+  assert.match(adminPage, /Manage hidden test entries/);
+  assert.match(adminPage, /DeleteWaitlistSignupButton/);
+  assert.match(leadHelpers, /isQualifiedSignup/);
   assert.match(
-    adminPage,
+    leadHelpers,
     /signup\.first_name\?\.trim\(\)\.toLocaleLowerCase\(\) !== "suvan"/,
   );
-  assert.match(adminPage, /\(data \?\? \[\]\)\.filter\(isVisibleSignup\)/);
+  assert.match(workbookRoute, /"Qualified leads"/);
+  assert.match(workbookRoute, /"Unqualified leads"/);
+  assert.match(workbookRoute, /categorizeVisibleSignups\(data \?\? \[\]\)/);
+  assert.match(workbookRoute, /frame-waitlist\.xlsx/);
+  assert.match(deleteRoute, /\.from\("waitlist_signups"\)[\s\S]*\.delete\(\)/);
   assert.match(css, /\.admin-tabs\s*\{/);
   assert.match(css, /\.admin-tabs a\.is-active/);
+  assert.match(css, /\.admin-delete\s*\{/);
 });

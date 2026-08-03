@@ -7,18 +7,17 @@ import {
   categorizeVisibleSignups,
   toWaitlistExportRow,
   waitlistExportHeaders,
+  type LeadTab,
   type WaitlistSignup,
 } from "@/lib/waitlist-leads";
+import { createXlsxWorkbook } from "@/lib/xlsx.server";
 
 export const dynamic = "force-dynamic";
 
-function csvCell(value: string | number | null) {
-  let safeValue = value === null ? "" : String(value);
-  if (/^[=+\-@]/.test(safeValue)) {
-    safeValue = `'${safeValue}`;
-  }
-  return `"${safeValue.replaceAll('"', '""')}"`;
-}
+const sheetNames: Record<LeadTab, string> = {
+  qualified: "Qualified leads",
+  unqualified: "Unqualified leads",
+};
 
 export async function GET() {
   const user = await getChatGPTUser();
@@ -40,25 +39,35 @@ export async function GET() {
     .returns<WaitlistSignup[]>();
 
   if (error) {
-    console.error("Waitlist CSV query failed", error);
+    console.error("Waitlist workbook query failed", error);
     return Response.json(
       { error: "The waitlist export is temporarily unavailable." },
       { status: 503 },
     );
   }
-  const rows = [
-    [...waitlistExportHeaders],
-    ...categorizeVisibleSignups(data ?? []).map(({ signup, qualification }) =>
-      toWaitlistExportRow(signup, qualification),
-    ),
-  ];
-  const csv = rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
 
-  return new Response(csv, {
+  const categorizedSignups = categorizeVisibleSignups(data ?? []);
+  const workbook = createXlsxWorkbook(
+    (["qualified", "unqualified"] as const).map((tab) => ({
+      name: sheetNames[tab],
+      rows: [
+        [...waitlistExportHeaders],
+        ...categorizedSignups
+          .filter((entry) => entry.tab === tab)
+          .map(({ signup, qualification }) =>
+            toWaitlistExportRow(signup, qualification),
+          ),
+      ],
+    })),
+  );
+
+  return new Response(Uint8Array.from(workbook), {
     headers: {
       "Cache-Control": "private, no-store",
-      "Content-Disposition": 'attachment; filename="frame-waitlist.csv"',
-      "Content-Type": "text/csv; charset=utf-8",
+      "Content-Disposition":
+        'attachment; filename="frame-waitlist.xlsx"',
+      "Content-Type":
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "X-Content-Type-Options": "nosniff",
     },
   });
