@@ -1,4 +1,5 @@
 import Image from "next/image";
+import Link from "next/link";
 import { BrandWordmark } from "./components/brand-wordmark";
 import { MobileNavigation } from "./components/mobile-navigation";
 
@@ -47,9 +48,9 @@ export default function Home() {
     <main>
       <header className="nav-shell">
         <nav className="nav container" aria-label="Primary navigation">
-          <a className="wordmark" href="/" aria-label="Frame home">
+          <Link className="wordmark" href="/" aria-label="Frame home">
             <BrandWordmark priority />
-          </a>
+          </Link>
           <div className="nav-links">
             {content.navigation.map((item) => (
               <a key={item.href} href={item.href}>
@@ -349,13 +350,13 @@ export default function Home() {
 
       <footer className="footer">
         <div className="container footer-top">
-          <a
+          <Link
             className="wordmark wordmark--footer"
             href="/"
             aria-label="Frame home"
           >
             <BrandWordmark variant="light" />
-          </a>
+          </Link>
           <div className="footer-links">
             <a href="#product">Product</a>
             <a href="#research">Research</a>
