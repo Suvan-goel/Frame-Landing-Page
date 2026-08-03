@@ -51,6 +51,8 @@ type QualificationResponse = {
   interviewWillingness: string | null;
 };
 
+type LeadTab = "qualified" | "unqualified";
+
 function parseQualificationResponse(
   motivation: string | null,
 ): QualificationResponse {
@@ -86,7 +88,31 @@ function parseQualificationResponse(
   }
 }
 
-export default async function WaitlistAdminPage() {
+function isQualifiedSignup(
+  signup: WaitlistSignup,
+  qualification: QualificationResponse,
+) {
+  return Boolean(
+    signup.first_name?.trim() &&
+      signup.last_name?.trim() &&
+      signup.gender &&
+      Number.isInteger(signup.age) &&
+      qualification.mainReason &&
+      qualification.recentSituation &&
+      qualification.monitoringMethod &&
+      qualification.interviewWillingness,
+  );
+}
+
+function isVisibleSignup(signup: WaitlistSignup) {
+  return signup.first_name?.trim().toLocaleLowerCase() !== "suvan";
+}
+
+export default async function WaitlistAdminPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ tab?: string | string[] }>;
+}) {
   const user = await requireChatGPTUser("/admin/waitlist");
   if (!(await isWaitlistAdmin(user.email))) {
     notFound();
@@ -107,7 +133,27 @@ export default async function WaitlistAdminPage() {
     console.error("Waitlist dashboard query failed", error);
     throw new Error("The waitlist is temporarily unavailable.");
   }
-  const signups = data ?? [];
+  const requestedTab = (await searchParams)?.tab;
+  const activeTab: LeadTab =
+    requestedTab === "unqualified" ? "unqualified" : "qualified";
+  const visibleSignups = (data ?? []).filter(isVisibleSignup);
+  const categorizedSignups = visibleSignups.map((signup) => {
+    const qualification = parseQualificationResponse(signup.motivation);
+    return {
+      signup,
+      qualification,
+      tab: isQualifiedSignup(signup, qualification)
+        ? ("qualified" as const)
+        : ("unqualified" as const),
+    };
+  });
+  const qualifiedCount = categorizedSignups.filter(
+    (entry) => entry.tab === "qualified",
+  ).length;
+  const unqualifiedCount = categorizedSignups.length - qualifiedCount;
+  const activeSignups = categorizedSignups.filter(
+    (entry) => entry.tab === activeTab,
+  );
 
   return (
     <main className="admin-page">
@@ -120,8 +166,8 @@ export default async function WaitlistAdminPage() {
             <p className="eyebrow">Owner view</p>
             <h1>Waitlist</h1>
             <p>
-              {signups.length} most recent{" "}
-              {signups.length === 1 ? "signup" : "signups"}
+              {visibleSignups.length} visible{" "}
+              {visibleSignups.length === 1 ? "signup" : "signups"}
             </p>
           </div>
           <div className="admin-actions">
@@ -134,7 +180,28 @@ export default async function WaitlistAdminPage() {
           </div>
         </header>
 
-        {signups.length ? (
+        <nav className="admin-tabs" aria-label="Waitlist lead status">
+          <a
+            className={activeTab === "qualified" ? "is-active" : undefined}
+            href="/admin/waitlist?tab=qualified"
+            aria-current={activeTab === "qualified" ? "page" : undefined}
+          >
+            Qualified leads <span>{qualifiedCount}</span>
+          </a>
+          <a
+            className={activeTab === "unqualified" ? "is-active" : undefined}
+            href="/admin/waitlist?tab=unqualified"
+            aria-current={activeTab === "unqualified" ? "page" : undefined}
+          >
+            Unqualified leads <span>{unqualifiedCount}</span>
+          </a>
+        </nav>
+        <p className="admin-tabs__note">
+          Qualified leads completed every early-access qualification and
+          demographic field.
+        </p>
+
+        {activeSignups.length ? (
           <div className="admin-table-shell">
             <table className="admin-table">
               <thead>
@@ -149,11 +216,7 @@ export default async function WaitlistAdminPage() {
                 </tr>
               </thead>
               <tbody>
-                {signups.map((signup) => {
-                  const qualification = parseQualificationResponse(
-                    signup.motivation,
-                  );
-                  return (
+                {activeSignups.map(({ signup, qualification }) => (
                   <tr key={signup.id}>
                     <td className="admin-lead">
                       <strong>
@@ -211,15 +274,18 @@ export default async function WaitlistAdminPage() {
                       </time>
                     </td>
                   </tr>
-                  );
-                })}
+                ))}
               </tbody>
             </table>
           </div>
         ) : (
           <div className="admin-empty">
-            <h2>No signups yet.</h2>
-            <p>Your first waitlist signup will appear here.</p>
+            <h2>No {activeTab} leads.</h2>
+            <p>
+              {activeTab === "qualified"
+                ? "Completed early-access applications will appear here."
+                : "Legacy or incomplete signups will appear here."}
+            </p>
           </div>
         )}
       </div>

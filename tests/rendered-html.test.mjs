@@ -324,3 +324,22 @@ test("validates contact messages before sending email", async () => {
   assert.match(sitemap, /https:\/\/framewearable\.com/);
   assert.match(sitemap, /`\$\{siteUrl\}\/contact`/);
 });
+
+test("separates admin leads and hides Suvan test signups", async () => {
+  const [adminPage, css] = await Promise.all([
+    readFile(new URL("../app/admin/waitlist/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(adminPage, /type LeadTab = "qualified" \| "unqualified"/);
+  assert.match(adminPage, /Qualified leads/);
+  assert.match(adminPage, /Unqualified leads/);
+  assert.match(adminPage, /isQualifiedSignup/);
+  assert.match(
+    adminPage,
+    /signup\.first_name\?\.trim\(\)\.toLocaleLowerCase\(\) !== "suvan"/,
+  );
+  assert.match(adminPage, /\(data \?\? \[\]\)\.filter\(isVisibleSignup\)/);
+  assert.match(css, /\.admin-tabs\s*\{/);
+  assert.match(css, /\.admin-tabs a\.is-active/);
+});

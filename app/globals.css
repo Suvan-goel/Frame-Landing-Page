@@ -1975,8 +1975,62 @@ h2 {
   gap: 24px;
 }
 
+.admin-tabs {
+  display: flex;
+  gap: 30px;
+  margin-top: 32px;
+  border-bottom: 1px solid var(--line);
+  overflow-x: auto;
+}
+
+.admin-tabs a {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: -1px;
+  padding: 14px 2px 12px;
+  border-bottom: 2px solid transparent;
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+  font-weight: 590;
+  white-space: nowrap;
+}
+
+.admin-tabs a:hover,
+.admin-tabs a.is-active {
+  color: var(--burgundy);
+}
+
+.admin-tabs a.is-active {
+  border-bottom-color: var(--burgundy);
+}
+
+.admin-tabs a span {
+  display: inline-flex;
+  min-width: 24px;
+  height: 24px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: rgba(32, 33, 30, 0.07);
+  color: var(--ink-soft);
+  font-size: 0.61rem;
+}
+
+.admin-tabs a.is-active span {
+  background: rgba(141, 62, 70, 0.1);
+  color: var(--burgundy);
+}
+
+.admin-tabs__note {
+  margin: 13px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.66rem;
+}
+
 .admin-table-shell {
-  margin-top: 36px;
+  margin-top: 26px;
   border: 1px solid var(--line);
   overflow-x: auto;
 }
@@ -2610,6 +2664,15 @@ h2 {
   .admin-actions {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .admin-tabs {
+    gap: 22px;
+    margin-top: 24px;
+  }
+
+  .admin-tabs a {
+    min-height: 48px;
   }
 }
 
