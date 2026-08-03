@@ -1037,10 +1037,12 @@ h2 {
 }
 
 .interest-flow__shell {
+  display: grid;
   width: min(1040px, calc(100% - 64px));
   min-height: calc(100dvh - var(--site-header-height));
+  align-items: center;
   margin-inline: auto;
-  padding-bottom: 48px;
+  padding-block: clamp(32px, 4dvh, 48px);
 }
 
 .interest-flow__close,
@@ -1073,7 +1075,7 @@ h2 {
 }
 
 .interest-flow__form {
-  padding-top: clamp(34px, 5vw, 64px);
+  padding-top: 0;
 }
 
 .interest-flow__progress {
@@ -2306,8 +2308,12 @@ h2 {
 }
 
 @media (min-width: 681px) and (max-height: 820px) {
+  .interest-flow__shell {
+    padding-block: 18px;
+  }
+
   .interest-flow__form {
-    padding-top: 18px;
+    padding-top: 0;
   }
 
   .interest-flow__content {
@@ -2615,11 +2621,11 @@ h2 {
 
   .interest-flow__shell {
     width: calc(100% - 40px);
-    padding-bottom: 28px;
+    padding-block: 28px;
   }
 
   .interest-flow__form {
-    padding-top: 28px;
+    padding-top: 0;
   }
 
   .interest-flow__content {
