@@ -69,7 +69,7 @@ test("server-renders the dedicated interest page", async () => {
 
   assert.match(html, /Register your interest/);
   assert.match(html, /What is the main reason you want Frame\?/);
-  assert.match(html, /Monitor high or borderline blood pressure without repeated cuff readings/);
+  assert.match(html, /See my blood pressure patterns over time/);
   assert.match(html, /Understand my blood pressure while sleeping/);
   assert.match(html, /name="mainReason"/);
   assert.match(html, /type="radio"/);

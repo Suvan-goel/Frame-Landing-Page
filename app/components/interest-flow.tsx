@@ -17,7 +17,7 @@ const FOUNDING_CONTRIBUTORS_ENABLED =
 const MAIN_REASON_OPTIONS = [
   [
     "monitor_high_or_borderline",
-    "Monitor high or borderline blood pressure without repeated cuff readings",
+    "See my blood pressure patterns over time",
   ],
   ["understand_sleep", "Understand my blood pressure while sleeping"],
   [
