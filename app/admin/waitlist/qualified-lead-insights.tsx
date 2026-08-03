@@ -1,3 +1,4 @@
+import type { CSSProperties } from "react";
 import {
   mainReasonLabels,
   monitoringLabels,
@@ -14,6 +15,8 @@ type ChartDatum = {
   label: string;
   count: number;
 };
+
+type ChartTone = "burgundy" | "sage" | "terracotta";
 
 const genderLabels: Record<string, string> = {
   woman: "Woman",
@@ -37,6 +40,8 @@ const ageRanges = [
   { label: "55–64", includes: (age: number) => age >= 55 && age <= 64 },
   { label: "65+", includes: (age: number) => age >= 65 },
 ] as const;
+
+const donutColours = ["#8d3e46", "#6e806f", "#c38262", "#a9935c", "#80768b"];
 
 function humanize(value: string) {
   const words = value.replaceAll("_", " ");
@@ -62,45 +67,74 @@ function responseBreakdown(
   }));
 }
 
+function percentage(count: number, total: number) {
+  return total ? Math.round((count / total) * 100) : 0;
+}
+
+function leadingDatum(data: ChartDatum[]) {
+  return data.reduce<ChartDatum | null>(
+    (leading, datum) => (!leading || datum.count > leading.count ? datum : leading),
+    null,
+  );
+}
+
+function ChartHeader({
+  eyebrow,
+  title,
+  total,
+  titleId,
+}: {
+  eyebrow: string;
+  title: string;
+  total: number;
+  titleId: string;
+}) {
+  return (
+    <header className="admin-chart__header">
+      <div>
+        <p>{eyebrow}</p>
+        <h3 id={titleId}>{title}</h3>
+      </div>
+      <span>{total} responses</span>
+    </header>
+  );
+}
+
 function DistributionChart({
   title,
-  description,
+  eyebrow,
   data,
   total,
+  tone,
   wide = false,
 }: {
   title: string;
-  description: string;
+  eyebrow: string;
   data: ChartDatum[];
   total: number;
+  tone: ChartTone;
   wide?: boolean;
 }) {
   const titleId = `chart-${title.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`;
 
   return (
-    <article className={`admin-chart${wide ? " admin-chart--wide" : ""}`}>
-      <header>
-        <div>
-          <p>{description}</p>
-          <h3 id={titleId}>{title}</h3>
-        </div>
-        <span>{total} responses</span>
-      </header>
-      <ol aria-labelledby={titleId}>
+    <article
+      className={`admin-chart admin-chart--${tone}${wide ? " admin-chart--wide" : ""}`}
+    >
+      <ChartHeader eyebrow={eyebrow} title={title} total={total} titleId={titleId} />
+      <ol className="admin-chart__rows" aria-labelledby={titleId}>
         {data.map((datum) => {
-          const percentage = total
-            ? Math.round((datum.count / total) * 100)
-            : 0;
+          const share = percentage(datum.count, total);
           return (
             <li key={datum.label}>
               <div className="admin-chart__label">
                 <span>{datum.label}</span>
                 <strong>
-                  {datum.count} <small>{percentage}%</small>
+                  {datum.count} <small>{share}%</small>
                 </strong>
               </div>
               <div className="admin-chart__track" aria-hidden="true">
-                <span style={{ width: `${percentage}%` }} />
+                <span style={{ width: `${share}%` }} />
               </div>
             </li>
           );
@@ -110,8 +144,120 @@ function DistributionChart({
   );
 }
 
+function AgeChart({
+  data,
+  total,
+  averageAge,
+}: {
+  data: ChartDatum[];
+  total: number;
+  averageAge: number | null;
+}) {
+  const titleId = "chart-age-range";
+  const highestCount = Math.max(...data.map(({ count }) => count), 1);
+
+  return (
+    <article className="admin-chart admin-chart--age">
+      <ChartHeader
+        eyebrow={averageAge ? `Average age ${averageAge}` : "Age"}
+        title="Age distribution"
+        total={total}
+        titleId={titleId}
+      />
+      <ol className="admin-age-chart" aria-labelledby={titleId}>
+        {data.map((datum) => {
+          const height = Math.round((datum.count / highestCount) * 100);
+          return (
+            <li key={datum.label}>
+              <strong>{datum.count}</strong>
+              <div aria-hidden="true">
+                <span style={{ height: `${height}%` }} />
+              </div>
+              <small>{datum.label}</small>
+            </li>
+          );
+        })}
+      </ol>
+    </article>
+  );
+}
+
+function DonutChart({ data, total }: { data: ChartDatum[]; total: number }) {
+  const titleId = "chart-gender";
+  let offset = 0;
+  const segments = data.map((datum, index) => {
+    const start = offset;
+    offset += total ? (datum.count / total) * 100 : 0;
+    return `${donutColours[index % donutColours.length]} ${start}% ${offset}%`;
+  });
+  const background = total
+    ? `conic-gradient(${segments.join(", ")})`
+    : "rgba(32, 33, 30, 0.08)";
+
+  return (
+    <article className="admin-chart admin-chart--gender">
+      <ChartHeader
+        eyebrow="Self-described"
+        title="Gender distribution"
+        total={total}
+        titleId={titleId}
+      />
+      <div className="admin-donut-layout">
+        <div
+          className="admin-donut"
+          style={{ background } as CSSProperties}
+          role="img"
+          aria-label={`Gender distribution across ${total} qualified leads`}
+        >
+          <span>
+            <strong>{total}</strong>
+            <small>leads</small>
+          </span>
+        </div>
+        <ul aria-labelledby={titleId}>
+          {data.map((datum, index) => (
+            <li key={datum.label}>
+              <i
+                style={{ backgroundColor: donutColours[index % donutColours.length] }}
+                aria-hidden="true"
+              />
+              <span>{datum.label}</span>
+              <strong>{percentage(datum.count, total)}%</strong>
+            </li>
+          ))}
+        </ul>
+      </div>
+    </article>
+  );
+}
+
+function InsightMetric({
+  label,
+  value,
+  detail,
+}: {
+  label: string;
+  value: string;
+  detail: string;
+}) {
+  return (
+    <article>
+      <span>{label}</span>
+      <strong>{value}</strong>
+      <p>{detail}</p>
+    </article>
+  );
+}
+
 export function QualifiedLeadInsights({ leads }: { leads: QualifiedLead[] }) {
-  if (!leads.length) return null;
+  if (!leads.length) {
+    return (
+      <section className="admin-empty admin-insights-empty">
+        <h2>No qualified lead insights yet.</h2>
+        <p>Charts will appear after the first complete early-access application.</p>
+      </section>
+    );
+  }
 
   const ages = leads
     .map(({ signup }) => signup.age)
@@ -143,6 +289,11 @@ export function QualifiedLeadInsights({ leads }: { leads: QualifiedLead[] }) {
     ({ qualification }) => qualification.interviewWillingness,
     interviewLabels,
   );
+  const largestAgeGroup = leadingDatum(ageData);
+  const topReason = leadingDatum(mainReasonData);
+  const openToCall = interviewData
+    .filter(({ label }) => label === "Yes" || label === "Possibly")
+    .reduce((total, { count }) => total + count, 0);
 
   return (
     <section
@@ -154,61 +305,75 @@ export function QualifiedLeadInsights({ leads }: { leads: QualifiedLead[] }) {
           <p className="eyebrow">Audience overview</p>
           <h2 id="qualified-insights-title">Qualified lead insights</h2>
           <p>
-            Compare who the qualified leads are and what they selected before
-            sharing their details.
+            A clear view of who the qualified leads are and what they selected
+            before sharing their details.
           </p>
         </div>
         <span>{leads.length} qualified leads</span>
       </div>
 
+      <div className="admin-insight-metrics" aria-label="Lead insight highlights">
+        <InsightMetric
+          label="Average age"
+          value={averageAge ? String(averageAge) : "—"}
+          detail={largestAgeGroup ? `Largest group: ${largestAgeGroup.label}` : "No age data"}
+        />
+        <InsightMetric
+          label="Top reason"
+          value={topReason ? `${percentage(topReason.count, leads.length)}%` : "—"}
+          detail={topReason?.label ?? "No response data"}
+        />
+        <InsightMetric
+          label="Open to a call"
+          value={`${percentage(openToCall, leads.length)}%`}
+          detail={`${openToCall} answered yes or possibly`}
+        />
+      </div>
+
       <div className="admin-insights__group">
         <div className="admin-insights__group-heading">
-          <h3>Demographics</h3>
+          <div>
+            <p className="eyebrow">Who they are</p>
+            <h3>Demographics</h3>
+          </div>
           <p>Age and self-described gender across the qualified audience.</p>
         </div>
-        <div className="admin-insights__grid">
-          <DistributionChart
-            title="Age range"
-            description={averageAge ? `Average age ${averageAge}` : "Age"}
-            data={ageData}
-            total={ages.length}
-          />
-          <DistributionChart
-            title="Gender"
-            description="Self-described"
-            data={genderData}
-            total={leads.length}
-          />
+        <div className="admin-insights__grid admin-insights__grid--demographics">
+          <AgeChart data={ageData} total={ages.length} averageAge={averageAge} />
+          <DonutChart data={genderData} total={leads.length} />
         </div>
       </div>
 
       <div className="admin-insights__group">
         <div className="admin-insights__group-heading">
-          <h3>Multiple-choice responses</h3>
-          <p>
-            Side-by-side distributions for each question asked before contact
-            details.
-          </p>
+          <div>
+            <p className="eyebrow">What they told us</p>
+            <h3>Multiple-choice responses</h3>
+          </div>
+          <p>Response distributions for each question asked before contact details.</p>
         </div>
         <div className="admin-insights__grid">
           <DistributionChart
             title="Main reason for wanting Frame"
-            description="Question 1"
+            eyebrow="Question 1"
             data={mainReasonData}
             total={leads.length}
+            tone="burgundy"
             wide
           />
           <DistributionChart
             title="Current monitoring method"
-            description="Question 3"
+            eyebrow="Question 3"
             data={monitoringData}
             total={leads.length}
+            tone="sage"
           />
           <DistributionChart
             title="Willing to join a 20-min call"
-            description="Question 4"
+            eyebrow="Question 4"
             data={interviewData}
             total={leads.length}
+            tone="terracotta"
           />
         </div>
       </div>

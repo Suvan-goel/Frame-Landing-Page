@@ -470,9 +470,10 @@ test("validates contact messages before sending email", async () => {
   assert.match(sitemap, /`\$\{siteUrl\}\/contact`/);
 });
 
-test("separates, exports, and permanently deletes admin leads", async () => {
-  const [adminPage, leadHelpers, workbookRoute, deleteRoute, css] = await Promise.all([
+test("separates, visualizes, exports, and permanently deletes admin leads", async () => {
+  const [adminPage, insights, leadHelpers, workbookRoute, deleteRoute, css] = await Promise.all([
     readFile(new URL("../app/admin/waitlist/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/waitlist/qualified-lead-insights.tsx", import.meta.url), "utf8"),
     readFile(new URL("../lib/waitlist-leads.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/waitlist.xlsx/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/waitlist/[id]/route.ts", import.meta.url), "utf8"),
@@ -482,10 +483,15 @@ test("separates, exports, and permanently deletes admin leads", async () => {
   assert.match(leadHelpers, /type LeadTab = "qualified" \| "unqualified"/);
   assert.match(adminPage, /Qualified leads/);
   assert.match(adminPage, /Unqualified leads/);
+  assert.match(adminPage, /Lead insights/);
+  assert.match(adminPage, /tab=insights/);
   assert.match(adminPage, /What Frame should help with/);
   assert.match(adminPage, /Export spreadsheet/);
   assert.match(adminPage, /Manage hidden test entries/);
   assert.match(adminPage, /DeleteWaitlistSignupButton/);
+  assert.match(insights, /admin-age-chart/);
+  assert.match(insights, /admin-donut/);
+  assert.match(insights, /Multiple-choice responses/);
   assert.match(leadHelpers, /isQualifiedSignup/);
   assert.match(
     leadHelpers,

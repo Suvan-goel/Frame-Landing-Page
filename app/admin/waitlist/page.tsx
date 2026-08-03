@@ -23,6 +23,8 @@ import {
 
 export const dynamic = "force-dynamic";
 
+type WaitlistView = LeadTab | "insights";
+
 export default async function WaitlistAdminPage({
   searchParams,
 }: {
@@ -49,8 +51,10 @@ export default async function WaitlistAdminPage({
     throw new Error("The waitlist is temporarily unavailable.");
   }
   const requestedTab = (await searchParams)?.tab;
-  const activeTab: LeadTab =
-    requestedTab === "unqualified" ? "unqualified" : "qualified";
+  const activeTab: WaitlistView =
+    requestedTab === "unqualified" || requestedTab === "insights"
+      ? requestedTab
+      : "qualified";
   const signups = data ?? [];
   const visibleSignups = signups.filter(isVisibleSignup);
   const hiddenSignups = signups.filter((signup) => !isVisibleSignup(signup));
@@ -60,9 +64,10 @@ export default async function WaitlistAdminPage({
   );
   const qualifiedCount = qualifiedSignups.length;
   const unqualifiedCount = categorizedSignups.length - qualifiedCount;
-  const activeSignups = categorizedSignups.filter(
-    (entry) => entry.tab === activeTab,
-  );
+  const activeSignups =
+    activeTab === "insights"
+      ? []
+      : categorizedSignups.filter((entry) => entry.tab === activeTab);
 
   return (
     <main className="admin-page">
@@ -89,7 +94,7 @@ export default async function WaitlistAdminPage({
           </div>
         </header>
 
-        <nav className="admin-tabs" aria-label="Waitlist lead status">
+        <nav className="admin-tabs" aria-label="Waitlist dashboard views">
           <a
             className={activeTab === "qualified" ? "is-active" : undefined}
             href="/admin/waitlist?tab=qualified"
@@ -104,17 +109,25 @@ export default async function WaitlistAdminPage({
           >
             Unqualified leads <span>{unqualifiedCount}</span>
           </a>
+          <a
+            className={activeTab === "insights" ? "is-active" : undefined}
+            href="/admin/waitlist?tab=insights"
+            aria-current={activeTab === "insights" ? "page" : undefined}
+          >
+            Lead insights <span>{qualifiedCount}</span>
+          </a>
         </nav>
         <p className="admin-tabs__note">
-          Qualified leads completed every early-access qualification and
-          demographic field.
+          {activeTab === "insights"
+            ? "Insights are calculated from qualified leads only."
+            : "Qualified leads completed every early-access qualification and demographic field."}
         </p>
 
-        {activeTab === "qualified" ? (
+        {activeTab === "insights" ? (
           <QualifiedLeadInsights leads={qualifiedSignups} />
         ) : null}
 
-        {activeSignups.length ? (
+        {activeTab !== "insights" && activeSignups.length ? (
           <div className="admin-table-shell">
             <table className="admin-table">
               <thead>
@@ -202,7 +215,7 @@ export default async function WaitlistAdminPage({
               </tbody>
             </table>
           </div>
-        ) : (
+        ) : activeTab !== "insights" ? (
           <div className="admin-empty">
             <h2>No {activeTab} leads.</h2>
             <p>
@@ -211,9 +224,9 @@ export default async function WaitlistAdminPage({
                 : "Legacy or incomplete signups will appear here."}
             </p>
           </div>
-        )}
+        ) : null}
 
-        {hiddenSignups.length ? (
+        {activeTab !== "insights" && hiddenSignups.length ? (
           <details className="admin-hidden-signups">
             <summary>
               Manage hidden test entries <span>{hiddenSignups.length}</span>
