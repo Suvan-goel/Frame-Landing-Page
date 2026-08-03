@@ -9,104 +9,18 @@ import {
   isWaitlistAdmin,
 } from "@/lib/supabase-admin.server";
 import { BrandWordmark } from "@/app/components/brand-wordmark";
+import { DeleteWaitlistSignupButton } from "@/app/components/delete-waitlist-signup-button";
+import {
+  categorizeSignup,
+  categorizeVisibleSignups,
+  isVisibleSignup,
+  mainReasonLabels,
+  monitoringLabels,
+  type LeadTab,
+  type WaitlistSignup,
+} from "@/lib/waitlist-leads";
 
 export const dynamic = "force-dynamic";
-
-type WaitlistSignup = {
-  id: number;
-  first_name: string | null;
-  last_name: string | null;
-  email: string;
-  gender: string | null;
-  age: number | null;
-  motivation: string | null;
-  placement: string;
-  utm_source: string | null;
-  utm_medium: string | null;
-  utm_campaign: string | null;
-  created_at: string;
-};
-
-const mainReasonLabels: Record<string, string> = {
-  monitor_high_or_borderline: "Monitor high or borderline blood pressure",
-  understand_sleep: "Understand blood pressure while sleeping",
-  understand_daily_factors: "Understand food, alcohol, stress and exercise",
-  understand_unexplained_changes: "Understand unexplained changes",
-  track_response_and_recovery: "Track response and recovery",
-  something_else: "Something else",
-};
-
-const monitoringLabels: Record<string, string> = {
-  upper_arm_regularly: "Upper-arm cuff regularly",
-  upper_arm_occasionally: "Upper-arm cuff occasionally",
-  wearable_or_cuffless: "Wearable or cuffless device",
-  medical_appointments_only: "Medical appointments only",
-  not_currently_monitoring: "Does not currently monitor",
-};
-
-type QualificationResponse = {
-  mainReason: string | null;
-  recentSituation: string | null;
-  monitoringMethod: string | null;
-  interviewWillingness: string | null;
-};
-
-type LeadTab = "qualified" | "unqualified";
-
-function parseQualificationResponse(
-  motivation: string | null,
-): QualificationResponse {
-  const fallback = {
-    mainReason: null,
-    recentSituation: motivation,
-    monitoringMethod: null,
-    interviewWillingness: null,
-  };
-  if (!motivation?.startsWith("{")) return fallback;
-
-  try {
-    const parsed = JSON.parse(motivation) as Record<string, unknown>;
-    if (parsed.version !== 2) return fallback;
-    return {
-      mainReason:
-        typeof parsed.mainReason === "string" ? parsed.mainReason : null,
-      recentSituation:
-        typeof parsed.recentSituation === "string"
-          ? parsed.recentSituation
-          : null,
-      monitoringMethod:
-        typeof parsed.monitoringMethod === "string"
-          ? parsed.monitoringMethod
-          : null,
-      interviewWillingness:
-        typeof parsed.interviewWillingness === "string"
-          ? parsed.interviewWillingness
-          : null,
-    };
-  } catch {
-    return fallback;
-  }
-}
-
-function isQualifiedSignup(
-  signup: WaitlistSignup,
-  qualification: QualificationResponse,
-) {
-  return Boolean(
-    signup.first_name?.trim() &&
-      signup.last_name?.trim() &&
-      signup.gender &&
-      Number.isInteger(signup.age) &&
-      qualification.mainReason &&
-      qualification.recentSituation &&
-      qualification.monitoringMethod &&
-      qualification.interviewWillingness,
-  );
-}
-
-function isVisibleSignup(signup: WaitlistSignup) {
-  return signup.first_name?.trim().toLocaleLowerCase() !== "suvan";
-}
 
 export default async function WaitlistAdminPage({
   searchParams,
@@ -136,17 +50,10 @@ export default async function WaitlistAdminPage({
   const requestedTab = (await searchParams)?.tab;
   const activeTab: LeadTab =
     requestedTab === "unqualified" ? "unqualified" : "qualified";
-  const visibleSignups = (data ?? []).filter(isVisibleSignup);
-  const categorizedSignups = visibleSignups.map((signup) => {
-    const qualification = parseQualificationResponse(signup.motivation);
-    return {
-      signup,
-      qualification,
-      tab: isQualifiedSignup(signup, qualification)
-        ? ("qualified" as const)
-        : ("unqualified" as const),
-    };
-  });
+  const signups = data ?? [];
+  const visibleSignups = signups.filter(isVisibleSignup);
+  const hiddenSignups = signups.filter((signup) => !isVisibleSignup(signup));
+  const categorizedSignups = categorizeVisibleSignups(signups);
   const qualifiedCount = categorizedSignups.filter(
     (entry) => entry.tab === "qualified",
   ).length;
@@ -171,8 +78,8 @@ export default async function WaitlistAdminPage({
             </p>
           </div>
           <div className="admin-actions">
-            <a className="button button--dark" href="/api/admin/waitlist.csv">
-              Export CSV
+            <a className="button button--dark" href="/api/admin/waitlist.xlsx">
+              Export spreadsheet
             </a>
             <a className="text-link" href={chatGPTSignOutPath("/")}>
               Sign out
@@ -213,6 +120,7 @@ export default async function WaitlistAdminPage({
                   <th>20-min call</th>
                   <th>Source</th>
                   <th>Joined</th>
+                  <th><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
               <tbody>
@@ -273,6 +181,16 @@ export default async function WaitlistAdminPage({
                         }).format(new Date(signup.created_at))}
                       </time>
                     </td>
+                    <td>
+                      <DeleteWaitlistSignupButton
+                        signupId={signup.id}
+                        leadLabel={
+                          [signup.first_name, signup.last_name]
+                            .filter(Boolean)
+                            .join(" ") || signup.email
+                        }
+                      />
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -288,6 +206,63 @@ export default async function WaitlistAdminPage({
             </p>
           </div>
         )}
+
+        {hiddenSignups.length ? (
+          <details className="admin-hidden-signups">
+            <summary>
+              Manage hidden test entries <span>{hiddenSignups.length}</span>
+            </summary>
+            <p>
+              Hidden entries are excluded from both spreadsheet tabs. Delete
+              them here to remove them permanently from the database.
+            </p>
+            <div className="admin-table-shell">
+              <table className="admin-table">
+                <thead>
+                  <tr>
+                    <th>Lead</th>
+                    <th>Status</th>
+                    <th>Joined</th>
+                    <th><span className="sr-only">Actions</span></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {hiddenSignups.map((signup) => {
+                    const entry = categorizeSignup(signup);
+                    const leadLabel =
+                      [signup.first_name, signup.last_name]
+                        .filter(Boolean)
+                        .join(" ") || signup.email;
+                    return (
+                      <tr key={signup.id}>
+                        <td className="admin-lead">
+                          <strong>{leadLabel}</strong>
+                          <a href={`mailto:${signup.email}`}>{signup.email}</a>
+                        </td>
+                        <td>{entry.tab === "qualified" ? "Qualified" : "Unqualified"}</td>
+                        <td>
+                          <time dateTime={signup.created_at}>
+                            {new Intl.DateTimeFormat("en", {
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                              timeZone: "UTC",
+                            }).format(new Date(signup.created_at))}
+                          </time>
+                        </td>
+                        <td>
+                          <DeleteWaitlistSignupButton
+                            signupId={signup.id}
+                            leadLabel={leadLabel}
+                          />
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </details>
+        ) : null}
       </div>
     </main>
   );
