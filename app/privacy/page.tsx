@@ -20,12 +20,13 @@ export default function PrivacyPage() {
         </a>
         <p className="eyebrow">Privacy</p>
         <h1>Privacy notice</h1>
-        <p className="legal-updated">Effective August 1, 2026</p>
+        <p className="legal-updated">Effective August 3, 2026</p>
 
         <p className="legal-intro">
           This notice explains how Frame Health Technologies handles information
           submitted through the Frame website, including its research and
-          early-access waitlist and contact form.
+          early-access waitlist, contact form, and Founding Contributor
+          membership experience.
         </p>
 
         <section>
@@ -34,6 +35,25 @@ export default function PrivacyPage() {
             If you use the contact form, we collect your name, email address,
             the topic you select, and your message so we can respond. Please do
             not include private medical information.
+          </p>
+        </section>
+
+        <section>
+          <h2>Founding Contributor membership</h2>
+          <p>
+            If you purchase a membership, we collect the name and email address
+            associated with your purchase, payment status and amount, the terms
+            version you accepted, membership and access dates, and your
+            contributor number. Stripe processes your payment details. Frame
+            does not receive or store your full card number.
+          </p>
+          <p>
+            The private contributor hub uses passwordless authentication. If
+            you complete onboarding or participate in the hub, we may also
+            collect your preferred name, country, interests, programme
+            feedback, questions, advisory votes, event participation, and
+            optional research applications. Please do not submit diagnoses,
+            symptoms, test results, or other medical information.
           </p>
         </section>
 
@@ -74,7 +94,9 @@ export default function PrivacyPage() {
             campaigns. The Pixel may use browser identifiers and similar
             technologies, which Meta processes under its own privacy policy. We
             do not send your name, email address, age, gender, or written
-            responses to Meta through the Pixel.
+            responses to Meta through the Pixel. The Pixel is not initialized
+            on checkout review, payment-success, member sign-in, onboarding,
+            private contributor-hub, or administration routes.
           </p>
         </section>
 
@@ -82,10 +104,15 @@ export default function PrivacyPage() {
           <h2>Sharing and retention</h2>
           <p>
             We do not sell your information. We share it only with service
-            providers that help us host, secure, operate the website, and
-            deliver contact messages, or when required by law. We keep submitted
-            information while Frame is in development or until you ask us to
-            delete it.
+            providers that help us host, secure, operate the website, process
+            payments, authenticate members, and deliver messages, or when
+            required by law. These providers currently include Stripe for
+            payments, Supabase for authentication and data storage, Resend for
+            transactional email, and our website hosting provider. We keep
+            submitted information while Frame is in development, for the period
+            needed to provide a membership and meet legal or accounting duties,
+            or until you ask us to delete information we are not required to
+            retain.
           </p>
         </section>
 

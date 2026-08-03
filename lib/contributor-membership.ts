@@ -1,0 +1,57 @@
+export const CONTRIBUTOR_TERMS_VERSION = "draft-2026-08-03-v1";
+export const CONTRIBUTOR_PRICE_CENTS = 9_900;
+export const CONTRIBUTOR_PRICE_LABEL = "$99";
+export const CONTRIBUTOR_CURRENCY = "usd";
+export const CONTRIBUTOR_ACCESS_MONTHS = 12;
+
+export const currentBenefits = [
+  "Permanent Founding Contributor status",
+  "A numbered contributor badge and optional Founders’ Wall recognition",
+  "12 months of access to Frame’s private development community",
+  "Monthly development updates and an accessible archive",
+  "A weekly asynchronous founder Q&A thread",
+  "Quarterly group briefings, demonstrations, and recordings",
+  "Advisory votes on selected product and communication decisions",
+  "Priority consideration for appropriately consented research opportunities",
+] as const;
+
+export const conditionalBenefits = [
+  "Priority access to purchase Frame in your region",
+  "10% off at launch, up to $50",
+  "Priority consideration for future product research opportunities",
+] as const;
+
+export const roadmapStages = [
+  ["01", "Technical proof of concept", "Investigate whether ultrasound can capture useful arterial information."],
+  ["02", "Measurement validation", "Test whether captured information can support dependable blood-pressure estimation."],
+  ["03", "Integrated engineering prototype", "Combine sensing, electronics, software, and data processing into a working prototype."],
+  ["04", "Wearability and safety testing", "Study comfort, contact quality, repeatability, motion tolerance, and safety."],
+  ["05", "Regulatory pathway", "Determine the evidence, quality systems, and authorizations required for any commercial product."],
+  ["06", "Potential commercial product", "Consider manufacture and launch only if the preceding technical and regulatory work supports it."],
+] as const;
+
+export const CURRENT_ROADMAP_STAGE_LABEL = "03";
+
+export type RoadmapStageStatus = "completed" | "current" | "proposed";
+
+export function getRoadmapStageStatus(label: string): RoadmapStageStatus {
+  if (label === CURRENT_ROADMAP_STAGE_LABEL) return "current";
+
+  return Number(label) < Number(CURRENT_ROADMAP_STAGE_LABEL)
+    ? "completed"
+    : "proposed";
+}
+
+export function addMembershipYear(date: Date) {
+  const expires = new Date(date);
+  expires.setUTCFullYear(expires.getUTCFullYear() + 1);
+  return expires;
+}
+
+export function formatContributorNumber(value: number | string) {
+  return `FC-${String(value).padStart(4, "0")}`;
+}
+
+export function isFoundingContributorsEnabled() {
+  return process.env.NEXT_PUBLIC_FOUNDING_CONTRIBUTORS_ENABLED === "true";
+}

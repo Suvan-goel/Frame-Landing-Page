@@ -10,6 +10,8 @@ const MIN_SITUATION_LENGTH = 20;
 const MAX_SITUATION_LENGTH = 750;
 const MIN_AGE = 18;
 const MAX_AGE = 120;
+const FOUNDING_CONTRIBUTORS_ENABLED =
+  process.env.NEXT_PUBLIC_FOUNDING_CONTRIBUTORS_ENABLED === "true";
 
 const MAIN_REASON_OPTIONS = [
   [
@@ -290,6 +292,12 @@ export function InterestFlow() {
     "A little about you.",
   ];
 
+  const canContinue =
+    (step === 0 && Boolean(mainReason)) ||
+    (step === 1 && recentSituation.trim().length >= MIN_SITUATION_LENGTH) ||
+    (step === 2 && Boolean(monitoringMethod)) ||
+    (step === 3 && Boolean(interviewWillingness));
+
   return (
     <main className="interest-flow" aria-labelledby="interest-flow-title">
       <div className="interest-flow__shell">
@@ -324,6 +332,20 @@ export function InterestFlow() {
                 Submit another response
               </button>
             </div>
+            {FOUNDING_CONTRIBUTORS_ENABLED ? (
+              <aside className="interest-flow__membership-offer">
+                <p className="eyebrow">Want to go further?</p>
+                <h3>Become a Founding Contributor</h3>
+                <p>
+                  Join Frame&apos;s private development community for 12 months.
+                  The one-time $99 membership supports the work; it is not a
+                  product purchase or preorder.
+                </p>
+                <Link href="/founding-contributors?source=waitlist_success" className="text-link">
+                  See what membership includes <span aria-hidden="true">↗</span>
+                </Link>
+              </aside>
+            ) : null}
           </div>
         ) : (
           <form className="interest-flow__form" onSubmit={handleSubmit} noValidate>
@@ -371,7 +393,6 @@ export function InterestFlow() {
                       setRecentSituation(event.target.value);
                       clearError("recentSituation");
                     }}
-                    placeholder="For example: Help me understand why my blood pressure changes throughout the day…"
                     minLength={MIN_SITUATION_LENGTH}
                     maxLength={MAX_SITUATION_LENGTH}
                     aria-invalid={Boolean(errors.recentSituation)}
@@ -464,7 +485,12 @@ export function InterestFlow() {
                 </button>
               ) : <span />}
               {step < 4 ? (
-                <button className="button button--dark" type="button" onClick={handleContinue}>
+                <button
+                  className="button button--dark"
+                  type="button"
+                  onClick={handleContinue}
+                  disabled={!canContinue}
+                >
                   Continue
                 </button>
               ) : (

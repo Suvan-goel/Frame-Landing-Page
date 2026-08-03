@@ -3,7 +3,6 @@ export const dynamic = "force-dynamic";
 const CONTACT_EMAIL = "support@framewearable.com";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_BODY_BYTES = 16_384;
-const MIN_MESSAGE_LENGTH = 20;
 const MAX_MESSAGE_LENGTH = 3000;
 
 const TOPIC_LABELS = new Map([
@@ -95,11 +94,12 @@ export async function POST(request: Request) {
   if (!topicLabel) {
     return jsonResponse({ error: "Choose what you’d like to discuss." }, 400);
   }
-  if (message.length < MIN_MESSAGE_LENGTH || message.length > MAX_MESSAGE_LENGTH) {
+  if (!message) {
+    return jsonResponse({ error: "Enter a message." }, 400);
+  }
+  if (message.length > MAX_MESSAGE_LENGTH) {
     return jsonResponse(
-      {
-        error: `Write between ${MIN_MESSAGE_LENGTH} and ${MAX_MESSAGE_LENGTH} characters.`,
-      },
+      { error: `Keep your message to ${MAX_MESSAGE_LENGTH} characters or fewer.` },
       400,
     );
   }

@@ -1,4 +1,7 @@
-/* eslint-disable @next/next/no-img-element */
+"use client";
+
+import { usePathname } from "next/navigation";
+import { useEffect } from "react";
 
 export const META_PIXEL_ID = "1068997465474786";
 const META_LEAD_RECORDED_STORAGE_KEY = "frame-meta-lead-recorded-v1";
@@ -22,27 +25,43 @@ fbq('init', '${META_PIXEL_ID}');
 fbq('track', 'PageView');
 `;
 
-export function MetaPixelScript() {
+const PRIVATE_PREFIXES = ["/contributors", "/admin", "/api"];
+const PRIVATE_EXACT_PATHS = [
+  "/founding-contributors/review",
+  "/founding-contributors/success",
+];
+
+export function isMetaPixelAllowed(pathname: string) {
   return (
-    <script
-      id="meta-pixel"
-      dangerouslySetInnerHTML={{ __html: META_PIXEL_BOOTSTRAP }}
-    />
+    !PRIVATE_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)) &&
+    !PRIVATE_EXACT_PATHS.includes(pathname)
   );
 }
 
-export function MetaPixelNoScript() {
-  return (
-    <noscript>
-      <img
-        alt=""
-        height="1"
-        width="1"
-        style={{ display: "none" }}
-        src={`https://www.facebook.com/tr?id=${META_PIXEL_ID}&ev=PageView&noscript=1`}
-      />
-    </noscript>
-  );
+export function MetaPixelRouteGuard() {
+  const pathname = usePathname();
+
+  useEffect(() => {
+    if (!isMetaPixelAllowed(pathname)) {
+      document.getElementById("meta-pixel")?.remove();
+      document
+        .querySelectorAll('script[src*="connect.facebook.net"]')
+        .forEach((script) => script.remove());
+      window.fbq = undefined;
+      return;
+    }
+    if (typeof window.fbq === "function") {
+      window.fbq("trackSingle", META_PIXEL_ID, "PageView");
+      return;
+    }
+    if (document.getElementById("meta-pixel")) return;
+    const script = document.createElement("script");
+    script.id = "meta-pixel";
+    script.text = META_PIXEL_BOOTSTRAP;
+    document.head.appendChild(script);
+  }, [pathname]);
+
+  return null;
 }
 
 export function trackMetaLead() {

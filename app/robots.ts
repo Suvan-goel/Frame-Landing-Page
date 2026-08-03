@@ -1,13 +1,19 @@
 import type { MetadataRoute } from "next";
 
-const siteUrl = "https://frame-blood-pressure.suvang.chatgpt.site";
+const siteUrl = "https://framewearable.com";
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
       allow: ["/", "/privacy"],
-      disallow: ["/admin/", "/api/"],
+      disallow: [
+        "/admin/",
+        "/api/",
+        "/contributors/",
+        "/founding-contributors/review",
+        "/founding-contributors/success",
+      ],
     },
     sitemap: `${siteUrl}/sitemap.xml`,
   };

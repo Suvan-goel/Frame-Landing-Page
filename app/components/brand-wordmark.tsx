@@ -21,6 +21,7 @@ export function BrandWordmark({
       width={1044}
       height={268}
       priority={priority}
+      unoptimized
     />
   );
 }
