@@ -3727,7 +3727,7 @@ h2 {
 .contributor-success dl {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  margin: 42px 0;
+  margin: 42px 0 0;
   border: 1px solid var(--line);
   text-align: left;
 }
@@ -3750,8 +3750,22 @@ h2 {
   font-size: 1.2rem;
 }
 
+.contributor-success__steps-heading {
+  margin-top: 54px;
+  text-align: left;
+}
+
+.contributor-success__steps-heading h2 {
+  margin: 12px 0 0;
+  font-family: var(--serif);
+  font-size: 2rem;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
 .contributor-success__steps {
-  margin: 40px 0;
+  margin: 24px 0 42px;
   padding: 0;
   list-style: none;
   text-align: left;
@@ -3764,6 +3778,10 @@ h2 {
   border-top: 1px solid var(--line);
 }
 
+.contributor-success__steps li:last-child {
+  border-bottom: 1px solid var(--line);
+}
+
 .contributor-success__steps span {
   color: var(--burgundy);
 }
@@ -3773,6 +3791,15 @@ h2 {
   align-items: center;
   justify-content: center;
   gap: 28px;
+}
+
+.contributor-success__refund-link {
+  display: inline-block;
+  margin-top: 24px;
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 .contributor-success__loader {

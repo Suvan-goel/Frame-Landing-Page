@@ -23,7 +23,8 @@ export function ContributorAuthConfirm() {
         setMessage("This sign-in link is invalid or has expired. Request a new one.");
         return;
       }
-      window.location.replace("/contributors");
+      const next = new URLSearchParams(window.location.search).get("next");
+      window.location.replace(next === "onboarding" ? "/contributors/onboarding" : "/contributors");
     }
     void finish();
     return () => {
