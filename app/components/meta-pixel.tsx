@@ -55,10 +55,29 @@ export function MetaPixelRouteGuard() {
       return;
     }
     if (document.getElementById("meta-pixel")) return;
-    const script = document.createElement("script");
-    script.id = "meta-pixel";
-    script.text = META_PIXEL_BOOTSTRAP;
-    document.head.appendChild(script);
+
+    const loadPixel = () => {
+      if (document.getElementById("meta-pixel")) return;
+      const script = document.createElement("script");
+      script.id = "meta-pixel";
+      script.text = META_PIXEL_BOOTSTRAP;
+      document.head.appendChild(script);
+    };
+
+    // Keep third-party tracking out of the critical rendering path while still
+    // recording engaged visits immediately on their first interaction.
+    const timerId = window.setTimeout(loadPixel, 3500);
+    window.addEventListener("pointerdown", loadPixel, {
+      once: true,
+      passive: true,
+    });
+    window.addEventListener("keydown", loadPixel, { once: true });
+
+    return () => {
+      window.clearTimeout(timerId);
+      window.removeEventListener("pointerdown", loadPixel);
+      window.removeEventListener("keydown", loadPixel);
+    };
   }, [pathname]);
 
   return null;

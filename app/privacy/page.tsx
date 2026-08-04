@@ -6,6 +6,9 @@ import { isFoundingContributorSalesPageEnabled } from "@/lib/contributor-sales-p
 export const metadata: Metadata = {
   title: "Privacy — Frame",
   description: "How Frame handles information submitted through its website.",
+  alternates: {
+    canonical: "/privacy",
+  },
   robots: {
     index: true,
     follow: true,

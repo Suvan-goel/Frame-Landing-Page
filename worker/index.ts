@@ -23,6 +23,55 @@ interface ExecutionContext {
   passThroughOnException(): void;
 }
 
+const STATIC_CONTENT_TYPES: Record<string, string> = {
+  ".avif": "image/avif",
+  ".gif": "image/gif",
+  ".ico": "image/x-icon",
+  ".jpeg": "image/jpeg",
+  ".jpg": "image/jpeg",
+  ".png": "image/png",
+  ".svg": "image/svg+xml",
+  ".webp": "image/webp",
+  ".woff": "font/woff",
+  ".woff2": "font/woff2",
+};
+
+function withPublicResponseHeaders(response: Response, url: URL) {
+  const headers = new Headers(response.headers);
+  const extension = Object.keys(STATIC_CONTENT_TYPES).find((candidate) =>
+    url.pathname.toLowerCase().endsWith(candidate),
+  );
+
+  if (
+    response.ok &&
+    extension &&
+    (!headers.has("content-type") ||
+      headers.get("content-type") === "application/octet-stream")
+  ) {
+    headers.set("Content-Type", STATIC_CONTENT_TYPES[extension]);
+  }
+
+  if (response.ok && url.pathname.startsWith("/assets/")) {
+    headers.set("Cache-Control", "public, max-age=31536000, immutable");
+  } else if (response.ok && extension) {
+    headers.set(
+      "Cache-Control",
+      "public, max-age=2592000, stale-while-revalidate=86400",
+    );
+  }
+
+  if (headers.get("content-type")?.startsWith("text/html")) {
+    headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+    headers.set("X-Content-Type-Options", "nosniff");
+  }
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  });
+}
+
 // Image security config. SVG sources with .svg extension auto-skip the
 // optimization endpoint on the client side (served directly, no proxy).
 // To route SVGs through the optimizer (with security headers), set
@@ -32,6 +81,14 @@ interface ExecutionContext {
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
+
+    if (url.hostname.toLowerCase() === "www.framewearable.com") {
+      return Response.redirect(
+        `https://framewearable.com${url.pathname}${url.search}`,
+        308,
+      );
+    }
+
     const isLocalRequest = isLoopbackHost(url.host);
     const optimizedImageSource =
       url.pathname === "/_vinext/image" ? url.searchParams.get("url") : null;
@@ -72,7 +129,13 @@ const worker = {
       isLocalRequest ? "1" : "0",
     );
 
-    return handler.fetch(new Request(request, { headers: appHeaders }), env, ctx);
+    const response = await handler.fetch(
+      new Request(request, { headers: appHeaders }),
+      env,
+      ctx,
+    );
+
+    return withPublicResponseHeaders(response, url);
   },
 };
 

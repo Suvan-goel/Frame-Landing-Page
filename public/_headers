@@ -1,0 +1,17 @@
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/assets/*.woff2
+  Content-Type: font/woff2
+
+/*.webp
+  Content-Type: image/webp
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+
+/*.png
+  Content-Type: image/png
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400
+
+/*.svg
+  Content-Type: image/svg+xml
+  Cache-Control: public, max-age=2592000, stale-while-revalidate=86400

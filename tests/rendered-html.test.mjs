@@ -30,7 +30,10 @@ test("server-renders the Frame landing page", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>Frame - Blood pressure in context<\/title>/i);
+  assert.match(
+    html,
+    /<title>Frame \| Ultrasound Wearable for Blood Pressure Patterns<\/title>/i,
+  );
   assert.match(
     html,
     /See how your cardiovascular system responds to daily life\./,
@@ -45,10 +48,12 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /Signal integrity/);
   assert.match(html, /Research and engineering inquiries/);
   assert.match(html, /Frame is under development and is not currently available for sale\./);
-  assert.match(html, /frame-product-concept-realistic-v3-transparent\.webp/);
-  assert.match(html, /frame-hero-man-transparent-v3\.webp/);
-  assert.match(html, /frame-sensing-concept-realistic-v3-transparent\.webp/);
-  assert.match(html, /frame-app-studio-v5\.webp/);
+  assert.match(html, /frame-product-concept-realistic-v3-transparent-720w\.webp/);
+  assert.match(html, /frame-hero-man-transparent-v3-720w\.webp/);
+  assert.match(html, /frame-sensing-concept-realistic-v3-transparent-960w\.webp/);
+  assert.match(html, /frame-app-studio-v5-640w\.webp/);
+  assert.match(html, /<script type="application\/ld\+json">/);
+  assert.match(html, /Frame Health Technologies/);
   assert.doesNotMatch(html, /facebook\.com\/tr\?id=/);
   assert.equal(html.match(/href="\/interest"/g)?.length, 3);
   assert.doesNotMatch(html, /What is the main reason you want Frame\?/);
@@ -286,16 +291,16 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     readdir(new URL("../public/", import.meta.url)),
   ]);
 
-  assert.match(page, /src="\/frame-product-concept-realistic-v3-transparent\.webp"/);
+  assert.match(page, /src="\/frame-product-concept-realistic-v3-transparent-720w\.webp"/);
   assert.match(page, /width=\{1254\}\s+height=\{1254\}/);
   assert.match(
     css,
     /\.product-concept-showcase__media img\s*\{[\s\S]*?width: min\(24vw, 270px\);/,
   );
-  assert.match(page, /src="\/frame-hero-man-transparent-v3\.webp"/);
+  assert.match(page, /src="\/frame-hero-man-transparent-v3-720w\.webp"/);
   assert.match(
     page,
-    /src="\/frame-hero-man-transparent-v3\.webp"[\s\S]*?width=\{1089\}[\s\S]*?height=\{1444\}/,
+    /src="\/frame-hero-man-transparent-v3-720w\.webp"[\s\S]*?width=\{1089\}[\s\S]*?height=\{1444\}/,
   );
   assert.match(css, /\.hero-visuals\s*\{[\s\S]*?top: 12px;/);
   assert.doesNotMatch(css, /\.hero-lifestyle\s*\{[^}]*transform:/);
@@ -303,8 +308,8 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     css,
     /\.hero-lifestyle img\s*\{[^}]*height: 98\.398125%;[^}]*transform: translate\(-144px, 76px\);/,
   );
-  assert.match(page, /src="\/frame-sensing-concept-realistic-v3-transparent\.webp"/);
-  assert.match(page, /src="\/frame-app-studio-v5\.webp"/);
+  assert.match(page, /src="\/frame-sensing-concept-realistic-v3-transparent-960w\.webp"/);
+  assert.match(page, /src="\/frame-app-studio-v5-640w\.webp"/);
   assert.doesNotMatch(page, /<svg|ProductDiagram|CrossSection|PatternTimeline/);
   assert.match(interestFlow, /fetch\("\/api\/waitlist"/);
   assert.doesNotMatch(interestFlow, /<dialog|showModal\(|OPEN_INTEREST_FLOW_EVENT/);
@@ -373,7 +378,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(contributorPayments, /if \(duplicatePayment\) return/);
   assert.match(contributorPayments, /existingContributor\.checkout_intent_id === intent\.id/);
   assert.doesNotMatch(page, /Connect a real waitlist API/);
-  assert.match(layout, /url: `\$\{baseUrl\}\/og-launch-v2\.png`/);
+  assert.match(layout, /url: "\/og-launch-v2\.png"/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
   assert.match(api, /from\("waitlist_signups"\)\.insert/);
   assert.match(api, /first_name: firstName/);
@@ -543,8 +548,8 @@ test("validates contact messages before sending email", async () => {
   assert.match(contactApi, /Enter a message\./);
   assert.match(privacy, /href="\/contact\?topic=privacy"/);
   assert.doesNotMatch(privacy, /mailto:support@framewearable\.com/);
-  assert.match(sitemap, /https:\/\/framewearable\.com/);
-  assert.match(sitemap, /`\$\{siteUrl\}\/contact`/);
+  assert.match(sitemap, /import \{ SITE_URL \} from "@\/lib\/site"/);
+  assert.match(sitemap, /`\$\{SITE_URL\}\/contact`/);
 });
 
 test("separates, visualizes, exports, and permanently deletes admin leads", async () => {
