@@ -24,6 +24,20 @@ async function render(path = "/", init, origin = "http://localhost") {
   );
 }
 
+test("permanently redirects www requests to the canonical host", async () => {
+  const response = await render(
+    "/privacy?source=www",
+    undefined,
+    "https://www.framewearable.com",
+  );
+
+  assert.equal(response.status, 308);
+  assert.equal(
+    response.headers.get("location"),
+    "https://framewearable.com/privacy?source=www",
+  );
+});
+
 test("server-renders the Frame landing page", async () => {
   const response = await render();
   assert.equal(response.status, 200);
