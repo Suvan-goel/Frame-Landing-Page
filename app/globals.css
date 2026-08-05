@@ -3013,6 +3013,38 @@ h2 {
     display: none;
   }
 
+  .site-header__back-arrow {
+    position: relative;
+    width: 1.15rem;
+    height: 1rem;
+    flex: 0 0 auto;
+    color: transparent;
+    font-size: 0;
+  }
+
+  .site-header__back-arrow::before {
+    position: absolute;
+    top: 50%;
+    right: 0;
+    left: 0;
+    height: 1px;
+    background: var(--ink);
+    content: "";
+    transform: translateY(-50%);
+  }
+
+  .site-header__back-arrow::after {
+    position: absolute;
+    top: 50%;
+    left: 1px;
+    width: 0.36rem;
+    height: 0.36rem;
+    border-bottom: 1px solid var(--ink);
+    border-left: 1px solid var(--ink);
+    content: "";
+    transform: translateY(-50%) rotate(45deg);
+  }
+
   .section {
     padding: 64px 0;
   }
