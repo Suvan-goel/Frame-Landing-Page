@@ -591,6 +591,14 @@ test("separates, visualizes, exports, and permanently deletes admin leads", asyn
   assert.match(leadHelpers, /isQualifiedSignup/);
   assert.match(
     leadHelpers,
+    /monitor_high_or_borderline: "See my blood pressure patterns over time"/,
+  );
+  assert.doesNotMatch(
+    leadHelpers,
+    /Monitor high or borderline blood pressure/,
+  );
+  assert.match(
+    leadHelpers,
     /signup\.first_name\?\.trim\(\)\.toLocaleLowerCase\(\) !== "suvan"/,
   );
   assert.match(workbookRoute, /"Qualified leads"/);

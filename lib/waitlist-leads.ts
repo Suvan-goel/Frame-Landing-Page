@@ -23,7 +23,7 @@ export type QualificationResponse = {
 export type LeadTab = "qualified" | "unqualified";
 
 export const mainReasonLabels: Record<string, string> = {
-  monitor_high_or_borderline: "Monitor high or borderline blood pressure",
+  monitor_high_or_borderline: "See my blood pressure patterns over time",
   understand_sleep: "Understand blood pressure while sleeping",
   understand_daily_factors: "Understand food, alcohol, stress and exercise",
   understand_unexplained_changes: "Understand unexplained changes",
