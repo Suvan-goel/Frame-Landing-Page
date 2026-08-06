@@ -6,9 +6,19 @@ import { useEffect } from "react";
 export const META_PIXEL_ID = "1068997465474786";
 const META_LEAD_RECORDED_STORAGE_KEY = "frame-meta-lead-recorded-v1";
 
+export type WaitlistAnalyticsEvent =
+  | "waitlist_form_viewed"
+  | "waitlist_email_submitted"
+  | "waitlist_email_success"
+  | "waitlist_email_error"
+  | "qualification_started"
+  | "qualification_skipped"
+  | "qualification_completed";
+
 declare global {
   interface Window {
     fbq?: (...args: unknown[]) => void;
+    dataLayer?: Array<Record<string, unknown>>;
   }
 }
 
@@ -32,6 +42,13 @@ const PRIVATE_EXACT_PATHS = [
 ];
 const PRIVATE_ADDITIONAL_PREFIXES = ["/preorder", "/preorders"];
 
+function isLocalBrowserHost() {
+  if (typeof window === "undefined") return false;
+  return ["localhost", "127.0.0.1", "::1"].includes(
+    window.location.hostname.toLowerCase(),
+  );
+}
+
 export function isMetaPixelAllowed(pathname: string) {
   return (
     !PRIVATE_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)) &&
@@ -44,7 +61,7 @@ export function MetaPixelRouteGuard() {
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!isMetaPixelAllowed(pathname)) {
+    if (isLocalBrowserHost() || !isMetaPixelAllowed(pathname)) {
       document.getElementById("meta-pixel")?.remove();
       document
         .querySelectorAll('script[src*="connect.facebook.net"]')
@@ -85,28 +102,59 @@ export function MetaPixelRouteGuard() {
   return null;
 }
 
-export function trackMetaLead() {
+function trackMetaConversion(
+  eventName: "Lead" | "QualifiedLead",
+  recordKey: string,
+) {
   if (typeof window === "undefined" || typeof window.fbq !== "function") {
     return;
   }
+  if (isLocalBrowserHost()) return;
+
+  const storageKey = `${META_LEAD_RECORDED_STORAGE_KEY}:${eventName}:${recordKey}`;
 
   try {
-    if (
-      window.localStorage.getItem(META_LEAD_RECORDED_STORAGE_KEY) === "true"
-    ) {
+    if (window.localStorage.getItem(storageKey) === "true") {
       return;
     }
   } catch {
     // Tracking should still work when browser storage is unavailable.
   }
 
-  window.fbq("trackSingle", META_PIXEL_ID, "Lead", {
-    content_name: "Frame early access application",
-  });
+  if (eventName === "Lead") {
+    window.fbq("trackSingle", META_PIXEL_ID, "Lead", {
+      content_name: "Frame early access signup",
+    });
+  } else {
+    window.fbq("trackSingleCustom", META_PIXEL_ID, "QualifiedLead", {
+      content_name: "Frame optional qualification survey",
+    });
+  }
 
   try {
-    window.localStorage.setItem(META_LEAD_RECORDED_STORAGE_KEY, "true");
+    window.localStorage.setItem(storageKey, "true");
   } catch {
     // A sent conversion should not be affected by unavailable storage.
   }
+}
+
+export function trackMetaLead(recordKey = "legacy") {
+  trackMetaConversion("Lead", recordKey);
+}
+
+export function trackMetaQualifiedLead(recordKey: string) {
+  trackMetaConversion("QualifiedLead", recordKey);
+}
+
+export function trackWaitlistEvent(
+  event: WaitlistAnalyticsEvent,
+  detail: Record<string, string | boolean> = {},
+) {
+  if (typeof window === "undefined") return;
+
+  const payload = { event, ...detail };
+  window.dispatchEvent(
+    new CustomEvent("frame:analytics", { detail: payload }),
+  );
+  window.dataLayer?.push(payload);
 }

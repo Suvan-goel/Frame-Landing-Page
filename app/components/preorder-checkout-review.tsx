@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 
 export function PreorderCheckoutReview({
   priceLabel,
@@ -18,6 +18,7 @@ export function PreorderCheckoutReview({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [cancelled, setCancelled] = useState(false);
+  const requestKey = useRef<string | null>(null);
   const countryLabel = allowedCountries
     .map((country) => country === "GB" ? "UK" : country)
     .join(", ");
@@ -43,6 +44,7 @@ export function PreorderCheckoutReview({
     setSubmitting(true);
     setError("");
     const query = new URLSearchParams(window.location.search);
+    requestKey.current ??= window.crypto.randomUUID();
     try {
       const response = await fetch("/api/preorders/checkout", {
         method: "POST",
@@ -56,6 +58,7 @@ export function PreorderCheckoutReview({
           utmSource: query.get("utm_source"),
           utmMedium: query.get("utm_medium"),
           utmCampaign: query.get("utm_campaign"),
+          requestKey: requestKey.current,
         }),
       });
       const result = (await response.json()) as { url?: string; error?: string };

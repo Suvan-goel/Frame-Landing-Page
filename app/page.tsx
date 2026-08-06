@@ -2,6 +2,10 @@
 import Link from "next/link";
 import { BrandWordmark } from "./components/brand-wordmark";
 import { MobileNavigation } from "./components/mobile-navigation";
+import {
+  WaitlistSignupFlow,
+  WaitlistSignupProvider,
+} from "./components/waitlist-signup-flow";
 import { isFoundingContributorSalesPageEnabled } from "@/lib/contributor-sales-page.server";
 import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
 import { INSTAGRAM_URL } from "@/lib/site";
@@ -43,7 +47,7 @@ export default async function Home() {
   const mobileNavigation = [
     ...content.navigation,
     ...(showPreorderAreas
-      ? [{ label: "Pre-order test", href: "/preorder/review?source=homepage_nav" }]
+      ? [{ label: "Pre-order", href: "/preorder/review?source=homepage_nav" }]
       : []),
     ...(showLocalContributorAreas
       ? [{ label: "Contributors", href: "/founding-contributors" }]
@@ -51,6 +55,7 @@ export default async function Home() {
   ];
 
   return (
+    <WaitlistSignupProvider>
     <main>
       <header className="nav-shell">
         <nav className="nav container" aria-label="Primary navigation">
@@ -64,14 +69,14 @@ export default async function Home() {
               </a>
             ))}
             {showPreorderAreas ? (
-              <a href="/preorder/review?source=homepage_nav">Pre-order test</a>
+              <a href="/preorder/review?source=homepage_nav">Pre-order</a>
             ) : null}
             {showLocalContributorAreas ? (
               <a href="/founding-contributors">Contributors</a>
             ) : null}
           </div>
-          <a className="nav-cta" href="/interest">
-            I&apos;m interested
+          <a className="nav-cta" href="#homepage-hero-waitlist">
+            Join early access
           </a>
           <MobileNavigation items={mobileNavigation} />
         </nav>
@@ -90,16 +95,14 @@ export default async function Home() {
               ultrasound to track blood-pressure patterns through sleep, rest,
               and recovery, then turns them into clear, personal insight.
             </p>
-            <div className="hero-actions">
-              <a className="button button--dark" href="/interest">
-                I&apos;m interested
-              </a>
+            <WaitlistSignupFlow placement="homepage_hero" />
+            <div className="hero-actions hero-actions--secondary">
               <a className="text-link" href="#how-it-works">
                 How it works <span aria-hidden="true">↓</span>
               </a>
               {showPreorderAreas ? (
                 <a className="text-link" href="/preorder/review?source=homepage_hero">
-                  Test pre-order <span aria-hidden="true">↗</span>
+                  Pre-order Frame <span aria-hidden="true">↗</span>
                 </a>
               ) : null}
             </div>
@@ -350,15 +353,17 @@ export default async function Home() {
         <section className="home-contributor-section home-preorder-section">
           <div className="container home-contributor-grid">
             <div>
-              <p className="eyebrow">Local pre-order implementation</p>
-              <h2>Test the complete device-order journey.</h2>
+              <p className="eyebrow">Frame pre-orders</p>
+              <h2>Reserve one of the first Frames.</h2>
             </div>
             <div>
               <p>
-                A private $299 Stripe test flow for product review, shipping details, signed payment fulfilment, confirmation and owner reporting. Public sales remain blocked.
+                Pre-order one Frame for $299. You&apos;ll review its development status,
+                estimated delivery, and refund terms before continuing to secure
+                checkout. Your payment is taken when you place the pre-order.
               </p>
               <a className="button button--dark" href="/preorder/review?source=homepage">
-                Open the pre-order test
+                Review your pre-order
               </a>
             </div>
           </div>
@@ -372,14 +377,7 @@ export default async function Home() {
             <h2>Help shape a new way to understand cardiovascular health.</h2>
           </div>
           <div className="final-cta__form final-cta__action">
-            <p>
-              Do you think Frame sounds interesting? Help us out by answering
-              some short questions and sharing your contact details so we can
-              keep you up to date with Frame&apos;s development!
-            </p>
-            <a className="button button--light" href="/interest">
-              Register your interest.
-            </a>
+            <WaitlistSignupFlow placement="homepage_final" tone="light" />
             <a
               className="collaboration-link"
               href="/contact?topic=research"
@@ -406,7 +404,7 @@ export default async function Home() {
               <a href="/founding-contributors">Founding Contributors</a>
             ) : null}
             {showPreorderAreas ? (
-              <a href="/preorder/review?source=homepage_footer">Pre-order test</a>
+              <a href="/preorder/review?source=homepage_footer">Pre-order</a>
             ) : null}
             <a
               href={INSTAGRAM_URL}
@@ -422,7 +420,9 @@ export default async function Home() {
         </div>
         <div className="container footer-bottom">
           <p>
-            Frame is under development and is not currently available for sale.
+            {showPreorderAreas
+              ? "Frame is under development. A pre-order reserves a future device; the estimated delivery date may change. "
+              : "Frame is under development and is not currently available for sale. "}
             Product concepts and interfaces shown are illustrative. Frame is not
             intended to diagnose or treat any medical condition.
           </p>
@@ -430,5 +430,6 @@ export default async function Home() {
         </div>
       </footer>
     </main>
+    </WaitlistSignupProvider>
   );
 }

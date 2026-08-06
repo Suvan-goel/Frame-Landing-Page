@@ -9,6 +9,16 @@ import {
   isPreorderPath,
   isPreorderRequestAllowed,
 } from "../lib/preorder-access";
+import {
+  clearPreorderStagingCookieHeader,
+  createPreorderStagingCookieValue,
+  verifyPreorderStagingAccessToken,
+  isPreorderStagingConfigured,
+  isPreorderStagingCookieAllowed,
+  PREORDER_STAGING_ACCESS_PATH,
+  PREORDER_STAGING_EXIT_PATH,
+  preorderStagingCookieHeader,
+} from "../lib/preorder-staging-access";
 
 interface Env {
   ASSETS: Fetcher;
@@ -22,6 +32,7 @@ interface Env {
   };
   PREORDER_MODE?: string;
   PREORDER_LEGAL_APPROVED_VERSION?: string;
+  PREORDER_STAGING_ACCESS_SECRET?: string;
 }
 
 interface ExecutionContext {
@@ -96,6 +107,70 @@ const worker = {
     }
 
     const isLocalRequest = isLoopbackHost(url.host);
+    const stagingConfigured = isPreorderStagingConfigured({
+      mode: env.PREORDER_MODE,
+      secret: env.PREORDER_STAGING_ACCESS_SECRET,
+    });
+
+    if (!isLocalRequest && url.pathname === PREORDER_STAGING_ACCESS_PATH) {
+      const token = url.searchParams.get("token") ?? "";
+      const allowed =
+        stagingConfigured &&
+        (await verifyPreorderStagingAccessToken(
+          token,
+          env.PREORDER_STAGING_ACCESS_SECRET as string,
+        ));
+      if (!allowed) {
+        return new Response("Not found", {
+          status: 404,
+          headers: {
+            "Cache-Control": "no-store",
+            "Content-Type": "text/plain; charset=utf-8",
+            "Referrer-Policy": "no-referrer",
+            "X-Content-Type-Options": "nosniff",
+            "X-Robots-Tag": "noindex, nofollow",
+          },
+        });
+      }
+      const cookie = await createPreorderStagingCookieValue(
+        env.PREORDER_STAGING_ACCESS_SECRET as string,
+      );
+      return new Response(null, {
+        status: 303,
+        headers: {
+          "Cache-Control": "no-store",
+          Location: "/preorder/review?source=private_staging",
+          "Referrer-Policy": "no-referrer",
+          "Set-Cookie": preorderStagingCookieHeader(cookie),
+          "X-Content-Type-Options": "nosniff",
+          "X-Robots-Tag": "noindex, nofollow",
+        },
+      });
+    }
+
+    if (
+      !isLocalRequest &&
+      stagingConfigured &&
+      url.pathname === PREORDER_STAGING_EXIT_PATH
+    ) {
+      return new Response(null, {
+        status: 303,
+        headers: {
+          "Cache-Control": "no-store",
+          Location: "/",
+          "Set-Cookie": clearPreorderStagingCookieHeader(),
+          "X-Content-Type-Options": "nosniff",
+        },
+      });
+    }
+
+    const stagingRequestAllowed =
+      !isLocalRequest &&
+      (await isPreorderStagingCookieAllowed({
+        mode: env.PREORDER_MODE,
+        secret: env.PREORDER_STAGING_ACCESS_SECRET,
+        cookieHeader: request.headers.get("cookie"),
+      }));
     const optimizedImageSource =
       url.pathname === "/_vinext/image" ? url.searchParams.get("url") : null;
     const isContributorRequest =
@@ -107,15 +182,17 @@ const worker = {
         : false);
     const isPreorderRequest = isPreorderPath(url.pathname);
     const isSharedStripeWebhook = url.pathname === "/api/stripe/webhook";
-    const preorderRequestAllowed = isPreorderRequestAllowed({
-      host: url.host,
-      mode: env.PREORDER_MODE,
-      approvedTermsVersion: env.PREORDER_LEGAL_APPROVED_VERSION,
-    });
+    const preorderRequestAllowed =
+      isPreorderRequestAllowed({
+        host: url.host,
+        mode: env.PREORDER_MODE,
+        approvedTermsVersion: env.PREORDER_LEGAL_APPROVED_VERSION,
+      }) || stagingRequestAllowed;
 
     if (
       (isContributorRequest && !isLocalRequest) ||
-      ((isPreorderRequest || isSharedStripeWebhook) && !preorderRequestAllowed)
+      (isPreorderRequest && !preorderRequestAllowed) ||
+      (isSharedStripeWebhook && !preorderRequestAllowed && !stagingConfigured)
     ) {
       return new Response("Not found", {
         status: 404,
@@ -147,6 +224,10 @@ const worker = {
     appHeaders.set(
       "x-frame-preorder-sales-request",
       preorderRequestAllowed ? "1" : "0",
+    );
+    appHeaders.set(
+      "x-frame-preorder-staging-request",
+      stagingRequestAllowed ? "1" : "0",
     );
 
     const response = await handler.fetch(

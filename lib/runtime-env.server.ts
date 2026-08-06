@@ -10,6 +10,7 @@ import {
 export type FrameRuntimeEnv = {
   SUPABASE_URL?: string;
   SUPABASE_SECRET_KEY?: string;
+  WAITLIST_ADMIN_EMAILS?: string;
   RESEND_API_KEY?: string;
   CONTRIBUTOR_FROM_EMAIL?: string;
   STRIPE_SECRET_KEY?: string;
@@ -25,6 +26,10 @@ export type FrameRuntimeEnv = {
   PREORDER_ESTIMATED_DELIVERY?: string;
   STRIPE_PREORDER_PRICE_ID?: string;
   PREORDER_FROM_EMAIL?: string;
+  PREORDER_ORDER_ACCESS_SECRET?: string;
+  PREORDER_RATE_LIMIT_SECRET?: string;
+  PREORDER_STAGING_ACCESS_SECRET?: string;
+  PREORDER_OPERATIONS_EMAIL?: string;
 };
 
 export async function getFrameRuntimeEnv(): Promise<FrameRuntimeEnv> {
@@ -61,6 +66,7 @@ export async function getPreorderMode() {
 }
 
 export async function isPreorderSalesRequestEnabled(request: Request) {
+  if (request.headers.get("x-frame-preorder-sales-request") === "1") return true;
   return isPreorderRequestAllowed({
     host: new URL(request.url).host,
     mode: await getRuntimeValue("PREORDER_MODE"),

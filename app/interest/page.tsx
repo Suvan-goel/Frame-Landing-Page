@@ -3,9 +3,9 @@ import { InterestFlow } from "../components/interest-flow";
 import { isFoundingContributorSalesPageEnabled } from "@/lib/contributor-sales-page.server";
 
 export const metadata: Metadata = {
-  title: "Register your interest — Frame",
+  title: "Join Frame early access",
   description:
-    "Tell Frame what you want to understand about your blood pressure and register for early access.",
+    "Join Frame early access with your email, then optionally help shape the product with three short questions.",
   alternates: {
     canonical: "/interest",
   },

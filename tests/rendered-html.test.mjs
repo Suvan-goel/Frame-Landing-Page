@@ -2,8 +2,14 @@ import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 import { formatName } from "../lib/name-format.ts";
+import { createPreorderStagingAccessToken } from "../lib/preorder-staging-access.ts";
+import {
+  captureWaitlistEmail,
+  completeWaitlistQualification,
+  skipWaitlistQualification,
+} from "../lib/waitlist-service.server.ts";
 
-async function render(path = "/", init, origin = "http://localhost") {
+async function render(path = "/", init, origin = "http://localhost", env = {}) {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
@@ -16,12 +22,90 @@ async function render(path = "/", init, origin = "http://localhost") {
       ASSETS: {
         fetch: async () => new Response("Not found", { status: 404 }),
       },
+      ...env,
     },
     {
       waitUntil() {},
       passThroughOnException() {},
     },
   );
+}
+
+async function createRenderSession(origin = "http://localhost", env = {}) {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("session", `${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+
+  return (path, init) =>
+    worker.fetch(
+      new Request(`${origin}${path}`, init),
+      {
+        ASSETS: {
+          fetch: async () => new Response("Not found", { status: 404 }),
+        },
+        ...env,
+      },
+      {
+        waitUntil() {},
+        passThroughOnException() {},
+      },
+    );
+}
+
+function createWaitlistRepositoryFixture() {
+  const records = [];
+  let nextId = 1;
+  const repository = {
+    async findByEmail(email) {
+      return records.find((record) => record.email === email) ?? null;
+    },
+    async insert(input) {
+      const record = {
+        id: nextId++,
+        email: input.email,
+        signupToken: `00000000-0000-4000-8000-${String(nextId).padStart(12, "0")}`,
+        qualificationStatus: "not_started",
+        surveyCompletedAt: null,
+        attribution: input,
+        qualification: null,
+      };
+      records.push(record);
+      return record;
+    },
+    async findByToken(signupToken) {
+      return records.find((record) => record.signupToken === signupToken) ?? null;
+    },
+    async markSkipped(id, skippedAt) {
+      const record = records.find((candidate) => candidate.id === id);
+      record.qualificationStatus = "skipped";
+      record.skippedAt = skippedAt;
+    },
+    async completeIfIncomplete(id, update) {
+      const record = records.find((candidate) => candidate.id === id);
+      if (record.surveyCompletedAt || record.qualificationStatus === "completed") {
+        return false;
+      }
+      record.qualificationStatus = "completed";
+      record.surveyCompletedAt = update.completedAt;
+      record.qualification = update;
+      return true;
+    },
+  };
+  return { repository, records };
+}
+
+function waitlistEmailInput(email) {
+  return {
+    email,
+    placement: "homepage_hero",
+    utmSource: "meta",
+    utmMedium: "paid_social",
+    utmCampaign: "launch",
+    utmContent: "creative_a",
+    utmTerm: null,
+    metaClickId: "meta-click-id",
+    referrer: "https://example.com/campaign",
+  };
 }
 
 test("server-renders the Frame landing page", async () => {
@@ -47,7 +131,7 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /Evidence before claims\./);
   assert.match(html, /Signal integrity/);
   assert.match(html, /Research and engineering inquiries/);
-  assert.match(html, /Frame is under development and is not currently available for sale\./);
+  assert.match(html, /A pre-order reserves a future device; the estimated delivery date may change\./);
   assert.match(html, /frame-product-concept-realistic-v3-transparent-720w\.webp/);
   assert.match(html, /frame-hero-man-transparent-v3-720w\.webp/);
   assert.match(html, /frame-sensing-concept-realistic-v3-transparent-960w\.webp/);
@@ -55,7 +139,11 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /<script type="application\/ld\+json">/);
   assert.match(html, /Frame Health Technologies/);
   assert.doesNotMatch(html, /facebook\.com\/tr\?id=/);
-  assert.equal(html.match(/href="\/interest"/g)?.length, 3);
+  assert.match(html, /Join Frame early access/);
+  assert.match(html, /Get development updates and the opportunity to help shape Frame/);
+  assert.equal(html.match(/name="email"/g)?.length, 2);
+  assert.equal(html.match(/Join early access/g)?.length >= 2, true);
+  assert.match(html, /href="#homepage-hero-waitlist"/);
   assert.doesNotMatch(html, /What is the main reason you want Frame\?/);
   assert.doesNotMatch(html, /<dialog/i);
   assert.match(html, /<section class="final-cta" id="early-access">/);
@@ -72,13 +160,10 @@ test("server-renders the dedicated interest page", async () => {
   assert.equal(response.status, 200);
   const html = await response.text();
 
-  assert.match(html, /Register your interest/);
-  assert.match(html, /What is the main reason you want Frame\?/);
-  assert.match(html, /See my blood pressure patterns over time/);
-  assert.match(html, /Understand my blood pressure while sleeping/);
-  assert.match(html, /name="mainReason"/);
-  assert.match(html, /type="radio"/);
-  assert.match(html, /aria-label="Step 1 of 5"/);
+  assert.match(html, /Join Frame early access/);
+  assert.match(html, /Get development updates and the opportunity to help shape Frame/);
+  assert.match(html, /name="email"/);
+  assert.match(html, /Join early access/);
   assert.match(html, /aria-label="Back to home"/);
   assert.doesNotMatch(html, /<dialog/i);
 });
@@ -156,12 +241,13 @@ test("server-renders the Founding Contributor funnel locally", async () => {
 });
 
 test("routes the local pre-order funnel to production-ready customer pages and draft policies", async () => {
-  const [homeResponse, entryResponse, reviewResponse, successResponse, termsResponse, refundsResponse, successSource] =
+  const [homeResponse, entryResponse, reviewResponse, successResponse, manageResponse, termsResponse, refundsResponse, successSource] =
     await Promise.all([
       render("/"),
       render("/preorder"),
       render("/preorder/review"),
       render("/preorder/success"),
+      render("/preorder/manage"),
       render("/preorder/terms"),
       render("/preorder/refunds"),
       readFile(new URL("../app/components/preorder-success.tsx", import.meta.url), "utf8"),
@@ -170,6 +256,9 @@ test("routes the local pre-order funnel to production-ready customer pages and d
   assert.equal(homeResponse.status, 200);
   const home = await homeResponse.text();
   assert.match(home, /href="\/preorder\/review\?source=homepage"/);
+  assert.match(home, /Reserve one of the first Frames/);
+  assert.match(home, /Review your pre-order/);
+  assert.doesNotMatch(home, /pre-order test|local pre-order implementation/i);
   assert.doesNotMatch(home, /href="\/preorder(?:[?"])/);
 
   assert.equal(entryResponse.status, 307);
@@ -196,6 +285,9 @@ test("routes the local pre-order funnel to production-ready customer pages and d
   assert.match(successSource, /Your Frame pre-order is confirmed/);
   assert.match(successSource, /What happens next/);
   assert.doesNotMatch(successSource, /local pre-order flow|signed webhook|Open owner view|Run another test|Stripe test dashboard/i);
+
+  assert.equal(manageResponse.status, 200);
+  assert.match(await manageResponse.text(), /Loading your order/i);
 
   assert.equal(termsResponse.status, 200);
   assert.match(await termsResponse.text(), /Implementation draft — not approved for live sales/);
@@ -227,12 +319,18 @@ test("keeps every Founding Contributor surface local-only", async () => {
     "/preorder",
     "/preorder/review",
     "/preorder/success",
+    "/preorder/manage",
     "/preorder/terms",
     "/preorder/refunds",
+    "/preorder/staging-access",
+    "/preorder/staging-exit",
     "/preorders",
     "/admin/preorders",
     "/api/preorders/checkout",
     "/api/preorders/status",
+    "/api/preorders/manage",
+    "/api/admin/preorders/example/operations",
+    "/api/admin/preorders.csv",
     "/preorder%2Freview",
     "/og-founding-contributors.png",
     "/contributors%2Fterms",
@@ -265,6 +363,99 @@ test("keeps every Founding Contributor surface local-only", async () => {
   assert.doesNotMatch(publicPrivacy, /pre-order testing|test payments and shipping-address/i);
   assert.doesNotMatch(publicSitemap, /founding-contributors/);
   assert.doesNotMatch(publicSitemap, /preorder/);
+});
+
+test("keeps private pre-order staging behind a revocable test-mode cookie", async () => {
+  const origin = "https://frame-staging.example";
+  const secret = "private-staging-test-secret-0123456789abcdef";
+  const stagingEnv = {
+    PREORDER_MODE: "test",
+    PREORDER_STAGING_ACCESS_SECRET: secret,
+  };
+  const accessToken = await createPreorderStagingAccessToken(secret);
+  assert.doesNotMatch(accessToken, new RegExp(secret));
+
+  const [withoutAccess, invalidAccess, liveModeAccess] = await Promise.all([
+    render("/preorder/review", undefined, origin, stagingEnv),
+    render(
+      "/preorder/staging-access?token=incorrect",
+      undefined,
+      origin,
+      stagingEnv,
+    ),
+    render(
+      `/preorder/staging-access?token=${encodeURIComponent(accessToken)}`,
+      undefined,
+      origin,
+      { ...stagingEnv, PREORDER_MODE: "live" },
+    ),
+  ]);
+  assert.equal(withoutAccess.status, 404);
+  assert.equal(invalidAccess.status, 404);
+  assert.equal(liveModeAccess.status, 404);
+
+  const access = await render(
+    `/preorder/staging-access?token=${encodeURIComponent(accessToken)}`,
+    undefined,
+    origin,
+    stagingEnv,
+  );
+  assert.equal(access.status, 303);
+  assert.equal(
+    access.headers.get("location"),
+    "/preorder/review?source=private_staging",
+  );
+  const setCookie = access.headers.get("set-cookie") ?? "";
+  assert.match(setCookie, /frame_preorder_staging=v1\./);
+  assert.match(setCookie, /HttpOnly/);
+  assert.match(setCookie, /Secure/);
+  assert.match(setCookie, /SameSite=Lax/);
+  assert.doesNotMatch(setCookie, new RegExp(secret));
+  const cookie = setCookie.split(";")[0];
+  const tamperedCookie = `${cookie.slice(0, -1)}${cookie.endsWith("a") ? "b" : "a"}`;
+
+  const [review, home, webhook, tampered] = await Promise.all([
+    render(
+      "/preorder/review",
+      { headers: { accept: "text/html", cookie } },
+      origin,
+      stagingEnv,
+    ),
+    render(
+      "/",
+      { headers: { accept: "text/html", cookie } },
+      origin,
+      stagingEnv,
+    ),
+    render(
+      "/api/stripe/webhook",
+      { method: "POST", body: "{}" },
+      origin,
+      stagingEnv,
+    ),
+    render(
+      "/preorder/review",
+      { headers: { accept: "text/html", cookie: tamperedCookie } },
+      origin,
+      stagingEnv,
+    ),
+  ]);
+  assert.equal(review.status, 200);
+  assert.match(await review.text(), /Private staging · Stripe test mode · no live charge/);
+  assert.equal(home.status, 200);
+  assert.match(await home.text(), /Review your pre-order/);
+  assert.equal(webhook.status, 400);
+  assert.match(await webhook.text(), /Stripe signature is required/);
+  assert.equal(tampered.status, 404);
+
+  const exit = await render(
+    "/preorder/staging-exit",
+    { headers: { cookie } },
+    origin,
+    stagingEnv,
+  );
+  assert.equal(exit.status, 303);
+  assert.match(exit.headers.get("set-cookie") ?? "", /Max-Age=0/);
 });
 
 test("renders draft contributor policies and keeps member routes private", async () => {
@@ -302,6 +493,8 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     privacy,
     demographicsMigration,
     interestFlow,
+    waitlistFlow,
+    waitlistMigration,
     interestPage,
     metaPixel,
     contributorMigration,
@@ -329,6 +522,17 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     ),
     readFile(
       new URL("../app/components/interest-flow.tsx", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL("../app/components/waitlist-signup-flow.tsx", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL(
+        "../supabase/migrations/20260806140000_email_first_waitlist.sql",
+        import.meta.url,
+      ),
       "utf8",
     ),
     readFile(new URL("../app/interest/page.tsx", import.meta.url), "utf8"),
@@ -372,55 +576,43 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(page, /src="\/frame-sensing-concept-realistic-v3-transparent-960w\.webp"/);
   assert.match(page, /src="\/frame-app-studio-v5-640w\.webp"/);
   assert.doesNotMatch(page, /<svg|ProductDiagram|CrossSection|PatternTimeline/);
-  assert.match(interestFlow, /fetch\("\/api\/waitlist"/);
+  assert.match(waitlistFlow, /fetch\("\/api\/waitlist"/);
   assert.doesNotMatch(interestFlow, /<dialog|showModal\(|OPEN_INTEREST_FLOW_EVENT/);
   assert.match(interestPage, /showFoundingContributorOffer=/);
   assert.match(interestPage, /isFoundingContributorSalesPageEnabled\(\)/);
   assert.match(interestPage, /canonical: "\/interest"/);
-  assert.match(interestFlow, /MIN_SITUATION_LENGTH = 20/);
-  assert.match(
-    interestFlow,
-    /What would you want Frame to help you understand or do that you can’t easily today\?/,
-  );
-  assert.match(interestFlow, /MAX_SITUATION_LENGTH = 750/);
-  assert.match(interestFlow, /type="radio"/);
-  assert.match(interestFlow, /name="recentSituation"/);
-  assert.match(interestFlow, /name="monitoringMethod"/);
-  assert.match(interestFlow, /name="interviewWillingness"/);
-  assert.match(interestFlow, /name="firstName"/);
-  assert.match(interestFlow, /name="lastName"/);
-  assert.match(interestFlow, /name="age"/);
-  assert.match(interestFlow, /name="gender"/);
-  assert.match(interestFlow, /name="email"/);
-  assert.doesNotMatch(page, /InterestFlow|InterestTrigger|<WaitlistPopup \/>/);
-  assert.match(page, /href="\/interest"/);
-  assert.match(page, /I&apos;m interested/);
-  assert.match(page, /Register your interest\./);
-  assert.match(
-    page,
-    /Do you think Frame sounds interesting\?[\s\S]*keep you up to date with Frame&apos;s development!/
-  );
-  assert.match(interestFlow, /Your interest has been registered!/);
-  assert.match(
-    interestFlow,
-    /We genuinely read all responses and[\s\S]*your input is invaluable for Frame&apos;s development\./,
-  );
-  assert.match(interestFlow, /formatName\(firstName\)/);
-  assert.match(api, /return formatName\(value\)/);
-  assert.match(api, /MIN_SITUATION_LENGTH = 20/);
-  assert.match(api, /MAIN_REASON_VALUES/);
-  assert.match(api, /MONITORING_METHOD_VALUES/);
-  assert.match(api, /INTERVIEW_WILLINGNESS_VALUES/);
-  assert.match(api, /GENDER_VALUES/);
-  assert.match(api, /age < MIN_AGE \|\| age > MAX_AGE/);
-  assert.match(interestFlow, /window\.localStorage\.setItem/);
-  assert.doesNotMatch(interestFlow, /result\.status === "joined"/);
-  assert.match(interestFlow, /trackMetaLead\(\)/);
+  assert.match(waitlistFlow, /Join Frame early access/);
+  assert.match(waitlistFlow, /action: "capture_email"/);
+  assert.match(waitlistFlow, /setStage\("invitation"\)/);
+  assert.match(waitlistFlow, /You’re on the list\./);
+  assert.match(waitlistFlow, /Your place is already secured/);
+  assert.match(waitlistFlow, /Skip and finish/);
+  assert.match(waitlistFlow, /action: "submit_qualification"/);
+  assert.match(waitlistFlow, /researchCall === "yes"/);
+  assert.match(waitlistFlow, /First name/);
+  assert.doesNotMatch(waitlistFlow, /Last name|name="age"|name="gender"/);
+  assert.match(waitlistFlow, /frustration\.trim\(\)/);
+  assert.doesNotMatch(waitlistFlow, /minLength=/);
+  assert.match(page, /WaitlistSignupProvider/);
+  assert.match(page, /placement="homepage_hero"/);
+  assert.match(page, /placement="homepage_final" tone="light"/);
+  assert.doesNotMatch(page, /href="\/interest"/);
+  assert.match(api, /formatName\(value\)\.slice/);
+  assert.match(api, /captureWaitlistEmail/);
+  assert.match(api, /completeWaitlistQualification/);
+  assert.match(api, /skipWaitlistQualification/);
+  assert.match(api, /leadCreated/);
+  assert.match(waitlistFlow, /result\.leadCreated === true/);
+  assert.match(waitlistFlow, /result\.qualifiedLeadCreated === true/);
+  assert.match(waitlistFlow, /waitlist_email_success/);
+  assert.match(waitlistFlow, /qualification_completed/);
   assert.match(
     metaPixel,
     /window\.fbq\("trackSingle", META_PIXEL_ID, "Lead"/,
   );
+  assert.match(metaPixel, /"trackSingleCustom", META_PIXEL_ID, "QualifiedLead"/);
   assert.match(metaPixel, /frame-meta-lead-recorded-v1/);
+  assert.match(metaPixel, /eventName.*recordKey/s);
   assert.match(metaPixel, /1068997465474786/);
   assert.match(metaPixel, /PRIVATE_PREFIXES = \["\/contributors", "\/admin", "\/api"\]/);
   assert.match(metaPixel, /"\/founding-contributors\/review"/);
@@ -441,18 +633,16 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.doesNotMatch(page, /Connect a real waitlist API/);
   assert.match(layout, /url: "\/og-launch-v2\.png"/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
-  assert.match(api, /from\("waitlist_signups"\)\.insert/);
-  assert.match(api, /first_name: firstName/);
-  assert.match(api, /last_name: lastName/);
-  assert.match(api, /gender/);
-  assert.match(api, /age/);
-  assert.match(api, /motivation/);
-  assert.match(api, /const qualificationRecord = JSON\.stringify/);
-  assert.match(api, /mainReason,/);
-  assert.match(api, /recentSituation,/);
-  assert.match(api, /monitoringMethod,/);
-  assert.match(api, /interviewWillingness,/);
-  assert.match(api, /motivation: qualificationRecord/);
+  assert.match(css, /\.waitlist-signup__email-row/);
+  assert.match(css, /@media \(max-width: 680px\)[\s\S]*?\.waitlist-signup__email-row/);
+  assert.match(api, /from\("waitlist_signups"\)[\s\S]*?\.insert/);
+  assert.match(api, /signup_referrer/);
+  assert.match(api, /meta_click_id/);
+  assert.match(waitlistMigration, /add column if not exists survey_token uuid/);
+  assert.match(waitlistMigration, /add column if not exists qualification_status text/);
+  assert.match(waitlistMigration, /survey_completed_at timestamptz/);
+  assert.match(waitlistMigration, /where qualification_status is null/);
+  assert.doesNotMatch(waitlistMigration, /drop table|drop column|delete from/i);
   assert.match(supabase, /SUPABASE_SECRET_KEY/);
   assert.doesNotMatch(page, /SUPABASE_SECRET_KEY|createClient/);
   assert.match(demographicsMigration, /add column if not exists gender text/);
@@ -491,15 +681,173 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   );
 });
 
-test("rejects incomplete interest responses before storage", async () => {
+test("rejects invalid email capture before storage", async () => {
   const response = await render("/api/waitlist", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ email: "person@example.com" }),
+    body: JSON.stringify({ action: "capture_email", email: "not-an-email" }),
   });
 
   assert.equal(response.status, 400);
-  assert.match(await response.text(), /main reason/i);
+  assert.match(await response.text(), /valid email/i);
+});
+
+test("completes the local email-first API flow without external credentials", async () => {
+  const email = `local-preview-${process.pid}@example.com`;
+  const localRender = await createRenderSession();
+  const captureResponse = await localRender("/api/waitlist", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      action: "capture_email",
+      email,
+      placement: "homepage_hero",
+      utmSource: "local_test",
+    }),
+  });
+  assert.equal(captureResponse.status, 201);
+  const captured = await captureResponse.json();
+  assert.equal(captured.status, "joined");
+  assert.equal(captured.leadCreated, true);
+  assert.match(captured.signupToken, /^[0-9a-f-]{36}$/i);
+
+  const duplicateResponse = await localRender("/api/waitlist", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ action: "capture_email", email }),
+  });
+  assert.equal(duplicateResponse.status, 200);
+  const duplicate = await duplicateResponse.json();
+  assert.equal(duplicate.status, "already_registered");
+  assert.equal(duplicate.leadCreated, false);
+  assert.equal(duplicate.signupToken, captured.signupToken);
+
+  const surveyResponse = await localRender("/api/waitlist", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      action: "submit_qualification",
+      signupToken: captured.signupToken,
+      primaryInterest: "understand_daily_factors",
+      monitoringMethod: "upper_arm_occasionally",
+      frustration: "I only get occasional readings.",
+      researchCall: "yes",
+      firstName: "Ada",
+    }),
+  });
+  assert.equal(surveyResponse.status, 200);
+  assert.deepEqual(await surveyResponse.json(), {
+    status: "completed",
+    qualifiedLeadCreated: true,
+  });
+
+  const repeatedSurvey = await localRender("/api/waitlist", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      action: "submit_qualification",
+      signupToken: captured.signupToken,
+      primaryInterest: "understand_daily_factors",
+      monitoringMethod: "upper_arm_occasionally",
+    }),
+  });
+  assert.equal(repeatedSurvey.status, 200);
+  assert.deepEqual(await repeatedSurvey.json(), {
+    status: "already_completed",
+    qualifiedLeadCreated: false,
+  });
+});
+
+test("captures email before the optional survey and treats duplicates as success", async () => {
+  const { repository, records } = createWaitlistRepositoryFixture();
+  const input = waitlistEmailInput("person@example.com");
+
+  const captured = await captureWaitlistEmail(repository, input);
+  assert.equal(captured.status, "joined");
+  assert.equal(captured.leadCreated, true);
+  assert.equal(records.length, 1);
+  assert.equal(records[0].qualificationStatus, "not_started");
+  assert.equal(records[0].qualification, null);
+  assert.equal(records[0].attribution.utmCampaign, "launch");
+
+  const duplicate = await captureWaitlistEmail(repository, input);
+  assert.equal(duplicate.status, "already_registered");
+  assert.equal(duplicate.leadCreated, false);
+  assert.equal(duplicate.signupToken, captured.signupToken);
+  assert.equal(records.length, 1);
+});
+
+test("skips the optional survey without changing waitlist membership", async () => {
+  const { repository, records } = createWaitlistRepositoryFixture();
+  const captured = await captureWaitlistEmail(
+    repository,
+    waitlistEmailInput("skip@example.com"),
+  );
+
+  const skipped = await skipWaitlistQualification(
+    repository,
+    captured.signupToken,
+    "2026-08-06T12:00:00.000Z",
+  );
+  assert.equal(skipped.status, "skipped");
+  assert.equal(records.length, 1);
+  assert.equal(records[0].email, "skip@example.com");
+  assert.equal(records[0].qualificationStatus, "skipped");
+});
+
+test("associates survey answers with the correct email and completes only once", async () => {
+  const { repository, records } = createWaitlistRepositoryFixture();
+  const first = await captureWaitlistEmail(
+    repository,
+    waitlistEmailInput("first@example.com"),
+  );
+  const second = await captureWaitlistEmail(
+    repository,
+    waitlistEmailInput("second@example.com"),
+  );
+  const answers = {
+    primaryInterest: "understand_daily_factors",
+    primaryInterestOther: null,
+    monitoringMethod: "upper_arm_occasionally",
+    monitoringMethodOther: null,
+    frustration: "Occasional readings lack everyday context.",
+    researchCall: "yes",
+    firstName: "Ada",
+    completedAt: "2026-08-06T12:05:00.000Z",
+  };
+
+  const completed = await completeWaitlistQualification(
+    repository,
+    second.signupToken,
+    answers,
+  );
+  assert.equal(completed.status, "completed");
+  assert.equal(completed.qualifiedLeadCreated, true);
+  assert.equal(records.find((record) => record.email === "first@example.com").qualification, null);
+  assert.deepEqual(
+    records.find((record) => record.email === "second@example.com").qualification,
+    answers,
+  );
+
+  const repeated = await completeWaitlistQualification(
+    repository,
+    second.signupToken,
+    answers,
+  );
+  assert.equal(repeated.status, "already_completed");
+  assert.equal(repeated.qualifiedLeadCreated, false);
+  assert.notEqual(first.signupToken, second.signupToken);
+});
+
+test("surfaces waitlist storage failures without inventing a successful capture", async () => {
+  const { repository } = createWaitlistRepositoryFixture();
+  repository.findByEmail = async () => {
+    throw new Error("database unavailable");
+  };
+  await assert.rejects(
+    captureWaitlistEmail(repository, waitlistEmailInput("error@example.com")),
+    /database unavailable/,
+  );
 });
 
 test("requires explicit membership acknowledgment before checkout", async () => {
@@ -565,17 +913,19 @@ test("completes the default local pre-order preview without external payment con
 });
 
 test("routes Stripe events by commerce flow and keeps pre-order fulfilment separate", async () => {
-  const [webhook, checkout, payments, migration, access] = await Promise.all([
+  const [webhook, webhookProcessing, checkout, payments, migration, access] = await Promise.all([
     readFile(new URL("../app/api/stripe/webhook/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/stripe-webhook-processing.server.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/preorders/checkout/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/preorder-payments.server.ts", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/20260804000000_add_preorders.sql", import.meta.url), "utf8"),
     readFile(new URL("../lib/preorder-access.ts", import.meta.url), "utf8"),
   ]);
 
-  assert.match(webhook, /session\.metadata\?\.flow === "frame_preorder"/);
-  assert.match(webhook, /fulfillPreorderCheckout/);
-  assert.match(webhook, /membership === "frame_founding_contributor"/);
+  assert.match(webhook, /processStripeWebhookEvent/);
+  assert.match(webhookProcessing, /session\.metadata\?\.flow === "frame_preorder"/);
+  assert.match(webhookProcessing, /fulfillPreorderCheckout/);
+  assert.match(webhookProcessing, /membership === "frame_founding_contributor"/);
   assert.match(checkout, /idempotencyKey: `frame-preorder-checkout-/);
   assert.match(checkout, /shipping_address_collection/);
   assert.match(checkout, /startsWith\("sk_test_"\)/);
@@ -585,6 +935,242 @@ test("routes Stripe events by commerce flow and keeps pre-order fulfilment separ
   assert.match(migration, /create table if not exists public\.preorder_payments/);
   assert.match(migration, /create table if not exists public\.preorder_events/);
   assert.match(access, /!isDraftPreorderVersion\(PREORDER_TERMS_VERSION\)/);
+});
+
+test("separates pre-order environments and enforces owner-controlled capacity", async () => {
+  const [migration, checkout, payments, admin, controls, access, launchReadiness] = await Promise.all([
+    readFile(
+      new URL(
+        "../supabase/migrations/20260806000000_add_preorder_sales_controls.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(new URL("../app/api/preorders/checkout/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/preorder-payments.server.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin/preorders/page.tsx", import.meta.url), "utf8"),
+    readFile(
+      new URL("../app/api/admin/preorders/controls/route.ts", import.meta.url),
+      "utf8",
+    ),
+    readFile(new URL("../lib/preorder-access.ts", import.meta.url), "utf8"),
+    readFile(
+      new URL("../lib/preorder-launch-readiness.server.ts", import.meta.url),
+      "utf8",
+    ),
+  ]);
+
+  assert.match(migration, /create table if not exists public\.preorder_sales_controls/);
+  assert.match(migration, /create or replace function public\.reserve_preorder_checkout/);
+  assert.match(migration, /\('live', 'paused', null\)/);
+  assert.match(migration, /alter table public\.preorder_sales_controls enable row level security/);
+  assert.match(checkout, /reservePreorderCheckout/);
+  assert.match(checkout, /requestKey/);
+  assert.match(checkout, /environment,/);
+  assert.match(payments, /intent\.environment !== environment/);
+  assert.match(admin, /\.eq\("environment", environment\)/);
+  assert.match(controls, /Live sales cannot be opened until every launch safeguard passes/);
+  assert.match(controls, /evaluatePreorderLaunchReadiness/);
+  assert.match(access, /"\/api\/admin\/preorders"/);
+  assert.match(launchReadiness, /startsWith\("sk_live_"\)/);
+  assert.match(launchReadiness, /stripe\.prices\.retrieve/);
+  assert.match(launchReadiness, /Customer email delivery is not configured/);
+  assert.match(launchReadiness, /Order-link and endpoint-protection secrets must be different/);
+});
+
+test("adds auditable owner operations and signed customer cancellation requests", async () => {
+  const [
+    migration,
+    accessTokens,
+    customerManagement,
+    manageApi,
+    adminOperations,
+    refundApi,
+    adminPage,
+    email,
+  ] = await Promise.all([
+    readFile(
+      new URL(
+        "../supabase/migrations/20260806010000_add_preorder_order_operations.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(new URL("../lib/preorder-order-access.server.ts", import.meta.url), "utf8"),
+    readFile(
+      new URL("../lib/preorder-customer-management.server.ts", import.meta.url),
+      "utf8",
+    ),
+    readFile(new URL("../app/api/preorders/manage/route.ts", import.meta.url), "utf8"),
+    readFile(
+      new URL("../lib/preorder-admin-operations.server.ts", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL("../app/api/admin/preorders/[id]/refund/route.ts", import.meta.url),
+      "utf8",
+    ),
+    readFile(new URL("../app/admin/preorders/[id]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../lib/preorder-email.server.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(migration, /cancellation_status text not null default 'none'/);
+  assert.match(migration, /manage_token_version integer not null default 1/);
+  assert.match(migration, /tracking_number text/);
+  assert.match(accessTokens, /HMAC/);
+  assert.match(accessTokens, /expiresAt/);
+  assert.match(customerManagement, /cancellation_status: "requested"/);
+  assert.doesNotMatch(customerManagement, /getStripe|refunds\.create/);
+  assert.match(manageApi, /requestPreorderCancellation/);
+  assert.match(adminOperations, /stripe\.refunds\.create/);
+  assert.match(adminOperations, /payment_status: "refund_pending"/);
+  assert.match(adminOperations, /sendPreorderShippingEmail/);
+  assert.match(refundApi, /authorizePreorderAdminApi/);
+  assert.match(adminPage, /requireChatGPTUser/);
+  assert.match(adminPage, /PreorderOrderOperations/);
+  assert.match(email, /Manage your pre-order/);
+  assert.doesNotMatch(email, /Local test only|draft terms|not approved for live sales/);
+});
+
+test("hardens public pre-order endpoints and adds authenticated recovery and export tools", async () => {
+  const [
+    migration,
+    rateLimit,
+    checkout,
+    manage,
+    webhook,
+    retry,
+    admin,
+    exportRoute,
+  ] = await Promise.all([
+    readFile(
+      new URL(
+        "../supabase/migrations/20260806020000_add_preorder_launch_hardening.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(new URL("../lib/preorder-rate-limit.server.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/preorders/checkout/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/preorders/manage/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/stripe/webhook/route.ts", import.meta.url), "utf8"),
+    readFile(
+      new URL(
+        "../app/api/admin/preorders/webhooks/[eventId]/retry/route.ts",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(new URL("../app/admin/preorders/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/admin/preorders.csv/route.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(migration, /create table if not exists public\.preorder_rate_limits/);
+  assert.match(migration, /create or replace function public\.consume_preorder_rate_limit/);
+  assert.match(migration, /processing_attempts integer not null default 0/);
+  assert.match(rateLimit, /HMAC/);
+  assert.doesNotMatch(rateLimit, /insert.*clientAddress|subject_hash: clientAddress/s);
+  assert.match(checkout, /scope: "preorder_checkout"/);
+  assert.match(manage, /scope: "preorder_manage_mutation"/);
+  assert.match(webhook, /beginStripeWebhookEvent/);
+  assert.match(retry, /authorizePreorderAdminApi/);
+  assert.match(retry, /Only failed events can be retried/);
+  assert.match(admin, /PreorderWebhookRecovery/);
+  assert.match(admin, /Download CSV/);
+  assert.match(exportRoute, /isWaitlistAdmin/);
+  assert.match(exportRoute, /formula|\^\[=\+\\-@\]/i);
+});
+
+test("claims Stripe webhooks atomically and provides a sandbox concurrency suite", async () => {
+  const [migration, webhookEvents, retry, reliability, packageJson] = await Promise.all([
+    readFile(
+      new URL(
+        "../supabase/migrations/20260806040000_add_atomic_stripe_webhook_claims.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(new URL("../lib/stripe-webhook-events.server.ts", import.meta.url), "utf8"),
+    readFile(
+      new URL(
+        "../app/api/admin/preorders/webhooks/[eventId]/retry/route.ts",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(new URL("../scripts/test-preorder-reliability.mjs", import.meta.url), "utf8"),
+    readFile(new URL("../package.json", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(migration, /create or replace function public\.claim_stripe_webhook_event/);
+  assert.match(migration, /on conflict \(event_id\) do nothing/);
+  assert.match(migration, /for update/);
+  assert.match(migration, /v_event\.status = 'processed'/);
+  assert.match(migration, /make_interval\(secs => p_stale_after_seconds\)/);
+  assert.match(webhookEvents, /rpc\("claim_stripe_webhook_event"/);
+  assert.doesNotMatch(webhookEvents, /maybeSingle<WebhookEventRow>/);
+  assert.match(retry, /claim\.duplicate/);
+  assert.match(reliability, /PREORDER_MODE === "test"/);
+  assert.match(reliability, /Live pre-orders must remain paused/);
+  assert.match(reliability, /Array\.from\(\{ length: 10 \}/);
+  assert.match(reliability, /synthetic checkout cleanup/);
+  assert.match(packageJson, /preorder:test:reliability/);
+});
+
+test("adds customer address changes, delivery acknowledgements, and lifecycle notifications", async () => {
+  const [
+    migration,
+    customerManagement,
+    manageApi,
+    adminOperations,
+    operationsApi,
+    adminPage,
+    email,
+    payments,
+  ] = await Promise.all([
+    readFile(
+      new URL(
+        "../supabase/migrations/20260806030000_add_preorder_customer_change_workflows.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(
+      new URL("../lib/preorder-customer-management.server.ts", import.meta.url),
+      "utf8",
+    ),
+    readFile(new URL("../app/api/preorders/manage/route.ts", import.meta.url), "utf8"),
+    readFile(
+      new URL("../lib/preorder-admin-operations.server.ts", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL("../app/api/admin/preorders/[id]/operations/route.ts", import.meta.url),
+      "utf8",
+    ),
+    readFile(new URL("../app/admin/preorders/[id]/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../lib/preorder-email.server.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/preorder-payments.server.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(migration, /current_estimated_delivery text/);
+  assert.match(migration, /address_change_status text not null default 'none'/);
+  assert.match(migration, /delivery_update_version integer not null default 0/);
+  assert.match(customerManagement, /requestPreorderAddressChange/);
+  assert.match(customerManagement, /respondToPreorderDeliveryUpdate/);
+  assert.match(customerManagement, /sendPreorderOwnerActionEmail/);
+  assert.match(manageApi, /request_address_change/);
+  assert.match(manageApi, /respond_delivery_update/);
+  assert.match(adminOperations, /resolvePreorderAddressChange/);
+  assert.match(adminOperations, /sendPreorderDeliveryUpdate/);
+  assert.match(adminOperations, /Resolve the shipping-address request before shipping/);
+  assert.match(operationsApi, /approve_address_change/);
+  assert.match(operationsApi, /send_delivery_update/);
+  assert.match(adminPage, /current_estimated_delivery/);
+  assert.match(email, /sendPreorderCancellationDeclinedEmail/);
+  assert.match(email, /sendPreorderAddressChangeResolutionEmail/);
+  assert.match(email, /sendPreorderDeliveryUpdateEmail/);
+  assert.match(payments, /sendPreorderRefundUpdateEmail/);
 });
 
 test("uses recorded payment data in contributor and owner views", async () => {
@@ -623,37 +1209,44 @@ test("rejects unverified Stripe webhooks", async () => {
   assert.match(await response.text(), /Stripe signature is required/i);
 });
 
-test("requires valid demographic information before storage", async () => {
-  const baseApplication = {
-    mainReason: "understand_sleep",
-    recentSituation:
-      "After a restless night, my cuff reading was unusually high and I wanted more context.",
-    monitoringMethod: "upper_arm_occasionally",
-    interviewWillingness: "possibly",
-    firstName: "Ada",
-    lastName: "Lovelace",
-    email: "ada@example.com",
+test("validates the optional survey without requiring demographics", async () => {
+  const baseSurvey = {
+    action: "submit_qualification",
+    signupToken: "11111111-1111-4111-8111-111111111111",
   };
 
-  const missingGender = await render("/api/waitlist", {
+  const missingInterest = await render("/api/waitlist", {
     method: "POST",
     headers: { "content-type": "application/json" },
-    body: JSON.stringify({ ...baseApplication, age: 36 }),
+    body: JSON.stringify(baseSurvey),
   });
-  assert.equal(missingGender.status, 400);
-  assert.match(await missingGender.text(), /gender/i);
+  assert.equal(missingInterest.status, 400);
+  assert.match(await missingInterest.text(), /main reason/i);
 
-  const invalidAge = await render("/api/waitlist", {
+  const invalidMonitoring = await render("/api/waitlist", {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({
-      ...baseApplication,
-      gender: "prefer_not_to_say",
-      age: 17,
+      ...baseSurvey,
+      primaryInterest: "understand_daily_factors",
+      monitoringMethod: "invalid",
     }),
   });
-  assert.equal(invalidAge.status, 400);
-  assert.match(await invalidAge.text(), /age between 18 and 120/i);
+  assert.equal(invalidMonitoring.status, 400);
+  assert.match(await invalidMonitoring.text(), /currently monitor/i);
+
+  const missingCallName = await render("/api/waitlist", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      ...baseSurvey,
+      primaryInterest: "understand_daily_factors",
+      monitoringMethod: "upper_arm_occasionally",
+      researchCall: "yes",
+    }),
+  });
+  assert.equal(missingCallName.status, 400);
+  assert.match(await missingCallName.text(), /first name/i);
 });
 
 test("validates contact messages before sending email", async () => {
@@ -710,14 +1303,10 @@ test("separates, visualizes, exports, and permanently deletes admin leads", asyn
   assert.match(insights, /admin-donut/);
   assert.match(insights, /Multiple-choice responses/);
   assert.match(leadHelpers, /isQualifiedSignup/);
-  assert.match(
-    leadHelpers,
-    /monitor_high_or_borderline: "See my blood pressure patterns over time"/,
-  );
-  assert.doesNotMatch(
-    leadHelpers,
-    /Monitor high or borderline blood pressure/,
-  );
+  assert.match(leadHelpers, /qualification_status: QualificationStatus/);
+  assert.match(leadHelpers, /Email captured · survey not completed/);
+  assert.match(leadHelpers, /highIntent/);
+  assert.match(leadHelpers, /survey_completed_at/);
   assert.match(
     leadHelpers,
     /signup\.first_name\?\.trim\(\)\.toLocaleLowerCase\(\) !== "suvan"/,

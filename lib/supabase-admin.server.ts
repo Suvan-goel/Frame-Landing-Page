@@ -1,4 +1,5 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { getFrameRuntimeEnv } from "./runtime-env.server";
 
 type SupabaseRuntimeEnv = {
   SUPABASE_URL?: string;
@@ -9,8 +10,7 @@ type SupabaseRuntimeEnv = {
 let cachedAdminClient: SupabaseClient | null = null;
 
 async function getRuntimeEnv() {
-  const { env } = await import("cloudflare:workers");
-  return env as unknown as SupabaseRuntimeEnv;
+  return (await getFrameRuntimeEnv()) as SupabaseRuntimeEnv;
 }
 
 export function createSupabaseAdmin(url: string, secretKey: string) {

@@ -8,6 +8,8 @@ const PREORDER_ROUTE_ROOTS = [
   "/preorder",
   "/preorders",
   "/admin/preorders",
+  "/api/admin/preorders",
+  "/api/admin/preorders.csv",
   "/api/preorders",
 ] as const;
 

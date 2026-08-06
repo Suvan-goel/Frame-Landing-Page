@@ -414,6 +414,12 @@ h2 {
   color: var(--ink);
 }
 
+.button--secondary {
+  border: 1px solid rgba(32, 33, 30, 0.32);
+  background: transparent;
+  color: var(--ink);
+}
+
 .text-link {
   display: inline-flex;
   align-items: center;
@@ -1324,6 +1330,466 @@ h2 {
   align-items: center;
   gap: 24px;
   margin-top: 34px;
+}
+
+.waitlist-signup {
+  width: min(620px, 100%);
+  margin-top: 30px;
+}
+
+.interest-flow__shell > .waitlist-signup {
+  width: min(760px, 100%);
+  margin: 0 auto;
+}
+
+.final-cta .waitlist-signup {
+  width: 100%;
+  margin-top: 0;
+}
+
+.waitlist-signup__intro strong {
+  display: block;
+  font-family: var(--serif);
+  font-size: 1.42rem;
+  font-weight: 400;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+}
+
+.waitlist-signup__intro p {
+  max-width: 520px;
+  margin: 6px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.waitlist-signup--light .waitlist-signup__intro p {
+  color: rgba(250, 248, 242, 0.76);
+}
+
+.waitlist-signup form {
+  margin-top: 16px;
+}
+
+.waitlist-signup__email-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+}
+
+.waitlist-signup__email-row input,
+.waitlist-signup__other-field input,
+.waitlist-signup__first-name input,
+.waitlist-signup__final-questions textarea {
+  width: 100%;
+  border: 1px solid rgba(32, 33, 30, 0.3);
+  border-radius: 2px;
+  background: var(--paper);
+  color: var(--ink);
+  outline: none;
+}
+
+.waitlist-signup__email-row input,
+.waitlist-signup__other-field input,
+.waitlist-signup__first-name input {
+  height: 52px;
+  padding: 0 15px;
+}
+
+.waitlist-signup__email-row input:focus,
+.waitlist-signup__other-field input:focus,
+.waitlist-signup__first-name input:focus,
+.waitlist-signup__final-questions textarea:focus {
+  border-color: var(--burgundy);
+}
+
+.waitlist-signup__email-row input[aria-invalid="true"],
+.waitlist-signup__first-name input[aria-invalid="true"] {
+  border-color: var(--burgundy);
+}
+
+.waitlist-signup__email-row .button {
+  min-width: 170px;
+  min-height: 52px;
+}
+
+.waitlist-signup--light .form-field label,
+.waitlist-signup--light .form-note {
+  color: rgba(250, 248, 242, 0.76);
+}
+
+.waitlist-signup--light .waitlist-signup__email-row input,
+.waitlist-signup--light .waitlist-signup__other-field input,
+.waitlist-signup--light .waitlist-signup__first-name input,
+.waitlist-signup--light .waitlist-signup__final-questions textarea {
+  border-color: rgba(255, 255, 255, 0.44);
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--paper);
+}
+
+.waitlist-signup--light .waitlist-signup__email-row input:focus,
+.waitlist-signup--light .waitlist-signup__other-field input:focus,
+.waitlist-signup--light .waitlist-signup__first-name input:focus,
+.waitlist-signup--light .waitlist-signup__final-questions textarea:focus {
+  border-color: var(--paper);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.waitlist-signup--light textarea::placeholder {
+  color: rgba(250, 248, 242, 0.58);
+}
+
+.waitlist-signup .form-note {
+  margin-top: 8px;
+}
+
+.waitlist-signup .form-note a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.waitlist-signup__live {
+  min-height: 1.2rem;
+  margin: 6px 0 0;
+  color: var(--burgundy);
+  font-size: 0.68rem;
+  line-height: 1.45;
+}
+
+.waitlist-signup--light .form-error,
+.waitlist-signup--light .waitlist-signup__live {
+  color: #f7ddd3;
+}
+
+.waitlist-signup__state h3,
+.waitlist-signup__survey > h3 {
+  max-width: 720px;
+  margin: 12px 0 0;
+  font-family: var(--serif);
+  font-size: clamp(2.15rem, 4vw, 3.25rem);
+  font-weight: 400;
+  letter-spacing: -0.045em;
+  line-height: 1.02;
+}
+
+.waitlist-signup__state h3:focus,
+.waitlist-signup__survey > h3:focus {
+  outline: none;
+}
+
+.waitlist-signup__state > p:not(.eyebrow) {
+  max-width: 560px;
+  margin: 18px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.88rem;
+}
+
+.waitlist-signup--light .waitlist-signup__state > p:not(.eyebrow) {
+  color: rgba(250, 248, 242, 0.76);
+}
+
+.waitlist-signup__survey-invitation {
+  max-width: 600px;
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+.waitlist-signup--light .waitlist-signup__survey-invitation {
+  border-color: rgba(250, 248, 242, 0.24);
+}
+
+.waitlist-signup__survey-invitation h4 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  font-weight: 400;
+}
+
+.waitlist-signup__survey-invitation p {
+  margin: 7px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+}
+
+.waitlist-signup--light .waitlist-signup__survey-invitation p {
+  color: rgba(250, 248, 242, 0.76);
+}
+
+.waitlist-signup__actions {
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  margin-top: 24px;
+}
+
+.waitlist-signup__text-button {
+  display: inline-flex;
+  min-height: 44px;
+  align-items: center;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px solid var(--line);
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 0.74rem;
+}
+
+.waitlist-signup--light .waitlist-signup__text-button {
+  border-color: rgba(250, 248, 242, 0.35);
+  color: rgba(250, 248, 242, 0.84);
+}
+
+.waitlist-signup__text-button:disabled {
+  cursor: wait;
+  opacity: 0.58;
+}
+
+.waitlist-signup__secured {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 20px;
+  color: var(--ink-soft);
+  font-size: 0.7rem;
+  font-weight: 620;
+}
+
+.waitlist-signup__secured span {
+  display: inline-grid;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--sage-soft);
+  color: var(--ink);
+  place-items: center;
+}
+
+.waitlist-signup--light .waitlist-signup__secured {
+  color: rgba(250, 248, 242, 0.76);
+}
+
+.waitlist-signup__progress {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  color: var(--ink-soft);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 0.6rem;
+}
+
+.waitlist-signup--light .waitlist-signup__progress {
+  color: rgba(250, 248, 242, 0.66);
+}
+
+.waitlist-signup__progress > div {
+  height: 2px;
+  background: rgba(32, 33, 30, 0.14);
+  overflow: hidden;
+}
+
+.waitlist-signup--light .waitlist-signup__progress > div {
+  background: rgba(250, 248, 242, 0.2);
+}
+
+.waitlist-signup__progress i {
+  display: block;
+  height: 100%;
+  background: var(--burgundy);
+  transition: width 220ms ease;
+}
+
+.waitlist-signup--light .waitlist-signup__progress i {
+  background: var(--paper);
+}
+
+.waitlist-signup__choices {
+  display: grid;
+  margin: 28px 0 0;
+  padding: 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+.waitlist-signup--light .waitlist-signup__choices {
+  border-color: rgba(250, 248, 242, 0.24);
+}
+
+.waitlist-signup__choice {
+  display: grid;
+  grid-template-columns: 20px 1fr;
+  align-items: center;
+  gap: 15px;
+  min-height: 54px;
+  padding: 10px 2px;
+  border-bottom: 1px solid var(--line);
+  cursor: pointer;
+}
+
+.waitlist-signup--light .waitlist-signup__choice {
+  border-color: rgba(250, 248, 242, 0.24);
+}
+
+.waitlist-signup__choice input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.waitlist-signup__choice > span {
+  width: 17px;
+  height: 17px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 4px var(--cream);
+}
+
+.waitlist-signup--light .waitlist-signup__choice > span {
+  box-shadow: inset 0 0 0 4px var(--burgundy);
+}
+
+.waitlist-signup__choice input:checked + span {
+  border-color: var(--burgundy);
+  background: var(--burgundy);
+}
+
+.waitlist-signup--light .waitlist-signup__choice input:checked + span {
+  border-color: var(--paper);
+  background: var(--paper);
+}
+
+.waitlist-signup__choice input:focus-visible + span {
+  outline: 3px solid currentColor;
+  outline-offset: 4px;
+}
+
+.waitlist-signup__choice strong {
+  font-size: 0.82rem;
+  font-weight: 520;
+  line-height: 1.38;
+}
+
+.waitlist-signup__other-field,
+.waitlist-signup__first-name {
+  max-width: 460px;
+  margin-top: 16px;
+}
+
+.waitlist-signup .form-field label span,
+.waitlist-signup__research-call legend span {
+  font-weight: 430;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.waitlist-signup__final-questions {
+  display: grid;
+  gap: 26px;
+  margin-top: 28px;
+}
+
+.waitlist-signup__final-questions textarea {
+  min-height: 144px;
+  padding: 14px 15px;
+  line-height: 1.55;
+  resize: vertical;
+}
+
+.waitlist-signup__research-call {
+  margin: 0;
+  padding: 22px 0 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+.waitlist-signup--light .waitlist-signup__research-call {
+  border-color: rgba(250, 248, 242, 0.24);
+}
+
+.waitlist-signup__research-call legend {
+  padding: 0;
+  font-size: 0.78rem;
+  font-weight: 620;
+}
+
+.waitlist-signup__research-call > div {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 14px;
+}
+
+.waitlist-signup__research-call label {
+  cursor: pointer;
+}
+
+.waitlist-signup__research-call input {
+  position: absolute;
+  opacity: 0;
+}
+
+.waitlist-signup__research-call label span {
+  display: inline-flex;
+  min-width: 82px;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  font-size: 0.74rem;
+}
+
+.waitlist-signup--light .waitlist-signup__research-call label span {
+  border-color: rgba(250, 248, 242, 0.28);
+}
+
+.waitlist-signup__research-call input:checked + span {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.waitlist-signup--light .waitlist-signup__research-call input:checked + span {
+  border-color: var(--paper);
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.waitlist-signup__research-call input:focus-visible + span {
+  outline: 3px solid currentColor;
+  outline-offset: 3px;
+}
+
+.waitlist-signup__survey-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  margin-top: 20px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+
+.waitlist-signup--light .waitlist-signup__survey-actions {
+  border-color: rgba(250, 248, 242, 0.24);
+}
+
+.waitlist-signup__survey-actions > div {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+}
+
+.waitlist-signup__membership-offer h4,
+.interest-flow__membership-offer h4 {
+  margin: 9px 0;
+  font-family: var(--serif);
+  font-size: 1.7rem;
+  font-weight: 400;
 }
 
 .final-cta .waitlist-form {
@@ -3221,6 +3687,40 @@ h2 {
     font-size: 0.72rem;
   }
 
+  .waitlist-signup {
+    margin-top: 26px;
+  }
+
+  .waitlist-signup__email-row {
+    grid-template-columns: 1fr;
+  }
+
+  .waitlist-signup__email-row .button {
+    width: 100%;
+  }
+
+  .waitlist-signup__state h3,
+  .waitlist-signup__survey > h3 {
+    font-size: var(--headline-flow);
+  }
+
+  .waitlist-signup__choice {
+    min-height: 58px;
+  }
+
+  .waitlist-signup__survey-actions {
+    align-items: stretch;
+    flex-direction: column-reverse;
+  }
+
+  .waitlist-signup__survey-actions > div {
+    justify-content: space-between;
+  }
+
+  .waitlist-signup__survey-actions > .waitlist-signup__text-button {
+    align-self: flex-start;
+  }
+
   .hero {
     padding: 90px 0 40px;
   }
@@ -3255,8 +3755,13 @@ h2 {
     line-height: 1.65;
   }
 
-  .hero-actions {
+  .hero .waitlist-signup {
     order: 4;
+    margin-top: 28px;
+  }
+
+  .hero-actions {
+    order: 5;
     align-items: center;
     flex-direction: row;
     flex-wrap: nowrap;
@@ -3271,7 +3776,7 @@ h2 {
   }
 
   .attributes {
-    order: 6;
+    order: 7;
     margin-top: 20px;
     font-size: 0.75rem;
   }
@@ -3283,7 +3788,7 @@ h2 {
   .hero-visuals {
     position: relative;
     display: grid;
-    order: 5;
+    order: 6;
     width: 100%;
     min-height: 0;
     grid-template-rows: 340px auto;
@@ -4063,6 +4568,11 @@ h2 {
   text-transform: uppercase;
 }
 
+.preorder-test-banner a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .preorder-checkout-page .checkout-page__layout {
   width: min(1180px, calc(100% - 80px));
   grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.28fr);
@@ -4269,6 +4779,67 @@ h2 {
 
 .preorder-admin-readiness strong {
   color: var(--burgundy);
+}
+
+.preorder-reliability-panel {
+  margin-bottom: 32px;
+  padding: 28px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.preorder-reliability-panel__heading,
+.preorder-recovery-list li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.preorder-reliability-panel__heading h2 {
+  margin: 9px 0 0;
+  font-family: var(--serif);
+  font-size: 1.8rem;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+.preorder-reliability-panel > p:not(.form-success, .form-error) {
+  margin: 18px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+}
+
+.preorder-recovery-list {
+  display: grid;
+  gap: 0;
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.preorder-recovery-list li {
+  align-items: center;
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+}
+
+.preorder-recovery-list li > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.preorder-recovery-list code,
+.preorder-recovery-list small {
+  color: var(--ink-soft);
+  font-size: 0.68rem;
+  overflow-wrap: anywhere;
+}
+
+.preorder-recovery-list .button {
+  flex: 0 0 auto;
 }
 
 .admin-empty .button {
@@ -5620,6 +6191,546 @@ h2 {
   font-size: 0.8rem;
 }
 
+.preorder-sales-controls {
+  margin-bottom: 32px;
+  padding: 28px;
+  border: 1px solid var(--line);
+  background: #eee8dc;
+}
+
+.preorder-sales-controls__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.preorder-sales-controls__heading h2 {
+  margin: 8px 0 0;
+  font-family: var(--serif);
+  font-size: 2rem;
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.preorder-sales-controls__numbers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin: 28px 0;
+  background: var(--line);
+}
+
+.preorder-sales-controls__numbers > div {
+  min-height: 94px;
+  padding: 18px;
+  background: var(--paper);
+}
+
+.preorder-sales-controls__numbers dt,
+.preorder-sales-controls form label > span {
+  color: var(--ink-soft);
+  font-size: 0.63rem;
+  font-weight: 620;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.preorder-sales-controls__numbers dd {
+  margin: 7px 0 0;
+  font-family: var(--serif);
+  font-size: 1.6rem;
+}
+
+.preorder-sales-controls form {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.8fr) minmax(180px, 1fr) auto;
+  align-items: end;
+  gap: 18px;
+}
+
+.preorder-sales-controls form label {
+  display: grid;
+  gap: 7px;
+}
+
+.preorder-sales-controls select,
+.preorder-sales-controls input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 13px;
+  border: 1px solid rgba(32, 33, 30, 0.25);
+  border-radius: 0;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.preorder-sales-controls form .button {
+  min-height: 46px;
+  white-space: nowrap;
+}
+
+.preorder-sales-controls__note,
+.preorder-sales-controls > .form-success,
+.preorder-sales-controls > .form-error {
+  margin: 15px 0 0;
+  font-size: 0.72rem;
+}
+
+.preorder-sales-controls__note {
+  color: var(--ink-soft);
+}
+
+.preorder-sales-controls__blockers ul {
+  display: grid;
+  gap: 5px;
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: var(--burgundy);
+  font-size: 0.7rem;
+}
+
+.admin-status--paused,
+.admin-status--sold_out,
+.admin-status--refund_failed,
+.admin-status--disputed {
+  border-color: rgba(141, 62, 70, 0.3);
+  background: rgba(141, 62, 70, 0.08);
+  color: var(--burgundy);
+}
+
+.admin-lead strong a {
+  color: inherit;
+}
+
+.preorder-manage-page {
+  min-height: 100vh;
+  background: var(--paper);
+}
+
+.preorder-manage-card {
+  width: min(980px, calc(100% - 64px));
+  margin: 64px auto 110px;
+  padding: 48px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.preorder-manage-card--state {
+  min-height: 420px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.preorder-manage-card--state h1,
+.preorder-manage-card__header h1 {
+  margin: 14px 0 0;
+  font-size: var(--headline-panel);
+  line-height: 1;
+}
+
+.preorder-manage-card--state > p:last-of-type,
+.preorder-manage-card__header > div > p:last-child {
+  margin: 14px 0 0;
+  color: var(--ink-soft);
+}
+
+.preorder-manage-actions {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-top: 30px;
+}
+
+.preorder-manage-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 32px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid var(--line);
+}
+
+.preorder-manage-status {
+  padding: 7px 10px;
+  border: 1px solid rgba(63, 104, 72, 0.3);
+  background: rgba(63, 104, 72, 0.08);
+  color: #355a3d;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.preorder-manage-status--cancelled,
+.preorder-manage-status--returned {
+  border-color: rgba(141, 62, 70, 0.3);
+  background: rgba(141, 62, 70, 0.08);
+  color: var(--burgundy);
+}
+
+.preorder-manage-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 34px;
+  background: var(--line);
+}
+
+.preorder-manage-grid > section {
+  min-height: 250px;
+  padding: 28px;
+  background: var(--paper);
+}
+
+.preorder-manage-grid h2,
+.preorder-manage-cancellation h2 {
+  margin: 13px 0;
+  font-family: var(--serif);
+  font-size: 1.75rem;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+}
+
+.preorder-manage-grid p,
+.preorder-manage-cancellation > p:not(.eyebrow) {
+  color: var(--ink-soft);
+}
+
+.preorder-manage-card__email {
+  margin-top: 25px;
+  font-size: 0.75rem;
+}
+
+.preorder-manage-cancellation {
+  margin-top: 34px;
+  padding: 30px;
+  border: 1px solid var(--line);
+  background: #eee8dc;
+}
+
+.preorder-manage-cancellation--pending {
+  border-left: 4px solid var(--burgundy);
+}
+
+.preorder-manage-cancellation form {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.preorder-manage-address-change form > label,
+.preorder-manage-address-grid label,
+.preorder-owner-delivery-form label {
+  display: grid;
+  gap: 7px;
+}
+
+.preorder-manage-address-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.preorder-manage-cancellation label,
+.preorder-owner-card label > span,
+.preorder-fulfillment-form label > span {
+  color: var(--ink-soft);
+  font-size: 0.64rem;
+  font-weight: 620;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.preorder-manage-cancellation label span {
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.preorder-manage-cancellation textarea,
+.preorder-manage-cancellation input,
+.preorder-manage-cancellation select,
+.preorder-owner-card textarea,
+.preorder-owner-delivery-form input,
+.preorder-fulfillment-form input,
+.preorder-fulfillment-form select {
+  width: 100%;
+  padding: 12px 13px;
+  border: 1px solid rgba(32, 33, 30, 0.25);
+  border-radius: 0;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.preorder-manage-cancellation .button {
+  width: fit-content;
+  margin-top: 5px;
+}
+
+.preorder-manage-delivery-change {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: 24px 0 0;
+  background: var(--line);
+}
+
+.preorder-manage-delivery-change > div {
+  padding: 16px;
+  background: var(--paper);
+}
+
+.preorder-manage-delivery-change dt {
+  color: var(--ink-soft);
+  font-size: 0.61rem;
+  font-weight: 620;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.preorder-manage-delivery-change dd {
+  margin: 7px 0 0;
+  font-family: var(--serif);
+  font-size: 1.25rem;
+}
+
+.preorder-manage-policies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  margin-top: 32px;
+  color: var(--ink-soft);
+  font-size: 0.7rem;
+}
+
+.preorder-order-detail .admin-header h1 {
+  font-size: clamp(2.9rem, 5vw, 4.6rem);
+}
+
+.preorder-order-statuses {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  margin: 42px 0 28px;
+  background: var(--line);
+}
+
+.preorder-order-statuses > div {
+  min-height: 100px;
+  padding: 18px;
+  background: var(--paper);
+}
+
+.preorder-order-statuses span,
+.preorder-owner-facts dt {
+  color: var(--ink-soft);
+  font-size: 0.61rem;
+  font-weight: 620;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.preorder-order-statuses strong {
+  display: block;
+  margin-top: 9px;
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  font-weight: 400;
+  text-transform: capitalize;
+}
+
+.preorder-order-cancellation-summary {
+  margin-bottom: 28px;
+  padding: 24px 26px;
+  border-left: 4px solid var(--burgundy);
+  background: #f1e4e3;
+}
+
+.preorder-order-cancellation-summary h2 {
+  margin: 8px 0 5px;
+  font-family: var(--serif);
+  font-size: 1.7rem;
+  font-weight: 400;
+  text-transform: capitalize;
+}
+
+.preorder-order-cancellation-summary p,
+.preorder-order-cancellation-summary small {
+  color: var(--ink-soft);
+}
+
+.preorder-order-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.48fr);
+  align-items: start;
+  gap: 28px;
+}
+
+.preorder-order-layout > div,
+.preorder-order-layout > aside,
+.preorder-order-operations {
+  display: grid;
+  gap: 20px;
+}
+
+.preorder-owner-card {
+  padding: 26px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.preorder-owner-card__heading,
+.preorder-owner-line-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.preorder-owner-card h2,
+.preorder-owner-line-item h2 {
+  margin: 9px 0 0;
+  font-family: var(--serif);
+  font-size: 1.7rem;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+}
+
+.preorder-owner-card > p:not(.eyebrow),
+.preorder-owner-line-item p {
+  margin: 12px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+}
+
+.preorder-owner-line-item {
+  margin: 18px 0 22px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.preorder-owner-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 22px 0;
+}
+
+.preorder-owner-facts dd {
+  margin: 5px 0 0;
+  font-size: 0.78rem;
+}
+
+.preorder-fulfillment-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.preorder-fulfillment-form label,
+.preorder-owner-card--attention label {
+  display: grid;
+  gap: 7px;
+}
+
+.preorder-fulfillment-form__wide {
+  grid-column: 1 / -1;
+}
+
+.preorder-fulfillment-form .button {
+  width: fit-content;
+}
+
+.preorder-owner-card--attention {
+  border-left: 4px solid var(--burgundy);
+  background: #f1e4e3;
+}
+
+.preorder-owner-card--attention .button,
+.preorder-owner-card > .button {
+  margin-top: 18px;
+}
+
+.preorder-owner-requested-address {
+  margin: 18px 0;
+  font-family: var(--serif);
+  font-size: 1.18rem;
+  line-height: 1.45;
+}
+
+.preorder-owner-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.preorder-owner-inline-actions .button {
+  margin-top: 0;
+}
+
+.preorder-owner-delivery-form {
+  display: grid;
+  gap: 15px;
+  margin-top: 22px;
+}
+
+.preorder-owner-delivery-form .button {
+  width: fit-content;
+}
+
+.preorder-owner-card--danger {
+  border-color: rgba(141, 62, 70, 0.35);
+}
+
+.preorder-danger-button {
+  margin-top: 18px;
+  border: 1px solid var(--burgundy);
+  background: transparent;
+  color: var(--burgundy);
+}
+
+.preorder-danger-button:hover:not(:disabled) {
+  background: var(--burgundy);
+  color: var(--paper);
+}
+
+.preorder-owner-feedback {
+  margin: 0;
+}
+
+.preorder-owner-timeline {
+  display: grid;
+  gap: 0;
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.preorder-owner-timeline li {
+  display: grid;
+  gap: 3px;
+  padding: 13px 0;
+  border-top: 1px solid var(--line);
+  font-size: 0.72rem;
+  text-transform: capitalize;
+}
+
+.preorder-owner-timeline span,
+.preorder-owner-timeline small {
+  color: var(--ink-soft);
+  font-size: 0.66rem;
+  text-transform: none;
+}
+
 @media (max-width: 980px) {
   .founding-hero,
   .founding-stage,
@@ -5627,7 +6738,9 @@ h2 {
   .founding-faq,
   .checkout-page__layout,
   .home-contributor-grid,
-  .hub-two-column {
+  .hub-two-column,
+  .preorder-sales-controls form,
+  .preorder-order-layout {
     grid-template-columns: 1fr;
   }
 
@@ -5766,8 +6879,45 @@ h2 {
   .hub-summary-grid,
   .hub-card-grid,
   .hub-roadmap ol,
-  .admin-metrics {
+  .admin-metrics,
+  .preorder-sales-controls__numbers,
+  .preorder-manage-grid,
+  .preorder-manage-address-grid,
+  .preorder-manage-delivery-change,
+  .preorder-order-statuses,
+  .preorder-owner-facts,
+  .preorder-fulfillment-form {
     grid-template-columns: 1fr;
+  }
+
+  .preorder-sales-controls {
+    padding: 22px 18px;
+  }
+
+  .preorder-reliability-panel__heading,
+  .preorder-recovery-list li {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .preorder-recovery-list .button {
+    width: fit-content;
+  }
+
+  .preorder-manage-card {
+    width: calc(100% - 32px);
+    margin-top: 44px;
+    padding: 28px 20px;
+  }
+
+  .preorder-manage-card__header,
+  .preorder-manage-actions {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .preorder-fulfillment-form__wide {
+    grid-column: auto;
   }
 
   .founding-benefit-grid article {

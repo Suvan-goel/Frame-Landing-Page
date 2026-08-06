@@ -6,6 +6,7 @@ import {
 import {
   categorizeVisibleSignups,
   toWaitlistExportRow,
+  WAITLIST_SIGNUP_SELECT,
   waitlistExportHeaders,
   type LeadTab,
   type WaitlistSignup,
@@ -31,9 +32,7 @@ export async function GET() {
   const supabase = await getSupabaseAdmin();
   const { data, error } = await supabase
     .from("waitlist_signups")
-    .select(
-      "id,first_name,last_name,email,gender,age,motivation,placement,utm_source,utm_medium,utm_campaign,created_at",
-    )
+    .select(WAITLIST_SIGNUP_SELECT)
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
     .returns<WaitlistSignup[]>();

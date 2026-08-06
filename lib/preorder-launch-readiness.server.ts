@@ -1,0 +1,127 @@
+import Stripe from "stripe";
+import { isPreorderLiveApproved } from "./preorder-access";
+import { getPreorderConfiguration } from "./preorder-config.server";
+import {
+  PREORDER_DEFAULT_ALLOWED_COUNTRIES,
+  PREORDER_DEFAULT_CURRENCY,
+  PREORDER_DEFAULT_PRICE_CENTS,
+  PREORDER_ESTIMATED_DELIVERY,
+} from "./preorder";
+import { getPreorderMode, getRuntimeValue } from "./runtime-env.server";
+
+export type PreorderLaunchReadiness = {
+  ready: boolean;
+  blockers: string[];
+};
+
+function configuredSecret(value: string | undefined) {
+  return Boolean(value && value.length >= 32);
+}
+
+function configuredEmail(value: string | undefined) {
+  return Boolean(value && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()));
+}
+
+export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchReadiness> {
+  const [
+    mode,
+    approvedTermsVersion,
+    stripeSecretKey,
+    stripePriceId,
+    stripeWebhookSecret,
+    resendApiKey,
+    preorderFromEmail,
+    operationsEmail,
+    adminEmails,
+    orderAccessSecret,
+    rateLimitSecret,
+    configuration,
+  ] = await Promise.all([
+    getPreorderMode(),
+    getRuntimeValue("PREORDER_LEGAL_APPROVED_VERSION"),
+    getRuntimeValue("STRIPE_SECRET_KEY"),
+    getRuntimeValue("STRIPE_PREORDER_PRICE_ID"),
+    getRuntimeValue("STRIPE_WEBHOOK_SECRET"),
+    getRuntimeValue("RESEND_API_KEY"),
+    getRuntimeValue("PREORDER_FROM_EMAIL"),
+    getRuntimeValue("PREORDER_OPERATIONS_EMAIL"),
+    getRuntimeValue("WAITLIST_ADMIN_EMAILS"),
+    getRuntimeValue("PREORDER_ORDER_ACCESS_SECRET"),
+    getRuntimeValue("PREORDER_RATE_LIMIT_SECRET"),
+    getPreorderConfiguration(),
+  ]);
+
+  const blockers: string[] = [];
+  if (!isPreorderLiveApproved({ mode, approvedTermsVersion })) {
+    blockers.push("Approved, non-draft pre-order terms are not active in live mode.");
+  }
+  if (!stripeSecretKey?.startsWith("sk_live_")) {
+    blockers.push("A live Stripe secret key is not configured.");
+  }
+  if (!stripePriceId?.startsWith("price_")) {
+    blockers.push("A live Stripe pre-order price is not configured.");
+  }
+  if (!stripeWebhookSecret?.startsWith("whsec_") || stripeWebhookSecret.length < 24) {
+    blockers.push("A signed Stripe webhook endpoint is not configured.");
+  }
+  if (!resendApiKey?.startsWith("re_") || !preorderFromEmail?.trim()) {
+    blockers.push("Customer email delivery is not configured.");
+  }
+  const operationsRecipient =
+    operationsEmail?.trim() ??
+    adminEmails
+      ?.split(",")
+      .map((email) => email.trim())
+      .find(Boolean);
+  if (!configuredEmail(operationsRecipient)) {
+    blockers.push("A valid pre-order operations recipient is not configured.");
+  }
+  if (!configuredSecret(orderAccessSecret)) {
+    blockers.push("A dedicated customer order-link signing secret is not configured.");
+  }
+  if (!configuredSecret(rateLimitSecret)) {
+    blockers.push("A dedicated endpoint-protection signing secret is not configured.");
+  }
+  if (orderAccessSecret && rateLimitSecret && orderAccessSecret === rateLimitSecret) {
+    blockers.push("Order-link and endpoint-protection secrets must be different.");
+  }
+
+  if (
+    configuration.priceCents !== PREORDER_DEFAULT_PRICE_CENTS ||
+    configuration.currency !== PREORDER_DEFAULT_CURRENCY ||
+    configuration.allowedCountries.join(",") !==
+      PREORDER_DEFAULT_ALLOWED_COUNTRIES.join(",") ||
+    configuration.estimatedDelivery !== PREORDER_ESTIMATED_DELIVERY
+  ) {
+    blockers.push("The runtime offer does not match the reviewed $299, US-only, January 1, 2027 configuration.");
+  }
+
+  if (stripeSecretKey?.startsWith("sk_live_") && stripePriceId?.startsWith("price_")) {
+    try {
+      const stripe = new Stripe(stripeSecretKey, {
+        httpClient: Stripe.createFetchHttpClient(),
+      });
+      const price = await stripe.prices.retrieve(stripePriceId, {
+        expand: ["product"],
+      });
+      const product =
+        typeof price.product === "string" || !price.product || price.product.deleted
+          ? null
+          : price.product;
+      if (
+        !price.active ||
+        !price.livemode ||
+        price.type !== "one_time" ||
+        price.unit_amount !== configuration.priceCents ||
+        price.currency !== configuration.currency ||
+        !product?.active
+      ) {
+        blockers.push("The live Stripe product and price do not match the reviewed offer.");
+      }
+    } catch {
+      blockers.push("The live Stripe product and price could not be verified.");
+    }
+  }
+
+  return { ready: blockers.length === 0, blockers };
+}

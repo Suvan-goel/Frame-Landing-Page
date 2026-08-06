@@ -28,7 +28,7 @@ const genderLabels: Record<string, string> = {
 
 const interviewLabels: Record<string, string> = {
   yes: "Yes",
-  possibly: "Possibly",
+  maybe: "Maybe",
   no: "No",
 };
 
@@ -286,13 +286,21 @@ export function QualifiedLeadInsights({ leads }: { leads: QualifiedLead[] }) {
   );
   const interviewData = responseBreakdown(
     leads,
-    ({ qualification }) => qualification.interviewWillingness,
+    ({ qualification }) =>
+      qualification.interviewWillingness === "possibly"
+        ? "maybe"
+        : qualification.interviewWillingness,
     interviewLabels,
   );
   const largestAgeGroup = leadingDatum(ageData);
   const topReason = leadingDatum(mainReasonData);
+  const genderResponseCount = genderData.reduce((total, datum) => total + datum.count, 0);
+  const interviewResponseCount = interviewData.reduce(
+    (total, datum) => total + datum.count,
+    0,
+  );
   const openToCall = interviewData
-    .filter(({ label }) => label === "Yes" || label === "Possibly")
+    .filter(({ label }) => label === "Yes" || label === "Maybe")
     .reduce((total, { count }) => total + count, 0);
 
   return (
@@ -326,7 +334,7 @@ export function QualifiedLeadInsights({ leads }: { leads: QualifiedLead[] }) {
         <InsightMetric
           label="Open to a call"
           value={`${percentage(openToCall, leads.length)}%`}
-          detail={`${openToCall} answered yes or possibly`}
+          detail={`${openToCall} answered yes or maybe`}
         />
       </div>
 
@@ -336,11 +344,11 @@ export function QualifiedLeadInsights({ leads }: { leads: QualifiedLead[] }) {
             <p className="eyebrow">Who they are</p>
             <h3>Demographics</h3>
           </div>
-          <p>Age and self-described gender across the qualified audience.</p>
+          <p>Age and self-described gender where applicants chose to provide them.</p>
         </div>
         <div className="admin-insights__grid admin-insights__grid--demographics">
           <AgeChart data={ageData} total={ages.length} averageAge={averageAge} />
-          <DonutChart data={genderData} total={leads.length} />
+          <DonutChart data={genderData} total={genderResponseCount} />
         </div>
       </div>
 
@@ -350,7 +358,7 @@ export function QualifiedLeadInsights({ leads }: { leads: QualifiedLead[] }) {
             <p className="eyebrow">What they told us</p>
             <h3>Multiple-choice responses</h3>
           </div>
-          <p>Response distributions for each question asked before contact details.</p>
+          <p>Response distributions from completed optional surveys.</p>
         </div>
         <div className="admin-insights__grid">
           <DistributionChart
@@ -363,16 +371,16 @@ export function QualifiedLeadInsights({ leads }: { leads: QualifiedLead[] }) {
           />
           <DistributionChart
             title="Current monitoring method"
-            eyebrow="Question 3"
+            eyebrow="Question 2"
             data={monitoringData}
             total={leads.length}
             tone="sage"
           />
           <DistributionChart
-            title="Willing to join a 20-min call"
-            eyebrow="Question 4"
+            title="Open to a short research call"
+            eyebrow="Optional follow-up"
             data={interviewData}
-            total={leads.length}
+            total={interviewResponseCount}
             tone="terracotta"
           />
         </div>

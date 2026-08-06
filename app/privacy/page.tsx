@@ -38,7 +38,7 @@ export default async function PrivacyPage() {
             ? " It also covers the locally tested Founding Contributor membership experience."
             : null}
           {showPreorderAreas
-            ? " It also covers the locally tested device pre-order experience."
+            ? " It also covers the Frame device pre-order experience."
             : null}
         </p>
 
@@ -74,9 +74,14 @@ export default async function PrivacyPage() {
 
         {showPreorderAreas ? (
           <section>
-            <h2>Local pre-order testing</h2>
+            <h2>Device pre-orders</h2>
             <p>
-              If you complete a Stripe test payment, the local implementation records your name, email address, shipping address, test payment status and amount, the product and quantity, the terms and product-status versions accepted, fulfilment status, order events, and email-delivery status. Stripe processes test card details; Frame does not receive or store a full card number.
+              If you place a pre-order, we record your name, email address,
+              shipping address, payment status and amount, the product and
+              quantity, the terms and product-status versions you accepted,
+              fulfilment status, order events, and email-delivery status. Stripe
+              processes your card details; Frame does not receive or store your
+              full card number.
             </p>
           </section>
         ) : null}
@@ -84,16 +89,19 @@ export default async function PrivacyPage() {
         <section>
           <h2>Information we collect</h2>
           <p>
-            If you apply for early access, we collect your first and last name,
-            email address, age, gender, your main reason for wanting Frame, what
-            you want Frame to help you understand or do, how you currently
-            monitor your blood pressure, and whether you would be open to a
-            20-minute conversation with us. Please do not include private
-            medical information in your written response. We also collect the
-            time of signup, where on the page you started the flow, and any
-            campaign labels included in the link you used. Our hosting providers
-            may process limited technical information, such as IP address and
-            browser details, to operate and secure the site.
+            If you join Frame early access, we collect your email address. You
+            can optionally tell us why you are interested in Frame, how you
+            currently monitor your blood pressure, what feels frustrating or
+            missing, and whether you would be open to a short research call. We
+            ask for your first name only if you say yes to a call. Earlier
+            versions of the application also asked some applicants for their
+            name, age and gender; those historical responses remain stored.
+            Please do not include private medical information in your written
+            response. We also collect the time and location of signup within the
+            site, referral information, and campaign labels or click identifiers
+            included in the link you used. Our hosting providers may process
+            limited technical information, such as IP address and browser
+            details, to operate and secure the site.
           </p>
         </section>
 
@@ -113,9 +121,9 @@ export default async function PrivacyPage() {
         <section>
           <h2>Advertising measurement</h2>
           <p>
-            We use the Meta Pixel to understand whether a visit or completed
-            application came from a Meta ad and to measure and improve our
-            campaigns. The Pixel may use browser identifiers and similar
+            We use the Meta Pixel to understand whether a visit, early-access
+            signup or optional survey completion came from a Meta ad and to
+            measure and improve our campaigns. The Pixel may use browser identifiers and similar
             technologies, which Meta processes under its own privacy policy. We
             do not send your name, email address, age, gender, or written
             responses to Meta through the Pixel.
@@ -137,7 +145,7 @@ export default async function PrivacyPage() {
               ? " The local membership flow also uses Stripe for payments and Supabase for member authentication."
               : null}
             {showPreorderAreas
-              ? " The local pre-order flow also uses Stripe for test payments and shipping-address collection."
+              ? " The pre-order flow also uses Stripe for payment processing and shipping-address collection."
               : null}
             {" "}We keep submitted information while Frame is in development,
             for the period needed to provide the relevant service and meet

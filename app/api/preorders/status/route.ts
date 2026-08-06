@@ -11,6 +11,8 @@ import {
 } from "@/lib/runtime-env.server";
 import { getStripe } from "@/lib/stripe.server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin.server";
+import { createPreorderManagePath } from "@/lib/preorder-order-access.server";
+import { consumePreorderRateLimit } from "@/lib/preorder-rate-limit.server";
 
 export const dynamic = "force-dynamic";
 
@@ -25,6 +27,7 @@ type StoredOrder = {
   currency: string;
   estimated_delivery: string;
   placed_at: string;
+  manage_token_version: number;
 };
 
 function response(body: Record<string, unknown>, status = 200) {
@@ -42,6 +45,15 @@ async function orderResponse(order: StoredOrder) {
     .eq("preorder_id", order.id)
     .maybeSingle();
   if (item.error) throw item.error;
+  let managePath: string | null = null;
+  try {
+    managePath = await createPreorderManagePath({
+      orderId: order.id,
+      tokenVersion: order.manage_token_version,
+    });
+  } catch (error) {
+    console.error("Pre-order management link creation failed", error);
+  }
 
   return {
     status: order.payment_status === "paid" ? "confirmed" : order.payment_status,
@@ -55,6 +67,7 @@ async function orderResponse(order: StoredOrder) {
       placedAt: order.placed_at,
       estimatedDelivery: order.estimated_delivery,
       fulfillmentStatus: order.fulfillment_status,
+      managePath,
     },
   };
 }
@@ -84,14 +97,34 @@ export async function GET(request: Request) {
 
   const sessionId = url.searchParams.get("session_id") ?? "";
   if (!/^cs_(?:test|live)_[A-Za-z0-9_]+$/.test(sessionId)) {
-    return response({ error: "A valid test payment confirmation reference is required." }, 400);
+    return response({ error: "A valid payment confirmation reference is required." }, 400);
   }
 
   try {
+    const rateLimit = await consumePreorderRateLimit({
+      request,
+      scope: "preorder_status",
+      limit: 60,
+      windowSeconds: 10 * 60,
+    });
+    if (!rateLimit.allowed) {
+      return new Response(
+        JSON.stringify({ error: "Too many confirmation checks. Please wait and try again." }),
+        {
+          status: 429,
+          headers: {
+            "Cache-Control": "no-store",
+            "Content-Type": "application/json; charset=utf-8",
+            "Retry-After": String(rateLimit.retryAfterSeconds),
+            "X-Content-Type-Options": "nosniff",
+          },
+        },
+      );
+    }
     const supabase = await getSupabaseAdmin();
     const stored = await supabase
       .from("preorders")
-      .select("id,order_number,full_name,email,payment_status,fulfillment_status,amount_total,currency,estimated_delivery,placed_at")
+      .select("id,order_number,full_name,email,payment_status,fulfillment_status,amount_total,currency,estimated_delivery,placed_at,manage_token_version")
       .eq("stripe_checkout_session_id", sessionId)
       .maybeSingle<StoredOrder>();
     if (stored.error) throw stored.error;
@@ -111,6 +144,6 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("Pre-order payment status failed", error);
-    return response({ error: "Test payment confirmation is temporarily unavailable." }, 503);
+    return response({ error: "Payment confirmation is temporarily unavailable." }, 503);
   }
 }

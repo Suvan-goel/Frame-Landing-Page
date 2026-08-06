@@ -7,7 +7,7 @@ import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
 
 export const metadata: Metadata = {
   title: "Draft Frame Pre-order Terms — local test",
-  description: "Implementation draft for the local Frame pre-order test.",
+  description: "Terms for placing a Frame device pre-order.",
   robots: { index: false, follow: false },
 };
 

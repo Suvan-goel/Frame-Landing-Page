@@ -17,6 +17,8 @@ import {
   isVisibleSignup,
   mainReasonLabels,
   monitoringLabels,
+  qualificationStatusLabels,
+  WAITLIST_SIGNUP_SELECT,
   type LeadTab,
   type WaitlistSignup,
 } from "@/lib/waitlist-leads";
@@ -38,9 +40,7 @@ export default async function WaitlistAdminPage({
   const supabase = await getSupabaseAdmin();
   const { data, error } = await supabase
     .from("waitlist_signups")
-    .select(
-      "id,first_name,last_name,email,gender,age,motivation,placement,utm_source,utm_medium,utm_campaign,created_at",
-    )
+    .select(WAITLIST_SIGNUP_SELECT)
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
     .limit(500)
@@ -121,7 +121,7 @@ export default async function WaitlistAdminPage({
         <p className="admin-tabs__note">
           {activeTab === "insights"
             ? "Insights are calculated from qualified leads only."
-            : "Qualified leads completed every early-access qualification and demographic field."}
+            : "Qualified leads completed the optional early-access survey. Name and demographics are shown only where they were provided."}
         </p>
 
         {activeTab === "insights" ? (
@@ -137,14 +137,14 @@ export default async function WaitlistAdminPage({
                   <th>Main reason</th>
                   <th>What Frame should help with</th>
                   <th>Current monitoring</th>
-                  <th>20-min call</th>
+                  <th>Research call</th>
                   <th>Source</th>
                   <th>Joined</th>
                   <th><span className="sr-only">Actions</span></th>
                 </tr>
               </thead>
               <tbody>
-                {activeSignups.map(({ signup, qualification }) => (
+                {activeSignups.map(({ signup, qualification, qualificationStatus, highIntent }) => (
                   <tr key={signup.id}>
                     <td className="admin-lead">
                       <strong>
@@ -155,17 +155,18 @@ export default async function WaitlistAdminPage({
                       <a href={`mailto:${signup.email}`}>{signup.email}</a>
                       <small>
                         {[
+                          qualificationStatusLabels[qualificationStatus],
+                          highIntent ? "High intent" : null,
                           signup.gender?.replaceAll("_", " "),
                           signup.age ? `Age ${signup.age}` : null,
                         ]
                           .filter(Boolean)
-                          .join(" · ") || "Demographics not provided"}
+                          .join(" · ")}
                       </small>
                     </td>
                     <td>
                       {qualification.mainReason
-                        ? mainReasonLabels[qualification.mainReason] ??
-                          qualification.mainReason
+                        ? `${mainReasonLabels[qualification.mainReason] ?? qualification.mainReason}${qualification.mainReasonOther ? ` — ${qualification.mainReasonOther}` : ""}`
                         : "Legacy signup"}
                     </td>
                     <td className="admin-motivation">
@@ -174,14 +175,15 @@ export default async function WaitlistAdminPage({
                     </td>
                     <td>
                       {qualification.monitoringMethod
-                        ? monitoringLabels[qualification.monitoringMethod] ??
-                          qualification.monitoringMethod
+                        ? `${monitoringLabels[qualification.monitoringMethod] ?? qualification.monitoringMethod}${qualification.monitoringMethodOther ? ` — ${qualification.monitoringMethodOther}` : ""}`
                         : "—"}
                     </td>
                     <td>
                       {qualification.interviewWillingness
-                        ? qualification.interviewWillingness[0].toUpperCase() +
-                          qualification.interviewWillingness.slice(1)
+                        ? qualification.interviewWillingness === "possibly"
+                          ? "Maybe"
+                          : qualification.interviewWillingness[0].toUpperCase() +
+                            qualification.interviewWillingness.slice(1)
                         : "—"}
                     </td>
                     <td className="admin-source">
@@ -221,8 +223,8 @@ export default async function WaitlistAdminPage({
             <h2>No {activeTab} leads.</h2>
             <p>
               {activeTab === "qualified"
-                ? "Completed early-access applications will appear here."
-                : "Legacy or incomplete signups will appear here."}
+                ? "Completed optional surveys will appear here."
+                : "Email-only, skipped, or legacy incomplete signups will appear here."}
             </p>
           </div>
         ) : null}
@@ -259,7 +261,7 @@ export default async function WaitlistAdminPage({
                           <strong>{leadLabel}</strong>
                           <a href={`mailto:${signup.email}`}>{signup.email}</a>
                         </td>
-                        <td>{entry.tab === "qualified" ? "Qualified" : "Unqualified"}</td>
+                        <td>{qualificationStatusLabels[entry.qualificationStatus]}</td>
                         <td>
                           <time dateTime={signup.created_at}>
                             {new Intl.DateTimeFormat("en", {

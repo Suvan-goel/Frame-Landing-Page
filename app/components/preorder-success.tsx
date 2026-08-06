@@ -15,6 +15,7 @@ type StatusResult = {
     currency: string;
     placedAt: string;
     estimatedDelivery: string;
+    managePath?: string | null;
   };
 };
 
@@ -163,7 +164,11 @@ export function PreorderSuccess() {
       </section>
 
       <div className="preorder-confirmation__actions">
-        <Link className="button button--dark" href="/">Return to Frame</Link>
+        {order.managePath ? (
+          <a className="button button--dark" href={order.managePath}>Manage your pre-order</a>
+        ) : (
+          <Link className="button button--dark" href="/">Return to Frame</Link>
+        )}
         <Link className="text-link" href="/contact?topic=general">Need help? Contact us</Link>
       </div>
 

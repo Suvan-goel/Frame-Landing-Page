@@ -1,7 +1,11 @@
 import type Stripe from "stripe";
 import { getPreorderConfiguration } from "./preorder-config.server";
 import { isPreorderLiveApproved } from "./preorder-access";
-import { sendPreorderConfirmationEmail } from "./preorder-email.server";
+import {
+  sendPreorderConfirmationEmail,
+  sendPreorderRefundUpdateEmail,
+} from "./preorder-email.server";
+import { createPreorderManagePath } from "./preorder-order-access.server";
 import {
   PREORDER_PRODUCT_NAME,
   PREORDER_PRODUCT_STATUS_VERSION,
@@ -14,6 +18,7 @@ import { getSupabaseAdmin } from "./supabase-admin.server";
 type PreorderRow = {
   id: string;
   order_number: number;
+  environment: "test" | "live";
   email: string;
   full_name: string;
   amount_total: number;
@@ -24,6 +29,7 @@ type PreorderRow = {
   fulfillment_status: string;
   confirmation_email_sent_at: string | null;
   shipping_address: Record<string, unknown>;
+  manage_token_version: number;
 };
 
 function stripeId(value: string | { id: string } | null) {
@@ -80,6 +86,10 @@ export async function fulfillPreorderCheckout(
   if ((mode === "live") !== session.livemode) {
     throw new Error("Stripe payment mode does not match the pre-order launch mode.");
   }
+  const environment = session.livemode ? "live" : "test";
+  if (session.metadata.environment !== environment) {
+    throw new Error("Stripe payment environment metadata is invalid.");
+  }
 
   const intentId = session.metadata.checkout_intent_id;
   if (!intentId) throw new Error("Pre-order checkout intent metadata is missing.");
@@ -94,6 +104,10 @@ export async function fulfillPreorderCheckout(
     throw intentResult.error ?? new Error("Pre-order checkout intent was not found.");
   }
   const intent = intentResult.data;
+
+  if (intent.environment !== environment) {
+    throw new Error("Pre-order intent environment does not match the Stripe payment.");
+  }
 
   if (
     intent.terms_version !== PREORDER_TERMS_VERSION ||
@@ -146,6 +160,9 @@ export async function fulfillPreorderCheckout(
     .eq("checkout_intent_id", intent.id)
     .maybeSingle<PreorderRow>();
   if (existing.error) throw existing.error;
+  if (existing.data && existing.data.environment !== environment) {
+    throw new Error("Stored pre-order environment does not match the Stripe payment.");
+  }
 
   const paymentIntentId = stripeId(session.payment_intent);
   const customerId = stripeId(session.customer);
@@ -157,6 +174,7 @@ export async function fulfillPreorderCheckout(
     const inserted = await supabase
       .from("preorders")
       .insert({
+        environment,
         checkout_intent_id: intent.id,
         stripe_checkout_session_id: session.id,
         stripe_customer_id: customerId,
@@ -174,6 +192,7 @@ export async function fulfillPreorderCheckout(
         amount_total: session.amount_total,
         currency: session.currency,
         estimated_delivery: intent.estimated_delivery,
+        current_estimated_delivery: intent.estimated_delivery,
         terms_version: intent.terms_version,
         product_status_version: intent.product_status_version,
         terms_accepted_at: intent.terms_accepted_at,
@@ -216,6 +235,7 @@ export async function fulfillPreorderCheckout(
 
   const payment = await supabase.from("preorder_payments").upsert(
     {
+      environment,
       preorder_id: order.id,
       checkout_intent_id: intent.id,
       stripe_checkout_session_id: session.id,
@@ -251,10 +271,15 @@ export async function fulfillPreorderCheckout(
 
   if (!order.confirmation_email_sent_at) {
     try {
+      const managePath = await createPreorderManagePath({
+        orderId: order.id,
+        tokenVersion: order.manage_token_version,
+      });
       await sendPreorderConfirmationEmail({
         origin,
         preorderId: order.id,
         orderNumber: order.order_number,
+        environment: order.environment,
         email: order.email,
         fullName: order.full_name,
         amountTotal: order.amount_total,
@@ -263,6 +288,7 @@ export async function fulfillPreorderCheckout(
         placedAt: order.placed_at,
         estimatedDelivery: order.estimated_delivery,
         shippingAddress: order.shipping_address,
+        managePath,
       });
       const sentAt = new Date().toISOString();
       const updated = await supabase
@@ -292,15 +318,22 @@ export async function reconcilePreorderRefund(input: {
   amountRefunded: number;
   fullyRefunded: boolean;
   failed?: boolean;
+  origin?: string;
 }) {
   const supabase = await getSupabaseAdmin();
   const payment = await supabase
     .from("preorder_payments")
-    .select("preorder_id,amount_total,amount_refunded")
+    .select("preorder_id,amount_total,amount_refunded,currency")
     .eq("stripe_payment_intent_id", input.paymentIntentId)
     .maybeSingle();
   if (payment.error) throw payment.error;
   if (!payment.data?.preorder_id) return false;
+  const order = await supabase
+    .from("preorders")
+    .select("id,order_number,environment,manage_token_version,email,full_name,cancellation_status")
+    .eq("id", payment.data.preorder_id)
+    .single();
+  if (order.error) throw order.error;
 
   const paymentStatus = input.failed
     ? "refund_failed"
@@ -323,15 +356,23 @@ export async function reconcilePreorderRefund(input: {
     .eq("stripe_payment_intent_id", input.paymentIntentId);
   if (paymentUpdate.error) throw paymentUpdate.error;
 
+  const orderUpdateValues: Record<string, unknown> = {
+    order_status: input.fullyRefunded ? "cancelled" : "placed",
+    payment_status: paymentStatus,
+    amount_refunded: amountRefunded,
+    cancelled_at: input.fullyRefunded ? new Date().toISOString() : null,
+    updated_at: new Date().toISOString(),
+  };
+  if (input.fullyRefunded) {
+    orderUpdateValues.cancellation_status = "completed";
+    orderUpdateValues.cancellation_resolved_at = new Date().toISOString();
+  } else if (input.failed && order.data.cancellation_status === "processing") {
+    orderUpdateValues.cancellation_status = "requested";
+  }
+
   const orderUpdate = await supabase
     .from("preorders")
-    .update({
-      order_status: input.fullyRefunded ? "cancelled" : "placed",
-      payment_status: paymentStatus,
-      amount_refunded: amountRefunded,
-      cancelled_at: input.fullyRefunded ? new Date().toISOString() : null,
-      updated_at: new Date().toISOString(),
-    })
+    .update(orderUpdateValues)
     .eq("id", payment.data.preorder_id);
   if (orderUpdate.error) throw orderUpdate.error;
 
@@ -341,6 +382,36 @@ export async function reconcilePreorderRefund(input: {
     eventType: paymentStatus,
     detail: { amount_refunded: amountRefunded },
   });
+  if (input.fullyRefunded && input.origin) {
+    try {
+      const managePath = await createPreorderManagePath({
+        orderId: order.data.id,
+        tokenVersion: order.data.manage_token_version,
+      });
+      await sendPreorderRefundUpdateEmail({
+        origin: input.origin,
+        preorderId: order.data.id,
+        orderNumber: order.data.order_number,
+        environment: order.data.environment,
+        email: order.data.email,
+        fullName: order.data.full_name,
+        amountRefunded,
+        currency: payment.data.currency,
+        status: "completed",
+        managePath,
+      });
+    } catch (error) {
+      console.error("Pre-order refund completion email failed", error);
+      await insertOrderEvent({
+        preorderId: order.data.id,
+        eventKey: `preorder-refund-email-failed-${input.paymentIntentId}-${amountRefunded}`,
+        eventType: "refund_completion_email_failed",
+        detail: {
+          error: error instanceof Error ? error.message.slice(0, 300) : "Unknown error",
+        },
+      });
+    }
+  }
   return true;
 }
 
