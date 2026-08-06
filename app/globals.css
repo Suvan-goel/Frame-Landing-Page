@@ -5684,28 +5684,37 @@ h2 {
   }
 
   .hero--email-first .hero-email-first__eyebrow {
+    order: 1;
     margin-bottom: 20px;
   }
 
   .hero--email-first h1 {
+    order: 2;
     margin: 0;
     font-size: clamp(2.85rem, 12vw, 3.3rem);
     line-height: 0.96;
   }
 
   .hero--email-first .hero-intro {
+    order: 3;
     margin-top: 20px;
     font-size: 0.92rem;
     line-height: 1.58;
   }
 
   .hero--email-first .waitlist-signup--compact {
+    order: 4;
     margin-top: 26px;
   }
 
   .hero--email-first .waitlist-signup--compact .waitlist-signup__email-row {
     grid-template-columns: 1fr;
     gap: 8px;
+  }
+
+  .hero--email-first .waitlist-signup--compact .waitlist-signup__email-row input {
+    height: 52px;
+    min-height: 52px;
   }
 
   .hero--email-first .waitlist-signup--compact .waitlist-signup__email-row .button {

@@ -398,6 +398,16 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     css,
     /\.hero-lifestyle img\s*\{[^}]*height: 98\.398125%;[^}]*transform: translate\(-144px, 76px\);/,
   );
+  assert.match(
+    css,
+    /\.hero--email-first \.hero-email-first__eyebrow\s*\{[^}]*order: 1;/,
+  );
+  assert.match(css, /\.hero--email-first h1\s*\{[^}]*order: 2;/);
+  assert.match(css, /\.hero--email-first \.hero-intro\s*\{[^}]*order: 3;/);
+  assert.match(
+    css,
+    /\.hero--email-first \.waitlist-signup--compact\s*\{[^}]*order: 4;/,
+  );
   assert.match(page, /src="\/frame-sensing-concept-realistic-v3-transparent-960w\.webp"/);
   assert.match(page, /src="\/frame-app-studio-v5-640w\.webp"/);
   assert.doesNotMatch(page, /<svg|ProductDiagram|CrossSection|PatternTimeline/);
