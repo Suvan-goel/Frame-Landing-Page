@@ -108,6 +108,20 @@ function waitlistEmailInput(email) {
   };
 }
 
+test("permanently redirects www requests to the canonical host", async () => {
+  const response = await render(
+    "/privacy?source=www",
+    undefined,
+    "https://www.framewearable.com",
+  );
+
+  assert.equal(response.status, 308);
+  assert.equal(
+    response.headers.get("location"),
+    "https://framewearable.com/privacy?source=www",
+  );
+});
+
 test("server-renders the Frame landing page", async () => {
   const response = await render();
   assert.equal(response.status, 200);
@@ -1307,6 +1321,14 @@ test("separates, visualizes, exports, and permanently deletes admin leads", asyn
   assert.match(leadHelpers, /Email captured · survey not completed/);
   assert.match(leadHelpers, /highIntent/);
   assert.match(leadHelpers, /survey_completed_at/);
+  assert.match(
+    leadHelpers,
+    /monitor_high_or_borderline: "See my blood pressure patterns over time"/,
+  );
+  assert.doesNotMatch(
+    leadHelpers,
+    /Monitor high or borderline blood pressure/,
+  );
   assert.match(
     leadHelpers,
     /signup\.first_name\?\.trim\(\)\.toLocaleLowerCase\(\) !== "suvan"/,

@@ -49,6 +49,7 @@ export const WAITLIST_SIGNUP_SELECT =
 
 export const mainReasonLabels: Record<string, string> = {
   ...Object.fromEntries(PRIMARY_INTEREST_OPTIONS),
+  monitor_high_or_borderline: "See my blood pressure patterns over time",
   understand_sleep: "Understand blood pressure while sleeping",
   understand_unexplained_changes: "Understand unexplained changes",
   track_response_and_recovery: "Track response and recovery",
