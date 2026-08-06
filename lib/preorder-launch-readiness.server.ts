@@ -27,6 +27,8 @@ const requiredWebhookEvents = [
   "checkout.session.completed",
   "checkout.session.async_payment_succeeded",
   "checkout.session.expired",
+  "refund.created",
+  "refund.updated",
   "charge.refunded",
   "refund.failed",
   "charge.dispute.created",

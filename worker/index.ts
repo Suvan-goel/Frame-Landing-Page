@@ -193,7 +193,7 @@ const worker = {
     if (
       (isContributorRequest && !isLocalRequest) ||
       (isPreorderRequest && !preorderRequestAllowed) ||
-      (isSharedStripeWebhook && !preorderRequestAllowed && !stagingConfigured)
+      (isSharedStripeWebhook && request.method !== "POST")
     ) {
       return new Response("Not found", {
         status: 404,

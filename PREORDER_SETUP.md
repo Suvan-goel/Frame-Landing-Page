@@ -52,6 +52,12 @@ stripe listen --forward-to localhost:3000/api/stripe/webhook
 If Resend is not configured, the paid order still succeeds. The failed
 confirmation delivery is recorded for retry and appears in the owner view.
 
+Verified Stripe events are durably claimed before the webhook returns success.
+Production Workers finish the order, refund or dispute work in the background;
+failed or five-minute-stalled events remain visible and retryable in the owner
+view. The webhook route intentionally stays available even when new pre-order
+sales are paused.
+
 ## Launch lock
 
 Public requests remain blocked unless all of the following are true:

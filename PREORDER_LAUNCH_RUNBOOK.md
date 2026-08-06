@@ -117,7 +117,22 @@ The live Stripe webhook endpoint is:
 https://framewearable.com/api/stripe/webhook
 ```
 
-Subscribe it to the checkout, refund and dispute events already handled by the application.
+Subscribe both the test and live endpoints to:
+
+- `checkout.session.completed`
+- `checkout.session.async_payment_succeeded`
+- `checkout.session.expired`
+- `refund.created`
+- `refund.updated`
+- `charge.refunded`
+- `refund.failed`
+- `charge.dispute.created`
+- `charge.dispute.closed`
+
+The signed webhook route remains available when new sales are paused. Each
+verified event is claimed in Supabase before Stripe is acknowledged, then
+processed in the Worker background. Failed work and processing that has stalled
+for five minutes appears in the owner recovery panel and can be safely retried.
 
 ## 5. Final cutover
 
@@ -140,3 +155,5 @@ If checkout, email, webhook, fulfilment or policy behaviour is uncertain:
 4. Reopen only after `npm run preorder:check:launch` passes again.
 
 Pausing allocation does not remove existing orders or customer-management links.
+It also does not block signed Stripe events or fulfilment for a customer who had
+already completed payment.

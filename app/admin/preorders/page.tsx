@@ -14,6 +14,7 @@ import {
 } from "@/lib/preorder-operations.server";
 import { formatPreorderMoney, formatPreorderNumber } from "@/lib/preorder";
 import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
+import { isStripeWebhookRecoveryEligible } from "@/lib/stripe-webhook-recovery";
 import { getSupabaseAdmin, isWaitlistAdmin } from "@/lib/supabase-admin.server";
 
 export const dynamic = "force-dynamic";
@@ -40,6 +41,7 @@ type PreorderAdminRow = {
 type FailedWebhookRow = {
   event_id: string;
   event_type: string;
+  status: string;
   error_message: string | null;
   processing_attempts: number;
   last_attempted_at: string | null;
@@ -79,11 +81,11 @@ export default async function PreorderAdminPage({
       .eq("preorders.environment", environment),
     supabase
       .from("stripe_webhook_events")
-      .select("event_id,event_type,error_message,processing_attempts,last_attempted_at", { count: "exact" })
-      .eq("status", "failed")
+      .select("event_id,event_type,status,error_message,processing_attempts,last_attempted_at")
+      .in("status", ["failed", "processing"])
       .eq("livemode", environment === "live")
       .order("last_attempted_at", { ascending: false })
-      .limit(20)
+      .limit(100)
       .returns<FailedWebhookRow[]>(),
     getPreorderSalesSnapshot(environment),
     evaluatePreorderLaunchReadiness(),
@@ -116,15 +118,21 @@ export default async function PreorderAdminPage({
       ["requested", "processing"].includes(order.cancellation_status) ||
       ["refund_failed", "disputed"].includes(order.payment_status),
   ).length;
-  const failedWebhookRows: FailedWebhook[] = (failedWebhooks.data ?? []).map(
-    (event) => ({
+  const failedWebhookRows: FailedWebhook[] = (failedWebhooks.data ?? [])
+    .filter((event) =>
+      isStripeWebhookRecoveryEligible({
+        status: event.status,
+        lastAttemptedAt: event.last_attempted_at,
+      }),
+    )
+    .map((event) => ({
       eventId: event.event_id,
       eventType: event.event_type,
+      status: event.status === "processing" ? "stalled" : "failed",
       errorMessage: event.error_message,
       processingAttempts: event.processing_attempts,
       lastAttemptedAt: event.last_attempted_at,
-    }),
-  );
+    }));
 
   return (
     <main className="admin-page">
@@ -168,7 +176,7 @@ export default async function PreorderAdminPage({
           <article><span>Paid orders</span><strong>{paidRows.length}</strong></article>
           <article><span>Gross payments</span><strong>{moneySummary(grossByCurrency)}</strong></article>
           <article><span>Refunded</span><strong>{moneySummary(refundedByCurrency)}</strong></article>
-          <article><span>Needs attention</span><strong>{orderAttentionCount + (failedEmails.count ?? 0) + (failedWebhooks.count ?? 0)}</strong></article>
+          <article><span>Needs attention</span><strong>{orderAttentionCount + (failedEmails.count ?? 0) + failedWebhookRows.length}</strong></article>
         </section>
 
         <PreorderSalesControls

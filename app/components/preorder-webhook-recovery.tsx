@@ -6,6 +6,7 @@ import { useState } from "react";
 export type FailedWebhook = {
   eventId: string;
   eventType: string;
+  status: "failed" | "stalled";
   errorMessage: string | null;
   processingAttempts: number;
   lastAttemptedAt: string | null;
@@ -52,10 +53,10 @@ export function PreorderWebhookRecovery({
       <div className="preorder-reliability-panel__heading">
         <div>
           <p className="eyebrow">Payment reliability</p>
-          <h2>{events.length ? "Failed Stripe events need attention." : "Webhook processing is healthy."}</h2>
+          <h2>{events.length ? "Stripe events need recovery." : "Webhook processing is healthy."}</h2>
         </div>
         <span className={`admin-status ${events.length ? "admin-status--refund_failed" : "admin-status--paid"}`}>
-          {events.length ? `${events.length} failed` : "No failures"}
+          {events.length ? `${events.length} unresolved` : "No failures"}
         </span>
       </div>
       {events.length ? (
@@ -66,7 +67,9 @@ export function PreorderWebhookRecovery({
                 <strong>{event.eventType}</strong>
                 <code>{event.eventId}</code>
                 <small>
-                  {event.errorMessage ?? "No failure detail was recorded."}
+                  {event.status === "stalled"
+                    ? "Background processing did not finish and can now be recovered."
+                    : event.errorMessage ?? "No failure detail was recorded."}
                   {` · ${event.processingAttempts} attempt${event.processingAttempts === 1 ? "" : "s"}`}
                   {event.lastAttemptedAt ? ` · ${new Date(event.lastAttemptedAt).toLocaleString("en-GB", { timeZone: "UTC" })} UTC` : ""}
                 </small>
@@ -83,7 +86,7 @@ export function PreorderWebhookRecovery({
           ))}
         </ul>
       ) : (
-        <p>No failed Stripe events are recorded for this environment.</p>
+        <p>No failed or stalled Stripe events are recorded for this environment.</p>
       )}
       {message ? <p className="form-success" role="status">{message}</p> : null}
       {error ? <p className="form-error" role="alert">{error}</p> : null}

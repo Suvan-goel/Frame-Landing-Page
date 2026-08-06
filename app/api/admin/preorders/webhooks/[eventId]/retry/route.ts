@@ -8,6 +8,7 @@ import {
   failStripeWebhookEvent,
 } from "@/lib/stripe-webhook-events.server";
 import { processStripeWebhookEvent } from "@/lib/stripe-webhook-processing.server";
+import { isStripeWebhookRecoveryEligible } from "@/lib/stripe-webhook-recovery";
 import { getStripe } from "@/lib/stripe.server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin.server";
 
@@ -58,16 +59,32 @@ export async function POST(
   const supabase = await getSupabaseAdmin();
   const stored = await supabase
     .from("stripe_webhook_events")
-    .select("event_id,status,livemode")
+    .select("event_id,status,livemode,last_attempted_at")
     .eq("event_id", eventId)
-    .maybeSingle<{ event_id: string; status: string; livemode: boolean }>();
+    .maybeSingle<{
+      event_id: string;
+      status: string;
+      livemode: boolean;
+      last_attempted_at: string | null;
+    }>();
   if (stored.error) {
     console.error("Stripe event recovery lookup failed", stored.error);
     return response({ error: "The failed event could not be loaded." }, 503);
   }
   if (!stored.data) return response({ error: "Stripe event not found." }, 404);
-  if (stored.data.status !== "failed") {
-    return response({ error: "Only failed events can be retried." }, 409);
+  if (
+    !isStripeWebhookRecoveryEligible({
+      status: stored.data.status,
+      lastAttemptedAt: stored.data.last_attempted_at,
+    })
+  ) {
+    return response(
+      {
+        error:
+          "Only failed events can be retried immediately; processing events become retryable after five minutes.",
+      },
+      409,
+    );
   }
   if (stored.data.livemode !== (environment === "live")) {
     return response({ error: "The event belongs to a different environment." }, 409);

@@ -1,17 +1,11 @@
 import type Stripe from "stripe";
 import { getPreorderConfiguration } from "./preorder-config.server";
-import { isPreorderLiveApproved } from "./preorder-access";
 import {
   sendPreorderConfirmationEmail,
   sendPreorderRefundUpdateEmail,
 } from "./preorder-email.server";
 import { createPreorderManagePath } from "./preorder-order-access.server";
-import {
-  PREORDER_PRODUCT_NAME,
-  PREORDER_PRODUCT_STATUS_VERSION,
-  PREORDER_TERMS_VERSION,
-} from "./preorder";
-import { getPreorderMode, getRuntimeValue } from "./runtime-env.server";
+import { PREORDER_PRODUCT_NAME } from "./preorder";
 import { getStripe, getStripePreorderPriceId } from "./stripe.server";
 import { getSupabaseAdmin } from "./supabase-admin.server";
 
@@ -70,22 +64,6 @@ export async function fulfillPreorderCheckout(
     throw new Error("Pre-order terms were not accepted in Checkout.");
   }
 
-  const mode = await getPreorderMode();
-  if (mode !== "test" && mode !== "live") {
-    throw new Error("Pre-order fulfilment is disabled.");
-  }
-  if (
-    mode === "live" &&
-    !isPreorderLiveApproved({
-      mode,
-      approvedTermsVersion: await getRuntimeValue("PREORDER_LEGAL_APPROVED_VERSION"),
-    })
-  ) {
-    throw new Error("Live pre-order fulfilment is blocked until approved terms are active.");
-  }
-  if ((mode === "live") !== session.livemode) {
-    throw new Error("Stripe payment mode does not match the pre-order launch mode.");
-  }
   const environment = session.livemode ? "live" : "test";
   if (session.metadata.environment !== environment) {
     throw new Error("Stripe payment environment metadata is invalid.");
@@ -110,8 +88,8 @@ export async function fulfillPreorderCheckout(
   }
 
   if (
-    intent.terms_version !== PREORDER_TERMS_VERSION ||
-    intent.product_status_version !== PREORDER_PRODUCT_STATUS_VERSION ||
+    !intent.terms_version ||
+    !intent.product_status_version ||
     session.metadata.terms_version !== intent.terms_version ||
     session.metadata.product_status_version !== intent.product_status_version
   ) {

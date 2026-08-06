@@ -267,8 +267,12 @@ if (supabase) {
     fail("Endpoint throttling", first.error?.message ?? second.error?.message ?? "Unexpected rate-limit result.");
   }
 
-  const [failedWebhooks, pendingCancellations, emailDeliveries] = await Promise.all([
-    supabase.from("stripe_webhook_events").select("event_id", { count: "exact", head: true }).eq("status", "failed"),
+  const [webhookRecovery, pendingCancellations, emailDeliveries] = await Promise.all([
+    supabase
+      .from("stripe_webhook_events")
+      .select("event_id,status,last_attempted_at")
+      .in("status", ["failed", "processing"])
+      .limit(1_000),
     supabase.from("preorders").select("id", { count: "exact", head: true }).in("cancellation_status", ["requested", "processing"]),
     supabase
       .from("preorder_email_deliveries")
@@ -276,17 +280,34 @@ if (supabase) {
       .order("created_at", { ascending: false })
       .limit(1_000),
   ]);
-  for (const [result, name] of [
-    [failedWebhooks, "Failed webhooks"],
-    [pendingCancellations, "Pending cancellations"],
-  ]) {
-    if (result.error) {
-      fail(name, result.error.message);
-    } else if ((result.count ?? 0) > 0) {
-      warn(name, `${result.count} record${result.count === 1 ? " needs" : "s need"} owner review.`);
+  if (webhookRecovery.error) {
+    fail("Webhook recovery", webhookRecovery.error.message);
+  } else {
+    const staleBefore = Date.now() - 5 * 60 * 1_000;
+    const unresolvedWebhooks = webhookRecovery.data.filter(
+      (event) =>
+        event.status === "failed" ||
+        (event.status === "processing" &&
+          (!event.last_attempted_at || Date.parse(event.last_attempted_at) <= staleBefore)),
+    ).length;
+    if (unresolvedWebhooks) {
+      warn(
+        "Webhook recovery",
+        `${unresolvedWebhooks} event${unresolvedWebhooks === 1 ? " needs" : "s need"} owner recovery.`,
+      );
     } else {
-      pass(name, "No outstanding records.");
+      pass("Webhook recovery", "No failed or stalled events.");
     }
+  }
+  if (pendingCancellations.error) {
+    fail("Pending cancellations", pendingCancellations.error.message);
+  } else if ((pendingCancellations.count ?? 0) > 0) {
+    warn(
+      "Pending cancellations",
+      `${pendingCancellations.count} record${pendingCancellations.count === 1 ? " needs" : "s need"} owner review.`,
+    );
+  } else {
+    pass("Pending cancellations", "No outstanding records.");
   }
   if (emailDeliveries.error) {
     fail("Failed email deliveries", emailDeliveries.error.message);
@@ -345,6 +366,8 @@ if (target === "launch" && /^(?:sk|rk)_live_/.test(secretKey) && webhookEndpoint
       "checkout.session.completed",
       "checkout.session.async_payment_succeeded",
       "checkout.session.expired",
+      "refund.created",
+      "refund.updated",
       "charge.refunded",
       "refund.failed",
       "charge.dispute.created",

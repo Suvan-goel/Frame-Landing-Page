@@ -80,7 +80,7 @@ export async function verifyStripeWebhook(rawBody: string, signature: string) {
   const activeEnvironment = mode === "live" || mode === "test" ? mode : null;
   const environments: Array<PreorderEnvironment | null> = activeEnvironment
     ? [activeEnvironment, activeEnvironment === "live" ? "test" : "live"]
-    : [null];
+    : ["live", "test", null];
   let lastError: unknown;
 
   for (const environment of environments) {

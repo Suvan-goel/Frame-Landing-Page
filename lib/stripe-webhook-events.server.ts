@@ -1,12 +1,11 @@
 import type Stripe from "stripe";
 import { getSupabaseAdmin } from "./supabase-admin.server";
+import { STRIPE_WEBHOOK_STALE_AFTER_SECONDS } from "./stripe-webhook-recovery";
 
 type WebhookEventClaim = {
   duplicate: boolean;
   processing_attempts: number;
 };
-
-const WEBHOOK_STALE_AFTER_SECONDS = 300;
 
 export async function beginStripeWebhookEvent(event: Stripe.Event) {
   const supabase = await getSupabaseAdmin();
@@ -14,7 +13,7 @@ export async function beginStripeWebhookEvent(event: Stripe.Event) {
     p_event_id: event.id,
     p_event_type: event.type,
     p_livemode: event.livemode,
-    p_stale_after_seconds: WEBHOOK_STALE_AFTER_SECONDS,
+    p_stale_after_seconds: STRIPE_WEBHOOK_STALE_AFTER_SECONDS,
   });
   if (claimed.error) throw claimed.error;
 

@@ -9,10 +9,46 @@ import {
   reconcilePreorderDispute,
   reconcilePreorderRefund,
 } from "./preorder-payments.server";
+import { getStripe } from "./stripe.server";
 import { getSupabaseAdmin } from "./supabase-admin.server";
 
-function paymentIntentId(value: string | Stripe.PaymentIntent | null) {
+function stripeId(value: string | { id: string } | null) {
   return typeof value === "string" ? value : value?.id ?? null;
+}
+
+async function reconcileRefundObject(
+  event: Stripe.Event,
+  refund: Stripe.Refund,
+  origin: string,
+) {
+  const paymentIntentId = stripeId(refund.payment_intent);
+  if (!paymentIntentId) return;
+
+  if (event.type === "refund.failed" || refund.status === "failed") {
+    const preorderHandled = await reconcilePreorderRefund({
+      paymentIntentId,
+      amountRefunded: 0,
+      fullyRefunded: false,
+      failed: true,
+      origin,
+    });
+    if (!preorderHandled) await reconcileRefund(paymentIntentId, "refund_failed");
+    return;
+  }
+
+  const chargeId = stripeId(refund.charge);
+  if (!chargeId) return;
+  const stripe = await getStripe(event.livemode ? "live" : "test");
+  const charge = await stripe.charges.retrieve(chargeId);
+  const preorderHandled = await reconcilePreorderRefund({
+    paymentIntentId,
+    amountRefunded: charge.amount_refunded,
+    fullyRefunded: charge.refunded,
+    origin,
+  });
+  if (!preorderHandled && charge.refunded) {
+    await reconcileRefund(paymentIntentId, "refunded");
+  }
 }
 
 export async function processStripeWebhookEvent(
@@ -58,7 +94,7 @@ export async function processStripeWebhookEvent(
     }
     case "charge.refunded": {
       const charge = event.data.object as Stripe.Charge;
-      const id = paymentIntentId(charge.payment_intent);
+      const id = stripeId(charge.payment_intent);
       if (id) {
         const preorderHandled = await reconcilePreorderRefund({
           paymentIntentId: id,
@@ -72,24 +108,16 @@ export async function processStripeWebhookEvent(
       }
       break;
     }
+    case "refund.created":
+    case "refund.updated":
     case "refund.failed": {
       const refund = event.data.object as Stripe.Refund;
-      const id = paymentIntentId(refund.payment_intent);
-      if (id) {
-        const preorderHandled = await reconcilePreorderRefund({
-          paymentIntentId: id,
-          amountRefunded: 0,
-          fullyRefunded: false,
-          failed: true,
-          origin,
-        });
-        if (!preorderHandled) await reconcileRefund(id, "refund_failed");
-      }
+      await reconcileRefundObject(event, refund, origin);
       break;
     }
     case "charge.dispute.created": {
       const dispute = event.data.object as Stripe.Dispute;
-      const id = paymentIntentId(dispute.payment_intent);
+      const id = stripeId(dispute.payment_intent);
       if (id) {
         const preorderHandled = await reconcilePreorderDispute(id, true);
         if (!preorderHandled) await reconcileDispute(id, true);
@@ -98,7 +126,7 @@ export async function processStripeWebhookEvent(
     }
     case "charge.dispute.closed": {
       const dispute = event.data.object as Stripe.Dispute;
-      const id = paymentIntentId(dispute.payment_intent);
+      const id = stripeId(dispute.payment_intent);
       if (id && dispute.status === "won") {
         const preorderHandled = await reconcilePreorderDispute(id, false);
         if (!preorderHandled) await reconcileDispute(id, false);
