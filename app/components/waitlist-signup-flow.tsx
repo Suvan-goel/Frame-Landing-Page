@@ -929,9 +929,7 @@ export function WaitlistSignupFlow({
           <footer className="interest-flow__actions">
             {flow.surveyStep > 0 ? (
               <button className="interest-flow__back" type="button" onClick={flow.backSurvey} disabled={flow.surveyStatus === "submitting"}>Back</button>
-            ) : (
-              <Link className="interest-flow__back" href={finishHref}>Back</Link>
-            )}
+            ) : null}
             {flow.surveyStep < 4 ? (
               <button className="button button--dark" type="submit" disabled={!canContinue}>Continue</button>
             ) : (

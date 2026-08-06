@@ -1287,6 +1287,10 @@ h2 {
   min-width: 146px;
 }
 
+.interest-flow__actions > .button:only-child {
+  margin-left: auto;
+}
+
 .interest-flow__actions .button:disabled {
   cursor: not-allowed;
   opacity: 0.44;

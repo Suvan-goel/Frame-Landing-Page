@@ -451,6 +451,15 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(api, /age < MIN_AGE \|\| age > MAX_AGE/);
   assert.match(waitlistFlow, /window\.sessionStorage/);
   assert.match(waitlistFlow, /trackMetaLead\(token\)/);
+  assert.doesNotMatch(waitlistFlow, /className="interest-flow__back" href=\{finishHref\}>Back<\/Link>/);
+  assert.match(
+    waitlistFlow,
+    /flow\.surveyStep > 0 \? \([\s\S]*?className="interest-flow__back"[\s\S]*?>Back<\/button>[\s\S]*?\) : null/,
+  );
+  assert.match(
+    css,
+    /\.interest-flow__actions > \.button:only-child\s*\{[^}]*margin-left: auto;/,
+  );
   assert.match(
     metaPixel,
     /window\.fbq\("trackSingle", META_PIXEL_ID, "Lead"/,
