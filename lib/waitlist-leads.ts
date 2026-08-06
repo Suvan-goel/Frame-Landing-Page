@@ -147,10 +147,6 @@ export function isQualifiedSignup(
   return isLegacyQualified(signup, qualification);
 }
 
-export function isVisibleSignup(signup: WaitlistSignup) {
-  return signup.first_name?.trim().toLocaleLowerCase() !== "suvan";
-}
-
 export function categorizeSignup(signup: WaitlistSignup) {
   const qualification = qualificationForSignup(signup);
   const qualified = isQualifiedSignup(signup, qualification);
@@ -168,7 +164,7 @@ export function categorizeSignup(signup: WaitlistSignup) {
 }
 
 export function categorizeVisibleSignups(signups: WaitlistSignup[]) {
-  return signups.filter(isVisibleSignup).map(categorizeSignup);
+  return signups.map(categorizeSignup);
 }
 
 export type WaitlistExportCell = string | number | null;

@@ -12,9 +12,7 @@ import { BrandWordmark } from "@/app/components/brand-wordmark";
 import { DeleteWaitlistSignupButton } from "@/app/components/delete-waitlist-signup-button";
 import { QualifiedLeadInsights } from "./qualified-lead-insights";
 import {
-  categorizeSignup,
   categorizeVisibleSignups,
-  isVisibleSignup,
   mainReasonLabels,
   monitoringLabels,
   qualificationStatusLabels,
@@ -56,8 +54,6 @@ export default async function WaitlistAdminPage({
       ? requestedTab
       : "qualified";
   const signups = data ?? [];
-  const visibleSignups = signups.filter(isVisibleSignup);
-  const hiddenSignups = signups.filter((signup) => !isVisibleSignup(signup));
   const categorizedSignups = categorizeVisibleSignups(signups);
   const qualifiedSignups = categorizedSignups.filter(
     (entry) => entry.tab === "qualified",
@@ -80,8 +76,7 @@ export default async function WaitlistAdminPage({
             <p className="eyebrow">Owner view</p>
             <h1>Waitlist</h1>
             <p>
-              {visibleSignups.length} visible{" "}
-              {visibleSignups.length === 1 ? "signup" : "signups"}
+              {signups.length} {signups.length === 1 ? "signup" : "signups"}
             </p>
           </div>
           <div className="admin-actions">
@@ -270,62 +265,6 @@ export default async function WaitlistAdminPage({
           </div>
         ) : null}
 
-        {activeTab !== "insights" && hiddenSignups.length ? (
-          <details className="admin-hidden-signups">
-            <summary>
-              Manage hidden test entries <span>{hiddenSignups.length}</span>
-            </summary>
-            <p>
-              Hidden entries are excluded from both spreadsheet tabs. Delete
-              them here to remove them permanently from the database.
-            </p>
-            <div className="admin-table-shell">
-              <table className="admin-table">
-                <thead>
-                  <tr>
-                    <th>Lead</th>
-                    <th>Status</th>
-                    <th>Joined</th>
-                    <th><span className="sr-only">Actions</span></th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {hiddenSignups.map((signup) => {
-                    const entry = categorizeSignup(signup);
-                    const leadLabel =
-                      [signup.first_name, signup.last_name]
-                        .filter(Boolean)
-                        .join(" ") || signup.email;
-                    return (
-                      <tr key={signup.id}>
-                        <td className="admin-lead">
-                          <strong>{leadLabel}</strong>
-                          <a href={`mailto:${signup.email}`}>{signup.email}</a>
-                        </td>
-                        <td>{qualificationStatusLabels[entry.qualificationStatus]}</td>
-                        <td>
-                          <time dateTime={signup.created_at}>
-                            {new Intl.DateTimeFormat("en", {
-                              dateStyle: "medium",
-                              timeStyle: "short",
-                              timeZone: "UTC",
-                            }).format(new Date(signup.created_at))}
-                          </time>
-                        </td>
-                        <td>
-                          <DeleteWaitlistSignupButton
-                            signupId={signup.id}
-                            leadLabel={leadLabel}
-                          />
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          </details>
-        ) : null}
       </div>
     </main>
   );

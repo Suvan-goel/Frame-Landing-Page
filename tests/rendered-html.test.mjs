@@ -686,7 +686,7 @@ test("separates, visualizes, exports, and permanently deletes admin leads", asyn
   assert.match(adminPage, /tab=insights/);
   assert.match(adminPage, /What Frame should help with/);
   assert.match(adminPage, /Export spreadsheet/);
-  assert.match(adminPage, /Manage hidden test entries/);
+  assert.doesNotMatch(adminPage, /Manage hidden test entries/);
   assert.match(adminPage, /DeleteWaitlistSignupButton/);
   assert.match(insights, /admin-age-chart/);
   assert.match(insights, /admin-donut/);
@@ -703,10 +703,8 @@ test("separates, visualizes, exports, and permanently deletes admin leads", asyn
     leadHelpers,
     /Monitor high or borderline blood pressure/,
   );
-  assert.match(
-    leadHelpers,
-    /signup\.first_name\?\.trim\(\)\.toLocaleLowerCase\(\) !== "suvan"/,
-  );
+  assert.doesNotMatch(leadHelpers, /toLocaleLowerCase\(\) !== "suvan"/);
+  assert.match(leadHelpers, /return signups\.map\(categorizeSignup\)/);
   assert.match(workbookRoute, /"Qualified leads"/);
   assert.match(workbookRoute, /"Unqualified leads"/);
   assert.match(workbookRoute, /categorizeVisibleSignups\(data \?\? \[\]\)/);
