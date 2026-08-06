@@ -42,17 +42,10 @@ async function sendPreorderEmail(input: {
   html: string;
 }) {
   const supabase = await getSupabaseAdmin();
-  const existing = await supabase
-    .from("preorder_email_deliveries")
-    .select("status,sent_at")
-    .eq("delivery_key", input.deliveryKey)
-    .maybeSingle();
-  if (existing.error) throw existing.error;
-  if (existing.data?.status === "sent") return existing.data.sent_at as string;
-
   const now = new Date().toISOString();
-  const queued = await supabase.from("preorder_email_deliveries").upsert(
-    {
+  const queued = await supabase
+    .from("preorder_email_deliveries")
+    .insert({
       preorder_id: input.preorderId,
       email_type: input.emailType,
       recipient: input.recipient,
@@ -60,10 +53,39 @@ async function sendPreorderEmail(input: {
       status: "pending",
       error_message: null,
       updated_at: now,
-    },
-    { onConflict: "delivery_key" },
-  );
-  if (queued.error) throw queued.error;
+    })
+    .select("id")
+    .maybeSingle();
+  if (queued.error && queued.error.code !== "23505") throw queued.error;
+
+  let providerIdempotencyKey = input.deliveryKey;
+  if (!queued.data) {
+    const existing = await supabase
+      .from("preorder_email_deliveries")
+      .select("status,sent_at,updated_at")
+      .eq("delivery_key", input.deliveryKey)
+      .single();
+    if (existing.error) throw existing.error;
+    if (existing.data.status === "sent") return existing.data.sent_at as string;
+    if (existing.data.status === "pending") return existing.data.sent_at as string | null;
+
+    const retryQueued = await supabase
+      .from("preorder_email_deliveries")
+      .update({
+        status: "pending",
+        error_message: null,
+        updated_at: now,
+      })
+      .eq("delivery_key", input.deliveryKey)
+      .eq("status", "failed")
+      .eq("updated_at", existing.data.updated_at)
+      .select("id")
+      .maybeSingle();
+    if (retryQueued.error) throw retryQueued.error;
+    if (!retryQueued.data) return existing.data.sent_at as string | null;
+
+    providerIdempotencyKey = `${input.deliveryKey}-retry-${crypto.randomUUID()}`;
+  }
 
   const apiKey = await getRuntimeValue("RESEND_API_KEY");
   if (!apiKey) {
@@ -81,21 +103,35 @@ async function sendPreorderEmail(input: {
   const from =
     (await getRuntimeValue("PREORDER_FROM_EMAIL")) ??
     "Frame Pre-orders <preorders@framewearable.com>";
-  const response = await fetch("https://api.resend.com/emails", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-      "Idempotency-Key": input.deliveryKey,
-    },
-    body: JSON.stringify({
-      from,
-      to: [input.recipient],
-      subject: input.subject,
-      text: input.text,
-      html: input.html,
-    }),
-  });
+  let response: Response;
+  try {
+    response = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "Idempotency-Key": providerIdempotencyKey,
+      },
+      body: JSON.stringify({
+        from,
+        to: [input.recipient],
+        subject: input.subject,
+        text: input.text,
+        html: input.html,
+      }),
+    });
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : "Email provider request failed.";
+    await supabase
+      .from("preorder_email_deliveries")
+      .update({
+        status: "failed",
+        error_message: detail.slice(0, 500),
+        updated_at: new Date().toISOString(),
+      })
+      .eq("delivery_key", input.deliveryKey);
+    throw error;
+  }
 
   if (!response.ok) {
     const detail = await response.text();

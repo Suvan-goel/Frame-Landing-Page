@@ -1243,6 +1243,10 @@ test("adds customer address changes, delivery acknowledgements, and lifecycle no
   assert.match(email, /sendPreorderCancellationDeclinedEmail/);
   assert.match(email, /sendPreorderAddressChangeResolutionEmail/);
   assert.match(email, /sendPreorderDeliveryUpdateEmail/);
+  assert.match(email, /queued\.error\.code !== "23505"/);
+  assert.match(email, /\.eq\("status", "failed"\)/);
+  assert.match(email, /providerIdempotencyKey = `\$\{input\.deliveryKey\}-retry-/);
+  assert.doesNotMatch(email, /from\("preorder_email_deliveries"\)\.upsert/);
   assert.match(payments, /sendPreorderRefundUpdateEmail/);
 });
 
