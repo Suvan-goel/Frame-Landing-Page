@@ -25,10 +25,34 @@ export const dynamic = "force-dynamic";
 
 type WaitlistView = LeadTab | "insights";
 
+const ADMIN_TIME_ZONES = [
+  { value: "UTC", label: "UTC" },
+  { value: "Europe/London", label: "London (UK)" },
+  { value: "Europe/Rome", label: "Rome / Central Europe" },
+  { value: "America/New_York", label: "New York (Eastern)" },
+  { value: "America/Chicago", label: "Chicago (Central)" },
+  { value: "America/Denver", label: "Denver (Mountain)" },
+  { value: "America/Los_Angeles", label: "Los Angeles (Pacific)" },
+  { value: "America/Sao_Paulo", label: "São Paulo" },
+  { value: "Asia/Dubai", label: "Dubai" },
+  { value: "Asia/Kolkata", label: "India" },
+  { value: "Asia/Singapore", label: "Singapore" },
+  { value: "Asia/Tokyo", label: "Tokyo" },
+  { value: "Australia/Sydney", label: "Sydney" },
+  { value: "Pacific/Auckland", label: "Auckland" },
+] as const;
+
+function waitlistTabHref(tab: WaitlistView, timeZone: string) {
+  return `/admin/waitlist?tab=${tab}&timezone=${encodeURIComponent(timeZone)}`;
+}
+
 export default async function WaitlistAdminPage({
   searchParams,
 }: {
-  searchParams?: Promise<{ tab?: string | string[] }>;
+  searchParams?: Promise<{
+    tab?: string | string[];
+    timezone?: string | string[];
+  }>;
 }) {
   const user = await requireChatGPTUser("/admin/waitlist");
   if (!(await isWaitlistAdmin(user.email))) {
@@ -48,11 +72,26 @@ export default async function WaitlistAdminPage({
     console.error("Waitlist dashboard query failed", error);
     throw new Error("The waitlist is temporarily unavailable.");
   }
-  const requestedTab = (await searchParams)?.tab;
+  const resolvedSearchParams = await searchParams;
+  const requestedTab = resolvedSearchParams?.tab;
   const activeTab: WaitlistView =
     requestedTab === "unqualified" || requestedTab === "insights"
       ? requestedTab
       : "qualified";
+  const requestedTimeZone = resolvedSearchParams?.timezone;
+  const selectedTimeZone =
+    typeof requestedTimeZone === "string" &&
+    ADMIN_TIME_ZONES.some((option) => option.value === requestedTimeZone)
+      ? requestedTimeZone
+      : "UTC";
+  const selectedTimeZoneLabel =
+    ADMIN_TIME_ZONES.find((option) => option.value === selectedTimeZone)
+      ?.label ?? "UTC";
+  const dateFormatter = new Intl.DateTimeFormat("en", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: selectedTimeZone,
+  });
   const signups = data ?? [];
   const categorizedSignups = categorizeVisibleSignups(signups);
   const qualifiedSignups = categorizedSignups.filter(
@@ -89,24 +128,46 @@ export default async function WaitlistAdminPage({
           </div>
         </header>
 
+        <form className="admin-timezone" action="/admin/waitlist" method="get">
+          <input type="hidden" name="tab" value={activeTab} />
+          <div className="admin-timezone__field">
+            <label htmlFor="admin-timezone-select">Lead time zone</label>
+            <select
+              id="admin-timezone-select"
+              name="timezone"
+              defaultValue={selectedTimeZone}
+            >
+              {ADMIN_TIME_ZONES.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+          <button className="admin-timezone__submit" type="submit">
+            Apply
+          </button>
+          <p>Showing lead times in {selectedTimeZoneLabel}.</p>
+        </form>
+
         <nav className="admin-tabs" aria-label="Waitlist dashboard views">
           <a
             className={activeTab === "qualified" ? "is-active" : undefined}
-            href="/admin/waitlist?tab=qualified"
+            href={waitlistTabHref("qualified", selectedTimeZone)}
             aria-current={activeTab === "qualified" ? "page" : undefined}
           >
             Qualified leads <span>{qualifiedCount}</span>
           </a>
           <a
             className={activeTab === "unqualified" ? "is-active" : undefined}
-            href="/admin/waitlist?tab=unqualified"
+            href={waitlistTabHref("unqualified", selectedTimeZone)}
             aria-current={activeTab === "unqualified" ? "page" : undefined}
           >
             Unqualified leads <span>{unqualifiedCount}</span>
           </a>
           <a
             className={activeTab === "insights" ? "is-active" : undefined}
-            href="/admin/waitlist?tab=insights"
+            href={waitlistTabHref("insights", selectedTimeZone)}
             aria-current={activeTab === "insights" ? "page" : undefined}
           >
             Lead insights <span>{qualifiedCount}</span>
@@ -165,11 +226,7 @@ export default async function WaitlistAdminPage({
                         </td>
                         <td>
                           <time dateTime={signup.created_at}>
-                            {new Intl.DateTimeFormat("en", {
-                              dateStyle: "medium",
-                              timeStyle: "short",
-                              timeZone: "UTC",
-                            }).format(new Date(signup.created_at))}
+                            {dateFormatter.format(new Date(signup.created_at))}
                           </time>
                         </td>
                         <td>
@@ -232,11 +289,7 @@ export default async function WaitlistAdminPage({
                         </td>
                         <td>
                           <time dateTime={signup.created_at}>
-                            {new Intl.DateTimeFormat("en", {
-                              dateStyle: "medium",
-                              timeStyle: "short",
-                              timeZone: "UTC",
-                            }).format(new Date(signup.created_at))}
+                            {dateFormatter.format(new Date(signup.created_at))}
                           </time>
                         </td>
                         <td>

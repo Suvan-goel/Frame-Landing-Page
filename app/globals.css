@@ -2075,6 +2075,54 @@ h2 {
   gap: 24px;
 }
 
+.admin-timezone {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.admin-timezone__field {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-timezone label {
+  color: var(--ink-soft);
+  font-size: 0.58rem;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.admin-timezone select {
+  min-width: 224px;
+  height: 44px;
+  padding: 0 38px 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 2px;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.admin-timezone__submit {
+  min-height: 44px;
+  padding: 0 18px;
+  border: 0;
+  border-radius: 2px;
+  background: var(--ink);
+  color: var(--paper);
+  cursor: pointer;
+  font-size: 0.7rem;
+  font-weight: 640;
+}
+
+.admin-timezone p {
+  margin: 0 0 9px auto;
+  color: var(--ink-soft);
+  font-size: 0.66rem;
+}
+
 .admin-tabs {
   display: flex;
   gap: 30px;
@@ -3566,6 +3614,24 @@ h2 {
   .admin-actions {
     width: 100%;
     justify-content: space-between;
+  }
+
+  .admin-timezone {
+    align-items: stretch;
+    flex-wrap: wrap;
+  }
+
+  .admin-timezone__field {
+    flex: 1 1 220px;
+  }
+
+  .admin-timezone select {
+    width: 100%;
+  }
+
+  .admin-timezone p {
+    width: 100%;
+    margin: 0;
   }
 
   .admin-tabs {

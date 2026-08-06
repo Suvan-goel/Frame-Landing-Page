@@ -5,6 +5,7 @@ import { formatName } from "../lib/name-format.ts";
 import {
   captureWaitlistEmail,
   completeWaitlistQualification,
+  skipWaitlistQualification,
 } from "../lib/waitlist-service.server.ts";
 
 function createWaitlistRepositoryFixture() {
@@ -22,6 +23,7 @@ function createWaitlistRepositoryFixture() {
         qualificationStatus: "not_started",
         surveyCompletedAt: null,
         qualification: null,
+        attribution: input,
       };
       records.push(record);
       return record;
@@ -29,7 +31,11 @@ function createWaitlistRepositoryFixture() {
     async findByToken(signupToken) {
       return records.find((record) => record.signupToken === signupToken) ?? null;
     },
-    async markSkipped() {},
+    async markSkipped(id, skippedAt) {
+      const record = records.find((candidate) => candidate.id === id);
+      record.qualificationStatus = "skipped";
+      record.skippedAt = skippedAt;
+    },
     async completeIfIncomplete(id, update) {
       const record = records.find((candidate) => candidate.id === id);
       if (record.surveyCompletedAt || record.qualificationStatus === "completed") {
@@ -598,6 +604,21 @@ test("requires valid demographic information before storage", async () => {
   assert.match(await invalidAge.text(), /age between 18 and 120/i);
 });
 
+test("rejects an invalid email before creating a waitlist record", async () => {
+  const response = await render("/api/waitlist", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      action: "capture_email",
+      email: "not-an-email",
+      placement: "homepage_hero",
+    }),
+  });
+
+  assert.equal(response.status, 400);
+  assert.match(await response.text(), /valid email address/i);
+});
+
 test("validates contact messages before sending email", async () => {
   const response = await render("/api/contact", {
     method: "POST",
@@ -663,11 +684,59 @@ test("moves an email-only lead to qualified after that same signup completes the
   assert.equal(records[0].qualificationStatus, "completed");
 });
 
+test("captures email before the survey and treats a duplicate as success", async () => {
+  const { repository, records } = createWaitlistRepositoryFixture();
+  const input = waitlistEmailInput("duplicate@example.com");
+
+  const captured = await captureWaitlistEmail(repository, input);
+  const duplicate = await captureWaitlistEmail(repository, input);
+
+  assert.equal(captured.status, "joined");
+  assert.equal(captured.leadCreated, true);
+  assert.equal(duplicate.status, "already_registered");
+  assert.equal(duplicate.leadCreated, false);
+  assert.equal(duplicate.signupToken, captured.signupToken);
+  assert.equal(records.length, 1);
+  assert.equal(records[0].qualificationStatus, "not_started");
+});
+
+test("keeps an email-only lead unqualified when the survey is skipped", async () => {
+  const { repository, records } = createWaitlistRepositoryFixture();
+  const captured = await captureWaitlistEmail(
+    repository,
+    waitlistEmailInput("skip@example.com"),
+  );
+
+  const skipped = await skipWaitlistQualification(
+    repository,
+    captured.signupToken,
+    "2026-08-06T12:00:00.000Z",
+  );
+
+  assert.equal(skipped.status, "skipped");
+  assert.equal(records.length, 1);
+  assert.equal(records[0].email, "skip@example.com");
+  assert.equal(records[0].qualificationStatus, "skipped");
+});
+
+test("surfaces waitlist storage failures without reporting success", async () => {
+  const { repository } = createWaitlistRepositoryFixture();
+  repository.findByEmail = async () => {
+    throw new Error("database unavailable");
+  };
+
+  await assert.rejects(
+    captureWaitlistEmail(repository, waitlistEmailInput("error@example.com")),
+    /database unavailable/,
+  );
+});
+
 test("separates, visualizes, exports, and permanently deletes admin leads", async () => {
-  const [adminPage, insights, leadHelpers, workbookRoute, deleteRoute, css] = await Promise.all([
+  const [adminPage, insights, leadHelpers, csvRoute, workbookRoute, deleteRoute, css] = await Promise.all([
     readFile(new URL("../app/admin/waitlist/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/waitlist/qualified-lead-insights.tsx", import.meta.url), "utf8"),
     readFile(new URL("../lib/waitlist-leads.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/admin/waitlist.csv/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/waitlist.xlsx/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/waitlist/[id]/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
@@ -683,9 +752,14 @@ test("separates, visualizes, exports, and permanently deletes admin leads", asyn
   assert.match(adminPage, /<th>Delete<\/th>/);
   assert.match(adminPage, /leadLabel=\{signup\.email\}/);
   assert.match(adminPage, /Lead insights/);
-  assert.match(adminPage, /tab=insights/);
+  assert.match(adminPage, /waitlistTabHref\("insights", selectedTimeZone\)/);
   assert.match(adminPage, /What Frame should help with/);
   assert.match(adminPage, /Export spreadsheet/);
+  assert.match(adminPage, /Lead time zone/);
+  assert.match(adminPage, /Europe\/Rome/);
+  assert.match(adminPage, /America\/New_York/);
+  assert.match(adminPage, /timezone=\$\{encodeURIComponent\(timeZone\)\}/);
+  assert.match(adminPage, /timeZone: selectedTimeZone/);
   assert.doesNotMatch(adminPage, /Manage hidden test entries/);
   assert.match(adminPage, /DeleteWaitlistSignupButton/);
   assert.match(insights, /admin-age-chart/);
@@ -709,6 +783,7 @@ test("separates, visualizes, exports, and permanently deletes admin leads", asyn
   assert.match(workbookRoute, /"Unqualified leads"/);
   assert.match(workbookRoute, /categorizeVisibleSignups\(data \?\? \[\]\)/);
   assert.match(workbookRoute, /frame-waitlist\.xlsx/);
+  assert.match(csvRoute, /\.select\(WAITLIST_SIGNUP_SELECT\)/);
   assert.match(deleteRoute, /\.from\("waitlist_signups"\)[\s\S]*\.delete\(\)/);
   assert.match(css, /\.admin-tabs\s*\{/);
   assert.match(css, /\.admin-tabs a\.is-active/);
