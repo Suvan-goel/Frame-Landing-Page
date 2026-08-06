@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { SiteHeader } from "../components/site-header";
 import { isFoundingContributorSalesPageEnabled } from "@/lib/contributor-sales-page.server";
 import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
+import { isEmailFirstWaitlistEnabled } from "@/lib/waitlist-flow.server";
 
 export const metadata: Metadata = {
   title: "Privacy — Frame",
@@ -17,9 +18,14 @@ export const metadata: Metadata = {
 };
 
 export default async function PrivacyPage() {
-  const [showLocalContributorAreas, showPreorderAreas] = await Promise.all([
+  const [
+    showLocalContributorAreas,
+    showPreorderAreas,
+    showEmailFirstWaitlist,
+  ] = await Promise.all([
     isFoundingContributorSalesPageEnabled(),
     isPreorderSalesPageEnabled(),
+    isEmailFirstWaitlistEnabled(),
   ]);
 
   return (
@@ -88,21 +94,36 @@ export default async function PrivacyPage() {
 
         <section>
           <h2>Information we collect</h2>
-          <p>
-            If you join Frame early access, we collect your email address. You
-            can optionally tell us why you are interested in Frame, how you
-            currently monitor your blood pressure, what feels frustrating or
-            missing, and whether you would be open to a short research call. We
-            ask for your first name only if you say yes to a call. Earlier
-            versions of the application also asked some applicants for their
-            name, age and gender; those historical responses remain stored.
-            Please do not include private medical information in your written
-            response. We also collect the time and location of signup within the
-            site, referral information, and campaign labels or click identifiers
-            included in the link you used. Our hosting providers may process
-            limited technical information, such as IP address and browser
-            details, to operate and secure the site.
-          </p>
+          {showEmailFirstWaitlist ? (
+            <p>
+              If you join Frame early access, we collect your email address. You
+              can optionally tell us why you are interested in Frame, how you
+              currently monitor your blood pressure, what feels frustrating or
+              missing, and whether you would be open to a short research call. We
+              ask for your first name only if you say yes to a call. Earlier
+              versions of the application also asked some applicants for their
+              name, age and gender; those historical responses remain stored.
+              Please do not include private medical information in your written
+              response. We also collect the time and location of signup within the
+              site, referral information, and campaign labels or click identifiers
+              included in the link you used. Our hosting providers may process
+              limited technical information, such as IP address and browser
+              details, to operate and secure the site.
+            </p>
+          ) : (
+            <p>
+              If you apply for early access, we collect your first and last name,
+              email address, age, gender, your main reason for wanting Frame, what
+              you want Frame to help you understand or do, how you currently
+              monitor your blood pressure, and whether you would be open to a
+              20-minute conversation with us. Please do not include private
+              medical information in your written response. We also collect the
+              time of signup, where on the page you started the flow, and any
+              campaign labels included in the link you used. Our hosting providers
+              may process limited technical information, such as IP address and
+              browser details, to operate and secure the site.
+            </p>
+          )}
         </section>
 
         <section>

@@ -19,6 +19,7 @@ import {
   PREORDER_STAGING_EXIT_PATH,
   preorderStagingCookieHeader,
 } from "../lib/preorder-staging-access";
+import { EMAIL_FIRST_WAITLIST_HEADER } from "../lib/waitlist-flow";
 
 interface Env {
   ASSETS: Fetcher;
@@ -228,6 +229,10 @@ const worker = {
     appHeaders.set(
       "x-frame-preorder-staging-request",
       stagingRequestAllowed ? "1" : "0",
+    );
+    appHeaders.set(
+      EMAIL_FIRST_WAITLIST_HEADER,
+      isLocalRequest ? "1" : "0",
     );
 
     const response = await handler.fetch(

@@ -16,6 +16,8 @@ import {
   type WaitlistRepository,
 } from "@/lib/waitlist-service.server";
 import { getWaitlistPreviewRepository } from "@/lib/waitlist-preview.server";
+import { submitLegacyWaitlist } from "@/lib/legacy-waitlist-submission.server";
+import { EMAIL_FIRST_WAITLIST_HEADER } from "@/lib/waitlist-flow";
 
 export const dynamic = "force-dynamic";
 
@@ -348,6 +350,15 @@ export async function POST(request: Request) {
   }
 
   const action = payload.action as WaitlistAction | undefined;
+  if (!action) return submitLegacyWaitlist(payload);
+
+  const emailFirstAllowed =
+    isLoopbackHost(new URL(request.url).host) ||
+    request.headers.get(EMAIL_FIRST_WAITLIST_HEADER) === "1";
+  if (!emailFirstAllowed) {
+    return jsonResponse({ error: "Not found." }, 404);
+  }
+
   if (action === "capture_email") return captureEmail(payload, request);
   if (action === "submit_qualification") return submitQualification(payload, request);
   if (action === "skip_qualification") return skipQualification(payload, request);

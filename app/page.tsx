@@ -9,6 +9,7 @@ import {
 import { isFoundingContributorSalesPageEnabled } from "@/lib/contributor-sales-page.server";
 import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
 import { INSTAGRAM_URL } from "@/lib/site";
+import { isEmailFirstWaitlistEnabled } from "@/lib/waitlist-flow.server";
 
 const content = {
   navigation: [
@@ -40,9 +41,14 @@ function Arrow() {
 }
 
 export default async function Home() {
-  const [showLocalContributorAreas, showPreorderAreas] = await Promise.all([
+  const [
+    showLocalContributorAreas,
+    showPreorderAreas,
+    showEmailFirstWaitlist,
+  ] = await Promise.all([
     isFoundingContributorSalesPageEnabled(),
     isPreorderSalesPageEnabled(),
+    isEmailFirstWaitlistEnabled(),
   ]);
   const mobileNavigation = [
     ...content.navigation,
@@ -75,8 +81,11 @@ export default async function Home() {
               <a href="/founding-contributors">Contributors</a>
             ) : null}
           </div>
-          <a className="nav-cta" href="#homepage-hero-waitlist">
-            Join early access
+          <a
+            className="nav-cta"
+            href={showEmailFirstWaitlist ? "#homepage-hero-waitlist" : "/interest"}
+          >
+            {showEmailFirstWaitlist ? "Join early access" : "I’m interested"}
           </a>
           <MobileNavigation items={mobileNavigation} />
         </nav>
@@ -95,17 +104,35 @@ export default async function Home() {
               ultrasound to track blood-pressure patterns through sleep, rest,
               and recovery, then turns them into clear, personal insight.
             </p>
-            <WaitlistSignupFlow placement="homepage_hero" />
-            <div className="hero-actions hero-actions--secondary">
-              <a className="text-link" href="#how-it-works">
-                How it works <span aria-hidden="true">↓</span>
-              </a>
-              {showPreorderAreas ? (
-                <a className="text-link" href="/preorder/review?source=homepage_hero">
-                  Pre-order Frame <span aria-hidden="true">↗</span>
+            {showEmailFirstWaitlist ? (
+              <>
+                <WaitlistSignupFlow placement="homepage_hero" />
+                <div className="hero-actions hero-actions--secondary">
+                  <a className="text-link" href="#how-it-works">
+                    How it works <span aria-hidden="true">↓</span>
+                  </a>
+                  {showPreorderAreas ? (
+                    <a className="text-link" href="/preorder/review?source=homepage_hero">
+                      Pre-order Frame <span aria-hidden="true">↗</span>
+                    </a>
+                  ) : null}
+                </div>
+              </>
+            ) : (
+              <div className="hero-actions">
+                <a className="button button--dark" href="/interest">
+                  I&apos;m interested
                 </a>
-              ) : null}
-            </div>
+                <a className="text-link" href="#how-it-works">
+                  How it works <span aria-hidden="true">↓</span>
+                </a>
+                {showPreorderAreas ? (
+                  <a className="text-link" href="/preorder/review?source=homepage_hero">
+                    Pre-order Frame <span aria-hidden="true">↗</span>
+                  </a>
+                ) : null}
+              </div>
+            )}
             <ul className="attributes" aria-label="Product attributes">
               <li>Non-invasive</li>
               <li>Ultrasound-based</li>
@@ -377,7 +404,20 @@ export default async function Home() {
             <h2>Help shape a new way to understand cardiovascular health.</h2>
           </div>
           <div className="final-cta__form final-cta__action">
-            <WaitlistSignupFlow placement="homepage_final" tone="light" />
+            {showEmailFirstWaitlist ? (
+              <WaitlistSignupFlow placement="homepage_final" tone="light" />
+            ) : (
+              <>
+                <p>
+                  Do you think Frame sounds interesting? Help us out by answering
+                  some short questions and sharing your contact details so we can
+                  keep you up to date with Frame&apos;s development!
+                </p>
+                <a className="button button--light" href="/interest">
+                  Register your interest.
+                </a>
+              </>
+            )}
             <a
               className="collaboration-link"
               href="/contact?topic=research"

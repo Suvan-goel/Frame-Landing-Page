@@ -1,22 +1,32 @@
 import type { Metadata } from "next";
 import { InterestFlow } from "../components/interest-flow";
+import { InterestFlow as LegacyInterestFlow } from "../components/legacy-interest-flow";
 import { isFoundingContributorSalesPageEnabled } from "@/lib/contributor-sales-page.server";
+import { isEmailFirstWaitlistEnabled } from "@/lib/waitlist-flow.server";
 
 export const metadata: Metadata = {
-  title: "Join Frame early access",
+  title: "Register your interest — Frame",
   description:
-    "Join Frame early access with your email, then optionally help shape the product with three short questions.",
+    "Tell Frame what you want to understand about your blood pressure and register for early access.",
   alternates: {
     canonical: "/interest",
   },
 };
 
 export default async function InterestPage() {
-  return (
+  const [showFoundingContributorOffer, showEmailFirstWaitlist] =
+    await Promise.all([
+      isFoundingContributorSalesPageEnabled(),
+      isEmailFirstWaitlistEnabled(),
+    ]);
+
+  return showEmailFirstWaitlist ? (
     <InterestFlow
-      showFoundingContributorOffer={
-        await isFoundingContributorSalesPageEnabled()
-      }
+      showFoundingContributorOffer={showFoundingContributorOffer}
+    />
+  ) : (
+    <LegacyInterestFlow
+      showFoundingContributorOffer={showFoundingContributorOffer}
     />
   );
 }

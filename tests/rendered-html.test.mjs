@@ -182,6 +182,46 @@ test("server-renders the dedicated interest page", async () => {
   assert.doesNotMatch(html, /<dialog/i);
 });
 
+test("keeps the email-first waitlist local-only on public requests", async () => {
+  const homepage = await render(
+    "/",
+    { headers: { accept: "text/html" } },
+    "https://framewearable.com",
+  );
+  assert.equal(homepage.status, 200);
+  const homepageHtml = await homepage.text();
+  assert.match(homepageHtml, /I(?:&#x27;|&apos;|’)m interested/);
+  assert.match(homepageHtml, /href="\/interest"/);
+  assert.match(homepageHtml, /Register your interest\./);
+  assert.doesNotMatch(homepageHtml, /Join Frame early access/);
+  assert.doesNotMatch(homepageHtml, /id="homepage-hero-waitlist"/);
+
+  const interest = await render(
+    "/interest",
+    { headers: { accept: "text/html" } },
+    "https://framewearable.com",
+  );
+  assert.equal(interest.status, 200);
+  const interestHtml = await interest.text();
+  assert.match(interestHtml, /What is the main reason you want Frame\?/);
+  assert.match(interestHtml, /Step 1 of 5/);
+  assert.doesNotMatch(interestHtml, /Get development updates and the opportunity to help shape Frame/);
+
+  const emailFirstApi = await render(
+    "/api/waitlist",
+    {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        action: "capture_email",
+        email: "public@example.com",
+      }),
+    },
+    "https://framewearable.com",
+  );
+  assert.equal(emailFirstApi.status, 404);
+});
+
 test("server-renders the contact page", async () => {
   const response = await render("/contact");
   assert.equal(response.status, 200);
@@ -508,6 +548,9 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     demographicsMigration,
     interestFlow,
     waitlistFlow,
+    legacyInterestFlow,
+    waitlistGate,
+    worker,
     waitlistMigration,
     interestPage,
     metaPixel,
@@ -542,6 +585,12 @@ test("uses generated raster visuals and keeps the page editable", async () => {
       new URL("../app/components/waitlist-signup-flow.tsx", import.meta.url),
       "utf8",
     ),
+    readFile(
+      new URL("../app/components/legacy-interest-flow.tsx", import.meta.url),
+      "utf8",
+    ),
+    readFile(new URL("../lib/waitlist-flow.server.ts", import.meta.url), "utf8"),
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
     readFile(
       new URL(
         "../supabase/migrations/20260806140000_email_first_waitlist.sql",
@@ -610,11 +659,21 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(page, /WaitlistSignupProvider/);
   assert.match(page, /placement="homepage_hero"/);
   assert.match(page, /placement="homepage_final" tone="light"/);
-  assert.doesNotMatch(page, /href="\/interest"/);
+  assert.match(page, /showEmailFirstWaitlist/);
+  assert.match(page, /href=\{showEmailFirstWaitlist \? "#homepage-hero-waitlist" : "\/interest"\}/);
+  assert.match(interestPage, /LegacyInterestFlow/);
+  assert.match(interestPage, /isEmailFirstWaitlistEnabled\(\)/);
+  assert.match(legacyInterestFlow, /What is the main reason you want Frame\?/);
+  assert.match(legacyInterestFlow, /Register my interest/);
+  assert.match(waitlistGate, /EMAIL_FIRST_WAITLIST_HEADER/);
+  assert.match(worker, /EMAIL_FIRST_WAITLIST_HEADER/);
+  assert.match(worker, /isLocalRequest \? "1" : "0"/);
   assert.match(api, /formatName\(value\)\.slice/);
   assert.match(api, /captureWaitlistEmail/);
   assert.match(api, /completeWaitlistQualification/);
   assert.match(api, /skipWaitlistQualification/);
+  assert.match(api, /submitLegacyWaitlist/);
+  assert.match(api, /if \(!emailFirstAllowed\)/);
   assert.match(api, /leadCreated/);
   assert.match(waitlistFlow, /result\.leadCreated === true/);
   assert.match(waitlistFlow, /result\.qualifiedLeadCreated === true/);
