@@ -25,6 +25,9 @@ export type QualificationUpdate = {
   frustration: string | null;
   researchCall: string | null;
   firstName: string | null;
+  lastName: string | null;
+  age: number | null;
+  gender: string | null;
   completedAt: string;
 };
 

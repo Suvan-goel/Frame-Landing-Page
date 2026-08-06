@@ -85,39 +85,36 @@ export default async function Home() {
             className="nav-cta"
             href={showEmailFirstWaitlist ? "#homepage-hero-waitlist" : "/interest"}
           >
-            {showEmailFirstWaitlist ? "Join early access" : "I’m interested"}
+            {showEmailFirstWaitlist ? "Join the waitlist" : "I’m interested"}
           </a>
           <MobileNavigation items={mobileNavigation} />
         </nav>
       </header>
 
-      <section className="hero" id="top">
+      <section
+        className={`hero${showEmailFirstWaitlist ? " hero--email-first" : ""}`}
+        id="top"
+      >
         <div className="hero-grid container">
           <div className="hero-copy">
-            <div className="hero-meta">
-              <p className="eyebrow">MEASURE YOUR BLOOD PRESSURE CONTINUOUSLY</p>
-              <span>Currently in development</span>
-            </div>
+            {showEmailFirstWaitlist ? (
+              <p className="eyebrow hero-email-first__eyebrow">
+                MEASURE YOUR BLOOD PRESSURE CONTINUOUSLY
+              </p>
+            ) : (
+              <div className="hero-meta">
+                <p className="eyebrow">MEASURE YOUR BLOOD PRESSURE CONTINUOUSLY</p>
+                <span>Currently in development</span>
+              </div>
+            )}
             <h1>See how your cardiovascular system responds to daily life.</h1>
             <p className="hero-intro">
-              Frame is developing a non-invasive upper-arm wearable that uses
-              ultrasound to track blood-pressure patterns through sleep, rest,
-              and recovery, then turns them into clear, personal insight.
+              {showEmailFirstWaitlist
+                ? "Frame is developing a non-invasive upper-arm wearable that reveals how blood pressure changes throughout daily life."
+                : "Frame is developing a non-invasive upper-arm wearable that uses ultrasound to track blood-pressure patterns through sleep, rest, and recovery, then turns them into clear, personal insight."}
             </p>
             {showEmailFirstWaitlist ? (
-              <>
-                <WaitlistSignupFlow placement="homepage_hero" />
-                <div className="hero-actions hero-actions--secondary">
-                  <a className="text-link" href="#how-it-works">
-                    How it works <span aria-hidden="true">↓</span>
-                  </a>
-                  {showPreorderAreas ? (
-                    <a className="text-link" href="/preorder/review?source=homepage_hero">
-                      Pre-order Frame <span aria-hidden="true">↗</span>
-                    </a>
-                  ) : null}
-                </div>
-              </>
+              <WaitlistSignupFlow placement="homepage_hero" compact />
             ) : (
               <div className="hero-actions">
                 <a className="button button--dark" href="/interest">
@@ -133,11 +130,13 @@ export default async function Home() {
                 ) : null}
               </div>
             )}
-            <ul className="attributes" aria-label="Product attributes">
-              <li>Non-invasive</li>
-              <li>Ultrasound-based</li>
-              <li>Screenless</li>
-            </ul>
+            {!showEmailFirstWaitlist ? (
+              <ul className="attributes" aria-label="Product attributes">
+                <li>Non-invasive</li>
+                <li>Ultrasound-based</li>
+                <li>Screenless</li>
+              </ul>
+            ) : null}
           </div>
           <figure className="hero-visuals">
             <div className="hero-lifestyle">

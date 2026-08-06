@@ -1,45 +1,50 @@
 export const PRIMARY_INTEREST_OPTIONS = [
   [
     "monitor_high_or_borderline",
-    "Understanding how my blood pressure changes throughout the day",
+    "See my blood pressure patterns over time",
   ],
+  ["understand_sleep", "Understand my blood pressure while sleeping"],
   [
     "understand_daily_factors",
-    "Seeing how sleep, stress, exercise, diet or alcohol affect it",
+    "See how food, alcohol, stress and exercise affect me",
   ],
   [
-    "long_term_cardiovascular_health",
-    "Keeping an eye on my long-term cardiovascular health",
+    "understand_unexplained_changes",
+    "Understand unexplained changes in my blood pressure",
   ],
   [
-    "understand_blood_pressure_concern",
-    "Managing or understanding an existing blood-pressure concern",
+    "track_response_and_recovery",
+    "Track cardiovascular response and recovery",
   ],
-  [
-    "health_technology_and_wearables",
-    "I am interested in health technology and wearables",
-  ],
-  ["something_else", "Other"],
+  ["something_else", "Something else"],
 ] as const;
 
 export const MONITORING_METHOD_OPTIONS = [
-  ["upper_arm_regularly", "I use a traditional blood-pressure cuff regularly"],
-  ["upper_arm_occasionally", "I use a cuff occasionally"],
-  ["wearable_or_cuffless", "I use a wearable or app"],
-  ["medical_appointments_only", "It is mainly checked at medical appointments"],
+  ["upper_arm_regularly", "Upper-arm cuff regularly"],
+  ["upper_arm_occasionally", "Upper-arm cuff occasionally"],
+  ["wearable_or_cuffless", "Wearable or cuffless device"],
+  ["medical_appointments_only", "Only during medical appointments"],
   ["not_currently_monitoring", "I do not currently monitor it"],
-  ["something_else", "Other"],
 ] as const;
 
 export const RESEARCH_CALL_OPTIONS = [
   ["yes", "Yes"],
-  ["maybe", "Maybe"],
+  ["maybe", "Possibly"],
   ["no", "No"],
+] as const;
+
+export const GENDER_OPTIONS = [
+  ["woman", "Woman"],
+  ["man", "Man"],
+  ["non_binary", "Non-binary"],
+  ["another_identity", "Another identity"],
+  ["prefer_not_to_say", "Prefer not to say"],
 ] as const;
 
 export type PrimaryInterest = (typeof PRIMARY_INTEREST_OPTIONS)[number][0];
 export type MonitoringMethod = (typeof MONITORING_METHOD_OPTIONS)[number][0];
 export type ResearchCallPreference = (typeof RESEARCH_CALL_OPTIONS)[number][0];
+export type Gender = (typeof GENDER_OPTIONS)[number][0];
 
 export const primaryInterestValues = new Set<string>(
   PRIMARY_INTEREST_OPTIONS.map(([value]) => value),
@@ -51,4 +56,8 @@ export const monitoringMethodValues = new Set<string>(
 
 export const researchCallValues = new Set<string>(
   RESEARCH_CALL_OPTIONS.map(([value]) => value),
+);
+
+export const genderValues = new Set<string>(
+  GENDER_OPTIONS.map(([value]) => value),
 );

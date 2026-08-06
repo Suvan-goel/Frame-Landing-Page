@@ -1196,6 +1196,11 @@ h2 {
   margin-top: 38px;
 }
 
+.interest-flow__other-field {
+  max-width: 460px;
+  margin-top: 18px;
+}
+
 .interest-flow__text-response textarea {
   width: 100%;
   min-height: 210px;
@@ -1251,7 +1256,8 @@ h2 {
 }
 
 .interest-flow__details input,
-.interest-flow__details select {
+.interest-flow__details select,
+.interest-flow__other-field input {
   width: 100%;
   height: 50px;
   padding: 0 15px;
@@ -1265,6 +1271,10 @@ h2 {
 .interest-flow__details select {
   appearance: auto;
   background: transparent;
+}
+
+.interest-flow__other-field input:focus {
+  border-color: var(--burgundy);
 }
 
 .interest-flow__details .form-note {
@@ -1291,6 +1301,10 @@ h2 {
 
 .interest-flow__actions .button {
   min-width: 146px;
+}
+
+.interest-flow__actions > .button:only-child {
+  margin-left: auto;
 }
 
 .interest-flow__actions .button:disabled {
@@ -1380,7 +1394,8 @@ h2 {
 
 .waitlist-signup__email-row input,
 .waitlist-signup__other-field input,
-.waitlist-signup__first-name input,
+.waitlist-signup__profile input,
+.waitlist-signup__profile select,
 .waitlist-signup__final-questions textarea {
   width: 100%;
   border: 1px solid rgba(32, 33, 30, 0.3);
@@ -1392,20 +1407,23 @@ h2 {
 
 .waitlist-signup__email-row input,
 .waitlist-signup__other-field input,
-.waitlist-signup__first-name input {
+.waitlist-signup__profile input,
+.waitlist-signup__profile select {
   height: 52px;
   padding: 0 15px;
 }
 
 .waitlist-signup__email-row input:focus,
 .waitlist-signup__other-field input:focus,
-.waitlist-signup__first-name input:focus,
+.waitlist-signup__profile input:focus,
+.waitlist-signup__profile select:focus,
 .waitlist-signup__final-questions textarea:focus {
   border-color: var(--burgundy);
 }
 
 .waitlist-signup__email-row input[aria-invalid="true"],
-.waitlist-signup__first-name input[aria-invalid="true"] {
+.waitlist-signup__profile input[aria-invalid="true"],
+.waitlist-signup__profile select[aria-invalid="true"] {
   border-color: var(--burgundy);
 }
 
@@ -1421,7 +1439,8 @@ h2 {
 
 .waitlist-signup--light .waitlist-signup__email-row input,
 .waitlist-signup--light .waitlist-signup__other-field input,
-.waitlist-signup--light .waitlist-signup__first-name input,
+.waitlist-signup--light .waitlist-signup__profile input,
+.waitlist-signup--light .waitlist-signup__profile select,
 .waitlist-signup--light .waitlist-signup__final-questions textarea {
   border-color: rgba(255, 255, 255, 0.44);
   background: rgba(255, 255, 255, 0.04);
@@ -1430,7 +1449,8 @@ h2 {
 
 .waitlist-signup--light .waitlist-signup__email-row input:focus,
 .waitlist-signup--light .waitlist-signup__other-field input:focus,
-.waitlist-signup--light .waitlist-signup__first-name input:focus,
+.waitlist-signup--light .waitlist-signup__profile input:focus,
+.waitlist-signup--light .waitlist-signup__profile select:focus,
 .waitlist-signup--light .waitlist-signup__final-questions textarea:focus {
   border-color: var(--paper);
   background: rgba(255, 255, 255, 0.08);
@@ -1489,32 +1509,30 @@ h2 {
   color: rgba(250, 248, 242, 0.76);
 }
 
-.waitlist-signup__survey-invitation {
-  max-width: 600px;
-  margin-top: 24px;
-  padding-top: 20px;
-  border-top: 1px solid var(--line);
+.waitlist-signup__survey-link {
+  display: inline-flex;
+  width: fit-content;
+  min-height: 44px;
+  align-items: center;
+  gap: 12px;
+  margin-top: 22px;
+  border-bottom: 1px solid rgba(141, 62, 70, 0.38);
+  color: var(--burgundy);
+  font-size: 0.76rem;
+  font-weight: 620;
 }
 
-.waitlist-signup--light .waitlist-signup__survey-invitation {
-  border-color: rgba(250, 248, 242, 0.24);
+.waitlist-signup__survey-link span {
+  transition: transform 160ms ease;
 }
 
-.waitlist-signup__survey-invitation h4 {
-  margin: 0;
-  font-family: var(--serif);
-  font-size: 1.35rem;
-  font-weight: 400;
+.waitlist-signup__survey-link:hover span {
+  transform: translateX(3px);
 }
 
-.waitlist-signup__survey-invitation p {
-  margin: 7px 0 0;
-  color: var(--ink-soft);
-  font-size: 0.82rem;
-}
-
-.waitlist-signup--light .waitlist-signup__survey-invitation p {
-  color: rgba(250, 248, 242, 0.76);
+.waitlist-signup--light .waitlist-signup__survey-link {
+  border-color: rgba(250, 248, 242, 0.38);
+  color: var(--paper);
 }
 
 .waitlist-signup__actions {
@@ -1614,6 +1632,32 @@ h2 {
   border-top: 1px solid var(--line);
 }
 
+.waitlist-signup__profile {
+  display: grid;
+  gap: 18px;
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--line);
+}
+
+.waitlist-signup--light .waitlist-signup__profile {
+  border-color: rgba(250, 248, 242, 0.24);
+}
+
+.waitlist-signup__profile > p {
+  margin: 0 0 2px;
+  color: var(--ink-soft);
+  font-size: 0.74rem;
+}
+
+.waitlist-signup--light .waitlist-signup__profile > p {
+  color: rgba(250, 248, 242, 0.76);
+}
+
+.waitlist-signup__profile select {
+  appearance: auto;
+}
+
 .waitlist-signup--light .waitlist-signup__choices {
   border-color: rgba(250, 248, 242, 0.24);
 }
@@ -1672,14 +1716,12 @@ h2 {
   line-height: 1.38;
 }
 
-.waitlist-signup__other-field,
-.waitlist-signup__first-name {
+.waitlist-signup__other-field {
   max-width: 460px;
   margin-top: 16px;
 }
 
-.waitlist-signup .form-field label span,
-.waitlist-signup__research-call legend span {
+.waitlist-signup .form-field label span {
   font-weight: 430;
   letter-spacing: 0;
   text-transform: none;
@@ -1699,14 +1741,9 @@ h2 {
 }
 
 .waitlist-signup__research-call {
-  margin: 0;
-  padding: 22px 0 0;
+  margin: 28px 0 0;
+  padding: 0;
   border: 0;
-  border-top: 1px solid var(--line);
-}
-
-.waitlist-signup--light .waitlist-signup__research-call {
-  border-color: rgba(250, 248, 242, 0.24);
 }
 
 .waitlist-signup__research-call legend {
@@ -1719,7 +1756,7 @@ h2 {
   display: flex;
   flex-wrap: wrap;
   gap: 9px;
-  margin-top: 14px;
+  margin-top: 0;
 }
 
 .waitlist-signup__research-call label {
@@ -1769,13 +1806,12 @@ h2 {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
-  margin-top: 20px;
-  padding-top: 18px;
-  border-top: 1px solid var(--line);
+  margin-top: 12px;
+  padding-top: 0;
 }
 
-.waitlist-signup--light .waitlist-signup__survey-actions {
-  border-color: rgba(250, 248, 242, 0.24);
+.waitlist-signup__survey > .waitlist-signup__live:empty {
+  display: none;
 }
 
 .waitlist-signup__survey-actions > div {
@@ -2097,6 +2133,53 @@ h2 {
   background:
     linear-gradient(90deg, rgba(141, 62, 70, 0.035), transparent 42%),
     var(--cream);
+}
+
+.qualification-page {
+  width: 100%;
+  min-height: 100dvh;
+  background: var(--cream);
+}
+
+.qualification-page__shell {
+  display: grid;
+  width: min(824px, calc(100% - 64px));
+  min-height: calc(100dvh - var(--site-header-height));
+  align-items: center;
+  margin-inline: auto;
+  padding: clamp(52px, 7dvh, 84px) 0;
+}
+
+.qualification-page .waitlist-signup {
+  width: 100%;
+  margin: 0;
+}
+
+.qualification-page__loading {
+  color: var(--ink-soft);
+  font-size: 0.76rem;
+}
+
+.qualification-page__message {
+  max-width: 620px;
+}
+
+.qualification-page__message h1 {
+  margin: 20px 0 0;
+  font-size: var(--headline-flow);
+  line-height: 1;
+}
+
+.qualification-page__message > p:not(.eyebrow) {
+  max-width: 520px;
+  margin: 22px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.9rem;
+  line-height: 1.65;
+}
+
+.qualification-page__message .button {
+  margin-top: 30px;
 }
 
 .contact-page__layout {
@@ -7019,5 +7102,208 @@ h2 {
 
   .home-contributor-section {
     padding: 78px 0;
+  }
+}
+
+/* Local email-first hero preview */
+.hero--email-first {
+  min-height: min(820px, 100svh);
+  padding: 104px 0 32px;
+}
+
+.hero--email-first .hero-grid {
+  grid-template-columns: minmax(480px, 620px) minmax(0, 1fr);
+  gap: clamp(36px, 4vw, 64px);
+  align-items: stretch;
+  min-height: calc(min(820px, 100svh) - 136px);
+}
+
+.hero--email-first .hero-copy {
+  display: flex;
+  max-width: 620px;
+  flex-direction: column;
+  justify-content: center;
+  padding: 20px 0 28px;
+}
+
+.hero--email-first .hero-email-first__eyebrow {
+  margin-bottom: 24px;
+}
+
+.hero--email-first h1 {
+  max-width: 620px;
+  margin: 0;
+  font-size: clamp(3.7rem, 4.2vw, 4.65rem);
+  line-height: 0.95;
+}
+
+.hero--email-first .hero-intro {
+  max-width: 510px;
+  margin-top: 24px;
+  font-size: 0.96rem;
+  line-height: 1.6;
+}
+
+.hero--email-first .waitlist-signup--compact {
+  width: min(510px, 100%);
+  margin-top: 30px;
+}
+
+.hero--email-first .waitlist-signup--compact form {
+  margin-top: 0;
+}
+
+.hero--email-first .waitlist-signup--compact .form-field > label {
+  margin-bottom: 8px;
+  font-size: 0.62rem;
+  letter-spacing: 0.09em;
+}
+
+.hero--email-first .waitlist-signup--compact .waitlist-signup__email-row {
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.hero--email-first .waitlist-signup--compact .waitlist-signup__email-row input {
+  height: 50px;
+  padding-inline: 14px;
+  border: 1px solid rgba(32, 33, 30, 0.28);
+  background: rgba(250, 248, 242, 0.28);
+}
+
+.hero--email-first .waitlist-signup--compact .waitlist-signup__email-row input:focus,
+.hero--email-first .waitlist-signup--compact .waitlist-signup__email-row input[aria-invalid="true"] {
+  border: 1px solid var(--burgundy);
+}
+
+.hero--email-first .waitlist-signup--compact .waitlist-signup__email-row .button {
+  min-width: 160px;
+  min-height: 50px;
+  padding-inline: 22px;
+}
+
+.hero--email-first .waitlist-signup--compact .waitlist-signup__live {
+  min-height: 0;
+  margin-top: 6px;
+}
+
+.hero--email-first .waitlist-signup--compact .waitlist-signup__live:empty {
+  display: none;
+}
+
+.hero--email-first .hero-visuals {
+  width: 47vw;
+}
+
+.hero--email-first .hero-lifestyle {
+  width: min(720px, 100%);
+}
+
+.hero--email-first .hero-lifestyle img {
+  height: 96%;
+  transform: translate(-68px, 52px);
+}
+
+@media (max-width: 980px) {
+  .hero--email-first {
+    min-height: 0;
+    padding: 96px 0 38px;
+  }
+
+  .hero--email-first .hero-grid {
+    grid-template-columns: 1fr;
+    gap: 38px;
+    min-height: 0;
+  }
+
+  .hero--email-first .hero-copy {
+    max-width: 720px;
+    padding: 44px 0 0;
+  }
+
+  .hero--email-first h1 {
+    max-width: 690px;
+  }
+
+  .hero--email-first .hero-visuals {
+    width: calc(100% + 32px);
+    min-height: 500px;
+  }
+
+  .hero--email-first .hero-lifestyle {
+    width: 100%;
+  }
+
+  .hero--email-first .hero-lifestyle img {
+    height: 100%;
+    transform: none;
+  }
+}
+
+@media (max-width: 680px) {
+  .qualification-page__shell {
+    width: calc(100% - 40px);
+    padding: 42px 0 64px;
+  }
+
+  .hero--email-first {
+    padding: 72px 0 30px;
+  }
+
+  .hero--email-first .hero-grid {
+    gap: 0;
+    padding-top: 34px;
+  }
+
+  .hero--email-first .hero-copy {
+    display: flex;
+    padding: 0;
+  }
+
+  .hero--email-first .hero-email-first__eyebrow {
+    margin-bottom: 20px;
+  }
+
+  .hero--email-first h1 {
+    margin: 0;
+    font-size: clamp(2.85rem, 12vw, 3.3rem);
+    line-height: 0.96;
+  }
+
+  .hero--email-first .hero-intro {
+    margin-top: 20px;
+    font-size: 0.92rem;
+    line-height: 1.58;
+  }
+
+  .hero--email-first .waitlist-signup--compact {
+    margin-top: 26px;
+  }
+
+  .hero--email-first .waitlist-signup--compact .waitlist-signup__email-row {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+
+  .hero--email-first .waitlist-signup--compact .waitlist-signup__email-row .button {
+    width: 100%;
+  }
+
+  .hero--email-first .hero-visuals {
+    width: 100%;
+    min-height: 0;
+    grid-template-rows: 300px auto;
+    margin-top: 34px;
+  }
+
+  .hero--email-first .hero-lifestyle {
+    height: 300px;
+  }
+
+  .hero--email-first .hero-lifestyle img {
+    height: 330px;
   }
 }

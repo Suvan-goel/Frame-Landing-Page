@@ -3,6 +3,7 @@ import { formatName } from "@/lib/name-format";
 import { isLoopbackHost } from "@/lib/contributor-local-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
+  genderValues,
   monitoringMethodValues,
   primaryInterestValues,
   researchCallValues,
@@ -29,6 +30,9 @@ const MAX_ATTRIBUTION_LENGTH = 200;
 const MAX_REFERRER_LENGTH = 500;
 const MAX_OTHER_LENGTH = 160;
 const MAX_LONG_TEXT_LENGTH = 750;
+const MIN_FRUSTRATION_LENGTH = 20;
+const MIN_AGE = 18;
+const MAX_AGE = 120;
 
 type WaitlistAction =
   | "capture_email"
@@ -163,8 +167,12 @@ function waitlistRepository(supabase: SupabaseClient): WaitlistRepository {
       if (error) throw error;
     },
     async completeIfIncomplete(id, update: QualificationUpdate) {
-      const values: Record<string, string | null> = {
+      const values: Record<string, string | number | null> = {
         qualification_status: "completed",
+        first_name: update.firstName,
+        last_name: update.lastName,
+        age: update.age,
+        gender: update.gender,
         primary_interest: update.primaryInterest,
         primary_interest_other: update.primaryInterestOther,
         current_monitoring_method: update.monitoringMethod,
@@ -173,8 +181,6 @@ function waitlistRepository(supabase: SupabaseClient): WaitlistRepository {
         open_to_research_call: update.researchCall,
         survey_completed_at: update.completedAt,
       };
-      if (update.firstName) values.first_name = update.firstName;
-
       const { data, error } = await supabase
         .from("waitlist_signups")
         .update(values)
@@ -271,6 +277,10 @@ async function submitQualification(payload: Record<string, unknown>, request: Re
   const researchCall =
     typeof payload.researchCall === "string" ? payload.researchCall : null;
   const firstName = cleanName(payload.firstName);
+  const lastName = cleanName(payload.lastName);
+  const age = typeof payload.age === "number" ? payload.age : Number.NaN;
+  const gender = typeof payload.gender === "string" ? payload.gender : "";
+  const frustration = cleanLongText(payload.frustration);
 
   if (!UUID_PATTERN.test(signupToken)) {
     return jsonResponse({ error: "This signup session is no longer valid." }, 400);
@@ -287,16 +297,30 @@ async function submitQualification(payload: Record<string, unknown>, request: Re
       400,
     );
   }
-  if (researchCall && !researchCallValues.has(researchCall)) {
-    return jsonResponse({ error: "Choose a valid research-call response." }, 400);
-  }
-  if (researchCall === "yes" && !firstName) {
+  if (!frustration || frustration.length < MIN_FRUSTRATION_LENGTH) {
     return jsonResponse(
-      { error: "Enter your first name so we know how to address you." },
+      { error: "Write at least 20 characters before submitting." },
       400,
     );
   }
-
+  if (!firstName) {
+    return jsonResponse({ error: "Enter your first name." }, 400);
+  }
+  if (!lastName) {
+    return jsonResponse({ error: "Enter your last name." }, 400);
+  }
+  if (!Number.isInteger(age) || age < MIN_AGE || age > MAX_AGE) {
+    return jsonResponse(
+      { error: `Enter an age between ${MIN_AGE} and ${MAX_AGE}.` },
+      400,
+    );
+  }
+  if (!genderValues.has(gender)) {
+    return jsonResponse({ error: "Select a gender option." }, 400);
+  }
+  if (researchCall && !researchCallValues.has(researchCall)) {
+    return jsonResponse({ error: "Choose a valid research-call response." }, 400);
+  }
   try {
     const result = await completeWaitlistQualification(
       await repositoryForRequest(request),
@@ -312,9 +336,12 @@ async function submitQualification(payload: Record<string, unknown>, request: Re
           monitoringMethod === "something_else"
             ? cleanText(payload.monitoringMethodOther, MAX_OTHER_LENGTH)
             : null,
-        frustration: cleanLongText(payload.frustration),
+        frustration,
         researchCall,
-        firstName: researchCall === "yes" ? firstName : null,
+        firstName,
+        lastName,
+        age,
+        gender,
         completedAt: new Date().toISOString(),
       },
     );
