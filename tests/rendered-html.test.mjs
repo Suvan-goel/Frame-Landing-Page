@@ -990,13 +990,14 @@ test("completes the default local pre-order preview without external payment con
 });
 
 test("routes Stripe events by commerce flow and keeps pre-order fulfilment separate", async () => {
-  const [webhook, webhookProcessing, checkout, payments, migration, access] = await Promise.all([
+  const [webhook, webhookProcessing, checkout, payments, migration, access, stripeServer] = await Promise.all([
     readFile(new URL("../app/api/stripe/webhook/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/stripe-webhook-processing.server.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/preorders/checkout/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/preorder-payments.server.ts", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/20260804000000_add_preorders.sql", import.meta.url), "utf8"),
     readFile(new URL("../lib/preorder-access.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/stripe.server.ts", import.meta.url), "utf8"),
   ]);
 
   assert.match(webhook, /processStripeWebhookEvent/);
@@ -1005,13 +1006,18 @@ test("routes Stripe events by commerce flow and keeps pre-order fulfilment separ
   assert.match(webhookProcessing, /membership === "frame_founding_contributor"/);
   assert.match(checkout, /idempotencyKey: `frame-preorder-checkout-/);
   assert.match(checkout, /shipping_address_collection/);
-  assert.match(checkout, /startsWith\("sk_test_"\)/);
+  assert.match(checkout, /getStripe\(environment\)/);
+  assert.match(checkout, /getStripePreorderPriceId\(environment\)/);
+  assert.match(checkout, /price\.livemode !== \(environment === "live"\)/);
   assert.match(payments, /preorder_order_items/);
   assert.match(payments, /confirmation_email_failed/);
   assert.match(migration, /create table if not exists public\.preorders/);
   assert.match(migration, /create table if not exists public\.preorder_payments/);
   assert.match(migration, /create table if not exists public\.preorder_events/);
   assert.match(access, /!isDraftPreorderVersion\(PREORDER_TERMS_VERSION\)/);
+  assert.match(stripeServer, /\^\(\?:sk\|rk\)_live_/);
+  assert.match(stripeServer, /STRIPE_TEST_WEBHOOK_SECRET/);
+  assert.match(stripeServer, /STRIPE_LIVE_WEBHOOK_SECRET/);
 });
 
 test("separates pre-order environments and enforces owner-controlled capacity", async () => {
@@ -1049,7 +1055,9 @@ test("separates pre-order environments and enforces owner-controlled capacity", 
   assert.match(controls, /Live sales cannot be opened until every launch safeguard passes/);
   assert.match(controls, /evaluatePreorderLaunchReadiness/);
   assert.match(access, /"\/api\/admin\/preorders"/);
-  assert.match(launchReadiness, /startsWith\("sk_live_"\)/);
+  assert.match(launchReadiness, /isStripeSecretForEnvironment\(stripeSecretKey, "live"\)/);
+  assert.match(launchReadiness, /STRIPE_LIVE_WEBHOOK_ENDPOINT_ID/);
+  assert.match(launchReadiness, /stripe\.webhookEndpoints\.retrieve/);
   assert.match(launchReadiness, /stripe\.prices\.retrieve/);
   assert.match(launchReadiness, /Customer email delivery is not configured/);
   assert.match(launchReadiness, /Order-link and endpoint-protection secrets must be different/);

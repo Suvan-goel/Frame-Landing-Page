@@ -74,7 +74,7 @@ export async function POST(
   }
 
   try {
-    const stripe = await getStripe();
+    const stripe = await getStripe(environment);
     const event = await stripe.events.retrieve(eventId);
     if (event.livemode !== stored.data.livemode) {
       return response({ error: "The configured Stripe account does not match this event." }, 409);

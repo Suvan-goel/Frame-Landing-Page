@@ -127,8 +127,8 @@ export async function fulfillPreorderCheckout(
     throw new Error("Checkout Session totals do not match the pre-order intent.");
   }
 
-  const stripe = await getStripe();
-  const configuredPriceId = await getStripePreorderPriceId();
+  const stripe = await getStripe(environment);
+  const configuredPriceId = await getStripePreorderPriceId(environment);
   const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 10 });
   if (
     lineItems.data.length !== 1 ||

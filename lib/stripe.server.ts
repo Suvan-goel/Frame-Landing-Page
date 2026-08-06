@@ -1,20 +1,51 @@
 import Stripe from "stripe";
-import { getRuntimeValue } from "./runtime-env.server";
+import type { PreorderEnvironment } from "./preorder-operations.server";
+import { getPreorderMode, getRuntimeValue } from "./runtime-env.server";
 
-let cachedStripe: Stripe | null = null;
+const cachedStripe = new Map<string, Stripe>();
 
-export async function getStripe() {
-  if (cachedStripe) return cachedStripe;
+export function isStripeSecretForEnvironment(
+  secretKey: string | undefined,
+  environment: PreorderEnvironment,
+) {
+  return Boolean(
+    secretKey &&
+      (environment === "live"
+        ? /^(?:sk|rk)_live_/.test(secretKey)
+        : /^(?:sk|rk)_test_/.test(secretKey)),
+  );
+}
 
-  const secretKey = await getRuntimeValue("STRIPE_SECRET_KEY");
+async function stripeSecretKey(environment?: PreorderEnvironment) {
+  const dedicated = environment
+    ? await getRuntimeValue(
+        environment === "live" ? "STRIPE_LIVE_SECRET_KEY" : "STRIPE_TEST_SECRET_KEY",
+      )
+    : undefined;
+  return dedicated ?? (await getRuntimeValue("STRIPE_SECRET_KEY"));
+}
+
+export async function getStripe(environment?: PreorderEnvironment) {
+  const secretKey = await stripeSecretKey(environment);
   if (!secretKey) {
-    throw new Error("Stripe test mode is not configured yet.");
+    throw new Error(
+      environment
+        ? `Stripe ${environment} mode is not configured yet.`
+        : "Stripe test mode is not configured yet.",
+    );
+  }
+  if (environment && !isStripeSecretForEnvironment(secretKey, environment)) {
+    throw new Error(`Stripe ${environment} mode is not configured with a matching key.`);
   }
 
-  cachedStripe = new Stripe(secretKey, {
+  const existing = cachedStripe.get(secretKey);
+  if (existing) return existing;
+
+  const stripe = new Stripe(secretKey, {
     httpClient: Stripe.createFetchHttpClient(),
   });
-  return cachedStripe;
+  cachedStripe.set(secretKey, stripe);
+  return stripe;
 }
 
 export async function getStripePriceId() {
@@ -25,26 +56,66 @@ export async function getStripePriceId() {
   return priceId;
 }
 
-export async function getStripePreorderPriceId() {
-  const priceId = await getRuntimeValue("STRIPE_PREORDER_PRICE_ID");
+export async function getStripePreorderPriceId(environment?: PreorderEnvironment) {
+  const dedicated = environment
+    ? await getRuntimeValue(
+        environment === "live"
+          ? "STRIPE_LIVE_PREORDER_PRICE_ID"
+          : "STRIPE_TEST_PREORDER_PRICE_ID",
+      )
+    : undefined;
+  const priceId = dedicated ?? (await getRuntimeValue("STRIPE_PREORDER_PRICE_ID"));
   if (!priceId) {
-    throw new Error("The Stripe pre-order test price is not configured yet.");
+    throw new Error(
+      environment
+        ? `The Stripe pre-order ${environment} price is not configured yet.`
+        : "The Stripe pre-order test price is not configured yet.",
+    );
   }
   return priceId;
 }
 
 export async function verifyStripeWebhook(rawBody: string, signature: string) {
-  const webhookSecret = await getRuntimeValue("STRIPE_WEBHOOK_SECRET");
-  if (!webhookSecret) {
-    throw new Error("The Stripe webhook secret is not configured yet.");
+  const mode = await getPreorderMode();
+  const activeEnvironment = mode === "live" || mode === "test" ? mode : null;
+  const environments: Array<PreorderEnvironment | null> = activeEnvironment
+    ? [activeEnvironment, activeEnvironment === "live" ? "test" : "live"]
+    : [null];
+  let lastError: unknown;
+
+  for (const environment of environments) {
+    const dedicatedSecret = environment
+      ? await getRuntimeValue(
+          environment === "live"
+            ? "STRIPE_LIVE_WEBHOOK_SECRET"
+            : "STRIPE_TEST_WEBHOOK_SECRET",
+        )
+      : undefined;
+    const webhookSecret =
+      dedicatedSecret ??
+      (environment === activeEnvironment || environment === null
+        ? await getRuntimeValue("STRIPE_WEBHOOK_SECRET")
+        : undefined);
+    if (!webhookSecret) continue;
+
+    try {
+      const stripe = await getStripe(environment ?? undefined);
+      const event = await stripe.webhooks.constructEventAsync(
+        rawBody,
+        signature,
+        webhookSecret,
+        undefined,
+        Stripe.createSubtleCryptoProvider(),
+      );
+      if (environment && event.livemode !== (environment === "live")) {
+        throw new Error("Stripe webhook mode does not match its signing configuration.");
+      }
+      return event;
+    } catch (error) {
+      lastError = error;
+    }
   }
 
-  const stripe = await getStripe();
-  return stripe.webhooks.constructEventAsync(
-    rawBody,
-    signature,
-    webhookSecret,
-    undefined,
-    Stripe.createSubtleCryptoProvider(),
-  );
+  if (lastError) throw lastError;
+  throw new Error("The Stripe webhook secret is not configured yet.");
 }

@@ -8,6 +8,7 @@ import {
   PREORDER_ESTIMATED_DELIVERY,
 } from "./preorder";
 import { getPreorderMode, getRuntimeValue } from "./runtime-env.server";
+import { isStripeSecretForEnvironment } from "./stripe.server";
 
 export type PreorderLaunchReadiness = {
   ready: boolean;
@@ -22,13 +23,27 @@ function configuredEmail(value: string | undefined) {
   return Boolean(value && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()));
 }
 
+const requiredWebhookEvents = [
+  "checkout.session.completed",
+  "checkout.session.async_payment_succeeded",
+  "checkout.session.expired",
+  "charge.refunded",
+  "refund.failed",
+  "charge.dispute.created",
+  "charge.dispute.closed",
+] as const;
+
 export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchReadiness> {
   const [
     mode,
     approvedTermsVersion,
-    stripeSecretKey,
-    stripePriceId,
-    stripeWebhookSecret,
+    legacyStripeSecretKey,
+    dedicatedLiveStripeSecretKey,
+    legacyStripePriceId,
+    dedicatedLiveStripePriceId,
+    legacyStripeWebhookSecret,
+    dedicatedLiveStripeWebhookSecret,
+    liveStripeWebhookEndpointId,
     resendApiKey,
     preorderFromEmail,
     operationsEmail,
@@ -40,8 +55,12 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
     getPreorderMode(),
     getRuntimeValue("PREORDER_LEGAL_APPROVED_VERSION"),
     getRuntimeValue("STRIPE_SECRET_KEY"),
+    getRuntimeValue("STRIPE_LIVE_SECRET_KEY"),
     getRuntimeValue("STRIPE_PREORDER_PRICE_ID"),
+    getRuntimeValue("STRIPE_LIVE_PREORDER_PRICE_ID"),
     getRuntimeValue("STRIPE_WEBHOOK_SECRET"),
+    getRuntimeValue("STRIPE_LIVE_WEBHOOK_SECRET"),
+    getRuntimeValue("STRIPE_LIVE_WEBHOOK_ENDPOINT_ID"),
     getRuntimeValue("RESEND_API_KEY"),
     getRuntimeValue("PREORDER_FROM_EMAIL"),
     getRuntimeValue("PREORDER_OPERATIONS_EMAIL"),
@@ -51,11 +70,19 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
     getPreorderConfiguration(),
   ]);
 
+  const stripeSecretKey =
+    dedicatedLiveStripeSecretKey ?? (mode === "live" ? legacyStripeSecretKey : undefined);
+  const stripePriceId =
+    dedicatedLiveStripePriceId ?? (mode === "live" ? legacyStripePriceId : undefined);
+  const stripeWebhookSecret =
+    dedicatedLiveStripeWebhookSecret ??
+    (mode === "live" ? legacyStripeWebhookSecret : undefined);
+
   const blockers: string[] = [];
   if (!isPreorderLiveApproved({ mode, approvedTermsVersion })) {
     blockers.push("Approved, non-draft pre-order terms are not active in live mode.");
   }
-  if (!stripeSecretKey?.startsWith("sk_live_")) {
+  if (!isStripeSecretForEnvironment(stripeSecretKey, "live")) {
     blockers.push("A live Stripe secret key is not configured.");
   }
   if (!stripePriceId?.startsWith("price_")) {
@@ -63,6 +90,9 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
   }
   if (!stripeWebhookSecret?.startsWith("whsec_") || stripeWebhookSecret.length < 24) {
     blockers.push("A signed Stripe webhook endpoint is not configured.");
+  }
+  if (!liveStripeWebhookEndpointId?.startsWith("we_")) {
+    blockers.push("The live Stripe webhook endpoint reference is not configured.");
   }
   if (!resendApiKey?.startsWith("re_") || !preorderFromEmail?.trim()) {
     blockers.push("Customer email delivery is not configured.");
@@ -96,7 +126,7 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
     blockers.push("The runtime offer does not match the reviewed $299, US-only, January 1, 2027 configuration.");
   }
 
-  if (stripeSecretKey?.startsWith("sk_live_") && stripePriceId?.startsWith("price_")) {
+  if (isStripeSecretForEnvironment(stripeSecretKey, "live") && stripePriceId?.startsWith("price_")) {
     try {
       const stripe = new Stripe(stripeSecretKey, {
         httpClient: Stripe.createFetchHttpClient(),
@@ -120,6 +150,35 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
       }
     } catch {
       blockers.push("The live Stripe product and price could not be verified.");
+    }
+  }
+
+  if (
+    isStripeSecretForEnvironment(stripeSecretKey, "live") &&
+    liveStripeWebhookEndpointId?.startsWith("we_")
+  ) {
+    try {
+      const stripe = new Stripe(stripeSecretKey, {
+        httpClient: Stripe.createFetchHttpClient(),
+      });
+      const endpoint = await stripe.webhookEndpoints.retrieve(
+        liveStripeWebhookEndpointId,
+      );
+      const missingEvents = requiredWebhookEvents.filter(
+        (eventType) =>
+          !endpoint.enabled_events.includes("*") &&
+          !endpoint.enabled_events.includes(eventType),
+      );
+      if (
+        endpoint.status !== "enabled" ||
+        !endpoint.livemode ||
+        endpoint.url !== "https://framewearable.com/api/stripe/webhook" ||
+        missingEvents.length
+      ) {
+        blockers.push("The live Stripe webhook endpoint is not enabled for every required event.");
+      }
+    } catch {
+      blockers.push("The live Stripe webhook endpoint could not be verified.");
     }
   }
 

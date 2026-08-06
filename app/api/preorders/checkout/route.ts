@@ -143,25 +143,18 @@ export async function POST(request: Request) {
     if (mode === "live" && !isPreorderLiveApproved({ mode, approvedTermsVersion })) {
       throw new Error("Live pre-order Checkout is blocked until approved terms are active.");
     }
-    const secretKey = await getRuntimeValue("STRIPE_SECRET_KEY");
-    if (mode === "test" && !secretKey?.startsWith("sk_test_")) {
-      throw new Error("Stripe test mode is required for the local pre-order funnel.");
-    }
-    if (mode === "live" && !secretKey?.startsWith("sk_live_")) {
-      throw new Error("Stripe live mode is not configured for approved pre-orders.");
-    }
-
     const config = await getPreorderConfiguration();
-    const stripe = await getStripe();
-    const priceId = await getStripePreorderPriceId();
+    const stripe = await getStripe(environment);
+    const priceId = await getStripePreorderPriceId(environment);
     const price = await stripe.prices.retrieve(priceId);
     if (
       !price.active ||
+      price.livemode !== (environment === "live") ||
       price.type !== "one_time" ||
       price.unit_amount !== config.priceCents ||
       price.currency !== config.currency
     ) {
-      throw new Error("The Stripe pre-order price does not match the reviewed test offer.");
+      throw new Error("The Stripe pre-order price does not match the reviewed offer.");
     }
 
     const now = new Date();
@@ -280,7 +273,7 @@ export async function POST(request: Request) {
           (error.message.includes("configured") ||
             error.message.includes("disabled") ||
             error.message.includes("test mode") ||
-            error.message.includes("reviewed test offer"))
+            error.message.includes("reviewed offer"))
             ? error.message
             : "Secure payment is temporarily unavailable. Please try again shortly.",
       },

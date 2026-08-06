@@ -130,7 +130,8 @@ export async function GET(request: Request) {
     if (stored.error) throw stored.error;
     if (stored.data) return response(await orderResponse(stored.data));
 
-    const stripe = await getStripe();
+    const environment = sessionId.startsWith("cs_live_") ? "live" : "test";
+    const stripe = await getStripe(environment);
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     if (session.metadata?.flow !== "frame_preorder") {
       return response({ error: "Payment reference is not a Frame pre-order." }, 400);

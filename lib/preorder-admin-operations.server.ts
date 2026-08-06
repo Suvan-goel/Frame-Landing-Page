@@ -521,7 +521,7 @@ export async function initiatePreorderFullRefund(input: {
 
   let refund: Stripe.Refund;
   try {
-    const stripe = await getStripe();
+    const stripe = await getStripe(order.environment);
     refund = await stripe.refunds.create(
       {
         payment_intent: payment.data.stripe_payment_intent_id,

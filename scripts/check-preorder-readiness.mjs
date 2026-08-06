@@ -54,8 +54,29 @@ function configured(name, minimumLength = 1) {
 }
 
 const mode = process.env.PREORDER_MODE ?? "off";
-const secretKey = process.env.STRIPE_SECRET_KEY ?? "";
-const priceId = process.env.STRIPE_PREORDER_PRICE_ID ?? "";
+const targetEnvironment = target === "launch" ? "live" : "test";
+const secretKey =
+  process.env[
+    targetEnvironment === "live" ? "STRIPE_LIVE_SECRET_KEY" : "STRIPE_TEST_SECRET_KEY"
+  ] ?? process.env.STRIPE_SECRET_KEY ?? "";
+const priceId =
+  process.env[
+    targetEnvironment === "live"
+      ? "STRIPE_LIVE_PREORDER_PRICE_ID"
+      : "STRIPE_TEST_PREORDER_PRICE_ID"
+  ] ?? process.env.STRIPE_PREORDER_PRICE_ID ?? "";
+const webhookSecret =
+  process.env[
+    targetEnvironment === "live"
+      ? "STRIPE_LIVE_WEBHOOK_SECRET"
+      : "STRIPE_TEST_WEBHOOK_SECRET"
+  ] ?? process.env.STRIPE_WEBHOOK_SECRET ?? "";
+const webhookEndpointId =
+  process.env[
+    targetEnvironment === "live"
+      ? "STRIPE_LIVE_WEBHOOK_ENDPOINT_ID"
+      : "STRIPE_TEST_WEBHOOK_ENDPOINT_ID"
+  ] ?? "";
 const expectedPrice = Number(process.env.PREORDER_PRICE_CENTS ?? "29900");
 const expectedCurrency = (process.env.PREORDER_CURRENCY ?? "usd").toLowerCase();
 const allowedCountries = (process.env.PREORDER_ALLOWED_COUNTRIES ?? "US")
@@ -71,7 +92,7 @@ if (target === "launch") {
   } else {
     fail("Runtime mode", `Expected live mode, found ${mode}.`);
   }
-  if (secretKey.startsWith("sk_live_")) {
+  if (/^(?:sk|rk)_live_/.test(secretKey)) {
     pass("Stripe environment", "A live Stripe secret key is configured.");
   } else {
     fail("Stripe environment", "A live Stripe secret key is required.");
@@ -82,17 +103,24 @@ if (target === "launch") {
   } else {
     fail("Runtime mode", `Expected test mode, found ${mode}.`);
   }
-  if (secretKey.startsWith("sk_test_")) {
+  if (/^(?:sk|rk)_test_/.test(secretKey)) {
     pass("Stripe environment", "A Stripe test key is configured.");
   } else {
     fail("Stripe environment", "A Stripe test key is required.");
   }
 }
 
-if (configured("STRIPE_WEBHOOK_SECRET", 24)) {
+if (webhookSecret.startsWith("whsec_") && webhookSecret.length >= 24) {
   pass("Webhook signing", "A Stripe webhook signing secret is configured.");
 } else {
   fail("Webhook signing", "Add STRIPE_WEBHOOK_SECRET before testing signed events.");
+}
+if (target === "launch") {
+  if (webhookEndpointId.startsWith("we_")) {
+    pass("Webhook endpoint reference", "The live Stripe endpoint reference is configured.");
+  } else {
+    fail("Webhook endpoint reference", "STRIPE_LIVE_WEBHOOK_ENDPOINT_ID is required.");
+  }
 }
 
 for (const [name, label] of [
@@ -307,6 +335,42 @@ if (secretKey && priceId) {
   }
 } else {
   fail("Stripe price", "STRIPE_PREORDER_PRICE_ID and STRIPE_SECRET_KEY are required.");
+}
+
+if (target === "launch" && /^(?:sk|rk)_live_/.test(secretKey) && webhookEndpointId) {
+  try {
+    const stripe = new Stripe(secretKey, { httpClient: Stripe.createFetchHttpClient() });
+    const endpoint = await stripe.webhookEndpoints.retrieve(webhookEndpointId);
+    const requiredEvents = [
+      "checkout.session.completed",
+      "checkout.session.async_payment_succeeded",
+      "checkout.session.expired",
+      "charge.refunded",
+      "refund.failed",
+      "charge.dispute.created",
+      "charge.dispute.closed",
+    ];
+    const missingEvents = requiredEvents.filter(
+      (eventType) =>
+        !endpoint.enabled_events.includes("*") &&
+        !endpoint.enabled_events.includes(eventType),
+    );
+    if (
+      endpoint.status === "enabled" &&
+      endpoint.livemode &&
+      endpoint.url === "https://framewearable.com/api/stripe/webhook" &&
+      missingEvents.length === 0
+    ) {
+      pass("Stripe webhook endpoint", "The live endpoint is enabled for every required event.");
+    } else {
+      fail("Stripe webhook endpoint", "The live endpoint URL or event subscriptions are incomplete.");
+    }
+  } catch (error) {
+    fail(
+      "Stripe webhook endpoint",
+      error instanceof Error ? error.message : "The live endpoint could not be loaded.",
+    );
+  }
 }
 
 const symbols = { pass: "PASS", warn: "WARN", fail: "FAIL" };

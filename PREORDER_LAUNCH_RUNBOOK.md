@@ -38,6 +38,10 @@ PREORDER_STAGING_ACCESS_SECRET=<unique secret of at least 32 characters>
 STRIPE_SECRET_KEY=<test key>
 STRIPE_PREORDER_PRICE_ID=<test $299 price>
 STRIPE_WEBHOOK_SECRET=<staging endpoint signing secret>
+STRIPE_TEST_SECRET_KEY=<test key>
+STRIPE_TEST_PREORDER_PRICE_ID=<test $299 price>
+STRIPE_TEST_WEBHOOK_SECRET=<staging endpoint signing secret>
+STRIPE_TEST_WEBHOOK_ENDPOINT_ID=<test endpoint ID>
 ```
 
 It also needs the existing Supabase, Resend, sender, operations-email and dedicated order/rate-limit secret values. Keep `PREORDER_ORDER_ACCESS_SECRET` stable between staging deployments or previously emailed management links will stop working.
@@ -88,6 +92,10 @@ PREORDER_LEGAL_APPROVED_VERSION=<exact approved non-draft version>
 STRIPE_SECRET_KEY=<live key>
 STRIPE_PREORDER_PRICE_ID=<live $299 price>
 STRIPE_WEBHOOK_SECRET=<live endpoint signing secret>
+STRIPE_LIVE_SECRET_KEY=<restricted live key>
+STRIPE_LIVE_PREORDER_PRICE_ID=<live $299 price>
+STRIPE_LIVE_WEBHOOK_SECRET=<live endpoint signing secret>
+STRIPE_LIVE_WEBHOOK_ENDPOINT_ID=<live endpoint ID>
 PREORDER_PRICE_CENTS=29900
 PREORDER_CURRENCY=usd
 PREORDER_ALLOWED_COUNTRIES=US
@@ -95,6 +103,13 @@ PREORDER_ESTIMATED_DELIVERY=January 1, 2027
 ```
 
 Copy the Supabase, Resend, sender, operations-email, order-link and rate-limit values into the hosted environment. Use different values for `PREORDER_ORDER_ACCESS_SECRET` and `PREORDER_RATE_LIMIT_SECRET`. Do not expose any secret in source control.
+
+Keep the explicit `STRIPE_TEST_*` values in the hosted environment after
+cutover. The application selects Stripe credentials from each order or event's
+recorded environment, allowing test-order refunds and delayed signed test
+webhooks to be handled without ever using the live key. Both standard `sk_*`
+and restricted `rk_*` Stripe keys are accepted when they match the selected
+environment.
 
 The live Stripe webhook endpoint is:
 
