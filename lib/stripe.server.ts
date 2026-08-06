@@ -25,6 +25,14 @@ export async function getStripePriceId() {
   return priceId;
 }
 
+export async function getStripePreorderPriceId() {
+  const priceId = await getRuntimeValue("STRIPE_PREORDER_PRICE_ID");
+  if (!priceId) {
+    throw new Error("The Stripe pre-order test price is not configured yet.");
+  }
+  return priceId;
+}
+
 export async function verifyStripeWebhook(rawBody: string, signature: string) {
   const webhookSecret = await getRuntimeValue("STRIPE_WEBHOOK_SECRET");
   if (!webhookSecret) {

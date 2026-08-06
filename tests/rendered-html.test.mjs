@@ -30,7 +30,10 @@ test("server-renders the Frame landing page", async () => {
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
   const html = await response.text();
-  assert.match(html, /<title>Frame - Blood pressure in context<\/title>/i);
+  assert.match(
+    html,
+    /<title>Frame \| Ultrasound Wearable for Blood Pressure Patterns<\/title>/i,
+  );
   assert.match(
     html,
     /See how your cardiovascular system responds to daily life\./,
@@ -45,10 +48,12 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /Signal integrity/);
   assert.match(html, /Research and engineering inquiries/);
   assert.match(html, /Frame is under development and is not currently available for sale\./);
-  assert.match(html, /frame-product-concept-realistic-v3-transparent\.webp/);
-  assert.match(html, /frame-hero-man-transparent-v3\.webp/);
-  assert.match(html, /frame-sensing-concept-realistic-v3-transparent\.webp/);
-  assert.match(html, /frame-app-studio-v5\.webp/);
+  assert.match(html, /frame-product-concept-realistic-v3-transparent-720w\.webp/);
+  assert.match(html, /frame-hero-man-transparent-v3-720w\.webp/);
+  assert.match(html, /frame-sensing-concept-realistic-v3-transparent-960w\.webp/);
+  assert.match(html, /frame-app-studio-v5-640w\.webp/);
+  assert.match(html, /<script type="application\/ld\+json">/);
+  assert.match(html, /Frame Health Technologies/);
   assert.doesNotMatch(html, /facebook\.com\/tr\?id=/);
   assert.equal(html.match(/href="\/interest"/g)?.length, 3);
   assert.doesNotMatch(html, /What is the main reason you want Frame\?/);
@@ -150,6 +155,54 @@ test("server-renders the Founding Contributor funnel locally", async () => {
   assert.match(await signInResponse.text(), /Sign in to the contributor hub/);
 });
 
+test("routes the local pre-order funnel to production-ready customer pages and draft policies", async () => {
+  const [homeResponse, entryResponse, reviewResponse, successResponse, termsResponse, refundsResponse, successSource] =
+    await Promise.all([
+      render("/"),
+      render("/preorder"),
+      render("/preorder/review"),
+      render("/preorder/success"),
+      render("/preorder/terms"),
+      render("/preorder/refunds"),
+      readFile(new URL("../app/components/preorder-success.tsx", import.meta.url), "utf8"),
+    ]);
+
+  assert.equal(homeResponse.status, 200);
+  const home = await homeResponse.text();
+  assert.match(home, /href="\/preorder\/review\?source=homepage"/);
+  assert.doesNotMatch(home, /href="\/preorder(?:[?"])/);
+
+  assert.equal(entryResponse.status, 307);
+  assert.equal(
+    entryResponse.headers.get("location"),
+    "http://localhost/preorder/review?source=preorder_redirect",
+  );
+
+  assert.equal(reviewResponse.status, 200);
+  const review = await reviewResponse.text();
+  assert.match(review, /Review your Frame pre-order/);
+  assert.match(review, /Your pre-order/);
+  assert.match(review, /Due today/);
+  assert.match(review, /Before you continue/);
+  assert.match(review, /Frame is still in development/);
+  assert.match(review, /Continue to secure checkout — \$299/);
+  assert.match(review, /January 1, 2027/);
+  assert.match(review, /Secure payment is provided by Stripe/);
+  assert.doesNotMatch(review, /draft|local test|test checkout|test payment/i);
+  assert.doesNotMatch(review, /facebook\.com\/tr\?id=/);
+
+  assert.equal(successResponse.status, 200);
+  assert.match(await successResponse.text(), /confirming your pre-order/i);
+  assert.match(successSource, /Your Frame pre-order is confirmed/);
+  assert.match(successSource, /What happens next/);
+  assert.doesNotMatch(successSource, /local pre-order flow|signed webhook|Open owner view|Run another test|Stripe test dashboard/i);
+
+  assert.equal(termsResponse.status, 200);
+  assert.match(await termsResponse.text(), /Implementation draft — not approved for live sales/);
+  assert.equal(refundsResponse.status, 200);
+  assert.match(await refundsResponse.text(), /Draft Refund Workflow/);
+});
+
 test("keeps every Founding Contributor surface local-only", async () => {
   const publicOrigin = "https://framewearable.com";
   const restrictedPaths = [
@@ -171,6 +224,16 @@ test("keeps every Founding Contributor surface local-only", async () => {
     "/api/contributors/questions",
     "/api/contributors/votes",
     "/api/stripe/webhook",
+    "/preorder",
+    "/preorder/review",
+    "/preorder/success",
+    "/preorder/terms",
+    "/preorder/refunds",
+    "/preorders",
+    "/admin/preorders",
+    "/api/preorders/checkout",
+    "/api/preorders/status",
+    "/preorder%2Freview",
     "/og-founding-contributors.png",
     "/contributors%2Fterms",
     "/_vinext/image?url=%2Fog-founding-contributors.png&w=1200&q=75",
@@ -197,8 +260,11 @@ test("keeps every Founding Contributor surface local-only", async () => {
   assert.equal(homeResponse.status, 200);
   assert.doesNotMatch(publicHome, /Founding Contributors/);
   assert.doesNotMatch(publicHome, /href="\/founding-contributors/);
+  assert.doesNotMatch(publicHome, /Pre-order test|href="\/preorder/);
   assert.doesNotMatch(publicPrivacy, /Founding Contributor|contributor hub|membership/i);
+  assert.doesNotMatch(publicPrivacy, /pre-order testing|test payments and shipping-address/i);
   assert.doesNotMatch(publicSitemap, /founding-contributors/);
+  assert.doesNotMatch(publicSitemap, /preorder/);
 });
 
 test("renders draft contributor policies and keeps member routes private", async () => {
@@ -286,16 +352,16 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     readdir(new URL("../public/", import.meta.url)),
   ]);
 
-  assert.match(page, /src="\/frame-product-concept-realistic-v3-transparent\.webp"/);
+  assert.match(page, /src="\/frame-product-concept-realistic-v3-transparent-720w\.webp"/);
   assert.match(page, /width=\{1254\}\s+height=\{1254\}/);
   assert.match(
     css,
     /\.product-concept-showcase__media img\s*\{[\s\S]*?width: min\(24vw, 270px\);/,
   );
-  assert.match(page, /src="\/frame-hero-man-transparent-v3\.webp"/);
+  assert.match(page, /src="\/frame-hero-man-transparent-v3-720w\.webp"/);
   assert.match(
     page,
-    /src="\/frame-hero-man-transparent-v3\.webp"[\s\S]*?width=\{1089\}[\s\S]*?height=\{1444\}/,
+    /src="\/frame-hero-man-transparent-v3-720w\.webp"[\s\S]*?width=\{1089\}[\s\S]*?height=\{1444\}/,
   );
   assert.match(css, /\.hero-visuals\s*\{[\s\S]*?top: 12px;/);
   assert.doesNotMatch(css, /\.hero-lifestyle\s*\{[^}]*transform:/);
@@ -303,8 +369,8 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     css,
     /\.hero-lifestyle img\s*\{[^}]*height: 98\.398125%;[^}]*transform: translate\(-144px, 76px\);/,
   );
-  assert.match(page, /src="\/frame-sensing-concept-realistic-v3-transparent\.webp"/);
-  assert.match(page, /src="\/frame-app-studio-v5\.webp"/);
+  assert.match(page, /src="\/frame-sensing-concept-realistic-v3-transparent-960w\.webp"/);
+  assert.match(page, /src="\/frame-app-studio-v5-640w\.webp"/);
   assert.doesNotMatch(page, /<svg|ProductDiagram|CrossSection|PatternTimeline/);
   assert.match(interestFlow, /fetch\("\/api\/waitlist"/);
   assert.doesNotMatch(interestFlow, /<dialog|showModal\(|OPEN_INTEREST_FLOW_EVENT/);
@@ -373,7 +439,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(contributorPayments, /if \(duplicatePayment\) return/);
   assert.match(contributorPayments, /existingContributor\.checkout_intent_id === intent\.id/);
   assert.doesNotMatch(page, /Connect a real waitlist API/);
-  assert.match(layout, /url: `\$\{baseUrl\}\/og-launch-v2\.png`/);
+  assert.match(layout, /url: "\/og-launch-v2\.png"/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
   assert.match(api, /from\("waitlist_signups"\)\.insert/);
   assert.match(api, /first_name: firstName/);
@@ -445,6 +511,80 @@ test("requires explicit membership acknowledgment before checkout", async () => 
 
   assert.equal(response.status, 400);
   assert.match(await response.text(), /not ordering or reserving a Frame device/i);
+});
+
+test("requires both pre-order acknowledgements before checkout", async () => {
+  const productStatusResponse = await render("/api/preorders/checkout", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      productStatusAcknowledged: false,
+      termsAcknowledged: false,
+    }),
+  });
+  assert.equal(productStatusResponse.status, 400);
+  assert.match(await productStatusResponse.text(), /still in development/i);
+
+  const termsResponse = await render("/api/preorders/checkout", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      productStatusAcknowledged: true,
+      termsAcknowledged: false,
+    }),
+  });
+  assert.equal(termsResponse.status, 400);
+  assert.match(await termsResponse.text(), /Pre-order Terms/i);
+});
+
+test("completes the default local pre-order preview without external payment configuration", async () => {
+  const checkoutResponse = await render("/api/preorders/checkout", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      productStatusAcknowledged: true,
+      termsAcknowledged: true,
+      marketingOptIn: false,
+      quantity: 1,
+    }),
+  });
+  assert.equal(checkoutResponse.status, 200);
+  assert.deepEqual(await checkoutResponse.json(), {
+    url: "http://localhost/preorder/success?preview=1",
+  });
+
+  const statusResponse = await render("/api/preorders/status?preview=1", {
+    headers: { accept: "application/json" },
+  });
+  assert.equal(statusResponse.status, 200);
+  const status = await statusResponse.json();
+  assert.equal(status.status, "confirmed");
+  assert.equal(status.order.orderNumber, "FR-TEST-0001");
+  assert.equal(status.order.amountPaidCents, 29900);
+  assert.equal(status.order.estimatedDelivery, "January 1, 2027");
+});
+
+test("routes Stripe events by commerce flow and keeps pre-order fulfilment separate", async () => {
+  const [webhook, checkout, payments, migration, access] = await Promise.all([
+    readFile(new URL("../app/api/stripe/webhook/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/preorders/checkout/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/preorder-payments.server.ts", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/20260804000000_add_preorders.sql", import.meta.url), "utf8"),
+    readFile(new URL("../lib/preorder-access.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(webhook, /session\.metadata\?\.flow === "frame_preorder"/);
+  assert.match(webhook, /fulfillPreorderCheckout/);
+  assert.match(webhook, /membership === "frame_founding_contributor"/);
+  assert.match(checkout, /idempotencyKey: `frame-preorder-checkout-/);
+  assert.match(checkout, /shipping_address_collection/);
+  assert.match(checkout, /startsWith\("sk_test_"\)/);
+  assert.match(payments, /preorder_order_items/);
+  assert.match(payments, /confirmation_email_failed/);
+  assert.match(migration, /create table if not exists public\.preorders/);
+  assert.match(migration, /create table if not exists public\.preorder_payments/);
+  assert.match(migration, /create table if not exists public\.preorder_events/);
+  assert.match(access, /!isDraftPreorderVersion\(PREORDER_TERMS_VERSION\)/);
 });
 
 test("uses recorded payment data in contributor and owner views", async () => {
@@ -543,8 +683,8 @@ test("validates contact messages before sending email", async () => {
   assert.match(contactApi, /Enter a message\./);
   assert.match(privacy, /href="\/contact\?topic=privacy"/);
   assert.doesNotMatch(privacy, /mailto:support@framewearable\.com/);
-  assert.match(sitemap, /https:\/\/framewearable\.com/);
-  assert.match(sitemap, /`\$\{siteUrl\}\/contact`/);
+  assert.match(sitemap, /import \{ SITE_URL \} from "@\/lib\/site"/);
+  assert.match(sitemap, /`\$\{SITE_URL\}\/contact`/);
 });
 
 test("separates, visualizes, exports, and permanently deletes admin leads", async () => {
@@ -570,6 +710,14 @@ test("separates, visualizes, exports, and permanently deletes admin leads", asyn
   assert.match(insights, /admin-donut/);
   assert.match(insights, /Multiple-choice responses/);
   assert.match(leadHelpers, /isQualifiedSignup/);
+  assert.match(
+    leadHelpers,
+    /monitor_high_or_borderline: "See my blood pressure patterns over time"/,
+  );
+  assert.doesNotMatch(
+    leadHelpers,
+    /Monitor high or borderline blood pressure/,
+  );
   assert.match(
     leadHelpers,
     /signup\.first_name\?\.trim\(\)\.toLocaleLowerCase\(\) !== "suvan"/,

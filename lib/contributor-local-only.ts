@@ -6,7 +6,6 @@ const CONTRIBUTOR_ROUTE_ROOTS = [
   "/admin/contributors",
   "/api/founding-contributors",
   "/api/contributors",
-  "/api/stripe/webhook",
 ] as const;
 
 const CONTRIBUTOR_ASSET_PATHS = new Set(["/og-founding-contributors.png"]);

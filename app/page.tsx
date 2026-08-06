@@ -1,10 +1,10 @@
-import Image from "next/image";
+/* eslint-disable @next/next/no-img-element */
 import Link from "next/link";
 import { BrandWordmark } from "./components/brand-wordmark";
 import { MobileNavigation } from "./components/mobile-navigation";
 import { isFoundingContributorSalesPageEnabled } from "@/lib/contributor-sales-page.server";
-
-const INSTAGRAM_URL = "https://www.instagram.com/framewearable/";
+import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
+import { INSTAGRAM_URL } from "@/lib/site";
 
 const content = {
   navigation: [
@@ -36,14 +36,19 @@ function Arrow() {
 }
 
 export default async function Home() {
-  const showLocalContributorAreas =
-    await isFoundingContributorSalesPageEnabled();
-  const mobileNavigation = showLocalContributorAreas
-    ? [
-        ...content.navigation,
-        { label: "Contributors", href: "/founding-contributors" },
-      ]
-    : content.navigation;
+  const [showLocalContributorAreas, showPreorderAreas] = await Promise.all([
+    isFoundingContributorSalesPageEnabled(),
+    isPreorderSalesPageEnabled(),
+  ]);
+  const mobileNavigation = [
+    ...content.navigation,
+    ...(showPreorderAreas
+      ? [{ label: "Pre-order test", href: "/preorder/review?source=homepage_nav" }]
+      : []),
+    ...(showLocalContributorAreas
+      ? [{ label: "Contributors", href: "/founding-contributors" }]
+      : []),
+  ];
 
   return (
     <main>
@@ -58,6 +63,9 @@ export default async function Home() {
                 {item.label}
               </a>
             ))}
+            {showPreorderAreas ? (
+              <a href="/preorder/review?source=homepage_nav">Pre-order test</a>
+            ) : null}
             {showLocalContributorAreas ? (
               <a href="/founding-contributors">Contributors</a>
             ) : null}
@@ -89,6 +97,11 @@ export default async function Home() {
               <a className="text-link" href="#how-it-works">
                 How it works <span aria-hidden="true">↓</span>
               </a>
+              {showPreorderAreas ? (
+                <a className="text-link" href="/preorder/review?source=homepage_hero">
+                  Test pre-order <span aria-hidden="true">↗</span>
+                </a>
+              ) : null}
             </div>
             <ul className="attributes" aria-label="Product attributes">
               <li>Non-invasive</li>
@@ -98,15 +111,16 @@ export default async function Home() {
           </div>
           <figure className="hero-visuals">
             <div className="hero-lifestyle">
-              <Image
-                src="/frame-hero-man-transparent-v3.webp"
+              <img
+                src="/frame-hero-man-transparent-v3-720w.webp"
+                srcSet="/frame-hero-man-transparent-v3-480w.webp 480w, /frame-hero-man-transparent-v3-720w.webp 720w, /frame-hero-man-transparent-v3-960w.webp 960w"
                 alt="Man wearing the Frame wearable concept on his upper arm"
                 width={1089}
                 height={1444}
                 sizes="(max-width: 680px) 100vw, (max-width: 980px) 56vw, 34vw"
-                unoptimized
                 loading="eager"
                 fetchPriority="high"
+                decoding="async"
               />
             </div>
             <figcaption>Product concept. Final design in development.</figcaption>
@@ -140,13 +154,15 @@ export default async function Home() {
             </div>
             <figure className="product-concept-showcase">
               <div className="product-concept-showcase__media">
-                <Image
-                  src="/frame-product-concept-realistic-v3-transparent.webp"
+                <img
+                  src="/frame-product-concept-realistic-v3-transparent-720w.webp"
+                  srcSet="/frame-product-concept-realistic-v3-transparent-480w.webp 480w, /frame-product-concept-realistic-v3-transparent-720w.webp 720w, /frame-product-concept-realistic-v3-transparent-960w.webp 960w"
                   alt="Refined Frame upper-arm wearable concept with an adjustable charcoal knit band, burgundy clasp, and integrated ultrasound sensor"
                   width={1254}
                   height={1254}
                   sizes="(max-width: 680px) 84vw, (max-width: 980px) 480px, 42vw"
-                  unoptimized
+                  loading="lazy"
+                  decoding="async"
                 />
               </div>
               <figcaption>Product concept · final design in development</figcaption>
@@ -180,13 +196,16 @@ export default async function Home() {
           <div className="method-layout">
             <figure className="wide-image">
               <div className="wide-image-media image-frame">
-                <Image
-                  src="/frame-sensing-concept-realistic-v3-transparent.webp"
+                <img
+                  src="/frame-sensing-concept-realistic-v3-transparent-960w.webp"
+                  srcSet="/frame-sensing-concept-realistic-v3-transparent-640w.webp 640w, /frame-sensing-concept-realistic-v3-transparent-960w.webp 960w, /frame-sensing-concept-realistic-v3-transparent-1280w.webp 1280w"
                   alt="Exploded sensing concept showing the refined Frame ultrasound contact module above skin, tissue, and an artery"
                   className="cover-image"
-                  fill
+                  width={1448}
+                  height={1086}
                   sizes="(max-width: 680px) calc(100vw - 72px), (max-width: 980px) 40vw, 480px"
-                  unoptimized
+                  loading="lazy"
+                  decoding="async"
                 />
               </div>
               <figcaption>
@@ -234,13 +253,16 @@ export default async function Home() {
       <section className="software-section section">
         <div className="container software-grid">
           <figure className="software-image image-frame">
-            <Image
-              src="/frame-app-studio-v5.webp"
+            <img
+              src="/frame-app-studio-v5-640w.webp"
+              srcSet="/frame-app-studio-v5-480w.webp 480w, /frame-app-studio-v5-640w.webp 640w, /frame-app-studio-v5-896w.webp 896w"
               alt="Refined Frame companion app in an accurately proportioned iPhone 17 mockup, showing 82 percent reliable overnight coverage, a motion interruption, and a late meal timing pattern"
               className="cover-image"
-              fill
+              width={897}
+              height={1752}
               sizes="(max-width: 980px) calc(100vw - 64px), 58vw"
-              unoptimized
+              loading="lazy"
+              decoding="async"
             />
           </figure>
           <div className="software-copy">
@@ -324,6 +346,25 @@ export default async function Home() {
         </section>
       ) : null}
 
+      {showPreorderAreas ? (
+        <section className="home-contributor-section home-preorder-section">
+          <div className="container home-contributor-grid">
+            <div>
+              <p className="eyebrow">Local pre-order implementation</p>
+              <h2>Test the complete device-order journey.</h2>
+            </div>
+            <div>
+              <p>
+                A private $299 Stripe test flow for product review, shipping details, signed payment fulfilment, confirmation and owner reporting. Public sales remain blocked.
+              </p>
+              <a className="button button--dark" href="/preorder/review?source=homepage">
+                Open the pre-order test
+              </a>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       <section className="final-cta" id="early-access">
         <div className="container final-grid">
           <div className="final-cta__copy">
@@ -363,6 +404,9 @@ export default async function Home() {
             <a href="#research">Research</a>
             {showLocalContributorAreas ? (
               <a href="/founding-contributors">Founding Contributors</a>
+            ) : null}
+            {showPreorderAreas ? (
+              <a href="/preorder/review?source=homepage_footer">Pre-order test</a>
             ) : null}
             <a
               href={INSTAGRAM_URL}

@@ -2,6 +2,10 @@ import {
   isLocalContributorRequest,
   isLoopbackHost,
 } from "./contributor-local-only";
+import {
+  isPreorderRequestAllowed,
+  normalizePreorderMode,
+} from "./preorder-access";
 
 export type FrameRuntimeEnv = {
   SUPABASE_URL?: string;
@@ -12,6 +16,15 @@ export type FrameRuntimeEnv = {
   STRIPE_WEBHOOK_SECRET?: string;
   STRIPE_FOUNDING_CONTRIBUTOR_PRICE_ID?: string;
   CONTRIBUTOR_PREVIEW_MODE?: string;
+  PREORDER_MODE?: string;
+  PREORDER_LEGAL_APPROVED_VERSION?: string;
+  PREORDER_PREVIEW_MODE?: string;
+  PREORDER_PRICE_CENTS?: string;
+  PREORDER_CURRENCY?: string;
+  PREORDER_ALLOWED_COUNTRIES?: string;
+  PREORDER_ESTIMATED_DELIVERY?: string;
+  STRIPE_PREORDER_PRICE_ID?: string;
+  PREORDER_FROM_EMAIL?: string;
 };
 
 export async function getFrameRuntimeEnv(): Promise<FrameRuntimeEnv> {
@@ -38,6 +51,26 @@ export function isFoundingContributorSalesRequestEnabled(request: Request) {
 
 export async function isLocalContributorPreview(request: Request) {
   const enabled = (await getRuntimeValue("CONTRIBUTOR_PREVIEW_MODE")) === "true";
+  if (!enabled) return false;
+
+  return isLoopbackHost(new URL(request.url).host);
+}
+
+export async function getPreorderMode() {
+  return normalizePreorderMode(await getRuntimeValue("PREORDER_MODE"));
+}
+
+export async function isPreorderSalesRequestEnabled(request: Request) {
+  return isPreorderRequestAllowed({
+    host: new URL(request.url).host,
+    mode: await getRuntimeValue("PREORDER_MODE"),
+    approvedTermsVersion: await getRuntimeValue("PREORDER_LEGAL_APPROVED_VERSION"),
+  });
+}
+
+export async function isLocalPreorderPreview(request: Request) {
+  const configured = await getRuntimeValue("PREORDER_PREVIEW_MODE");
+  const enabled = configured !== "false";
   if (!enabled) return false;
 
   return isLoopbackHost(new URL(request.url).host);

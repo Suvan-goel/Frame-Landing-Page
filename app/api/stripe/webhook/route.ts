@@ -4,6 +4,11 @@ import {
   reconcileDispute,
   reconcileRefund,
 } from "@/lib/contributor-payments.server";
+import {
+  fulfillPreorderCheckout,
+  reconcilePreorderDispute,
+  reconcilePreorderRefund,
+} from "@/lib/preorder-payments.server";
 import { verifyStripeWebhook } from "@/lib/stripe.server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin.server";
 
@@ -57,7 +62,11 @@ export async function POST(request: Request) {
       case "checkout.session.async_payment_succeeded": {
         const session = event.data.object as Stripe.Checkout.Session;
         if (session.payment_status === "paid") {
-          await fulfillContributorCheckout(session, origin);
+          if (session.metadata?.flow === "frame_preorder") {
+            await fulfillPreorderCheckout(session, origin);
+          } else if (session.metadata?.membership === "frame_founding_contributor") {
+            await fulfillContributorCheckout(session, origin);
+          }
         }
         break;
       }
@@ -65,35 +74,65 @@ export async function POST(request: Request) {
         const session = event.data.object as Stripe.Checkout.Session;
         const intentId = session.metadata?.checkout_intent_id;
         if (intentId) {
-          await supabase
-            .from("contributor_checkout_intents")
-            .update({ status: "expired", updated_at: new Date().toISOString() })
-            .eq("id", intentId);
+          const table = session.metadata?.flow === "frame_preorder"
+            ? "preorder_checkout_intents"
+            : session.metadata?.membership === "frame_founding_contributor"
+              ? "contributor_checkout_intents"
+              : null;
+          if (table) {
+            await supabase
+              .from(table)
+              .update({ status: "expired", updated_at: new Date().toISOString() })
+              .eq("id", intentId);
+          }
         }
         break;
       }
       case "charge.refunded": {
         const charge = event.data.object as Stripe.Charge;
         const id = paymentIntentId(charge.payment_intent);
-        if (id && charge.refunded) await reconcileRefund(id, "refunded");
+        if (id) {
+          const preorderHandled = await reconcilePreorderRefund({
+            paymentIntentId: id,
+            amountRefunded: charge.amount_refunded,
+            fullyRefunded: charge.refunded,
+          });
+          if (!preorderHandled && charge.refunded) {
+            await reconcileRefund(id, "refunded");
+          }
+        }
         break;
       }
       case "refund.failed": {
         const refund = event.data.object as Stripe.Refund;
         const id = paymentIntentId(refund.payment_intent);
-        if (id) await reconcileRefund(id, "refund_failed");
+        if (id) {
+          const preorderHandled = await reconcilePreorderRefund({
+            paymentIntentId: id,
+            amountRefunded: 0,
+            fullyRefunded: false,
+            failed: true,
+          });
+          if (!preorderHandled) await reconcileRefund(id, "refund_failed");
+        }
         break;
       }
       case "charge.dispute.created": {
         const dispute = event.data.object as Stripe.Dispute;
         const id = paymentIntentId(dispute.payment_intent);
-        if (id) await reconcileDispute(id, true);
+        if (id) {
+          const preorderHandled = await reconcilePreorderDispute(id, true);
+          if (!preorderHandled) await reconcileDispute(id, true);
+        }
         break;
       }
       case "charge.dispute.closed": {
         const dispute = event.data.object as Stripe.Dispute;
         const id = paymentIntentId(dispute.payment_intent);
-        if (id && dispute.status === "won") await reconcileDispute(id, false);
+        if (id && dispute.status === "won") {
+          const preorderHandled = await reconcilePreorderDispute(id, false);
+          if (!preorderHandled) await reconcileDispute(id, false);
+        }
         break;
       }
       default:

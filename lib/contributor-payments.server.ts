@@ -310,7 +310,7 @@ export async function reconcileRefund(paymentIntentId: string, status: string) {
     .eq("stripe_payment_intent_id", paymentIntentId)
     .maybeSingle();
   if (error) throw error;
-  if (!payment?.contributor_id) return;
+  if (!payment?.contributor_id) return false;
 
   const duplicatePayment = payment.payment_status.startsWith("duplicate_");
   const recordedStatus = duplicatePayment
@@ -327,7 +327,7 @@ export async function reconcileRefund(paymentIntentId: string, status: string) {
     })
     .eq("stripe_payment_intent_id", paymentIntentId);
 
-  if (duplicatePayment) return;
+  if (duplicatePayment) return true;
 
   if (status === "refunded") {
     const result = await supabase
@@ -342,6 +342,7 @@ export async function reconcileRefund(paymentIntentId: string, status: string) {
       .eq("id", payment.contributor_id);
     if (result.error) throw result.error;
   }
+  return true;
 }
 
 export async function reconcileDispute(paymentIntentId: string, disputed: boolean) {
@@ -352,7 +353,7 @@ export async function reconcileDispute(paymentIntentId: string, disputed: boolea
     .eq("stripe_payment_intent_id", paymentIntentId)
     .maybeSingle();
   if (error) throw error;
-  if (!payment?.contributor_id) return;
+  if (!payment?.contributor_id) return false;
 
   const result = await supabase
     .from("contributors")
@@ -362,4 +363,5 @@ export async function reconcileDispute(paymentIntentId: string, disputed: boolea
     })
     .eq("id", payment.contributor_id);
   if (result.error) throw result.error;
+  return true;
 }

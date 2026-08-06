@@ -85,6 +85,7 @@ export default async function WaitlistAdminPage({
             </p>
           </div>
           <div className="admin-actions">
+            <a href="/admin/preorders">Pre-orders</a>
             <a className="button button--dark" href="/api/admin/waitlist.xlsx">
               Export spreadsheet
             </a>

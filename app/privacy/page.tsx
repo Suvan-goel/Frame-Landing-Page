@@ -2,10 +2,14 @@
 import type { Metadata } from "next";
 import { SiteHeader } from "../components/site-header";
 import { isFoundingContributorSalesPageEnabled } from "@/lib/contributor-sales-page.server";
+import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
 
 export const metadata: Metadata = {
   title: "Privacy — Frame",
   description: "How Frame handles information submitted through its website.",
+  alternates: {
+    canonical: "/privacy",
+  },
   robots: {
     index: true,
     follow: true,
@@ -13,8 +17,10 @@ export const metadata: Metadata = {
 };
 
 export default async function PrivacyPage() {
-  const showLocalContributorAreas =
-    await isFoundingContributorSalesPageEnabled();
+  const [showLocalContributorAreas, showPreorderAreas] = await Promise.all([
+    isFoundingContributorSalesPageEnabled(),
+    isPreorderSalesPageEnabled(),
+  ]);
 
   return (
     <main className="legal-page">
@@ -30,6 +36,9 @@ export default async function PrivacyPage() {
           early-access waitlist and contact form.
           {showLocalContributorAreas
             ? " It also covers the locally tested Founding Contributor membership experience."
+            : null}
+          {showPreorderAreas
+            ? " It also covers the locally tested device pre-order experience."
             : null}
         </p>
 
@@ -59,6 +68,15 @@ export default async function PrivacyPage() {
               feedback, questions, advisory votes, event participation, and
               optional research applications. Please do not submit diagnoses,
               symptoms, test results, or other medical information.
+            </p>
+          </section>
+        ) : null}
+
+        {showPreorderAreas ? (
+          <section>
+            <h2>Local pre-order testing</h2>
+            <p>
+              If you complete a Stripe test payment, the local implementation records your name, email address, shipping address, test payment status and amount, the product and quantity, the terms and product-status versions accepted, fulfilment status, order events, and email-delivery status. Stripe processes test card details; Frame does not receive or store a full card number.
             </p>
           </section>
         ) : null}
@@ -117,6 +135,9 @@ export default async function PrivacyPage() {
             email delivery, and our website hosting provider.
             {showLocalContributorAreas
               ? " The local membership flow also uses Stripe for payments and Supabase for member authentication."
+              : null}
+            {showPreorderAreas
+              ? " The local pre-order flow also uses Stripe for test payments and shipping-address collection."
               : null}
             {" "}We keep submitted information while Frame is in development,
             for the period needed to provide the relevant service and meet
