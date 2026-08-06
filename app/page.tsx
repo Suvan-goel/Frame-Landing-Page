@@ -2,6 +2,10 @@
 import Link from "next/link";
 import { BrandWordmark } from "./components/brand-wordmark";
 import { MobileNavigation } from "./components/mobile-navigation";
+import {
+  WaitlistSignupFlow,
+  WaitlistSignupProvider,
+} from "./components/waitlist-signup-flow";
 import { isFoundingContributorSalesPageEnabled } from "@/lib/contributor-sales-page.server";
 import { INSTAGRAM_URL } from "@/lib/site";
 
@@ -45,6 +49,7 @@ export default async function Home() {
     : content.navigation;
 
   return (
+    <WaitlistSignupProvider>
     <main>
       <header className="nav-shell">
         <nav className="nav container" aria-label="Primary navigation">
@@ -61,39 +66,25 @@ export default async function Home() {
               <a href="/founding-contributors">Contributors</a>
             ) : null}
           </div>
-          <a className="nav-cta" href="/interest">
-            I&apos;m interested
+          <a className="nav-cta" href="#homepage-hero-waitlist">
+            Join the waitlist
           </a>
           <MobileNavigation items={mobileNavigation} />
         </nav>
       </header>
 
-      <section className="hero" id="top">
+      <section className="hero hero--email-first" id="top">
         <div className="hero-grid container">
           <div className="hero-copy">
-            <div className="hero-meta">
-              <p className="eyebrow">MEASURE YOUR BLOOD PRESSURE CONTINUOUSLY</p>
-              <span>Currently in development</span>
-            </div>
+            <p className="eyebrow hero-email-first__eyebrow">
+              MEASURE YOUR BLOOD PRESSURE CONTINUOUSLY
+            </p>
             <h1>See how your cardiovascular system responds to daily life.</h1>
             <p className="hero-intro">
-              Frame is developing a non-invasive upper-arm wearable that uses
-              ultrasound to track blood-pressure patterns through sleep, rest,
-              and recovery, then turns them into clear, personal insight.
+              Frame is developing a non-invasive upper-arm wearable that reveals
+              how blood pressure changes throughout daily life.
             </p>
-            <div className="hero-actions">
-              <a className="button button--dark" href="/interest">
-                I&apos;m interested
-              </a>
-              <a className="text-link" href="#how-it-works">
-                How it works <span aria-hidden="true">↓</span>
-              </a>
-            </div>
-            <ul className="attributes" aria-label="Product attributes">
-              <li>Non-invasive</li>
-              <li>Ultrasound-based</li>
-              <li>Screenless</li>
-            </ul>
+            <WaitlistSignupFlow placement="homepage_hero" compact />
           </div>
           <figure className="hero-visuals">
             <div className="hero-lifestyle">
@@ -339,14 +330,7 @@ export default async function Home() {
             <h2>Help shape a new way to understand cardiovascular health.</h2>
           </div>
           <div className="final-cta__form final-cta__action">
-            <p>
-              Do you think Frame sounds interesting? Help us out by answering
-              some short questions and sharing your contact details so we can
-              keep you up to date with Frame&apos;s development!
-            </p>
-            <a className="button button--light" href="/interest">
-              Register your interest.
-            </a>
+            <WaitlistSignupFlow placement="homepage_final" tone="light" />
             <a
               className="collaboration-link"
               href="/contact?topic=research"
@@ -394,5 +378,6 @@ export default async function Home() {
         </div>
       </footer>
     </main>
+    </WaitlistSignupProvider>
   );
 }

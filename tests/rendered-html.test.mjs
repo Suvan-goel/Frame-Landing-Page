@@ -52,7 +52,12 @@ test("server-renders the Frame landing page", async () => {
     html,
     /See how your cardiovascular system responds to daily life\./,
   );
-  assert.match(html, /Currently in development/);
+  assert.doesNotMatch(html, /Currently in development/);
+  assert.match(html, /hero--email-first/);
+  assert.match(
+    html,
+    /Frame is developing a non-invasive upper-arm wearable that reveals how blood pressure changes throughout daily life\./,
+  );
   assert.match(
     html,
     /Continuous monitoring should create context, not continuous\s*(?:<!-- -->)?conclusions\./,
@@ -69,7 +74,9 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /<script type="application\/ld\+json">/);
   assert.match(html, /Frame Health Technologies/);
   assert.doesNotMatch(html, /facebook\.com\/tr\?id=/);
-  assert.equal(html.match(/href="\/interest"/g)?.length, 3);
+  assert.equal(html.match(/name="email"/g)?.length, 2);
+  assert.match(html, /Join the waitlist/);
+  assert.match(html, /href="#homepage-hero-waitlist"/);
   assert.doesNotMatch(html, /What is the main reason you want Frame\?/);
   assert.doesNotMatch(html, /<dialog/i);
   assert.match(html, /<section class="final-cta" id="early-access">/);
@@ -86,13 +93,9 @@ test("server-renders the dedicated interest page", async () => {
   assert.equal(response.status, 200);
   const html = await response.text();
 
-  assert.match(html, /Register your interest/);
-  assert.match(html, /What is the main reason you want Frame\?/);
-  assert.match(html, /See my blood pressure patterns over time/);
-  assert.match(html, /Understand my blood pressure while sleeping/);
-  assert.match(html, /name="mainReason"/);
-  assert.match(html, /type="radio"/);
-  assert.match(html, /aria-label="Step 1 of 5"/);
+  assert.match(html, /Join Frame early access/);
+  assert.match(html, /Get development updates and the opportunity to help shape Frame/);
+  assert.match(html, /name="email"/);
   assert.match(html, /aria-label="Back to home"/);
   assert.doesNotMatch(html, /<dialog/i);
 });
@@ -255,6 +258,9 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     privacy,
     demographicsMigration,
     interestFlow,
+    waitlistFlow,
+    qualificationPage,
+    waitlistOptions,
     interestPage,
     metaPixel,
     contributorMigration,
@@ -284,6 +290,15 @@ test("uses generated raster visuals and keeps the page editable", async () => {
       new URL("../app/components/interest-flow.tsx", import.meta.url),
       "utf8",
     ),
+    readFile(
+      new URL("../app/components/waitlist-signup-flow.tsx", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL("../app/early-access/questions/page.tsx", import.meta.url),
+      "utf8",
+    ),
+    readFile(new URL("../lib/waitlist-options.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/interest/page.tsx", import.meta.url), "utf8"),
     readFile(
       new URL("../app/components/meta-pixel.tsx", import.meta.url),
@@ -325,50 +340,46 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(page, /src="\/frame-sensing-concept-realistic-v3-transparent-960w\.webp"/);
   assert.match(page, /src="\/frame-app-studio-v5-640w\.webp"/);
   assert.doesNotMatch(page, /<svg|ProductDiagram|CrossSection|PatternTimeline/);
-  assert.match(interestFlow, /fetch\("\/api\/waitlist"/);
+  assert.match(waitlistFlow, /fetch\("\/api\/waitlist"/);
   assert.doesNotMatch(interestFlow, /<dialog|showModal\(|OPEN_INTEREST_FLOW_EVENT/);
   assert.match(interestPage, /showFoundingContributorOffer=/);
   assert.match(interestPage, /isFoundingContributorSalesPageEnabled\(\)/);
   assert.match(interestPage, /canonical: "\/interest"/);
-  assert.match(interestFlow, /MIN_SITUATION_LENGTH = 20/);
+  assert.match(waitlistFlow, /MIN_FRUSTRATION_LENGTH = 20/);
   assert.match(
-    interestFlow,
+    waitlistFlow,
     /What would you want Frame to help you understand or do that you can’t easily today\?/,
   );
-  assert.match(interestFlow, /MAX_SITUATION_LENGTH = 750/);
-  assert.match(interestFlow, /type="radio"/);
-  assert.match(interestFlow, /name="recentSituation"/);
-  assert.match(interestFlow, /name="monitoringMethod"/);
-  assert.match(interestFlow, /name="interviewWillingness"/);
-  assert.match(interestFlow, /name="firstName"/);
-  assert.match(interestFlow, /name="lastName"/);
-  assert.match(interestFlow, /name="age"/);
-  assert.match(interestFlow, /name="gender"/);
-  assert.match(interestFlow, /name="email"/);
-  assert.doesNotMatch(page, /InterestFlow|InterestTrigger|<WaitlistPopup \/>/);
-  assert.match(page, /href="\/interest"/);
-  assert.match(page, /I&apos;m interested/);
-  assert.match(page, /Register your interest\./);
+  assert.match(waitlistFlow, /MAX_LONG_TEXT_LENGTH = 750/);
+  assert.match(waitlistFlow, /type="radio"/);
+  assert.match(waitlistFlow, /name="frustration"/);
+  assert.match(waitlistFlow, /name="firstName"/);
+  assert.match(waitlistFlow, /name="lastName"/);
+  assert.match(waitlistFlow, /name="age"/);
+  assert.match(waitlistFlow, /name="gender"/);
+  assert.match(waitlistFlow, /name="email"/);
+  assert.match(page, /WaitlistSignupProvider/);
+  assert.match(page, /placement="homepage_hero" compact/);
+  assert.match(page, /placement="homepage_final" tone="light"/);
+  assert.match(waitlistFlow, /router\.push\("\/early-access\/questions"\)/);
+  assert.match(qualificationPage, /WaitlistQualificationFlow/);
+  assert.match(waitlistOptions, /See my blood pressure patterns over time/);
+  assert.match(waitlistOptions, /Understand my blood pressure while sleeping/);
+  assert.match(waitlistFlow, /Thank you - your answers have been saved\./);
   assert.match(
-    page,
-    /Do you think Frame sounds interesting\?[\s\S]*keep you up to date with Frame&apos;s development!/
+    waitlistFlow,
+    /We genuinely read all responses and[\s\S]*your input is invaluable for Frame’s development\./,
   );
-  assert.match(interestFlow, /Your interest has been registered!/);
-  assert.match(
-    interestFlow,
-    /We genuinely read all responses and[\s\S]*your input is invaluable for Frame&apos;s development\./,
-  );
-  assert.match(interestFlow, /formatName\(firstName\)/);
-  assert.match(api, /return formatName\(value\)/);
-  assert.match(api, /MIN_SITUATION_LENGTH = 20/);
-  assert.match(api, /MAIN_REASON_VALUES/);
-  assert.match(api, /MONITORING_METHOD_VALUES/);
-  assert.match(api, /INTERVIEW_WILLINGNESS_VALUES/);
-  assert.match(api, /GENDER_VALUES/);
+  assert.match(waitlistFlow, /formatName\(flow\.firstName\)/);
+  assert.match(api, /formatName\(value\)\.slice/);
+  assert.match(api, /MIN_FRUSTRATION_LENGTH = 20/);
+  assert.match(api, /primaryInterestValues/);
+  assert.match(api, /monitoringMethodValues/);
+  assert.match(api, /researchCallValues/);
+  assert.match(api, /genderValues/);
   assert.match(api, /age < MIN_AGE \|\| age > MAX_AGE/);
-  assert.match(interestFlow, /window\.localStorage\.setItem/);
-  assert.doesNotMatch(interestFlow, /result\.status === "joined"/);
-  assert.match(interestFlow, /trackMetaLead\(\)/);
+  assert.match(waitlistFlow, /window\.sessionStorage/);
+  assert.match(waitlistFlow, /trackMetaLead\(token\)/);
   assert.match(
     metaPixel,
     /window\.fbq\("trackSingle", META_PIXEL_ID, "Lead"/,
@@ -394,18 +405,15 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.doesNotMatch(page, /Connect a real waitlist API/);
   assert.match(layout, /url: "\/og-launch-v2\.png"/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
-  assert.match(api, /from\("waitlist_signups"\)\.insert/);
-  assert.match(api, /first_name: firstName/);
-  assert.match(api, /last_name: lastName/);
+  assert.match(api, /from\("waitlist_signups"\)/);
+  assert.match(api, /first_name: update\.firstName/);
+  assert.match(api, /last_name: update\.lastName/);
   assert.match(api, /gender/);
   assert.match(api, /age/);
-  assert.match(api, /motivation/);
-  assert.match(api, /const qualificationRecord = JSON\.stringify/);
-  assert.match(api, /mainReason,/);
-  assert.match(api, /recentSituation,/);
-  assert.match(api, /monitoringMethod,/);
-  assert.match(api, /interviewWillingness,/);
-  assert.match(api, /motivation: qualificationRecord/);
+  assert.match(api, /qualification_status: "completed"/);
+  assert.match(api, /primary_interest: update\.primaryInterest/);
+  assert.match(api, /current_monitoring_method: update\.monitoringMethod/);
+  assert.match(api, /frustration_or_missing_need: update\.frustration/);
   assert.match(supabase, /SUPABASE_SECRET_KEY/);
   assert.doesNotMatch(page, /SUPABASE_SECRET_KEY|createClient/);
   assert.match(demographicsMigration, /add column if not exists gender text/);

@@ -1,38 +1,42 @@
 import { getSupabaseAdmin } from "@/lib/supabase-admin.server";
 import { formatName } from "@/lib/name-format";
+import { isLoopbackHost } from "@/lib/contributor-local-only";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import {
+  genderValues,
+  monitoringMethodValues,
+  primaryInterestValues,
+  researchCallValues,
+} from "@/lib/waitlist-options";
+import {
+  captureWaitlistEmail,
+  completeWaitlistQualification,
+  skipWaitlistQualification,
+  type QualificationUpdate,
+  type WaitlistRecordState,
+  type WaitlistRepository,
+} from "@/lib/waitlist-service.server";
+import { getWaitlistPreviewRepository } from "@/lib/waitlist-preview.server";
+import { submitLegacyWaitlist } from "@/lib/legacy-waitlist-submission.server";
 
 export const dynamic = "force-dynamic";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_BODY_BYTES = 8_192;
 const MAX_NAME_LENGTH = 60;
-const MIN_SITUATION_LENGTH = 20;
-const MAX_SITUATION_LENGTH = 750;
+const MAX_ATTRIBUTION_LENGTH = 200;
+const MAX_REFERRER_LENGTH = 500;
+const MAX_OTHER_LENGTH = 160;
+const MAX_LONG_TEXT_LENGTH = 750;
+const MIN_FRUSTRATION_LENGTH = 20;
 const MIN_AGE = 18;
 const MAX_AGE = 120;
-const GENDER_VALUES = new Set([
-  "woman",
-  "man",
-  "non_binary",
-  "another_identity",
-  "prefer_not_to_say",
-]);
-const MAIN_REASON_VALUES = new Set([
-  "monitor_high_or_borderline",
-  "understand_sleep",
-  "understand_daily_factors",
-  "understand_unexplained_changes",
-  "track_response_and_recovery",
-  "something_else",
-]);
-const MONITORING_METHOD_VALUES = new Set([
-  "upper_arm_regularly",
-  "upper_arm_occasionally",
-  "wearable_or_cuffless",
-  "medical_appointments_only",
-  "not_currently_monitoring",
-]);
-const INTERVIEW_WILLINGNESS_VALUES = new Set(["yes", "possibly", "no"]);
+
+type WaitlistAction =
+  | "capture_email"
+  | "submit_qualification"
+  | "skip_qualification";
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return Response.json(body, {
@@ -44,24 +48,313 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
   });
 }
 
-function cleanAttribution(value: unknown) {
+function cleanText(value: unknown, maxLength: number) {
   if (typeof value !== "string") return null;
-  const cleaned = value.trim().replace(/\s+/g, " ").slice(0, 100);
+  const cleaned = value.trim().replace(/\s+/g, " ").slice(0, maxLength);
+  return cleaned || null;
+}
+
+function cleanLongText(value: unknown) {
+  if (typeof value !== "string") return null;
+  const cleaned = value
+    .trim()
+    .replace(/\r\n?/g, "\n")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .slice(0, MAX_LONG_TEXT_LENGTH);
   return cleaned || null;
 }
 
 function cleanName(value: unknown) {
-  if (typeof value !== "string") return "";
-  return formatName(value);
+  if (typeof value !== "string") return null;
+  const cleaned = formatName(value).slice(0, MAX_NAME_LENGTH);
+  return cleaned || null;
 }
 
-function cleanLongText(value: unknown) {
-  if (typeof value !== "string") return "";
-  return value
-    .trim()
-    .replace(/\r\n?/g, "\n")
-    .replace(/[ \t]+/g, " ")
-    .replace(/\n{3,}/g, "\n\n");
+function validEmail(value: unknown) {
+  if (typeof value !== "string") return null;
+  const email = value.trim().toLowerCase();
+  if (
+    !email ||
+    email.length > 254 ||
+    !EMAIL_PATTERN.test(email) ||
+    email.includes("..")
+  ) {
+    return null;
+  }
+  return email;
+}
+
+function waitlistRepository(supabase: SupabaseClient): WaitlistRepository {
+  const recordSelect =
+    "id,survey_token,qualification_status,survey_completed_at";
+  const toRecord = (row: {
+    id: number;
+    survey_token: string;
+    qualification_status: string;
+    survey_completed_at: string | null;
+  }): WaitlistRecordState => ({
+    id: row.id,
+    signupToken: row.survey_token,
+    qualificationStatus: row.qualification_status,
+    surveyCompletedAt: row.survey_completed_at,
+  });
+
+  return {
+    async findByEmail(email) {
+      const { data, error } = await supabase
+        .from("waitlist_signups")
+        .select(recordSelect)
+        .eq("email", email)
+        .maybeSingle<{
+          id: number;
+          survey_token: string;
+          qualification_status: string;
+          survey_completed_at: string | null;
+        }>();
+      if (error) throw error;
+      return data ? toRecord(data) : null;
+    },
+    async insert(input) {
+      const { data, error } = await supabase
+        .from("waitlist_signups")
+        .insert({
+          email: input.email,
+          placement: input.placement,
+          utm_source: input.utmSource,
+          utm_medium: input.utmMedium,
+          utm_campaign: input.utmCampaign,
+          utm_content: input.utmContent,
+          utm_term: input.utmTerm,
+          meta_click_id: input.metaClickId,
+          signup_referrer: input.referrer,
+          qualification_status: "not_started",
+        })
+        .select(recordSelect)
+        .single<{
+          id: number;
+          survey_token: string;
+          qualification_status: string;
+          survey_completed_at: string | null;
+        }>();
+      if (error) throw error;
+      return toRecord(data);
+    },
+    async findByToken(signupToken) {
+      const { data, error } = await supabase
+        .from("waitlist_signups")
+        .select(recordSelect)
+        .eq("survey_token", signupToken)
+        .maybeSingle<{
+          id: number;
+          survey_token: string;
+          qualification_status: string;
+          survey_completed_at: string | null;
+        }>();
+      if (error) throw error;
+      return data ? toRecord(data) : null;
+    },
+    async markSkipped(id, skippedAt) {
+      const { error } = await supabase
+        .from("waitlist_signups")
+        .update({
+          qualification_status: "skipped",
+          qualification_skipped_at: skippedAt,
+        })
+        .eq("id", id)
+        .neq("qualification_status", "completed");
+      if (error) throw error;
+    },
+    async completeIfIncomplete(id, update: QualificationUpdate) {
+      const values: Record<string, string | number | null> = {
+        qualification_status: "completed",
+        first_name: update.firstName,
+        last_name: update.lastName,
+        age: update.age,
+        gender: update.gender,
+        primary_interest: update.primaryInterest,
+        primary_interest_other: update.primaryInterestOther,
+        current_monitoring_method: update.monitoringMethod,
+        current_monitoring_method_other: update.monitoringMethodOther,
+        frustration_or_missing_need: update.frustration,
+        open_to_research_call: update.researchCall,
+        survey_completed_at: update.completedAt,
+      };
+      const { data, error } = await supabase
+        .from("waitlist_signups")
+        .update(values)
+        .eq("id", id)
+        .neq("qualification_status", "completed")
+        .is("survey_completed_at", null)
+        .select("id")
+        .maybeSingle<{ id: number }>();
+      if (error) throw error;
+      return Boolean(data);
+    },
+  };
+}
+
+async function repositoryForRequest(request: Request) {
+  if (isLoopbackHost(new URL(request.url).host)) {
+    return getWaitlistPreviewRepository();
+  }
+  return waitlistRepository(await getSupabaseAdmin());
+}
+
+async function captureEmail(payload: Record<string, unknown>, request: Request) {
+  // A filled honeypot receives the same successful shape without creating a
+  // record or a conversion event.
+  if (typeof payload.website === "string" && payload.website.trim()) {
+    return jsonResponse({
+      status: "joined",
+      signupToken: crypto.randomUUID(),
+      leadCreated: false,
+    }, 201);
+  }
+
+  const email = validEmail(payload.email);
+  if (!email) {
+    return jsonResponse({ error: "Enter a valid email address." }, 400);
+  }
+
+  try {
+    const result = await captureWaitlistEmail(await repositoryForRequest(request), {
+      email,
+      placement:
+        cleanText(payload.placement, MAX_ATTRIBUTION_LENGTH) ?? "landing_page",
+      utmSource: cleanText(payload.utmSource, MAX_ATTRIBUTION_LENGTH),
+      utmMedium: cleanText(payload.utmMedium, MAX_ATTRIBUTION_LENGTH),
+      utmCampaign: cleanText(payload.utmCampaign, MAX_ATTRIBUTION_LENGTH),
+      utmContent: cleanText(payload.utmContent, MAX_ATTRIBUTION_LENGTH),
+      utmTerm: cleanText(payload.utmTerm, MAX_ATTRIBUTION_LENGTH),
+      metaClickId: cleanText(payload.metaClickId, MAX_ATTRIBUTION_LENGTH),
+      referrer: cleanText(payload.referrer, MAX_REFERRER_LENGTH),
+    });
+    return jsonResponse(result, result.leadCreated ? 201 : 200);
+  } catch (error) {
+    console.error("Waitlist email capture failed", error);
+    return jsonResponse(
+      { error: "We couldn’t save your email. Please try again shortly." },
+      503,
+    );
+  }
+}
+
+async function skipQualification(payload: Record<string, unknown>, request: Request) {
+  const signupToken =
+    typeof payload.signupToken === "string" ? payload.signupToken : "";
+  if (!UUID_PATTERN.test(signupToken)) {
+    return jsonResponse({ error: "This signup session is no longer valid." }, 400);
+  }
+
+  try {
+    const result = await skipWaitlistQualification(
+      await repositoryForRequest(request),
+      signupToken,
+      new Date().toISOString(),
+    );
+    if (result.status === "not_found") {
+      return jsonResponse({ error: "This signup session is no longer valid." }, 404);
+    }
+    return jsonResponse(result);
+  } catch (error) {
+    console.error("Waitlist qualification skip failed", error);
+    return jsonResponse(
+      { error: "Your waitlist place is safe, but we couldn’t record the skipped survey." },
+      503,
+    );
+  }
+}
+
+async function submitQualification(payload: Record<string, unknown>, request: Request) {
+  const signupToken =
+    typeof payload.signupToken === "string" ? payload.signupToken : "";
+  const primaryInterest =
+    typeof payload.primaryInterest === "string" ? payload.primaryInterest : "";
+  const monitoringMethod =
+    typeof payload.monitoringMethod === "string" ? payload.monitoringMethod : "";
+  const researchCall =
+    typeof payload.researchCall === "string" ? payload.researchCall : null;
+  const firstName = cleanName(payload.firstName);
+  const lastName = cleanName(payload.lastName);
+  const age = typeof payload.age === "number" ? payload.age : Number.NaN;
+  const gender = typeof payload.gender === "string" ? payload.gender : "";
+  const frustration = cleanLongText(payload.frustration);
+
+  if (!UUID_PATTERN.test(signupToken)) {
+    return jsonResponse({ error: "This signup session is no longer valid." }, 400);
+  }
+  if (!primaryInterestValues.has(primaryInterest)) {
+    return jsonResponse(
+      { error: "Choose the one main reason that matters most to you." },
+      400,
+    );
+  }
+  if (!monitoringMethodValues.has(monitoringMethod)) {
+    return jsonResponse(
+      { error: "Choose how you currently monitor your blood pressure." },
+      400,
+    );
+  }
+  if (!frustration || frustration.length < MIN_FRUSTRATION_LENGTH) {
+    return jsonResponse(
+      { error: "Write at least 20 characters before submitting." },
+      400,
+    );
+  }
+  if (!firstName) {
+    return jsonResponse({ error: "Enter your first name." }, 400);
+  }
+  if (!lastName) {
+    return jsonResponse({ error: "Enter your last name." }, 400);
+  }
+  if (!Number.isInteger(age) || age < MIN_AGE || age > MAX_AGE) {
+    return jsonResponse(
+      { error: `Enter an age between ${MIN_AGE} and ${MAX_AGE}.` },
+      400,
+    );
+  }
+  if (!genderValues.has(gender)) {
+    return jsonResponse({ error: "Select a gender option." }, 400);
+  }
+  if (researchCall && !researchCallValues.has(researchCall)) {
+    return jsonResponse({ error: "Choose a valid research-call response." }, 400);
+  }
+  try {
+    const result = await completeWaitlistQualification(
+      await repositoryForRequest(request),
+      signupToken,
+      {
+        primaryInterest,
+        primaryInterestOther:
+          primaryInterest === "something_else"
+            ? cleanText(payload.primaryInterestOther, MAX_OTHER_LENGTH)
+            : null,
+        monitoringMethod,
+        monitoringMethodOther:
+          monitoringMethod === "something_else"
+            ? cleanText(payload.monitoringMethodOther, MAX_OTHER_LENGTH)
+            : null,
+        frustration,
+        researchCall,
+        firstName,
+        lastName,
+        age,
+        gender,
+        completedAt: new Date().toISOString(),
+      },
+    );
+    if (result.status === "not_found") {
+      return jsonResponse({ error: "This signup session is no longer valid." }, 404);
+    }
+    return jsonResponse(result);
+  } catch (error) {
+    console.error("Waitlist qualification failed", error);
+    return jsonResponse(
+      { error: "We couldn’t save your answers. Please try again shortly." },
+      503,
+    );
+  }
 }
 
 export async function POST(request: Request) {
@@ -75,178 +368,19 @@ export async function POST(request: Request) {
     return jsonResponse({ error: "Request origin is not allowed." }, 403);
   }
 
-  let payload: {
-    firstName?: unknown;
-    lastName?: unknown;
-    email?: unknown;
-    gender?: unknown;
-    age?: unknown;
-    mainReason?: unknown;
-    recentSituation?: unknown;
-    monitoringMethod?: unknown;
-    interviewWillingness?: unknown;
-    website?: unknown;
-    placement?: unknown;
-    utmSource?: unknown;
-    utmMedium?: unknown;
-    utmCampaign?: unknown;
-  };
-
+  let payload: Record<string, unknown>;
   try {
-    payload = (await request.json()) as typeof payload;
+    payload = (await request.json()) as Record<string, unknown>;
   } catch {
-    return jsonResponse({ error: "Complete every application field." }, 400);
+    return jsonResponse({ error: "The submitted information is invalid." }, 400);
   }
 
-  // A filled honeypot is treated as success so automated submissions do not
-  // receive a useful signal.
-  if (typeof payload.website === "string" && payload.website.trim()) {
-    return jsonResponse({ status: "joined" }, 201);
-  }
+  const action = payload.action as WaitlistAction | undefined;
+  if (!action) return submitLegacyWaitlist(payload);
 
-  const email = typeof payload.email === "string" ? payload.email.trim() : "";
-  const normalizedEmail = email.toLowerCase();
-  const firstName = cleanName(payload.firstName);
-  const lastName = cleanName(payload.lastName);
-  const gender = typeof payload.gender === "string" ? payload.gender : "";
-  const age = typeof payload.age === "number" ? payload.age : Number.NaN;
-  const mainReason =
-    typeof payload.mainReason === "string" ? payload.mainReason : "";
-  const recentSituation = cleanLongText(payload.recentSituation);
-  const monitoringMethod =
-    typeof payload.monitoringMethod === "string"
-      ? payload.monitoringMethod
-      : "";
-  const interviewWillingness =
-    typeof payload.interviewWillingness === "string"
-      ? payload.interviewWillingness
-      : "";
 
-  if (!MAIN_REASON_VALUES.has(mainReason)) {
-    return jsonResponse(
-      { error: "Choose the one main reason that matters most to you." },
-      400,
-    );
-  }
-  if (
-    recentSituation.length < MIN_SITUATION_LENGTH ||
-    recentSituation.length > MAX_SITUATION_LENGTH
-  ) {
-    return jsonResponse(
-      {
-        error: `Write between ${MIN_SITUATION_LENGTH} and ${MAX_SITUATION_LENGTH} characters about what you want Frame to help you understand or do.`,
-      },
-      400,
-    );
-  }
-  if (!MONITORING_METHOD_VALUES.has(monitoringMethod)) {
-    return jsonResponse(
-      { error: "Choose how you currently monitor your blood pressure." },
-      400,
-    );
-  }
-  if (!INTERVIEW_WILLINGNESS_VALUES.has(interviewWillingness)) {
-    return jsonResponse(
-      { error: "Choose whether you would be willing to speak with us." },
-      400,
-    );
-  }
-
-  if (!firstName || firstName.length > MAX_NAME_LENGTH) {
-    return jsonResponse({ error: "Enter your first name." }, 400);
-  }
-  if (!lastName || lastName.length > MAX_NAME_LENGTH) {
-    return jsonResponse({ error: "Enter your last name." }, 400);
-  }
-  if (
-    !email ||
-    email.length > 254 ||
-    !EMAIL_PATTERN.test(email) ||
-    normalizedEmail.includes("..")
-  ) {
-    return jsonResponse({ error: "Enter a valid email address." }, 400);
-  }
-  if (!GENDER_VALUES.has(gender)) {
-    return jsonResponse({ error: "Select a gender option." }, 400);
-  }
-  if (!Number.isInteger(age) || age < MIN_AGE || age > MAX_AGE) {
-    return jsonResponse(
-      { error: `Enter an age between ${MIN_AGE} and ${MAX_AGE}.` },
-      400,
-    );
-  }
-  const qualificationRecord = JSON.stringify({
-    version: 2,
-    mainReason,
-    recentSituation,
-    monitoringMethod,
-    interviewWillingness,
-  });
-  try {
-    const supabase = await getSupabaseAdmin();
-    const { data: existingSignup, error: lookupError } = await supabase
-      .from("waitlist_signups")
-      .select("id")
-      .eq("email", normalizedEmail)
-      .maybeSingle();
-
-    if (lookupError) {
-      throw lookupError;
-    }
-    if (existingSignup) {
-      const { error: updateError } = await supabase
-        .from("waitlist_signups")
-        .update({
-          first_name: firstName,
-          last_name: lastName,
-          gender,
-          age,
-          motivation: qualificationRecord,
-        })
-        .eq("id", existingSignup.id);
-
-      if (updateError) throw updateError;
-      return jsonResponse({ status: "updated" });
-    }
-
-    const { error } = await supabase.from("waitlist_signups").insert({
-      first_name: firstName,
-      last_name: lastName,
-      email: normalizedEmail,
-      gender,
-      age,
-      motivation: qualificationRecord,
-      placement: cleanAttribution(payload.placement) ?? "landing_page",
-      utm_source: cleanAttribution(payload.utmSource),
-      utm_medium: cleanAttribution(payload.utmMedium),
-      utm_campaign: cleanAttribution(payload.utmCampaign),
-    });
-
-    if (error?.code === "23505") {
-      const { error: updateError } = await supabase
-        .from("waitlist_signups")
-        .update({
-          first_name: firstName,
-          last_name: lastName,
-          gender,
-          age,
-          motivation: qualificationRecord,
-        })
-        .eq("email", normalizedEmail);
-
-      if (updateError) throw updateError;
-      return jsonResponse({ status: "updated" });
-    }
-    if (error) {
-      throw error;
-    }
-
-    return jsonResponse({ status: "joined" }, 201);
-  } catch (error) {
-    console.error("Waitlist signup failed", error);
-    return jsonResponse(
-      { error: "We couldn’t save your application. Please try again shortly." },
-      503,
-    );
-  }
+  if (action === "capture_email") return captureEmail(payload, request);
+  if (action === "submit_qualification") return submitQualification(payload, request);
+  if (action === "skip_qualification") return skipQualification(payload, request);
+  return jsonResponse({ error: "The submitted action is invalid." }, 400);
 }

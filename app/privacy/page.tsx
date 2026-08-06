@@ -69,16 +69,18 @@ export default async function PrivacyPage() {
         <section>
           <h2>Information we collect</h2>
           <p>
-            If you apply for early access, we collect your first and last name,
-            email address, age, gender, your main reason for wanting Frame, what
-            you want Frame to help you understand or do, how you currently
-            monitor your blood pressure, and whether you would be open to a
-            20-minute conversation with us. Please do not include private
-            medical information in your written response. We also collect the
-            time of signup, where on the page you started the flow, and any
-            campaign labels included in the link you used. Our hosting providers
-            may process limited technical information, such as IP address and
-            browser details, to operate and secure the site.
+            If you join the waitlist, we first collect your email address. If
+            you complete the optional survey, we also collect your first and
+            last name, age, gender, your main reason for wanting Frame, what you
+            want Frame to help you understand or do, how you currently monitor
+            your blood pressure, and whether you would be open to a 20-minute
+            conversation with us. Please do not include private medical
+            information in your written response. We also collect the time and
+            location of signup within the site, referral information, and
+            campaign labels or click identifiers included in the link you used.
+            Our hosting providers may process limited technical information,
+            such as IP address and browser details, to operate and secure the
+            site.
           </p>
         </section>
 
@@ -89,8 +91,8 @@ export default async function PrivacyPage() {
             progress, understand the needs people hope Frame can address, review
             suitability for early product access or future testing, understand
             which launch efforts are useful, and protect the waitlist from
-            abuse, and to respond to messages sent through the contact form.
-            Applying for early access does not enroll you in a study or make you
+            abuse and respond to messages sent through the contact form.
+            Joining the waitlist does not enroll you in a study or make you
             a research participant.
           </p>
         </section>
@@ -98,9 +100,9 @@ export default async function PrivacyPage() {
         <section>
           <h2>Advertising measurement</h2>
           <p>
-            We use the Meta Pixel to understand whether a visit or completed
-            application came from a Meta ad and to measure and improve our
-            campaigns. The Pixel may use browser identifiers and similar
+            We use the Meta Pixel to understand whether a visit, waitlist signup,
+            or optional survey completion came from a Meta ad and to measure and
+            improve our campaigns. The Pixel may use browser identifiers and similar
             technologies, which Meta processes under its own privacy policy. We
             do not send your name, email address, age, gender, or written
             responses to Meta through the Pixel.
