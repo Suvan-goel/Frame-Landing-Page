@@ -674,6 +674,10 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(api, /skipWaitlistQualification/);
   assert.match(api, /submitLegacyWaitlist/);
   assert.match(api, /if \(!emailFirstAllowed\)/);
+  assert.match(
+    api,
+    /emailFirstAllowed\s*=\s*request\.headers\.get\(EMAIL_FIRST_WAITLIST_HEADER\) === "1"/,
+  );
   assert.match(api, /leadCreated/);
   assert.match(waitlistFlow, /result\.leadCreated === true/);
   assert.match(waitlistFlow, /result\.qualifiedLeadCreated === true/);

@@ -353,7 +353,6 @@ export async function POST(request: Request) {
   if (!action) return submitLegacyWaitlist(payload);
 
   const emailFirstAllowed =
-    isLoopbackHost(new URL(request.url).host) ||
     request.headers.get(EMAIL_FIRST_WAITLIST_HEADER) === "1";
   if (!emailFirstAllowed) {
     return jsonResponse({ error: "Not found." }, 404);
