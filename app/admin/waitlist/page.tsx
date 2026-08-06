@@ -17,6 +17,8 @@ import {
   isVisibleSignup,
   mainReasonLabels,
   monitoringLabels,
+  qualificationStatusLabels,
+  WAITLIST_SIGNUP_SELECT,
   type LeadTab,
   type WaitlistSignup,
 } from "@/lib/waitlist-leads";
@@ -38,9 +40,7 @@ export default async function WaitlistAdminPage({
   const supabase = await getSupabaseAdmin();
   const { data, error } = await supabase
     .from("waitlist_signups")
-    .select(
-      "id,first_name,last_name,email,gender,age,motivation,placement,utm_source,utm_medium,utm_campaign,created_at",
-    )
+    .select(WAITLIST_SIGNUP_SELECT)
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
     .limit(500)
@@ -120,7 +120,9 @@ export default async function WaitlistAdminPage({
         <p className="admin-tabs__note">
           {activeTab === "insights"
             ? "Insights are calculated from qualified leads only."
-            : "Qualified leads completed every early-access qualification and demographic field."}
+            : activeTab === "unqualified"
+              ? "Unqualified leads joined with their email but have not completed and submitted the full survey."
+              : "Qualified leads completed and submitted the full optional survey."}
         </p>
 
         {activeTab === "insights" ? (
@@ -131,87 +133,129 @@ export default async function WaitlistAdminPage({
           <div className="admin-table-shell">
             <table className="admin-table">
               <thead>
-                <tr>
-                  <th>Lead</th>
-                  <th>Main reason</th>
-                  <th>What Frame should help with</th>
-                  <th>Current monitoring</th>
-                  <th>20-min call</th>
-                  <th>Source</th>
-                  <th>Joined</th>
-                  <th><span className="sr-only">Actions</span></th>
-                </tr>
+                {activeTab === "unqualified" ? (
+                  <tr>
+                    <th>Email</th>
+                    <th>Source</th>
+                    <th>Date and time</th>
+                    <th>Delete</th>
+                  </tr>
+                ) : (
+                  <tr>
+                    <th>Lead</th>
+                    <th>Main reason</th>
+                    <th>What Frame should help with</th>
+                    <th>Current monitoring</th>
+                    <th>Research call</th>
+                    <th>Source</th>
+                    <th>Joined</th>
+                    <th><span className="sr-only">Actions</span></th>
+                  </tr>
+                )}
               </thead>
               <tbody>
-                {activeSignups.map(({ signup, qualification }) => (
-                  <tr key={signup.id}>
-                    <td className="admin-lead">
-                      <strong>
-                        {[signup.first_name, signup.last_name]
-                          .filter(Boolean)
-                          .join(" ") || "Unqualified signup"}
-                      </strong>
-                      <a href={`mailto:${signup.email}`}>{signup.email}</a>
-                      <small>
-                        {[
-                          signup.gender?.replaceAll("_", " "),
-                          signup.age ? `Age ${signup.age}` : null,
-                        ]
-                          .filter(Boolean)
-                          .join(" · ") || "Demographics not provided"}
-                      </small>
-                    </td>
-                    <td>
-                      {qualification.mainReason
-                        ? mainReasonLabels[qualification.mainReason] ??
-                          qualification.mainReason
-                        : "Legacy signup"}
-                    </td>
-                    <td className="admin-motivation">
-                      {qualification.recentSituation ||
-                        "No qualification response"}
-                    </td>
-                    <td>
-                      {qualification.monitoringMethod
-                        ? monitoringLabels[qualification.monitoringMethod] ??
-                          qualification.monitoringMethod
-                        : "—"}
-                    </td>
-                    <td>
-                      {qualification.interviewWillingness
-                        ? qualification.interviewWillingness[0].toUpperCase() +
-                          qualification.interviewWillingness.slice(1)
-                        : "—"}
-                    </td>
-                    <td className="admin-source">
-                      <span>{signup.placement.replaceAll("_", " ")}</span>
-                      <small>
-                        {[signup.utm_source, signup.utm_medium, signup.utm_campaign]
-                          .filter(Boolean)
-                          .join(" / ") || "Direct"}
-                      </small>
-                    </td>
-                    <td>
-                      <time dateTime={signup.created_at}>
-                        {new Intl.DateTimeFormat("en", {
-                          dateStyle: "medium",
-                          timeStyle: "short",
-                          timeZone: "UTC",
-                        }).format(new Date(signup.created_at))}
-                      </time>
-                    </td>
-                    <td>
-                      <DeleteWaitlistSignupButton
-                        signupId={signup.id}
-                        leadLabel={
-                          [signup.first_name, signup.last_name]
-                            .filter(Boolean)
-                            .join(" ") || signup.email
-                        }
-                      />
-                    </td>
-                  </tr>
-                ))}
+                {activeTab === "unqualified"
+                  ? activeSignups.map(({ signup }) => (
+                      <tr key={signup.id}>
+                        <td>
+                          <a href={`mailto:${signup.email}`}>{signup.email}</a>
+                        </td>
+                        <td className="admin-source">
+                          <span>{signup.placement.replaceAll("_", " ")}</span>
+                          <small>
+                            {[signup.utm_source, signup.utm_medium, signup.utm_campaign]
+                              .filter(Boolean)
+                              .join(" / ") || "Direct"}
+                          </small>
+                        </td>
+                        <td>
+                          <time dateTime={signup.created_at}>
+                            {new Intl.DateTimeFormat("en", {
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                              timeZone: "UTC",
+                            }).format(new Date(signup.created_at))}
+                          </time>
+                        </td>
+                        <td>
+                          <DeleteWaitlistSignupButton
+                            signupId={signup.id}
+                            leadLabel={signup.email}
+                          />
+                        </td>
+                      </tr>
+                    ))
+                  : activeSignups.map(({ signup, qualification, qualificationStatus, highIntent }) => (
+                      <tr key={signup.id}>
+                        <td className="admin-lead">
+                          <strong>
+                            {[signup.first_name, signup.last_name]
+                              .filter(Boolean)
+                              .join(" ") || "Qualified signup"}
+                          </strong>
+                          <a href={`mailto:${signup.email}`}>{signup.email}</a>
+                          <small>
+                            {[
+                              qualificationStatusLabels[qualificationStatus],
+                              highIntent ? "High intent" : null,
+                              signup.gender?.replaceAll("_", " "),
+                              signup.age ? `Age ${signup.age}` : null,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </small>
+                        </td>
+                        <td>
+                          {qualification.mainReason
+                            ? `${mainReasonLabels[qualification.mainReason] ?? qualification.mainReason}${qualification.mainReasonOther ? ` — ${qualification.mainReasonOther}` : ""}`
+                            : "Legacy signup"}
+                        </td>
+                        <td className="admin-motivation">
+                          {qualification.recentSituation ||
+                            "No qualification response"}
+                        </td>
+                        <td>
+                          {qualification.monitoringMethod
+                            ? `${monitoringLabels[qualification.monitoringMethod] ?? qualification.monitoringMethod}${qualification.monitoringMethodOther ? ` — ${qualification.monitoringMethodOther}` : ""}`
+                            : "—"}
+                        </td>
+                        <td>
+                          {qualification.interviewWillingness
+                            ? qualification.interviewWillingness === "possibly"
+                              ? "Maybe"
+                              : qualification.interviewWillingness[0].toUpperCase() +
+                                qualification.interviewWillingness.slice(1)
+                            : "—"}
+                        </td>
+                        <td className="admin-source">
+                          <span>{signup.placement.replaceAll("_", " ")}</span>
+                          <small>
+                            {[signup.utm_source, signup.utm_medium, signup.utm_campaign]
+                              .filter(Boolean)
+                              .join(" / ") || "Direct"}
+                          </small>
+                        </td>
+                        <td>
+                          <time dateTime={signup.created_at}>
+                            {new Intl.DateTimeFormat("en", {
+                              dateStyle: "medium",
+                              timeStyle: "short",
+                              timeZone: "UTC",
+                            }).format(new Date(signup.created_at))}
+                          </time>
+                        </td>
+                        <td>
+                          <DeleteWaitlistSignupButton
+                            signupId={signup.id}
+                            leadLabel={
+                              [signup.first_name, signup.last_name]
+                                .filter(Boolean)
+                                .join(" ") || signup.email
+                            }
+                          />
+                        </td>
+                      </tr>
+                    ))}
               </tbody>
             </table>
           </div>
@@ -220,8 +264,8 @@ export default async function WaitlistAdminPage({
             <h2>No {activeTab} leads.</h2>
             <p>
               {activeTab === "qualified"
-                ? "Completed early-access applications will appear here."
-                : "Legacy or incomplete signups will appear here."}
+                ? "Completed optional surveys will appear here."
+                : "Email-only, skipped, or legacy incomplete signups will appear here."}
             </p>
           </div>
         ) : null}
@@ -258,7 +302,7 @@ export default async function WaitlistAdminPage({
                           <strong>{leadLabel}</strong>
                           <a href={`mailto:${signup.email}`}>{signup.email}</a>
                         </td>
-                        <td>{entry.tab === "qualified" ? "Qualified" : "Unqualified"}</td>
+                        <td>{qualificationStatusLabels[entry.qualificationStatus]}</td>
                         <td>
                           <time dateTime={signup.created_at}>
                             {new Intl.DateTimeFormat("en", {

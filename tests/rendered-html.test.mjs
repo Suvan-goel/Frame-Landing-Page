@@ -2,6 +2,61 @@ import assert from "node:assert/strict";
 import { readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 import { formatName } from "../lib/name-format.ts";
+import {
+  captureWaitlistEmail,
+  completeWaitlistQualification,
+} from "../lib/waitlist-service.server.ts";
+
+function createWaitlistRepositoryFixture() {
+  const records = [];
+  let nextId = 1;
+  const repository = {
+    async findByEmail(email) {
+      return records.find((record) => record.email === email) ?? null;
+    },
+    async insert(input) {
+      const record = {
+        id: nextId++,
+        email: input.email,
+        signupToken: `00000000-0000-4000-8000-${String(nextId).padStart(12, "0")}`,
+        qualificationStatus: "not_started",
+        surveyCompletedAt: null,
+        qualification: null,
+      };
+      records.push(record);
+      return record;
+    },
+    async findByToken(signupToken) {
+      return records.find((record) => record.signupToken === signupToken) ?? null;
+    },
+    async markSkipped() {},
+    async completeIfIncomplete(id, update) {
+      const record = records.find((candidate) => candidate.id === id);
+      if (record.surveyCompletedAt || record.qualificationStatus === "completed") {
+        return false;
+      }
+      record.qualificationStatus = "completed";
+      record.surveyCompletedAt = update.completedAt;
+      record.qualification = update;
+      return true;
+    },
+  };
+  return { repository, records };
+}
+
+function waitlistEmailInput(email) {
+  return {
+    email,
+    placement: "homepage_hero",
+    utmSource: null,
+    utmMedium: null,
+    utmCampaign: null,
+    utmContent: null,
+    utmTerm: null,
+    metaClickId: null,
+    referrer: null,
+  };
+}
 
 async function render(path = "/", init, origin = "http://localhost") {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -574,6 +629,40 @@ test("validates contact messages before sending email", async () => {
   assert.match(sitemap, /`\$\{SITE_URL\}\/contact`/);
 });
 
+test("moves an email-only lead to qualified after that same signup completes the survey", async () => {
+  const { repository, records } = createWaitlistRepositoryFixture();
+  const captured = await captureWaitlistEmail(
+    repository,
+    waitlistEmailInput("person@example.com"),
+  );
+
+  assert.equal(records.length, 1);
+  assert.equal(records[0].qualificationStatus, "not_started");
+
+  const completed = await completeWaitlistQualification(
+    repository,
+    captured.signupToken,
+    {
+      primaryInterest: "understand_daily_factors",
+      primaryInterestOther: null,
+      monitoringMethod: "upper_arm_occasionally",
+      monitoringMethodOther: null,
+      frustration: "Occasional readings lack everyday context.",
+      researchCall: "yes",
+      firstName: "Ada",
+      lastName: "Lovelace",
+      age: 36,
+      gender: "woman",
+      completedAt: "2026-08-06T12:05:00.000Z",
+    },
+  );
+
+  assert.equal(completed.status, "completed");
+  assert.equal(records.length, 1);
+  assert.equal(records[0].email, "person@example.com");
+  assert.equal(records[0].qualificationStatus, "completed");
+});
+
 test("separates, visualizes, exports, and permanently deletes admin leads", async () => {
   const [adminPage, insights, leadHelpers, workbookRoute, deleteRoute, css] = await Promise.all([
     readFile(new URL("../app/admin/waitlist/page.tsx", import.meta.url), "utf8"),
@@ -587,6 +676,12 @@ test("separates, visualizes, exports, and permanently deletes admin leads", asyn
   assert.match(leadHelpers, /type LeadTab = "qualified" \| "unqualified"/);
   assert.match(adminPage, /Qualified leads/);
   assert.match(adminPage, /Unqualified leads/);
+  assert.match(adminPage, /activeTab === "unqualified"/);
+  assert.match(adminPage, /<th>Email<\/th>/);
+  assert.match(adminPage, /<th>Source<\/th>/);
+  assert.match(adminPage, /<th>Date and time<\/th>/);
+  assert.match(adminPage, /<th>Delete<\/th>/);
+  assert.match(adminPage, /leadLabel=\{signup\.email\}/);
   assert.match(adminPage, /Lead insights/);
   assert.match(adminPage, /tab=insights/);
   assert.match(adminPage, /What Frame should help with/);
@@ -597,6 +692,9 @@ test("separates, visualizes, exports, and permanently deletes admin leads", asyn
   assert.match(insights, /admin-donut/);
   assert.match(insights, /Multiple-choice responses/);
   assert.match(leadHelpers, /isQualifiedSignup/);
+  assert.match(leadHelpers, /qualification_status: QualificationStatus/);
+  assert.match(leadHelpers, /Email captured · survey not completed/);
+  assert.match(leadHelpers, /survey_completed_at/);
   assert.match(
     leadHelpers,
     /monitor_high_or_borderline: "See my blood pressure patterns over time"/,
