@@ -452,6 +452,10 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(page, /placement="homepage_final" tone="light"/);
   assert.match(waitlistFlow, /router\.push\("\/early-access\/questions"\)/);
   assert.match(qualificationPage, /WaitlistQualificationFlow/);
+  assert.match(
+    qualificationPage,
+    /<SiteHeader backLabel="Skip survey" arrowDirection="right" \/>/,
+  );
   assert.match(waitlistOptions, /See my blood pressure patterns over time/);
   assert.match(waitlistOptions, /Understand my blood pressure while sleeping/);
   assert.match(waitlistFlow, /Your answers have been saved\./);
