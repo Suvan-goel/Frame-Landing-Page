@@ -3,6 +3,10 @@ import { readFile, readdir } from "node:fs/promises";
 import test from "node:test";
 import { formatName } from "../lib/name-format.ts";
 import {
+  RESEARCH_CALL_OPTIONS,
+  normalizeResearchCallValue,
+} from "../lib/waitlist-options.ts";
+import {
   captureWaitlistEmail,
   completeWaitlistQualification,
   skipWaitlistQualification,
@@ -307,6 +311,16 @@ test("renders draft contributor policies and keeps member routes private", async
 test("formats submitted names for the confirmation message", () => {
   assert.equal(formatName("sUVAN goEL"), "Suvan Goel");
   assert.equal(formatName("  mARY-jANE  o'NEILL "), "Mary-Jane O'Neill");
+});
+
+test("uses one canonical Possibly response while accepting legacy Maybe values", () => {
+  assert.deepEqual(RESEARCH_CALL_OPTIONS, [
+    ["yes", "Yes"],
+    ["possibly", "Possibly"],
+    ["no", "No"],
+  ]);
+  assert.equal(normalizeResearchCallValue("possibly"), "possibly");
+  assert.equal(normalizeResearchCallValue("maybe"), "possibly");
 });
 
 test("uses generated raster visuals and keeps the page editable", async () => {
@@ -784,18 +798,19 @@ test("separates, visualizes, exports, and permanently deletes admin leads", asyn
   assert.match(insights, /admin-age-chart/);
   assert.match(insights, /admin-donut/);
   assert.match(insights, /Multiple-choice responses/);
+  assert.match(insights, /eyebrow="Question 2"/);
+  assert.match(insights, /eyebrow="Question 4"/);
+  assert.match(insights, /eyebrow="Question 5"/);
+  assert.doesNotMatch(insights, /const interviewLabels|const genderLabels/);
   assert.match(leadHelpers, /isQualifiedSignup/);
   assert.match(leadHelpers, /qualification_status: QualificationStatus/);
   assert.match(leadHelpers, /Email captured · survey not completed/);
   assert.match(leadHelpers, /survey_completed_at/);
-  assert.match(
-    leadHelpers,
-    /monitor_high_or_borderline: "See my blood pressure patterns over time"/,
-  );
-  assert.doesNotMatch(
-    leadHelpers,
-    /Monitor high or borderline blood pressure/,
-  );
+  assert.match(leadHelpers, /Object\.fromEntries\(\s*PRIMARY_INTEREST_OPTIONS/);
+  assert.match(leadHelpers, /normalizeResearchCallValue\(interviewWillingness\)/);
+  assert.match(adminPage, /interviewLabels\[qualification\.interviewWillingness\]/);
+  assert.match(adminPage, /genderLabels\[signup\.gender\]/);
+  assert.doesNotMatch(adminPage, /\? "Maybe"/);
   assert.doesNotMatch(leadHelpers, /toLocaleLowerCase\(\) !== "suvan"/);
   assert.match(leadHelpers, /return signups\.map\(categorizeSignup\)/);
   assert.match(workbookRoute, /"Qualified leads"/);

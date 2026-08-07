@@ -5,6 +5,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import {
   genderValues,
   monitoringMethodValues,
+  normalizeResearchCallValue,
   primaryInterestValues,
   researchCallValues,
 } from "@/lib/waitlist-options";
@@ -273,8 +274,9 @@ async function submitQualification(payload: Record<string, unknown>, request: Re
     typeof payload.primaryInterest === "string" ? payload.primaryInterest : "";
   const monitoringMethod =
     typeof payload.monitoringMethod === "string" ? payload.monitoringMethod : "";
-  const researchCall =
+  const submittedResearchCall =
     typeof payload.researchCall === "string" ? payload.researchCall : null;
+  const researchCall = normalizeResearchCallValue(submittedResearchCall);
   const firstName = cleanName(payload.firstName);
   const lastName = cleanName(payload.lastName);
   const age = typeof payload.age === "number" ? payload.age : Number.NaN;
@@ -317,7 +319,7 @@ async function submitQualification(payload: Record<string, unknown>, request: Re
   if (!genderValues.has(gender)) {
     return jsonResponse({ error: "Select a gender option." }, 400);
   }
-  if (researchCall && !researchCallValues.has(researchCall)) {
+  if (submittedResearchCall && (!researchCall || !researchCallValues.has(researchCall))) {
     return jsonResponse({ error: "Choose a valid research-call response." }, 400);
   }
   try {

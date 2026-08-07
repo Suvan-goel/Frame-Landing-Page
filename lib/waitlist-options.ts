@@ -29,7 +29,7 @@ export const MONITORING_METHOD_OPTIONS = [
 
 export const RESEARCH_CALL_OPTIONS = [
   ["yes", "Yes"],
-  ["maybe", "Possibly"],
+  ["possibly", "Possibly"],
   ["no", "No"],
 ] as const;
 
@@ -57,6 +57,11 @@ export const monitoringMethodValues = new Set<string>(
 export const researchCallValues = new Set<string>(
   RESEARCH_CALL_OPTIONS.map(([value]) => value),
 );
+
+export function normalizeResearchCallValue(value: string | null | undefined) {
+  if (!value) return null;
+  return value === "maybe" ? "possibly" : value;
+}
 
 export const genderValues = new Set<string>(
   GENDER_OPTIONS.map(([value]) => value),

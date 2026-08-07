@@ -1,6 +1,9 @@
 import {
+  GENDER_OPTIONS,
   MONITORING_METHOD_OPTIONS,
   PRIMARY_INTEREST_OPTIONS,
+  RESEARCH_CALL_OPTIONS,
+  normalizeResearchCallValue,
 } from "./waitlist-options";
 
 export type QualificationStatus = "not_started" | "skipped" | "completed";
@@ -47,17 +50,21 @@ export type LeadTab = "qualified" | "unqualified";
 export const WAITLIST_SIGNUP_SELECT =
   "id,first_name,last_name,email,gender,age,motivation,placement,utm_source,utm_medium,utm_campaign,utm_content,utm_term,signup_referrer,meta_click_id,qualification_status,primary_interest,primary_interest_other,current_monitoring_method,current_monitoring_method_other,frustration_or_missing_need,open_to_research_call,survey_completed_at,qualification_skipped_at,created_at";
 
-export const mainReasonLabels: Record<string, string> = {
-  ...Object.fromEntries(PRIMARY_INTEREST_OPTIONS),
-  monitor_high_or_borderline: "See my blood pressure patterns over time",
-  understand_sleep: "Understand blood pressure while sleeping",
-  understand_unexplained_changes: "Understand unexplained changes",
-  track_response_and_recovery: "Track response and recovery",
-};
+export const mainReasonLabels: Record<string, string> = Object.fromEntries(
+  PRIMARY_INTEREST_OPTIONS,
+);
 
-export const monitoringLabels: Record<string, string> = {
-  ...Object.fromEntries(MONITORING_METHOD_OPTIONS),
-};
+export const monitoringLabels: Record<string, string> = Object.fromEntries(
+  MONITORING_METHOD_OPTIONS,
+);
+
+export const genderLabels: Record<string, string> = Object.fromEntries(
+  GENDER_OPTIONS,
+);
+
+export const interviewLabels: Record<string, string> = Object.fromEntries(
+  RESEARCH_CALL_OPTIONS,
+);
 
 export const qualificationStatusLabels: Record<QualificationStatus, string> = {
   not_started: "Email captured · survey not completed",
@@ -108,6 +115,8 @@ export function qualificationForSignup(
   signup: WaitlistSignup,
 ): QualificationResponse {
   const legacy = parseQualificationResponse(signup.motivation);
+  const interviewWillingness =
+    signup.open_to_research_call ?? legacy.interviewWillingness;
   return {
     mainReason: signup.primary_interest ?? legacy.mainReason,
     mainReasonOther: signup.primary_interest_other,
@@ -116,8 +125,7 @@ export function qualificationForSignup(
     monitoringMethod:
       signup.current_monitoring_method ?? legacy.monitoringMethod,
     monitoringMethodOther: signup.current_monitoring_method_other,
-    interviewWillingness:
-      signup.open_to_research_call ?? legacy.interviewWillingness,
+    interviewWillingness: normalizeResearchCallValue(interviewWillingness),
   };
 }
 

@@ -1,5 +1,7 @@
 import type { CSSProperties } from "react";
 import {
+  genderLabels,
+  interviewLabels,
   mainReasonLabels,
   monitoringLabels,
   type QualificationResponse,
@@ -17,20 +19,6 @@ type ChartDatum = {
 };
 
 type ChartTone = "burgundy" | "sage" | "terracotta";
-
-const genderLabels: Record<string, string> = {
-  woman: "Woman",
-  man: "Man",
-  non_binary: "Non-binary",
-  another_identity: "Another identity",
-  prefer_not_to_say: "Prefer not to say",
-};
-
-const interviewLabels: Record<string, string> = {
-  yes: "Yes",
-  possibly: "Possibly",
-  no: "No",
-};
 
 const ageRanges = [
   { label: "18–24", includes: (age: number) => age >= 18 && age <= 24 },
@@ -305,8 +293,8 @@ export function QualifiedLeadInsights({ leads }: { leads: QualifiedLead[] }) {
           <p className="eyebrow">Audience overview</p>
           <h2 id="qualified-insights-title">Qualified lead insights</h2>
           <p>
-            A clear view of who the qualified leads are and what they selected
-            before sharing their details.
+            A clear view of who the qualified leads are and how they answered
+            the optional survey.
           </p>
         </div>
         <span>{leads.length} qualified leads</span>
@@ -350,27 +338,27 @@ export function QualifiedLeadInsights({ leads }: { leads: QualifiedLead[] }) {
             <p className="eyebrow">What they told us</p>
             <h3>Multiple-choice responses</h3>
           </div>
-          <p>Response distributions for each question asked before contact details.</p>
+          <p>Response distributions aligned with the current survey.</p>
         </div>
         <div className="admin-insights__grid">
           <DistributionChart
-            title="Main reason for wanting Frame"
-            eyebrow="Question 1"
+            title="What is the main reason you want Frame?"
+            eyebrow="Question 2"
             data={mainReasonData}
             total={leads.length}
             tone="burgundy"
             wide
           />
           <DistributionChart
-            title="Current monitoring method"
-            eyebrow="Question 3"
+            title="How do you currently monitor your blood pressure?"
+            eyebrow="Question 4"
             data={monitoringData}
             total={leads.length}
             tone="sage"
           />
           <DistributionChart
-            title="Willing to join a 20-min call"
-            eyebrow="Question 4"
+            title="Would you be willing to speak with us for 20 minutes?"
+            eyebrow="Question 5"
             data={interviewData}
             total={leads.length}
             tone="terracotta"

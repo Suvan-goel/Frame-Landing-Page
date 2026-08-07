@@ -13,6 +13,8 @@ import { DeleteWaitlistSignupButton } from "@/app/components/delete-waitlist-sig
 import { QualifiedLeadInsights } from "./qualified-lead-insights";
 import {
   categorizeVisibleSignups,
+  genderLabels,
+  interviewLabels,
   mainReasonLabels,
   monitoringLabels,
   qualificationStatusLabels,
@@ -250,7 +252,10 @@ export default async function WaitlistAdminPage({
                             {[
                               qualificationStatusLabels[qualificationStatus],
                               highIntent ? "High intent" : null,
-                              signup.gender?.replaceAll("_", " "),
+                              signup.gender
+                                ? genderLabels[signup.gender] ??
+                                  signup.gender.replaceAll("_", " ")
+                                : null,
                               signup.age ? `Age ${signup.age}` : null,
                             ]
                               .filter(Boolean)
@@ -273,10 +278,8 @@ export default async function WaitlistAdminPage({
                         </td>
                         <td>
                           {qualification.interviewWillingness
-                            ? qualification.interviewWillingness === "possibly"
-                              ? "Maybe"
-                              : qualification.interviewWillingness[0].toUpperCase() +
-                                qualification.interviewWillingness.slice(1)
+                            ? interviewLabels[qualification.interviewWillingness] ??
+                              qualification.interviewWillingness.replaceAll("_", " ")
                             : "—"}
                         </td>
                         <td className="admin-source">
