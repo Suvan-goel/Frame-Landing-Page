@@ -5766,7 +5766,1395 @@ h2 {
     grid-template-columns: 1fr;
   }
 
-  .waitlist-signup__email-row .button {
+.waitlist-signup__email-row .button {
     width: 100%;
+  }
+}
+
+/* Local-only pre-order funnel and operations UI. */
+
+
+.preorder-test-banner {
+  position: relative;
+  z-index: 3;
+  padding: 10px 24px;
+  border-block: 1px solid rgba(141, 62, 70, 0.35);
+  background: #f7e9eb;
+  color: var(--burgundy);
+  font-size: 0.64rem;
+  font-weight: 720;
+  letter-spacing: 0.09em;
+  text-align: center;
+  text-transform: uppercase;
+}
+
+.preorder-test-banner a {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.preorder-checkout-page .checkout-page__layout {
+  width: min(1180px, calc(100% - 80px));
+  grid-template-columns: minmax(280px, 0.72fr) minmax(0, 1.28fr);
+  gap: clamp(64px, 7vw, 104px);
+  margin-top: 88px;
+}
+
+.preorder-review-intro {
+  padding-top: 8px !important;
+}
+
+.preorder-review-intro h2 {
+  max-width: 430px;
+}
+
+.preorder-review-intro > p:last-of-type {
+  max-width: 410px;
+  font-size: 0.98rem;
+  line-height: 1.65;
+}
+
+.preorder-review-intro ul {
+  margin: 38px 0 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+  list-style: none;
+}
+
+.preorder-review-intro li {
+  display: grid;
+  grid-template-columns: 36px 1fr;
+  gap: 12px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.78rem;
+}
+
+.preorder-review-intro li span {
+  color: var(--burgundy);
+  font-family: var(--serif);
+}
+
+.preorder-review-intro li strong {
+  font-weight: 560;
+}
+
+.preorder-checkout-review {
+  padding: clamp(26px, 3.5vw, 48px);
+  box-shadow: 0 24px 70px rgba(32, 33, 30, 0.055);
+}
+
+.preorder-order-card__top {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 34px;
+  padding-bottom: 30px;
+  border-bottom: 1px solid var(--line);
+}
+
+.preorder-order-card .checkout-summary__heading h1 {
+  margin: 12px 0 10px;
+  font-size: clamp(3.4rem, 6vw, 5.2rem);
+  line-height: 0.9;
+}
+
+.preorder-order-card .checkout-summary__heading > p:last-child {
+  max-width: 390px;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.82rem;
+  line-height: 1.5;
+}
+
+.preorder-order-card .checkout-summary__price {
+  align-items: flex-end;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 4px;
+  padding: 0;
+  border: 0;
+  white-space: nowrap;
+}
+
+.preorder-order-card .checkout-summary__price strong {
+  font-size: clamp(2.9rem, 5vw, 4rem);
+  line-height: 0.9;
+}
+
+.preorder-order-facts {
+  margin: 0;
+  padding: 22px 0 28px;
+}
+
+.preorder-order-facts > div {
+  display: grid;
+  grid-template-columns: minmax(130px, 0.72fr) minmax(0, 1.28fr);
+  gap: 24px;
+  padding: 8px 0;
+  font-size: 0.82rem;
+}
+
+.preorder-order-facts dt {
+  color: var(--ink-soft);
+}
+
+.preorder-order-facts dd {
+  margin: 0;
+  font-weight: 560;
+  text-align: right;
+}
+
+.preorder-development-note {
+  padding: 24px 26px;
+  border-left: 3px solid var(--burgundy);
+  background: rgba(141, 62, 70, 0.055);
+}
+
+.preorder-development-note h2 {
+  margin: 9px 0 8px;
+  font-family: var(--serif);
+  font-size: 1.55rem;
+  font-weight: 400;
+}
+
+.preorder-development-note > p:not(.eyebrow) {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.preorder-development-note a {
+  display: inline-block;
+  margin-top: 13px;
+  font-size: 0.74rem;
+  font-weight: 620;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.preorder-checkout-review__second-check {
+  margin-top: 12px;
+}
+
+.preorder-checkout-review .checkout-summary li strong {
+  max-width: 58%;
+}
+
+.preorder-checkout-review .checkout-review__acknowledgements {
+  margin-top: 34px;
+}
+
+.preorder-checkout-review .checkout-checkbox {
+  min-height: 76px;
+  align-items: center;
+  padding: 20px 22px;
+}
+
+.preorder-checkout-review .checkout-checkbox input {
+  width: 20px;
+  height: 20px;
+}
+
+.preorder-checkout-review .checkout-review__submit {
+  min-height: 54px;
+  margin-top: 4px;
+}
+
+@media (max-width: 680px) {
+  .preorder-checkout-page .checkout-page__layout {
+    width: calc(100% - 32px);
+    margin-top: 56px;
+  }
+
+  .preorder-order-card__top {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 24px;
+  }
+
+  .preorder-order-facts > div {
+    grid-template-columns: 1fr;
+    gap: 3px;
+    padding: 10px 0;
+  }
+
+  .preorder-development-note {
+    padding: 21px 20px;
+  }
+}
+
+.preorder-admin-readiness strong {
+  color: var(--burgundy);
+}
+
+.preorder-reliability-panel {
+  margin-bottom: 32px;
+  padding: 28px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.preorder-reliability-panel__heading,
+.preorder-recovery-list li {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.preorder-reliability-panel__heading h2 {
+  margin: 9px 0 0;
+  font-family: var(--serif);
+  font-size: 1.8rem;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 1.05;
+}
+
+.preorder-reliability-panel > p:not(.form-success, .form-error) {
+  margin: 18px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+}
+
+.preorder-recovery-list {
+  display: grid;
+  gap: 0;
+  margin: 24px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.preorder-recovery-list li {
+  align-items: center;
+  padding: 18px 0;
+  border-top: 1px solid var(--line);
+}
+
+.preorder-recovery-list li > div {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.preorder-recovery-list code,
+.preorder-recovery-list small {
+  color: var(--ink-soft);
+  font-size: 0.68rem;
+  overflow-wrap: anywhere;
+}
+
+.preorder-recovery-list .button {
+  flex: 0 0 auto;
+}
+
+.home-preorder-section {
+  border-top: 1px solid var(--line);
+  background: #eee8dc;
+}
+
+.checkout-page,
+.contributor-success-page,
+.contributor-auth-page,
+.contributor-onboarding-page {
+  min-height: 100vh;
+}
+
+.checkout-page__layout {
+  display: grid;
+  width: min(1100px, calc(100% - 80px));
+  grid-template-columns: 0.7fr 1.3fr;
+  gap: 80px;
+  margin: 90px auto 130px;
+}
+
+.checkout-page__layout > aside {
+  position: sticky;
+  top: 110px;
+  align-self: start;
+  padding-top: 12px;
+}
+
+.checkout-page__layout > aside h2 {
+  margin: 18px 0 22px;
+  font-size: var(--headline-flow);
+  line-height: 0.98;
+}
+
+.checkout-page__layout > aside > p:last-child {
+  color: var(--ink-soft);
+}
+
+.checkout-review {
+  padding: 42px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.checkout-review__notice,
+.contributor-preview-callout,
+.contributor-onboarding-note {
+  margin-bottom: 28px;
+  padding: 18px 20px;
+  border-left: 4px solid var(--burgundy);
+  background: rgba(141, 62, 70, 0.08);
+}
+
+.checkout-summary__heading h1 {
+  margin: 13px 0 26px;
+  font-size: var(--headline-panel);
+  line-height: 1;
+}
+
+.checkout-summary__price {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 19px 0;
+  border-block: 1px solid var(--line);
+}
+
+.checkout-summary__price strong {
+  font-family: var(--serif);
+  font-size: 3.5rem;
+  font-weight: 400;
+}
+
+.checkout-summary__price span {
+  color: var(--ink-soft);
+  font-size: 0.8rem;
+}
+
+.checkout-summary ul {
+  margin: 17px 0 32px;
+  padding: 0;
+  list-style: none;
+}
+
+.checkout-summary li {
+  display: flex;
+  justify-content: space-between;
+  gap: 25px;
+  padding: 7px 0;
+  color: var(--ink-soft);
+  font-size: 0.84rem;
+}
+
+.checkout-summary li strong {
+  color: var(--ink);
+  text-align: right;
+}
+
+.checkout-review fieldset {
+  margin: 0;
+  padding: 26px 0;
+  border: 0;
+  border-top: 1px solid var(--line);
+}
+
+.checkout-review legend {
+  margin-bottom: 15px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.checkout-checkbox,
+.contributor-checkbox-line {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  align-items: start;
+  gap: 13px;
+  cursor: pointer;
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.checkout-checkbox {
+  width: 100%;
+  padding: 18px 20px;
+  border: 1px solid var(--line);
+  background: #fff;
+}
+
+.checkout-checkbox--required {
+  border-left: 3px solid var(--burgundy);
+  background: rgba(141, 62, 70, 0.045);
+}
+
+.checkout-checkbox__copy {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+}
+
+.checkout-checkbox__copy strong {
+  min-width: 0;
+  font-weight: 560;
+  overflow-wrap: normal;
+}
+
+.checkout-checkbox__copy > span {
+  color: var(--ink-soft);
+}
+
+.checkout-review__marketing {
+  color: var(--ink-soft);
+}
+
+.checkout-review__marketing .checkout-checkbox {
+  background: rgba(255, 255, 255, 0.58);
+}
+
+.checkout-review__marketing .checkout-checkbox__copy strong {
+  font-weight: 500;
+}
+
+.checkout-review__marketing .checkout-checkbox__copy > span {
+  font-size: 0.74rem;
+}
+
+.checkout-checkbox input,
+.contributor-checkbox-line input,
+.contributor-check-grid input {
+  width: 18px;
+  height: 18px;
+  margin-top: 2px;
+  accent-color: var(--burgundy);
+}
+
+.checkout-review__policies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin-top: 30px;
+  padding-top: 0;
+  font-size: 0.75rem;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.checkout-review__submit {
+  width: 100%;
+}
+
+.checkout-review__footnote {
+  margin: 18px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.7rem;
+  text-align: center;
+}
+
+.preorder-success-page {
+  background: var(--cream);
+}
+
+.preorder-confirmation {
+  width: min(1080px, calc(100% - 80px));
+  margin: 0 auto;
+  padding: 86px 0 112px;
+}
+
+.preorder-confirmation__hero {
+  max-width: 890px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.preorder-confirmation__mark {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  place-items: center;
+  margin: 0 auto 24px;
+  border-radius: 50%;
+  background: var(--burgundy);
+  color: var(--paper);
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  line-height: 1;
+}
+
+.preorder-confirmation__hero h1,
+.preorder-confirmation--state h1 {
+  max-width: 850px;
+  margin: 22px auto 28px;
+  font-size: clamp(3.5rem, 6.7vw, 6.4rem);
+  letter-spacing: -0.058em;
+  line-height: 0.9;
+}
+
+.preorder-confirmation__hero > p:not(.eyebrow) {
+  max-width: 690px;
+  margin: 0 auto;
+  color: var(--ink-soft);
+  font-size: 1.05rem;
+  line-height: 1.65;
+}
+
+.preorder-confirmation__hero .preorder-confirmation__email {
+  max-width: 760px;
+  margin-top: 14px;
+  font-size: 0.79rem;
+}
+
+.preorder-confirmation__email a {
+  color: var(--ink);
+  font-weight: 620;
+  text-decoration: underline;
+  text-decoration-color: rgba(32, 33, 30, 0.3);
+  text-underline-offset: 3px;
+}
+
+.preorder-confirmation__summary-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(320px, 0.8fr);
+  gap: 18px;
+  margin-top: 72px;
+}
+
+.preorder-confirmation__order-card,
+.preorder-confirmation__delivery {
+  min-height: 380px;
+  padding: clamp(30px, 4vw, 46px);
+}
+
+.preorder-confirmation__order-card {
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.preorder-confirmation__card-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 28px;
+}
+
+.preorder-confirmation__card-heading h2 {
+  margin: 9px 0 0;
+  font-family: var(--serif);
+  font-size: clamp(2.5rem, 4vw, 3.6rem);
+  font-weight: 400;
+  letter-spacing: -0.05em;
+  line-height: 0.95;
+}
+
+.preorder-confirmation__card-heading > span {
+  flex: 0 0 auto;
+  padding: 7px 11px;
+  border-radius: 999px;
+  background: var(--sage-soft);
+  color: #435645;
+  font-size: 0.6rem;
+  font-weight: 680;
+  letter-spacing: 0.04em;
+}
+
+.preorder-confirmation__order-card dl {
+  margin: auto 0 0;
+  border-top: 1px solid var(--line);
+}
+
+.preorder-confirmation__order-card dl div {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 30px;
+  padding: 15px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.preorder-confirmation__order-card dt {
+  color: var(--ink-soft);
+  font-size: 0.67rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.preorder-confirmation__order-card dd {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.08rem;
+  text-align: right;
+}
+
+.preorder-confirmation__delivery {
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  background: var(--ink);
+  color: var(--paper);
+}
+
+.preorder-confirmation__delivery .eyebrow {
+  color: #d8a2a8;
+}
+
+.preorder-confirmation__delivery h2 {
+  margin: 16px 0 24px;
+  color: var(--paper);
+  font-family: var(--serif);
+  font-size: clamp(2.6rem, 4.6vw, 4.4rem);
+  font-weight: 400;
+  letter-spacing: -0.055em;
+  line-height: 0.94;
+}
+
+.preorder-confirmation__delivery > p:last-child {
+  margin: 0;
+  color: rgba(250, 248, 242, 0.68);
+  font-size: 0.8rem;
+  line-height: 1.6;
+}
+
+.preorder-confirmation__next {
+  display: grid;
+  grid-template-columns: minmax(250px, 0.7fr) minmax(0, 1.3fr);
+  gap: clamp(60px, 8vw, 110px);
+  margin-top: 96px;
+  padding-top: 68px;
+  border-top: 1px solid var(--line);
+}
+
+.preorder-confirmation__next-heading h2 {
+  margin: 16px 0 0;
+  font-family: var(--serif);
+  font-size: clamp(2.6rem, 4vw, 4rem);
+  font-weight: 400;
+  letter-spacing: -0.05em;
+  line-height: 0.96;
+}
+
+.preorder-confirmation__next ol {
+  margin: 0;
+  padding: 0;
+  border-top: 1px solid var(--line);
+  list-style: none;
+}
+
+.preorder-confirmation__next li {
+  display: grid;
+  grid-template-columns: 44px 1fr;
+  gap: 18px;
+  padding: 22px 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.preorder-confirmation__next li > span {
+  color: var(--burgundy);
+  font-family: var(--serif);
+  font-size: 0.95rem;
+}
+
+.preorder-confirmation__next h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  font-weight: 400;
+  letter-spacing: -0.025em;
+}
+
+.preorder-confirmation__next li p {
+  margin: 5px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.75rem;
+  line-height: 1.55;
+}
+
+.preorder-confirmation__actions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 30px;
+  margin-top: 72px;
+}
+
+.preorder-confirmation__policies {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px 28px;
+  margin-top: 54px;
+  padding-top: 25px;
+  border-top: 1px solid var(--line);
+  color: var(--ink-soft);
+  font-size: 0.69rem;
+}
+
+.preorder-confirmation__policies a {
+  text-decoration: underline;
+  text-decoration-color: rgba(32, 33, 30, 0.25);
+  text-underline-offset: 3px;
+}
+
+.preorder-confirmation--state {
+  display: flex;
+  min-height: calc(100vh - var(--site-header-height));
+  max-width: 790px;
+  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  text-align: center;
+}
+
+.preorder-confirmation--state h1 {
+  font-size: clamp(3.1rem, 5.7vw, 5.4rem);
+}
+
+.preorder-confirmation--state > p:not(.eyebrow) {
+  max-width: 620px;
+  margin: 0 auto;
+  color: var(--ink-soft);
+}
+
+.preorder-confirmation__loader {
+  width: 42px;
+  height: 42px;
+  margin-top: 34px;
+  border: 3px solid var(--line);
+  border-top-color: var(--burgundy);
+  border-radius: 50%;
+  animation: contributor-spin 0.8s linear infinite;
+}
+
+@media (max-width: 900px) {
+  .preorder-confirmation__summary-grid,
+  .preorder-confirmation__next {
+    grid-template-columns: 1fr;
+  }
+
+  .preorder-confirmation__next {
+    gap: 42px;
+  }
+}
+
+@media (max-width: 680px) {
+  .preorder-confirmation {
+    width: calc(100% - 36px);
+    padding: 62px 0 84px;
+  }
+
+  .preorder-confirmation__summary-grid {
+    margin-top: 54px;
+  }
+
+  .preorder-confirmation__card-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .preorder-confirmation__delivery {
+    min-height: 320px;
+  }
+
+  .preorder-confirmation__actions {
+    align-items: stretch;
+    flex-direction: column;
+    text-align: center;
+  }
+}
+
+@keyframes contributor-spin { to { transform: rotate(360deg); } }
+
+.preorder-sales-controls {
+  margin-bottom: 32px;
+  padding: 28px;
+  border: 1px solid var(--line);
+  background: #eee8dc;
+}
+
+.preorder-sales-controls__heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.preorder-sales-controls__heading h2 {
+  margin: 8px 0 0;
+  font-family: var(--serif);
+  font-size: 2rem;
+  font-weight: 400;
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.preorder-sales-controls__numbers {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1px;
+  margin: 28px 0;
+  background: var(--line);
+}
+
+.preorder-sales-controls__numbers > div {
+  min-height: 94px;
+  padding: 18px;
+  background: var(--paper);
+}
+
+.preorder-sales-controls__numbers dt,
+.preorder-sales-controls form label > span {
+  color: var(--ink-soft);
+  font-size: 0.63rem;
+  font-weight: 620;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.preorder-sales-controls__numbers dd {
+  margin: 7px 0 0;
+  font-family: var(--serif);
+  font-size: 1.6rem;
+}
+
+.preorder-sales-controls form {
+  display: grid;
+  grid-template-columns: minmax(180px, 0.8fr) minmax(180px, 1fr) auto;
+  align-items: end;
+  gap: 18px;
+}
+
+.preorder-sales-controls form label {
+  display: grid;
+  gap: 7px;
+}
+
+.preorder-sales-controls select,
+.preorder-sales-controls input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 13px;
+  border: 1px solid rgba(32, 33, 30, 0.25);
+  border-radius: 0;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.preorder-sales-controls form .button {
+  min-height: 46px;
+  white-space: nowrap;
+}
+
+.preorder-sales-controls__note,
+.preorder-sales-controls > .form-success,
+.preorder-sales-controls > .form-error {
+  margin: 15px 0 0;
+  font-size: 0.72rem;
+}
+
+.preorder-sales-controls__note {
+  color: var(--ink-soft);
+}
+
+.preorder-sales-controls__blockers ul {
+  display: grid;
+  gap: 5px;
+  margin: 10px 0 0;
+  padding-left: 18px;
+  color: var(--burgundy);
+  font-size: 0.7rem;
+}
+
+.preorder-manage-page {
+  min-height: 100vh;
+  background: var(--paper);
+}
+
+.preorder-manage-card {
+  width: min(980px, calc(100% - 64px));
+  margin: 64px auto 110px;
+  padding: 48px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.preorder-manage-card--state {
+  min-height: 420px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  flex-direction: column;
+}
+
+.preorder-manage-card--state h1,
+.preorder-manage-card__header h1 {
+  margin: 14px 0 0;
+  font-size: var(--headline-panel);
+  line-height: 1;
+}
+
+.preorder-manage-card--state > p:last-of-type,
+.preorder-manage-card__header > div > p:last-child {
+  margin: 14px 0 0;
+  color: var(--ink-soft);
+}
+
+.preorder-manage-actions {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+  margin-top: 30px;
+}
+
+.preorder-manage-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 32px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid var(--line);
+}
+
+.preorder-manage-status {
+  padding: 7px 10px;
+  border: 1px solid rgba(63, 104, 72, 0.3);
+  background: rgba(63, 104, 72, 0.08);
+  color: #355a3d;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.preorder-manage-status--cancelled,
+.preorder-manage-status--returned {
+  border-color: rgba(141, 62, 70, 0.3);
+  background: rgba(141, 62, 70, 0.08);
+  color: var(--burgundy);
+}
+
+.preorder-manage-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin-top: 34px;
+  background: var(--line);
+}
+
+.preorder-manage-grid > section {
+  min-height: 250px;
+  padding: 28px;
+  background: var(--paper);
+}
+
+.preorder-manage-grid h2,
+.preorder-manage-cancellation h2 {
+  margin: 13px 0;
+  font-family: var(--serif);
+  font-size: 1.75rem;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+}
+
+.preorder-manage-grid p,
+.preorder-manage-cancellation > p:not(.eyebrow) {
+  color: var(--ink-soft);
+}
+
+.preorder-manage-card__email {
+  margin-top: 25px;
+  font-size: 0.75rem;
+}
+
+.preorder-manage-cancellation {
+  margin-top: 34px;
+  padding: 30px;
+  border: 1px solid var(--line);
+  background: #eee8dc;
+}
+
+.preorder-manage-cancellation--pending {
+  border-left: 4px solid var(--burgundy);
+}
+
+.preorder-manage-cancellation form {
+  display: grid;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.preorder-manage-address-change form > label,
+.preorder-manage-address-grid label,
+.preorder-owner-delivery-form label {
+  display: grid;
+  gap: 7px;
+}
+
+.preorder-manage-address-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.preorder-manage-cancellation label,
+.preorder-owner-card label > span,
+.preorder-fulfillment-form label > span {
+  color: var(--ink-soft);
+  font-size: 0.64rem;
+  font-weight: 620;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.preorder-manage-cancellation label span {
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.preorder-manage-cancellation textarea,
+.preorder-manage-cancellation input,
+.preorder-manage-cancellation select,
+.preorder-owner-card textarea,
+.preorder-owner-delivery-form input,
+.preorder-fulfillment-form input,
+.preorder-fulfillment-form select {
+  width: 100%;
+  padding: 12px 13px;
+  border: 1px solid rgba(32, 33, 30, 0.25);
+  border-radius: 0;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+.preorder-manage-cancellation .button {
+  width: fit-content;
+  margin-top: 5px;
+}
+
+.preorder-manage-delivery-change {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  margin: 24px 0 0;
+  background: var(--line);
+}
+
+.preorder-manage-delivery-change > div {
+  padding: 16px;
+  background: var(--paper);
+}
+
+.preorder-manage-delivery-change dt {
+  color: var(--ink-soft);
+  font-size: 0.61rem;
+  font-weight: 620;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.preorder-manage-delivery-change dd {
+  margin: 7px 0 0;
+  font-family: var(--serif);
+  font-size: 1.25rem;
+}
+
+.preorder-manage-policies {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  margin-top: 32px;
+  color: var(--ink-soft);
+  font-size: 0.7rem;
+}
+
+.preorder-order-detail .admin-header h1 {
+  font-size: clamp(2.9rem, 5vw, 4.6rem);
+}
+
+.preorder-order-statuses {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  margin: 42px 0 28px;
+  background: var(--line);
+}
+
+.preorder-order-statuses > div {
+  min-height: 100px;
+  padding: 18px;
+  background: var(--paper);
+}
+
+.preorder-order-statuses span,
+.preorder-owner-facts dt {
+  color: var(--ink-soft);
+  font-size: 0.61rem;
+  font-weight: 620;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.preorder-order-statuses strong {
+  display: block;
+  margin-top: 9px;
+  font-family: var(--serif);
+  font-size: 1.35rem;
+  font-weight: 400;
+  text-transform: capitalize;
+}
+
+.preorder-order-cancellation-summary {
+  margin-bottom: 28px;
+  padding: 24px 26px;
+  border-left: 4px solid var(--burgundy);
+  background: #f1e4e3;
+}
+
+.preorder-order-cancellation-summary h2 {
+  margin: 8px 0 5px;
+  font-family: var(--serif);
+  font-size: 1.7rem;
+  font-weight: 400;
+  text-transform: capitalize;
+}
+
+.preorder-order-cancellation-summary p,
+.preorder-order-cancellation-summary small {
+  color: var(--ink-soft);
+}
+
+.preorder-order-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.48fr);
+  align-items: start;
+  gap: 28px;
+}
+
+.preorder-order-layout > div,
+.preorder-order-layout > aside,
+.preorder-order-operations {
+  display: grid;
+  gap: 20px;
+}
+
+.preorder-owner-card {
+  padding: 26px;
+  border: 1px solid var(--line);
+  background: var(--paper);
+}
+
+.preorder-owner-card__heading,
+.preorder-owner-line-item {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 24px;
+}
+
+.preorder-owner-card h2,
+.preorder-owner-line-item h2 {
+  margin: 9px 0 0;
+  font-family: var(--serif);
+  font-size: 1.7rem;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 1.1;
+}
+
+.preorder-owner-card > p:not(.eyebrow),
+.preorder-owner-line-item p {
+  margin: 12px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.78rem;
+}
+
+.preorder-owner-line-item {
+  margin: 18px 0 22px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid var(--line);
+}
+
+.preorder-owner-facts {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin: 22px 0;
+}
+
+.preorder-owner-facts dd {
+  margin: 5px 0 0;
+  font-size: 0.78rem;
+}
+
+.preorder-fulfillment-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-top: 24px;
+}
+
+.preorder-fulfillment-form label,
+.preorder-owner-card--attention label {
+  display: grid;
+  gap: 7px;
+}
+
+.preorder-fulfillment-form__wide {
+  grid-column: 1 / -1;
+}
+
+.preorder-fulfillment-form .button {
+  width: fit-content;
+}
+
+.preorder-owner-card--attention {
+  border-left: 4px solid var(--burgundy);
+  background: #f1e4e3;
+}
+
+.preorder-owner-card--attention .button,
+.preorder-owner-card > .button {
+  margin-top: 18px;
+}
+
+.preorder-owner-requested-address {
+  margin: 18px 0;
+  font-family: var(--serif);
+  font-size: 1.18rem;
+  line-height: 1.45;
+}
+
+.preorder-owner-inline-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 18px;
+}
+
+.preorder-owner-inline-actions .button {
+  margin-top: 0;
+}
+
+.preorder-owner-delivery-form {
+  display: grid;
+  gap: 15px;
+  margin-top: 22px;
+}
+
+.preorder-owner-delivery-form .button {
+  width: fit-content;
+}
+
+.preorder-owner-card--danger {
+  border-color: rgba(141, 62, 70, 0.35);
+}
+
+.preorder-danger-button {
+  margin-top: 18px;
+  border: 1px solid var(--burgundy);
+  background: transparent;
+  color: var(--burgundy);
+}
+
+.preorder-danger-button:hover:not(:disabled) {
+  background: var(--burgundy);
+  color: var(--paper);
+}
+
+.preorder-owner-feedback {
+  margin: 0;
+}
+
+.preorder-owner-timeline {
+  display: grid;
+  gap: 0;
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.preorder-owner-timeline li {
+  display: grid;
+  gap: 3px;
+  padding: 13px 0;
+  border-top: 1px solid var(--line);
+  font-size: 0.72rem;
+  text-transform: capitalize;
+}
+
+.preorder-owner-timeline span,
+.preorder-owner-timeline small {
+  color: var(--ink-soft);
+  font-size: 0.66rem;
+  text-transform: none;
+}
+
+@media (max-width: 980px) {
+  .founding-hero,
+  .founding-stage,
+  .founding-support,
+  .founding-faq,
+  .checkout-page__layout,
+  .home-contributor-grid,
+  .hub-two-column,
+  .preorder-sales-controls form,
+  .preorder-order-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .founding-stage,
+  .founding-support,
+  .founding-faq,
+  .checkout-page__layout,
+  .home-contributor-grid {
+    gap: 52px;
+  }
+}
+
+@media (max-width: 680px) {
+
+  .founding-benefit-grid,
+  .founding-conditional__grid,
+  .contributor-check-grid,
+  .contributor-success dl,
+  .hub-summary-grid,
+  .hub-card-grid,
+  .hub-roadmap ol,
+  .admin-metrics,
+  .preorder-sales-controls__numbers,
+  .preorder-manage-grid,
+  .preorder-manage-address-grid,
+  .preorder-manage-delivery-change,
+  .preorder-order-statuses,
+  .preorder-owner-facts,
+  .preorder-fulfillment-form {
+    grid-template-columns: 1fr;
+  }
+
+  .preorder-reliability-panel__heading,
+  .preorder-recovery-list li {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .preorder-manage-card {
+    width: calc(100% - 32px);
+    margin-top: 44px;
+    padding: 28px 20px;
+  }
+
+  .preorder-fulfillment-form__wide {
+    grid-column: auto;
+  }
+
+  .checkout-review,
+  .contributor-auth-card,
+  .hub-profile-form {
+    padding: 28px 20px;
+  }
+
+  .checkout-summary li strong {
+    text-align: left;
   }
 }

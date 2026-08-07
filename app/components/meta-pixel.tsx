@@ -40,6 +40,7 @@ const PRIVATE_EXACT_PATHS = [
   "/founding-contributors/review",
   "/founding-contributors/success",
 ];
+const PRIVATE_ADDITIONAL_PREFIXES = ["/preorder", "/preorders"];
 function isLocalBrowserHost() {
   if (typeof window === "undefined") return false;
   return ["localhost", "127.0.0.1", "::1"].includes(
@@ -50,6 +51,7 @@ function isLocalBrowserHost() {
 export function isMetaPixelAllowed(pathname: string) {
   return (
     !PRIVATE_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)) &&
+    !PRIVATE_ADDITIONAL_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)) &&
     !PRIVATE_EXACT_PATHS.includes(pathname)
   );
 }

@@ -11,6 +11,8 @@ export default function robots(): MetadataRoute.Robots {
         "/api/",
         "/contributors",
         "/founding-contributors",
+        "/preorder",
+        "/preorders",
       ],
     },
     sitemap: `${SITE_URL}/sitemap.xml`,
