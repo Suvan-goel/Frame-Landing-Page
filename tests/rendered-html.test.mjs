@@ -471,6 +471,20 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     /flow\.surveyStep > 0 \? \([\s\S]*?className="interest-flow__back"[\s\S]*?>Back<\/button>[\s\S]*?\) : null/,
   );
   assert.match(
+    waitlistFlow,
+    /const title = \[\s*"What is the main reason you want Frame\?",[\s\S]*?"A little about you\."/,
+  );
+  assert.match(
+    waitlistFlow,
+    /flow\.surveyStep === 4 \? \([\s\S]*?className="interest-flow__details"/,
+  );
+  assert.match(
+    waitlistFlow,
+    /flow\.surveyStep === 0 \? \([\s\S]*?name="primary-interest"/,
+  );
+  assert.match(waitlistFlow, /flow\.surveyStep === 3 && Boolean\(flow\.researchCall\)/);
+  assert.match(waitlistFlow, /disabled=\{!profileIsComplete \|\| flow\.surveyStatus === "submitting"\}/);
+  assert.match(
     css,
     /\.interest-flow__actions > \.button:only-child\s*\{[^}]*margin-left: auto;/,
   );

@@ -403,29 +403,22 @@ export function WaitlistSignupProvider({
   );
 
   const continueSurvey = useCallback(() => {
-    if (surveyStep === 0) {
-      const nextErrors = profileErrors(firstName, lastName, age, gender);
-      if (Object.keys(nextErrors).length) {
-        setErrors(nextErrors);
-        return;
-      }
-    }
-    if (surveyStep === 1 && !primaryInterest) {
+    if (surveyStep === 0 && !primaryInterest) {
       setErrors({ primaryInterest: "Choose the one main reason that matters most to you." });
       return;
     }
-    if (surveyStep === 2 && frustration.trim().length < MIN_FRUSTRATION_LENGTH) {
+    if (surveyStep === 1 && frustration.trim().length < MIN_FRUSTRATION_LENGTH) {
       setErrors({ frustration: "Write at least 20 characters before continuing." });
       return;
     }
-    if (surveyStep === 3 && !monitoringMethod) {
+    if (surveyStep === 2 && !monitoringMethod) {
       setErrors({ monitoringMethod: "Choose how you currently monitor your blood pressure." });
       return;
     }
     setErrors({});
     setSubmissionError("");
     setSurveyStep((current) => Math.min(current + 1, 4));
-  }, [age, firstName, frustration, gender, lastName, monitoringMethod, primaryInterest, surveyStep]);
+  }, [frustration, monitoringMethod, primaryInterest, surveyStep]);
 
   const backSurvey = useCallback(() => {
     setErrors({});
@@ -763,11 +756,11 @@ export function WaitlistSignupFlow({
   }
 
   const title = [
-    "A little about you.",
     "What is the main reason you want Frame?",
     "What would you want Frame to help you understand or do that you can’t easily today?",
     "How do you currently monitor your blood pressure?",
     "Would you be willing to speak with us for 20 minutes?",
+    "A little about you.",
   ][flow.surveyStep];
 
   const profileIsComplete =
@@ -778,10 +771,10 @@ export function WaitlistSignupFlow({
     Number(flow.age) <= MAX_AGE &&
     genderValues.has(flow.gender);
   const canContinue =
-    (flow.surveyStep === 0 && profileIsComplete) ||
-    (flow.surveyStep === 1 && Boolean(flow.primaryInterest)) ||
-    (flow.surveyStep === 2 && flow.frustration.trim().length >= MIN_FRUSTRATION_LENGTH) ||
-    (flow.surveyStep === 3 && Boolean(flow.monitoringMethod));
+    (flow.surveyStep === 0 && Boolean(flow.primaryInterest)) ||
+    (flow.surveyStep === 1 && flow.frustration.trim().length >= MIN_FRUSTRATION_LENGTH) ||
+    (flow.surveyStep === 2 && Boolean(flow.monitoringMethod)) ||
+    (flow.surveyStep === 3 && Boolean(flow.researchCall));
 
   return (
     <div
@@ -866,7 +859,7 @@ export function WaitlistSignupFlow({
             <p className="eyebrow">You’re on the list - the following questions are optional.</p>
             <h2 id={`${idPrefix}-survey-title`} ref={headingRef} tabIndex={-1}>{title}</h2>
 
-            {flow.surveyStep === 0 ? (
+            {flow.surveyStep === 4 ? (
               <div className="interest-flow__details">
                 <p>These details help us understand who we’re hearing from.</p>
                 <div className="form-name-fields">
@@ -899,11 +892,11 @@ export function WaitlistSignupFlow({
               </div>
             ) : null}
 
-            {flow.surveyStep === 1 ? (
+            {flow.surveyStep === 0 ? (
               <ChoiceList idPrefix={idPrefix} name="primary-interest" options={PRIMARY_INTEREST_OPTIONS} value={flow.primaryInterest} error={flow.errors.primaryInterest} onChange={flow.setPrimaryInterest} />
             ) : null}
 
-            {flow.surveyStep === 2 ? (
+            {flow.surveyStep === 1 ? (
               <div className="interest-flow__text-response form-field">
                 <label htmlFor={`${idPrefix}-frustration`} className="sr-only">{title}</label>
                 <textarea id={`${idPrefix}-frustration`} name="frustration" value={flow.frustration} onChange={(event) => flow.setFrustration(event.target.value)} required minLength={MIN_FRUSTRATION_LENGTH} maxLength={MAX_LONG_TEXT_LENGTH} aria-invalid={Boolean(flow.errors.frustration)} aria-describedby={`${idPrefix}-frustration-note${flow.errors.frustration ? ` ${idPrefix}-frustration-error` : ""}`} />
@@ -916,11 +909,11 @@ export function WaitlistSignupFlow({
               </div>
             ) : null}
 
-            {flow.surveyStep === 3 ? (
+            {flow.surveyStep === 2 ? (
               <ChoiceList idPrefix={idPrefix} name="monitoring-method" options={MONITORING_METHOD_OPTIONS} value={flow.monitoringMethod} error={flow.errors.monitoringMethod} onChange={flow.setMonitoringMethod} />
             ) : null}
 
-            {flow.surveyStep === 4 ? (
+            {flow.surveyStep === 3 ? (
               <ChoiceList idPrefix={idPrefix} name="research-call" options={RESEARCH_CALL_OPTIONS} value={flow.researchCall} onChange={flow.setResearchCall} />
             ) : null}
           </div>
@@ -933,7 +926,7 @@ export function WaitlistSignupFlow({
             {flow.surveyStep < 4 ? (
               <button className="button button--dark" type="submit" disabled={!canContinue}>Continue</button>
             ) : (
-              <button className="button button--dark" type="submit" disabled={!flow.researchCall || flow.surveyStatus === "submitting"}>
+              <button className="button button--dark" type="submit" disabled={!profileIsComplete || flow.surveyStatus === "submitting"}>
                 {flow.surveyStatus === "submitting" ? "Submitting…" : "Submit answers"}
               </button>
             )}
