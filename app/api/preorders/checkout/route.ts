@@ -2,8 +2,10 @@ import type Stripe from "stripe";
 import { getPreorderConfiguration } from "@/lib/preorder-config.server";
 import { isPreorderLiveApproved } from "@/lib/preorder-access";
 import {
+  formatPreorderMoney,
   PREORDER_MAX_QUANTITY,
   PREORDER_PRODUCT_STATUS_VERSION,
+  PREORDER_SHIPPING_RATE_CENTS,
   PREORDER_TERMS_VERSION,
 } from "@/lib/preorder";
 import {
@@ -144,6 +146,11 @@ export async function POST(request: Request) {
       throw new Error("Live pre-order Checkout is blocked until approved terms are active.");
     }
     const config = await getPreorderConfiguration();
+    if (config.shippingRateCents !== PREORDER_SHIPPING_RATE_CENTS) {
+      throw new Error("Pre-order shipping does not match the reviewed offer.");
+    }
+    const productPriceLabel = formatPreorderMoney(config.priceCents, config.currency);
+    const shippingPriceLabel = formatPreorderMoney(config.shippingRateCents, config.currency);
     const stripe = await getStripe(environment);
     const priceId = await getStripePreorderPriceId(environment);
     const price = await stripe.prices.retrieve(priceId);
@@ -152,7 +159,8 @@ export async function POST(request: Request) {
       price.livemode !== (environment === "live") ||
       price.type !== "one_time" ||
       price.unit_amount !== config.priceCents ||
-      price.currency !== config.currency
+      price.currency !== config.currency ||
+      price.tax_behavior !== "exclusive"
     ) {
       throw new Error("The Stripe pre-order price does not match the reviewed offer.");
     }
@@ -166,7 +174,7 @@ export async function POST(request: Request) {
       quantity,
       unitAmount: config.priceCents,
       currency: config.currency,
-      estimatedDelivery: config.estimatedDelivery,
+      estimatedDelivery: config.estimatedShipping,
       source: cleanAttribution(payload.source) ?? "preorder_review",
       utmSource: cleanAttribution(payload.utmSource),
       utmMedium: cleanAttribution(payload.utmMedium),
@@ -194,14 +202,27 @@ export async function POST(request: Request) {
         },
         billing_address_collection: "required",
         shipping_address_collection: { allowed_countries: allowedCountries },
-        automatic_tax: { enabled: false },
+        shipping_options: [
+          {
+            shipping_rate_data: {
+              type: "fixed_amount",
+              display_name: "Standard US shipping & handling",
+              fixed_amount: {
+                amount: config.shippingRateCents,
+                currency: config.currency,
+              },
+              tax_behavior: "exclusive",
+            },
+          },
+        ],
+        automatic_tax: { enabled: true },
         consent_collection: { terms_of_service: "required" },
         custom_text: {
           submit: {
             message:
               mode === "test"
-                ? `Sandbox payment only. Frame is still in development. Delivery is currently estimated for ${config.estimatedDelivery} and may change.`
-                : `Frame is still in development. Delivery is currently estimated for ${config.estimatedDelivery} and may change.`,
+                ? `Sandbox payment only. The ${productPriceLabel} product subtotal excludes ${shippingPriceLabel} standard US shipping and applicable sales tax. Frame is still in development and is estimated to ship in ${config.estimatedShipping}.`
+                : `The ${productPriceLabel} product subtotal excludes ${shippingPriceLabel} standard US shipping and applicable sales tax. Frame is still in development and is estimated to ship in ${config.estimatedShipping}.`,
           },
           terms_of_service_acceptance: {
             message: "I agree to the Frame Pre-order Terms and Refund Policy.",

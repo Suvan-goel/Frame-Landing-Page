@@ -76,8 +76,11 @@ const allowedCountries = (process.env.PREORDER_ALLOWED_COUNTRIES ?? "US")
   .split(",")
   .map((country) => country.trim().toUpperCase())
   .filter(Boolean);
-const estimatedDelivery =
-  process.env.PREORDER_ESTIMATED_DELIVERY ?? "January 1, 2027";
+const estimatedShipping =
+  process.env.PREORDER_ESTIMATED_SHIPPING ??
+  process.env.PREORDER_ESTIMATED_DELIVERY ??
+  "March 2027";
+const shippingRateCents = Number(process.env.PREORDER_SHIPPING_RATE_CENTS ?? "");
 
 if (target === "launch") {
   if (mode === "live") {
@@ -182,11 +185,16 @@ if (
   expectedCurrency === "usd" &&
   allowedCountries.length === 1 &&
   allowedCountries[0] === "US" &&
-  estimatedDelivery === "January 1, 2027"
+  estimatedShipping === "March 2027"
 ) {
-  pass("Reviewed offer", "$299 USD, one device, US-only and January 1, 2027 are configured.");
+  pass("Reviewed offer", "$299 USD, one device, US-only and March 2027 estimated shipping are configured.");
 } else {
   fail("Reviewed offer", "The runtime offer differs from the reviewed pre-order configuration.");
+}
+if (shippingRateCents === 1_900) {
+  pass("Separate shipping charge", "$19 USD standard US shipping is added at Checkout.");
+} else {
+  fail("Separate shipping charge", "Set PREORDER_SHIPPING_RATE_CENTS to the reviewed $19 USD rate (1900 cents).");
 }
 
 const termsVersion = PREORDER_TERMS_VERSION;
@@ -217,7 +225,7 @@ if (configured("SUPABASE_URL") && configured("SUPABASE_SECRET_KEY")) {
 if (supabase) {
   const controls = await supabase
     .from("preorder_sales_controls")
-    .select("environment,sales_status,unit_limit")
+    .select("environment,sales_status,inventory_limit,unit_limit")
     .in("environment", ["test", "live"]);
   if (controls.error) {
     fail("Sales controls", controls.error.message);
@@ -228,6 +236,22 @@ if (supabase) {
       pass("Live allocation lock", "Live pre-orders are paused.");
     } else {
       fail("Live allocation lock", `Expected paused, found ${live?.sales_status ?? "missing"}.`);
+    }
+    if (live?.inventory_limit === 1_000 && test?.inventory_limit === 1_000) {
+      pass("Inventory ceiling", "Test and live environments have a 1,000-unit lifetime ceiling.");
+    } else {
+      fail("Inventory ceiling", "Apply the 1,000-unit inventory-ceiling migration.");
+    }
+    if (target === "launch") {
+      if (Number.isSafeInteger(live?.unit_limit) && live.unit_limit >= 1 && live.unit_limit <= 1_000) {
+        pass("Live release allocation", `${live.unit_limit} units are released within the lifetime ceiling.`);
+      } else {
+        fail("Live release allocation", "Set a controlled live release allocation between 1 and 1,000 units while sales remain paused.");
+      }
+    } else if (live?.unit_limit === 100) {
+      pass("Initial live release", "The approved 100-unit initial allocation is recorded and remains paused.");
+    } else {
+      warn("Initial live release", "The live allocation differs from the approved initial 100-unit batch.");
     }
     if (test) {
       pass("Test allocation", `Test pre-orders are ${test.sales_status}.`);
@@ -343,11 +367,19 @@ if (secretKey && priceId) {
       price.type === "one_time" &&
       price.unit_amount === expectedPrice &&
       price.currency === expectedCurrency &&
+      price.tax_behavior === "exclusive" &&
       product?.active
     ) {
-      pass("Stripe price", `${expectedPrice} ${expectedCurrency.toUpperCase()} one-time price is active.`);
+      pass("Stripe price", `${expectedPrice} ${expectedCurrency.toUpperCase()} tax-exclusive one-time price is active.`);
     } else {
       fail("Stripe price", "The configured price does not match the reviewed pre-order offer.");
+    }
+    if (product?.tax_code) {
+      pass("Stripe product tax code", "An explicit product tax code is configured.");
+    } else if (target === "launch") {
+      fail("Stripe product tax code", "Assign the adviser-approved tax code to the live Stripe Product.");
+    } else {
+      warn("Stripe product tax code", "Assign the approved product tax code before launch; test Checkout can use the account preset.");
     }
   } catch (error) {
     fail("Stripe price", error instanceof Error ? error.message : "The Stripe price could not be loaded.");

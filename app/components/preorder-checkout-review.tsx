@@ -5,11 +5,13 @@ import { FormEvent, useEffect, useRef, useState } from "react";
 
 export function PreorderCheckoutReview({
   priceLabel,
-  estimatedDelivery,
+  shippingPriceLabel,
+  estimatedShipping,
   allowedCountries,
 }: {
   priceLabel: string;
-  estimatedDelivery: string;
+  shippingPriceLabel: string;
+  estimatedShipping: string;
   allowedCountries: string[];
 }) {
   const [productStatusAcknowledged, setProductStatusAcknowledged] = useState(false);
@@ -20,7 +22,7 @@ export function PreorderCheckoutReview({
   const [cancelled, setCancelled] = useState(false);
   const requestKey = useRef<string | null>(null);
   const countryLabel = allowedCountries
-    .map((country) => country === "GB" ? "UK" : country)
+    .map((country) => country === "US" ? "United States" : country === "GB" ? "UK" : country)
     .join(", ");
 
   useEffect(() => {
@@ -88,7 +90,7 @@ export function PreorderCheckoutReview({
             <p>Continuous blood-pressure insight, designed for everyday life.</p>
           </div>
           <div className="checkout-summary__price">
-            <span>Due today</span>
+            <span>Product subtotal</span>
             <strong>{priceLabel}</strong>
           </div>
         </div>
@@ -96,15 +98,15 @@ export function PreorderCheckoutReview({
         <dl className="preorder-order-facts">
           <div><dt>Quantity</dt><dd>1</dd></div>
           <div><dt>Available in</dt><dd>{countryLabel}</dd></div>
-          <div><dt>Shipping</dt><dd>No charge today</dd></div>
-          <div><dt>Estimated delivery</dt><dd>{estimatedDelivery}</dd></div>
+          <div><dt>Shipping</dt><dd>{shippingPriceLabel} standard</dd></div>
+          <div><dt>Estimated shipping</dt><dd>{estimatedShipping}</dd></div>
         </dl>
 
         <div className="preorder-development-note">
           <p className="eyebrow">Important product information</p>
           <h2>Frame is still in development.</h2>
           <p>
-            Final design, performance, regulatory status and delivery timing may change as engineering and manufacturing progress.
+            Final design, performance, regulatory status and shipping timing may change as engineering and manufacturing progress.
           </p>
           <Link href="/preorder/terms#product-status">Read the product status</Link>
         </div>
@@ -120,7 +122,7 @@ export function PreorderCheckoutReview({
           />
           <span className="checkout-checkbox__copy">
             <strong>I understand that Frame is still in development.</strong>
-            <span>Final specifications, approvals and delivery timing may change before fulfilment.</span>
+            <span>Final specifications, approvals and shipping timing may change before fulfilment.</span>
           </span>
         </label>
         <label className="checkout-checkbox checkout-checkbox--required preorder-checkout-review__second-check">
@@ -153,10 +155,10 @@ export function PreorderCheckoutReview({
 
       {error ? <p className="form-error checkout-review__error" role="alert">{error}</p> : null}
       <button className="button button--dark checkout-review__submit" type="submit" disabled={submitting}>
-        {submitting ? "Opening secure checkout…" : `Continue to secure checkout — ${priceLabel}`}
+        {submitting ? "Opening secure checkout…" : "Continue to secure checkout"}
       </button>
       <p className="checkout-review__footnote">
-        Secure payment is provided by Stripe. Frame never receives or stores your full card number.
+        {shippingPriceLabel} standard US shipping and applicable sales tax are added to the {priceLabel} product subtotal and shown before payment. Shipping is available to all 50 states and Washington, DC; US territories and international destinations are not supported at launch. Secure payment is provided by Stripe; Frame never receives or stores your full card number.
       </p>
 
       <div className="checkout-review__policies">

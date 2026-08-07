@@ -3,7 +3,7 @@ import {
   PREORDER_DEFAULT_ALLOWED_COUNTRIES,
   PREORDER_DEFAULT_CURRENCY,
   PREORDER_DEFAULT_PRICE_CENTS,
-  PREORDER_ESTIMATED_DELIVERY,
+  PREORDER_ESTIMATED_SHIPPING,
   PREORDER_PRODUCT_NAME,
   PREORDER_SKU,
 } from "./preorder";
@@ -12,6 +12,12 @@ function positiveInteger(value: string | undefined, fallback: number) {
   if (!value || !/^\d+$/.test(value)) return fallback;
   const parsed = Number(value);
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : fallback;
+}
+
+function optionalPositiveInteger(value: string | undefined) {
+  if (!value || !/^\d+$/.test(value)) return null;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
 }
 
 function currencyCode(value: string | undefined) {
@@ -31,11 +37,13 @@ function allowedCountries(value: string | undefined) {
 }
 
 export async function getPreorderConfiguration() {
-  const [priceCents, currency, countries, deliveryEstimate] = await Promise.all([
+  const [priceCents, currency, countries, shippingEstimate, legacyDeliveryEstimate, shippingRateCents] = await Promise.all([
     getRuntimeValue("PREORDER_PRICE_CENTS"),
     getRuntimeValue("PREORDER_CURRENCY"),
     getRuntimeValue("PREORDER_ALLOWED_COUNTRIES"),
+    getRuntimeValue("PREORDER_ESTIMATED_SHIPPING"),
     getRuntimeValue("PREORDER_ESTIMATED_DELIVERY"),
+    getRuntimeValue("PREORDER_SHIPPING_RATE_CENTS"),
   ]);
 
   return {
@@ -44,7 +52,10 @@ export async function getPreorderConfiguration() {
     priceCents: positiveInteger(priceCents, PREORDER_DEFAULT_PRICE_CENTS),
     currency: currencyCode(currency),
     allowedCountries: allowedCountries(countries),
-    estimatedDelivery:
-      deliveryEstimate?.trim().slice(0, 500) || PREORDER_ESTIMATED_DELIVERY,
+    estimatedShipping:
+      shippingEstimate?.trim().slice(0, 500) ||
+      legacyDeliveryEstimate?.trim().slice(0, 500) ||
+      PREORDER_ESTIMATED_SHIPPING,
+    shippingRateCents: optionalPositiveInteger(shippingRateCents),
   };
 }

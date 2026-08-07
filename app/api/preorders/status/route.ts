@@ -3,7 +3,7 @@ import {
   formatPreorderNumber,
   PREORDER_DEFAULT_CURRENCY,
   PREORDER_DEFAULT_PRICE_CENTS,
-  PREORDER_ESTIMATED_DELIVERY,
+  PREORDER_ESTIMATED_SHIPPING,
 } from "@/lib/preorder";
 import {
   isLocalPreorderPreview,
@@ -23,6 +23,9 @@ type StoredOrder = {
   email: string;
   payment_status: string;
   fulfillment_status: string;
+  amount_subtotal: number;
+  amount_shipping: number;
+  amount_tax: number;
   amount_total: number;
   currency: string;
   estimated_delivery: string;
@@ -62,10 +65,13 @@ async function orderResponse(order: StoredOrder) {
       fullName: order.full_name,
       email: order.email,
       quantity: item.data?.quantity ?? 1,
+      amountSubtotalCents: order.amount_subtotal,
+      amountShippingCents: order.amount_shipping,
+      amountTaxCents: order.amount_tax,
       amountPaidCents: order.amount_total,
       currency: order.currency,
       placedAt: order.placed_at,
-      estimatedDelivery: order.estimated_delivery,
+      estimatedShipping: order.estimated_delivery,
       fulfillmentStatus: order.fulfillment_status,
       managePath,
     },
@@ -86,10 +92,13 @@ export async function GET(request: Request) {
         fullName: "Test customer",
         email: "test@example.com",
         quantity: 1,
+        amountSubtotalCents: PREORDER_DEFAULT_PRICE_CENTS,
+        amountShippingCents: 0,
+        amountTaxCents: 0,
         amountPaidCents: PREORDER_DEFAULT_PRICE_CENTS,
         currency: PREORDER_DEFAULT_CURRENCY,
         placedAt: new Date().toISOString(),
-        estimatedDelivery: PREORDER_ESTIMATED_DELIVERY,
+        estimatedShipping: PREORDER_ESTIMATED_SHIPPING,
         fulfillmentStatus: "on_hold",
       },
     });
@@ -124,7 +133,7 @@ export async function GET(request: Request) {
     const supabase = await getSupabaseAdmin();
     const stored = await supabase
       .from("preorders")
-      .select("id,order_number,full_name,email,payment_status,fulfillment_status,amount_total,currency,estimated_delivery,placed_at,manage_token_version")
+      .select("id,order_number,full_name,email,payment_status,fulfillment_status,amount_subtotal,amount_shipping,amount_tax,amount_total,currency,estimated_delivery,placed_at,manage_token_version")
       .eq("stripe_checkout_session_id", sessionId)
       .maybeSingle<StoredOrder>();
     if (stored.error) throw stored.error;

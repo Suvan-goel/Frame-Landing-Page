@@ -11,10 +11,13 @@ type StatusResult = {
     fullName: string;
     email: string;
     quantity: number;
+    amountSubtotalCents: number;
+    amountShippingCents: number;
+    amountTaxCents: number;
     amountPaidCents: number;
     currency: string;
     placedAt: string;
-    estimatedDelivery: string;
+    estimatedShipping: string;
     managePath?: string | null;
   };
 };
@@ -123,6 +126,18 @@ export function PreorderSuccess() {
               <dd>{order.quantity}</dd>
             </div>
             <div>
+              <dt>Product subtotal</dt>
+              <dd>{formatMoney(order.amountSubtotalCents, order.currency)}</dd>
+            </div>
+            <div>
+              <dt>Shipping</dt>
+              <dd>{formatMoney(order.amountShippingCents, order.currency)}</dd>
+            </div>
+            <div>
+              <dt>Sales tax</dt>
+              <dd>{formatMoney(order.amountTaxCents, order.currency)}</dd>
+            </div>
+            <div>
               <dt>Total paid</dt>
               <dd>{formatMoney(order.amountPaidCents, order.currency)}</dd>
             </div>
@@ -133,11 +148,11 @@ export function PreorderSuccess() {
           </dl>
         </section>
 
-        <section className="preorder-confirmation__delivery" aria-labelledby="delivery-heading">
-          <p className="eyebrow">Estimated delivery</p>
-          <h2 id="delivery-heading">{order.estimatedDelivery}</h2>
+        <section className="preorder-confirmation__delivery" aria-labelledby="shipping-heading">
+          <p className="eyebrow">Estimated shipping</p>
+          <h2 id="shipping-heading">{order.estimatedShipping}</h2>
           <p>
-            This is our current estimate, not a guaranteed date. We’ll keep you informed if the timing changes.
+            This is our current estimate for when your order will leave our facility, not a guaranteed date. We’ll keep you informed if the timing changes.
           </p>
         </section>
       </div>
@@ -158,7 +173,7 @@ export function PreorderSuccess() {
           </li>
           <li>
             <span>03</span>
-            <div><h3>Shipping confirmation</h3><p>When your Frame is ready, we’ll confirm your delivery details and send tracking information.</p></div>
+            <div><h3>Shipping confirmation</h3><p>When your Frame is ready to ship, we’ll confirm your address and send tracking information.</p></div>
           </li>
         </ol>
       </section>

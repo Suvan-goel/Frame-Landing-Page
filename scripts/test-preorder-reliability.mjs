@@ -45,7 +45,7 @@ function checkoutArgs(requestKey, source) {
     p_quantity: 1,
     p_unit_amount: 29_900,
     p_currency: "usd",
-    p_estimated_delivery: "January 1, 2027",
+    p_estimated_delivery: "March 2027",
     p_source: source,
     p_utm_source: "synthetic",
     p_utm_medium: "reliability-test",
@@ -120,7 +120,7 @@ console.log(`Frame pre-order reliability test (${runId})\n`);
 try {
   const controls = await supabase
     .from("preorder_sales_controls")
-    .select("environment,sales_status,unit_limit,updated_by,updated_at")
+    .select("environment,sales_status,inventory_limit,unit_limit,updated_by,updated_at")
     .in("environment", ["test", "live"]);
   if (controls.error) throw new Error(`Sales controls: ${controls.error.message}`);
 
@@ -291,6 +291,7 @@ try {
         .from("preorder_sales_controls")
         .update({
           sales_status: originalTestControl.sales_status,
+          inventory_limit: originalTestControl.inventory_limit,
           unit_limit: originalTestControl.unit_limit,
           updated_by: originalTestControl.updated_by,
           updated_at: originalTestControl.updated_at,

@@ -15,6 +15,9 @@ type PreorderRow = {
   environment: "test" | "live";
   email: string;
   full_name: string;
+  amount_subtotal: number;
+  amount_shipping: number;
+  amount_tax: number;
   amount_total: number;
   currency: string;
   estimated_delivery: string;
@@ -260,11 +263,14 @@ export async function fulfillPreorderCheckout(
         environment: order.environment,
         email: order.email,
         fullName: order.full_name,
+        amountSubtotal: order.amount_subtotal,
+        amountShipping: order.amount_shipping,
+        amountTax: order.amount_tax,
         amountTotal: order.amount_total,
         currency: order.currency,
         quantity: intent.quantity,
         placedAt: order.placed_at,
-        estimatedDelivery: order.estimated_delivery,
+        estimatedShipping: order.estimated_delivery,
         shippingAddress: order.shipping_address,
         managePath,
       });

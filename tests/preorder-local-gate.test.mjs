@@ -61,10 +61,20 @@ test("keeps the funnel usable only on loopback during development", async () => 
     "/preorder/review",
     undefined,
     "http://localhost",
-    { PREORDER_MODE: "test" },
+    {
+      PREORDER_MODE: "test",
+      PREORDER_SHIPPING_RATE_CENTS: "1900",
+    },
   );
   assert.equal(response.status, 200);
-  assert.match(await response.text(), /Review your Frame pre-order/);
+  const html = await response.text();
+  assert.match(html, /Review your Frame pre-order/);
+  assert.match(html, /Product subtotal/);
+  assert.match(html, /\$19/);
+  assert.match(html, /standard US shipping/);
+  assert.match(html, /all 50 states and Washington, DC/);
+  assert.match(html, /Estimated shipping/);
+  assert.match(html, /March 2027/);
 });
 
 test("keeps the public homepage free of pre-order discovery and blocks webhook browsing", async () => {

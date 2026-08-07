@@ -63,3 +63,40 @@ test("makes failed and stale background events recoverable", () => {
     false,
   );
 });
+
+test("keeps the reviewed subtotal, shipping, tax and inventory controls explicit", async () => {
+  const [checkout, offer, migration, initialRelease, readiness] = await Promise.all([
+    readFile(new URL("../app/api/preorders/checkout/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/preorder.ts", import.meta.url), "utf8"),
+    readFile(
+      new URL(
+        "../supabase/migrations/20260807000000_add_preorder_inventory_ceiling.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(
+      new URL(
+        "../supabase/migrations/20260807010000_set_initial_preorder_release.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(new URL("../lib/preorder-launch-readiness.server.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(offer, /PREORDER_DEFAULT_PRICE_CENTS = 29_900/);
+  assert.match(offer, /PREORDER_SHIPPING_RATE_CENTS = 1_900/);
+  assert.match(offer, /PREORDER_ESTIMATED_SHIPPING = "March 2027"/);
+  assert.match(offer, /PREORDER_MAX_INVENTORY_UNITS = 1_000/);
+  assert.match(checkout, /shipping_options:/);
+  assert.match(checkout, /amount: config\.shippingRateCents/);
+  assert.match(checkout, /config\.shippingRateCents !== PREORDER_SHIPPING_RATE_CENTS/);
+  assert.match(checkout, /automatic_tax: \{ enabled: true \}/);
+  assert.match(checkout, /price\.tax_behavior !== "exclusive"/);
+  assert.match(migration, /inventory_limit = 1000/);
+  assert.match(migration, /unit_limit <= inventory_limit/);
+  assert.match(initialRelease, /sales_status = 'paused'/);
+  assert.match(initialRelease, /unit_limit = 100/);
+  assert.match(readiness, /reviewed \$19 USD rate/i);
+});

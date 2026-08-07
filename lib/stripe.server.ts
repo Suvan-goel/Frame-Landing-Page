@@ -7,7 +7,7 @@ const cachedStripe = new Map<string, Stripe>();
 export function isStripeSecretForEnvironment(
   secretKey: string | undefined,
   environment: PreorderEnvironment,
-) {
+): secretKey is string {
   return Boolean(
     secretKey &&
       (environment === "live"

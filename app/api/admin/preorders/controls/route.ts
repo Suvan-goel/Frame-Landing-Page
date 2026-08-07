@@ -5,6 +5,7 @@ import {
   type PreorderEnvironment,
   type PreorderSalesStatus,
 } from "@/lib/preorder-operations.server";
+import { PREORDER_MAX_INVENTORY_UNITS } from "@/lib/preorder";
 import { isWaitlistAdmin } from "@/lib/supabase-admin.server";
 
 export const dynamic = "force-dynamic";
@@ -70,13 +71,21 @@ export async function POST(request: Request) {
 
   const environment = payload.environment as PreorderEnvironment;
   const salesStatus = payload.salesStatus as PreorderSalesStatus;
-  const unitLimit = payload.unitLimit === null ? null : Number(payload.unitLimit);
+  const unitLimit = Number(payload.unitLimit);
   if (
-    unitLimit !== null &&
-    (!Number.isSafeInteger(unitLimit) || unitLimit < 1 || unitLimit > 1_000_000)
+    !Number.isSafeInteger(unitLimit) ||
+    unitLimit < 0 ||
+    unitLimit > PREORDER_MAX_INVENTORY_UNITS
   ) {
     return jsonResponse(
-      { error: "Capacity must be blank or a whole number from 1 to 1,000,000." },
+      { error: "Released capacity must be a whole number from 0 to 1,000." },
+      400,
+    );
+  }
+
+  if (salesStatus === "open" && unitLimit < 1) {
+    return jsonResponse(
+      { error: "Release at least one unit before opening checkout." },
       400,
     );
   }
@@ -104,6 +113,12 @@ export async function POST(request: Request) {
     return jsonResponse({ status: "updated", snapshot });
   } catch (error) {
     console.error("Pre-order sales controls update failed", error);
+    if (
+      error instanceof Error &&
+      error.message.includes("cannot be lower than paid units")
+    ) {
+      return jsonResponse({ error: error.message }, 409);
+    }
     return jsonResponse(
       { error: "Sales controls could not be updated. Please try again." },
       503,

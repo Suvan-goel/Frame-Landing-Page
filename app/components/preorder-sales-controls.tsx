@@ -18,9 +18,7 @@ export function PreorderSalesControls({
 }) {
   const router = useRouter();
   const [salesStatus, setSalesStatus] = useState(snapshot.salesStatus);
-  const [unitLimit, setUnitLimit] = useState(
-    snapshot.unitLimit === null ? "" : String(snapshot.unitLimit),
-  );
+  const [unitLimit, setUnitLimit] = useState(String(snapshot.unitLimit));
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -39,7 +37,7 @@ export function PreorderSalesControls({
         body: JSON.stringify({
           environment: snapshot.environment,
           salesStatus,
-          unitLimit: unitLimit.trim() ? Number(unitLimit) : null,
+          unitLimit: Number(unitLimit),
         }),
       });
       const result = (await response.json()) as { error?: string; blockers?: string[] };
@@ -81,9 +79,10 @@ export function PreorderSalesControls({
         <div><dt>Paid units</dt><dd>{snapshot.paidUnits}</dd></div>
         <div><dt>Reserved checkouts</dt><dd>{snapshot.reservedUnits}</dd></div>
         <div>
-          <dt>Remaining</dt>
-          <dd>{snapshot.remainingUnits === null ? "Unlimited" : snapshot.remainingUnits}</dd>
+          <dt>Released availability</dt>
+          <dd>{snapshot.remainingUnits}</dd>
         </div>
+        <div><dt>Lifetime availability</dt><dd>{snapshot.inventoryRemainingUnits}</dd></div>
       </dl>
 
       <form onSubmit={save}>
@@ -103,14 +102,13 @@ export function PreorderSalesControls({
           </select>
         </label>
         <label>
-          <span>Maximum units</span>
+          <span>Released-unit ceiling</span>
           <input
             type="number"
             inputMode="numeric"
-            min="1"
-            max="1000000"
+            min="0"
+            max={snapshot.inventoryLimit}
             step="1"
-            placeholder="Unlimited"
             value={unitLimit}
             onChange={(event) => {
               setUnitLimit(event.target.value);
@@ -118,6 +116,9 @@ export function PreorderSalesControls({
               setError("");
             }}
           />
+          <small>
+            Release units in batches up to the fixed {snapshot.inventoryLimit.toLocaleString()}-unit lifetime inventory ceiling. Set this to 0 to release none.
+          </small>
         </label>
         <button className="button button--dark" type="submit" disabled={saving}>
           {saving ? "Saving…" : "Save controls"}

@@ -3,7 +3,10 @@ import { notFound } from "next/navigation";
 import { PreorderCheckoutReview } from "../../components/preorder-checkout-review";
 import { PreorderHeader } from "../../components/preorder-chrome";
 import { getPreorderConfiguration } from "@/lib/preorder-config.server";
-import { formatPreorderMoney } from "@/lib/preorder";
+import {
+  formatPreorderMoney,
+  PREORDER_SHIPPING_RATE_CENTS,
+} from "@/lib/preorder";
 import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
 
 export const metadata: Metadata = {
@@ -17,11 +20,11 @@ export const dynamic = "force-dynamic";
 export default async function PreorderReviewPage() {
   if (!(await isPreorderSalesPageEnabled())) notFound();
   const offer = await getPreorderConfiguration();
-  const deliveryLabel = /local test|approved before launch/i.test(
-    offer.estimatedDelivery,
+  const shippingLabel = /local test|approved before launch/i.test(
+    offer.estimatedShipping,
   )
     ? "To be confirmed"
-    : offer.estimatedDelivery;
+    : offer.estimatedShipping;
 
   return (
     <main className="checkout-page preorder-checkout-page">
@@ -41,7 +44,11 @@ export default async function PreorderReviewPage() {
         </aside>
         <PreorderCheckoutReview
           priceLabel={formatPreorderMoney(offer.priceCents, offer.currency)}
-          estimatedDelivery={deliveryLabel}
+          shippingPriceLabel={formatPreorderMoney(
+            offer.shippingRateCents ?? PREORDER_SHIPPING_RATE_CENTS,
+            offer.currency,
+          )}
+          estimatedShipping={shippingLabel}
           allowedCountries={offer.allowedCountries}
         />
       </div>

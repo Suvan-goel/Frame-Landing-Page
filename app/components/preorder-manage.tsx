@@ -16,8 +16,8 @@ type ManagedOrder = {
   cancellationResolutionNote: string | null;
   canRequestCancellation: boolean;
   amountPaid: string;
-  originalEstimatedDelivery: string;
-  estimatedDelivery: string;
+  originalEstimatedShipping: string;
+  estimatedShipping: string;
   addressChangeStatus: string;
   addressChangeRequestedAt: string | null;
   requestedShippingAddress: Record<string, unknown> | null;
@@ -186,7 +186,7 @@ export function PreorderManage() {
     if (!order) return;
     if (
       response === "request_cancellation" &&
-      !window.confirm("Request cancellation instead of accepting the updated delivery estimate?")
+      !window.confirm("Request cancellation instead of accepting the updated shipping estimate?")
     ) {
       return;
     }
@@ -263,8 +263,8 @@ export function PreorderManage() {
 
       <div className="preorder-manage-grid">
         <section>
-          <p className="eyebrow">Delivery</p>
-          <h2>{order.estimatedDelivery}</h2>
+          <p className="eyebrow">Estimated shipping</p>
+          <h2>{order.estimatedShipping}</h2>
           {order.shippedAt ? <p>Shipped {formatDate(order.shippedAt)}</p> : <p>We’ll email you when your Frame ships.</p>}
           {order.trackingNumber ? <p><strong>{order.carrier ?? "Tracking"}:</strong> {order.trackingNumber}</p> : null}
           {order.trackingUrl ? <a className="text-link" href={order.trackingUrl} target="_blank" rel="noreferrer">Track shipment</a> : null}
@@ -279,12 +279,12 @@ export function PreorderManage() {
 
       {order.requiresDeliveryResponse ? (
         <section className="preorder-manage-cancellation preorder-manage-cancellation--pending">
-          <p className="eyebrow">Delivery update</p>
+          <p className="eyebrow">Shipping estimate update</p>
           <h2>Please review the updated estimate.</h2>
           <p>{order.deliveryUpdateMessage}</p>
           <dl className="preorder-manage-delivery-change">
-            <div><dt>Original estimate</dt><dd>{order.originalEstimatedDelivery}</dd></div>
-            <div><dt>Current estimate</dt><dd>{order.estimatedDelivery}</dd></div>
+            <div><dt>Original estimate</dt><dd>{order.originalEstimatedShipping}</dd></div>
+            <div><dt>Current estimate</dt><dd>{order.estimatedShipping}</dd></div>
           </dl>
           <div className="preorder-manage-actions">
             <button className="button button--dark" type="button" disabled={Boolean(busy)} onClick={() => respondToDeliveryUpdate("accept")}>{busy === "respond_delivery_update" ? "Saving…" : "Accept updated estimate"}</button>
@@ -293,7 +293,7 @@ export function PreorderManage() {
         </section>
       ) : order.deliveryUpdateStatus === "accepted" ? (
         <section className="preorder-manage-cancellation">
-          <p className="eyebrow">Delivery response recorded</p>
+          <p className="eyebrow">Shipping response recorded</p>
           <h2>You accepted the current estimate.</h2>
           <p>{order.deliveryUpdateMessage}</p>
         </section>

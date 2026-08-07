@@ -18,9 +18,11 @@ a synthetic `FR-TEST-0001` order and does not call Stripe, Supabase, or Resend.
 
 ## Full Stripe test workflow
 
-1. Apply `supabase/migrations/20260804000000_add_preorders.sql` to the existing
-   Supabase project.
-2. In Stripe test mode, create one active, one-time USD Price for $299.00.
+1. Apply all pending files in `supabase/migrations` to the existing Supabase
+   project. The inventory-ceiling migration fixes the lifetime ceiling at
+   1,000 units and keeps live released capacity at zero until an owner raises it.
+2. In Stripe test mode, create one active, one-time USD Price for $299.00 with
+   tax behaviour set to exclusive.
 3. Configure Stripe's test-mode public details and terms-of-service URL so
    Checkout can require terms acceptance.
 4. Add these values to `.env.local`:
@@ -31,7 +33,8 @@ PREORDER_PREVIEW_MODE=false
 PREORDER_PRICE_CENTS=29900
 PREORDER_CURRENCY=usd
 PREORDER_ALLOWED_COUNTRIES=US
-PREORDER_ESTIMATED_DELIVERY=January 1, 2027
+PREORDER_ESTIMATED_SHIPPING=March 2027
+PREORDER_SHIPPING_RATE_CENTS=1900
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_PREORDER_PRICE_ID=price_...
 STRIPE_WEBHOOK_SECRET=whsec_...
@@ -42,6 +45,17 @@ STRIPE_TEST_WEBHOOK_ENDPOINT_ID=we_...
 RESEND_API_KEY=re_...
 PREORDER_FROM_EMAIL=Frame Pre-orders <preorders@framewearable.com>
 ```
+
+The shipping value is a provisional flat $19 USD standard shipping and handling
+charge for all 50 states and Washington, DC. US territories and international
+destinations are excluded from the initial launch. Revalidate the rate against
+the final boxed weight, dimensions, US fulfilment origin, fulfilment fees and
+lithium-battery classification before public sales are opened.
+
+The live environment begins with a cumulative release allocation of 100 units
+inside the fixed 1,000-unit lifetime inventory ceiling. Applying the release
+migration keeps the live sales status paused; it does not make the allocation
+available for purchase.
 
 5. Forward Stripe test events to the local webhook:
 

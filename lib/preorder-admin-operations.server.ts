@@ -27,6 +27,9 @@ type OperationalOrder = {
   fulfillment_status: string;
   cancellation_status: string;
   confirmation_email_sent_at: string | null;
+  amount_subtotal: number;
+  amount_shipping: number;
+  amount_tax: number;
   amount_total: number;
   amount_refunded: number;
   currency: string;
@@ -51,7 +54,7 @@ type OperationalOrder = {
 };
 
 const operationalOrderColumns =
-  "id,order_number,environment,manage_token_version,email,full_name,shipping_address,order_status,payment_status,fulfillment_status,cancellation_status,confirmation_email_sent_at,amount_total,amount_refunded,currency,estimated_delivery,current_estimated_delivery,placed_at,address_change_status,address_change_requested_at,requested_shipping_address,address_change_reason,address_change_resolved_at,address_change_resolution_note,delivery_update_version,delivery_update_status,delivery_update_message,delivery_update_sent_at,delivery_update_acknowledged_at,carrier,tracking_number,tracking_url,shipped_at";
+  "id,order_number,environment,manage_token_version,email,full_name,shipping_address,order_status,payment_status,fulfillment_status,cancellation_status,confirmation_email_sent_at,amount_subtotal,amount_shipping,amount_tax,amount_total,amount_refunded,currency,estimated_delivery,current_estimated_delivery,placed_at,address_change_status,address_change_requested_at,requested_shipping_address,address_change_reason,address_change_resolved_at,address_change_resolution_note,delivery_update_version,delivery_update_status,delivery_update_message,delivery_update_sent_at,delivery_update_acknowledged_at,carrier,tracking_number,tracking_url,shipped_at";
 
 async function getOperationalOrder(orderId: string) {
   const supabase = await getSupabaseAdmin();
@@ -432,11 +435,14 @@ export async function retryPreorderConfirmationEmail(input: {
     environment: order.environment,
     email: order.email,
     fullName: order.full_name,
+    amountSubtotal: order.amount_subtotal,
+    amountShipping: order.amount_shipping,
+    amountTax: order.amount_tax,
     amountTotal: order.amount_total,
     currency: order.currency,
     quantity: item.data?.quantity ?? 1,
     placedAt: order.placed_at,
-    estimatedDelivery: order.estimated_delivery,
+    estimatedShipping: order.estimated_delivery,
     shippingAddress: order.shipping_address,
     managePath,
     deliveryKey: `preorder-confirmation-manual-${order.id}-${crypto.randomUUID()}`,

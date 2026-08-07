@@ -179,11 +179,14 @@ export async function sendPreorderConfirmationEmail(input: {
   environment: PreorderEnvironment;
   email: string;
   fullName: string;
+  amountSubtotal: number;
+  amountShipping: number;
+  amountTax: number;
   amountTotal: number;
   currency: string;
   quantity: number;
   placedAt: string;
-  estimatedDelivery: string;
+  estimatedShipping: string;
   shippingAddress: Record<string, unknown>;
   managePath?: string | null;
   deliveryKey?: string;
@@ -191,6 +194,9 @@ export async function sendPreorderConfirmationEmail(input: {
   const deliveryKey =
     input.deliveryKey ?? `preorder-confirmation-${input.preorderId}`;
   const orderNumber = formatPreorderNumber(input.orderNumber);
+  const subtotal = formatPreorderMoney(input.amountSubtotal, input.currency);
+  const shippingAmount = formatPreorderMoney(input.amountShipping, input.currency);
+  const taxAmount = formatPreorderMoney(input.amountTax, input.currency);
   const amount = formatPreorderMoney(input.amountTotal, input.currency);
   const placedAt = new Intl.DateTimeFormat("en-US", { dateStyle: "long" }).format(
     new Date(input.placedAt),
@@ -215,10 +221,13 @@ export async function sendPreorderConfirmationEmail(input: {
       `Hello ${input.fullName},`,
       "",
       `Your Frame pre-order is confirmed. Order ${orderNumber}.`,
-      `Payment: ${amount}`,
+      `Product subtotal: ${subtotal}`,
+      `Shipping: ${shippingAmount}`,
+      `Sales tax: ${taxAmount}`,
+      `Total paid: ${amount}`,
       `Quantity: ${input.quantity}`,
       `Placed: ${placedAt}`,
-      `Estimated delivery: ${input.estimatedDelivery}`,
+      `Estimated shipping: ${input.estimatedShipping}`,
       "",
       "Shipping address:",
       ...shipping,
@@ -237,11 +246,14 @@ export async function sendPreorderConfirmationEmail(input: {
         <h1 style="font-family:Georgia,serif;font-weight:400;font-size:38px;line-height:1.1">Your Frame pre-order is confirmed.</h1>
         <p>Hello ${escapeHtml(input.fullName)}. We’ve received your payment and recorded your place in the pre-order queue.</p>
         <div style="background:#f3efe6;padding:20px 24px;margin:28px 0">
-          <p style="margin:0 0 8px"><strong>Payment:</strong> ${escapeHtml(amount)}</p>
+          <p style="margin:0 0 8px"><strong>Product subtotal:</strong> ${escapeHtml(subtotal)}</p>
+          <p style="margin:0 0 8px"><strong>Shipping:</strong> ${escapeHtml(shippingAmount)}</p>
+          <p style="margin:0 0 8px"><strong>Sales tax:</strong> ${escapeHtml(taxAmount)}</p>
+          <p style="margin:0 0 8px"><strong>Total paid:</strong> ${escapeHtml(amount)}</p>
           <p style="margin:0 0 8px"><strong>Quantity:</strong> ${input.quantity}</p>
           <p style="margin:0"><strong>Placed:</strong> ${escapeHtml(placedAt)}</p>
         </div>
-        <p><strong>Estimated delivery:</strong> ${escapeHtml(input.estimatedDelivery)}</p>
+        <p><strong>Estimated shipping:</strong> ${escapeHtml(input.estimatedShipping)}</p>
         <p><strong>Shipping address</strong><br>${shipping.map(escapeHtml).join("<br>")}</p>
         ${sandbox ? '<p style="padding:16px;border-left:4px solid #7b2937;background:#f7ecee"><strong>Sandbox order.</strong> No live charge was made.</p>' : ""}
         ${manageUrl ? `<p style="margin:30px 0"><a href="${escapeHtml(manageUrl)}" style="display:inline-block;background:#20211e;color:#faf8f2;padding:13px 20px;text-decoration:none">Manage your pre-order</a></p>` : ""}
@@ -476,11 +488,11 @@ export async function sendPreorderDeliveryUpdateEmail(input: {
     emailType: "delivery_update",
     recipient: input.email,
     deliveryKey: `preorder-delivery-update-${input.preorderId}-${input.deliveryUpdateVersion}`,
-    subject: `${sandbox ? "[Sandbox] " : ""}Delivery update for your Frame pre-order — ${orderNumber}`,
+    subject: `${sandbox ? "[Sandbox] " : ""}Shipping estimate update for your Frame pre-order — ${orderNumber}`,
     text: [
       `Hello ${input.fullName},`,
       "",
-      `The estimated delivery timing for ${orderNumber} has changed.`,
+      `The estimated shipping timing for ${orderNumber} has changed.`,
       `Previous estimate: ${input.previousEstimate}`,
       `Current estimate: ${input.currentEstimate}`,
       `Update: ${input.message}`,
@@ -492,14 +504,14 @@ export async function sendPreorderDeliveryUpdateEmail(input: {
       <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#20211e;line-height:1.6">
         <p style="font-size:30px;font-family:Georgia,serif;margin-bottom:32px">Frame</p>
         <p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#7b2937">${sandbox ? "Sandbox · " : ""}${escapeHtml(orderNumber)}</p>
-        <h1 style="font-family:Georgia,serif;font-weight:400;font-size:38px;line-height:1.1">An update to your estimated delivery.</h1>
-        <p>Hello ${escapeHtml(input.fullName)}. The estimated delivery timing for your Frame pre-order has changed.</p>
+        <h1 style="font-family:Georgia,serif;font-weight:400;font-size:38px;line-height:1.1">An update to your estimated shipping.</h1>
+        <p>Hello ${escapeHtml(input.fullName)}. The estimated shipping timing for your Frame pre-order has changed.</p>
         <div style="background:#f3efe6;padding:20px 24px;margin:28px 0">
           <p style="margin:0 0 8px"><strong>Previous:</strong> ${escapeHtml(input.previousEstimate)}</p>
           <p style="margin:0"><strong>Current:</strong> ${escapeHtml(input.currentEstimate)}</p>
         </div>
         <p>${escapeHtml(input.message)}</p>
-        <p style="margin:30px 0"><a href="${escapeHtml(manageUrl)}" style="display:inline-block;background:#20211e;color:#faf8f2;padding:13px 20px;text-decoration:none">Review delivery update</a></p>
+        <p style="margin:30px 0"><a href="${escapeHtml(manageUrl)}" style="display:inline-block;background:#20211e;color:#faf8f2;padding:13px 20px;text-decoration:none">Review shipping update</a></p>
         <p style="color:#686a63">You can accept the updated estimate or request cancellation from your order page.</p>
       </div>
     `,

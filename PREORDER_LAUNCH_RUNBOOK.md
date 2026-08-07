@@ -23,10 +23,12 @@ and every remote pre-order surface remains unavailable.
 ## 1. Current local state
 
 - Stripe test mode is connected at $299 USD for one device.
-- Orders are limited to United States shipping.
-- The recorded estimated delivery date is January 1, 2027.
+- Orders are limited to all 50 United States and Washington, DC; US territories and international destinations are excluded.
+- The recorded estimated shipping window is March 2027.
+- The product subtotal is $299 USD; $19 USD standard US shipping and applicable sales tax are added at Checkout.
 - Customer confirmation, management, address, delivery, cancellation, shipping and refund emails are connected.
 - Test and live commerce records are separated.
+- The lifetime inventory ceiling is 1,000 units, with an approved initial cumulative release allocation of 100 units.
 - Live allocation is paused.
 
 Run the local preflight at any time:
@@ -87,6 +89,8 @@ The invitation grants a signed, secure, 12-hour browser session. Rotating `PREOR
 Do not complete this section until the lawyer and medical-device regulatory review are finished.
 
 - Replace every draft policy and bracketed placeholder with approved wording.
+- Revalidate the provisional $19 US shipping rate using the final packaged dimensions and weight, US fulfilment origin and fees, and lithium-battery classification; confirm Stripe Tax registrations with the relevant advisers.
+- Assign an explicit Stripe product tax code approved for Frame's final product classification.
 - Assign a new non-draft `PREORDER_TERMS_VERSION` and matching product-status version in the application.
 - Set `PREORDER_LEGAL_APPROVED_VERSION` to exactly the approved terms version.
 - Re-run the full test suite after the version and copy change.
@@ -121,7 +125,8 @@ STRIPE_LIVE_WEBHOOK_ENDPOINT_ID=<live endpoint ID>
 PREORDER_PRICE_CENTS=29900
 PREORDER_CURRENCY=usd
 PREORDER_ALLOWED_COUNTRIES=US
-PREORDER_ESTIMATED_DELIVERY=January 1, 2027
+PREORDER_ESTIMATED_SHIPPING=March 2027
+PREORDER_SHIPPING_RATE_CENTS=1900
 ```
 
 Copy the Supabase, Resend, sender, operations-email, order-link and rate-limit values into the hosted environment. Use different values for `PREORDER_ORDER_ACCESS_SECRET` and `PREORDER_RATE_LIMIT_SECRET`. Do not expose any secret in source control.
@@ -161,7 +166,7 @@ for five minutes appears in the owner recovery panel and can be safely retried.
 1. Confirm the Supabase `live` allocation is still `paused`.
 2. Run `npm run preorder:check:launch` against the exact values intended for production.
 3. Complete one live-mode smoke purchase only if approved by the payment and legal launch plan, then refund it and verify the order, webhook and email records.
-4. Review capacity and set the live unit limit.
+4. Confirm the fixed 1,000-unit inventory ceiling and the initial 100-unit cumulative live release allocation.
 5. Open the `live` allocation from the authenticated owner view.
 6. Confirm the public homepage button reaches review and Stripe live Checkout.
 

@@ -5,8 +5,11 @@ import {
   PREORDER_DEFAULT_ALLOWED_COUNTRIES,
   PREORDER_DEFAULT_CURRENCY,
   PREORDER_DEFAULT_PRICE_CENTS,
-  PREORDER_ESTIMATED_DELIVERY,
+  PREORDER_ESTIMATED_SHIPPING,
+  PREORDER_MAX_INVENTORY_UNITS,
+  PREORDER_SHIPPING_RATE_CENTS,
 } from "./preorder";
+import { getPreorderSalesSnapshot } from "./preorder-operations.server";
 import { getPreorderMode, getRuntimeValue } from "./runtime-env.server";
 import { isStripeSecretForEnvironment } from "./stripe.server";
 
@@ -50,6 +53,7 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
     orderAccessSecret,
     rateLimitSecret,
     configuration,
+    liveSalesSnapshot,
   ] = await Promise.all([
     getPreorderMode(),
     getRuntimeValue("PREORDER_LEGAL_APPROVED_VERSION"),
@@ -64,6 +68,7 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
     getRuntimeValue("PREORDER_ORDER_ACCESS_SECRET"),
     getRuntimeValue("PREORDER_RATE_LIMIT_SECRET"),
     getPreorderConfiguration(),
+    getPreorderSalesSnapshot("live").catch(() => null),
   ]);
 
   const stripeSecretKey = dedicatedLiveStripeSecretKey;
@@ -113,9 +118,26 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
     configuration.currency !== PREORDER_DEFAULT_CURRENCY ||
     configuration.allowedCountries.join(",") !==
       PREORDER_DEFAULT_ALLOWED_COUNTRIES.join(",") ||
-    configuration.estimatedDelivery !== PREORDER_ESTIMATED_DELIVERY
+    configuration.estimatedShipping !== PREORDER_ESTIMATED_SHIPPING
   ) {
-    blockers.push("The runtime offer does not match the reviewed $299, US-only, January 1, 2027 configuration.");
+    blockers.push("The runtime offer does not match the reviewed $299, US-only, March 2027 estimated-shipping configuration.");
+  }
+  if (configuration.shippingRateCents !== PREORDER_SHIPPING_RATE_CENTS) {
+    blockers.push("The pre-order shipping charge is not the reviewed $19 USD rate.");
+  }
+  if (!liveSalesSnapshot) {
+    blockers.push("The live inventory ceiling and release allocation could not be verified.");
+  } else {
+    if (liveSalesSnapshot.inventoryLimit !== PREORDER_MAX_INVENTORY_UNITS) {
+      blockers.push("The live lifetime inventory ceiling is not 1,000 units.");
+    }
+    if (
+      liveSalesSnapshot.unitLimit === null ||
+      liveSalesSnapshot.unitLimit < 1 ||
+      liveSalesSnapshot.unitLimit > PREORDER_MAX_INVENTORY_UNITS
+    ) {
+      blockers.push("A controlled live release allocation between 1 and 1,000 units is required.");
+    }
   }
 
   if (isStripeSecretForEnvironment(stripeSecretKey, "live") && stripePriceId?.startsWith("price_")) {
@@ -136,9 +158,13 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
         price.type !== "one_time" ||
         price.unit_amount !== configuration.priceCents ||
         price.currency !== configuration.currency ||
+        price.tax_behavior !== "exclusive" ||
         !product?.active
       ) {
         blockers.push("The live Stripe product and price do not match the reviewed offer.");
+      }
+      if (product && !product.tax_code) {
+        blockers.push("The live Stripe product does not have an approved tax code.");
       }
     } catch {
       blockers.push("The live Stripe product and price could not be verified.");

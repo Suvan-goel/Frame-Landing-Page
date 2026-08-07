@@ -6,10 +6,12 @@ export type PreorderSalesStatus = "open" | "paused" | "sold_out";
 export type PreorderSalesSnapshot = {
   environment: PreorderEnvironment;
   salesStatus: PreorderSalesStatus;
-  unitLimit: number | null;
+  inventoryLimit: number;
+  unitLimit: number;
   paidUnits: number;
   reservedUnits: number;
-  remainingUnits: number | null;
+  remainingUnits: number;
+  inventoryRemainingUnits: number;
   updatedAt: string;
   updatedBy: string | null;
 };
@@ -17,10 +19,12 @@ export type PreorderSalesSnapshot = {
 type SnapshotRow = {
   environment: PreorderEnvironment;
   sales_status: PreorderSalesStatus;
-  unit_limit: number | null;
+  inventory_limit: number | string;
+  unit_limit: number | string;
   paid_units: number | string;
   reserved_units: number | string;
-  remaining_units: number | string | null;
+  remaining_units: number | string;
+  inventory_remaining_units: number | string;
   updated_at: string;
   updated_by: string | null;
 };
@@ -57,11 +61,12 @@ function snapshotFromRow(row: SnapshotRow): PreorderSalesSnapshot {
   return {
     environment: row.environment,
     salesStatus: row.sales_status,
-    unitLimit: row.unit_limit,
+    inventoryLimit: numberValue(row.inventory_limit),
+    unitLimit: numberValue(row.unit_limit),
     paidUnits: numberValue(row.paid_units),
     reservedUnits: numberValue(row.reserved_units),
-    remainingUnits:
-      row.remaining_units === null ? null : numberValue(row.remaining_units),
+    remainingUnits: numberValue(row.remaining_units),
+    inventoryRemainingUnits: numberValue(row.inventory_remaining_units),
     updatedAt: row.updated_at,
     updatedBy: row.updated_by,
   };
@@ -84,9 +89,13 @@ export async function getPreorderSalesSnapshot(
 export async function updatePreorderSalesControl(input: {
   environment: PreorderEnvironment;
   salesStatus: PreorderSalesStatus;
-  unitLimit: number | null;
+  unitLimit: number;
   updatedBy: string;
 }) {
+  const current = await getPreorderSalesSnapshot(input.environment);
+  if (input.unitLimit < current.paidUnits + current.reservedUnits) {
+    throw new Error("Released capacity cannot be lower than paid units and active checkout reservations.");
+  }
   const supabase = await getSupabaseAdmin();
   const updated = await supabase
     .from("preorder_sales_controls")

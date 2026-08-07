@@ -199,7 +199,7 @@ async function AuthenticatedOrderDetail({ id }: { id: string }) {
                   <strong>{formatPreorderMoney(item.unit_amount * item.quantity, item.currency)}</strong>
                 </div>
               ))}
-              <p><strong>Current estimated delivery:</strong> {order.current_estimated_delivery}</p>
+              <p><strong>Current estimated shipping:</strong> {order.current_estimated_delivery}</p>
               {order.current_estimated_delivery !== order.estimated_delivery ? (
                 <p><strong>Original estimate:</strong> {order.estimated_delivery}</p>
               ) : null}

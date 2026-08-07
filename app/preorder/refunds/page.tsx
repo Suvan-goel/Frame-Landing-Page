@@ -24,7 +24,7 @@ export default async function PreorderRefundsPage() {
         <p className="legal-updated">Effective date: not set</p>
         <p className="legal-intro">The backend can reconcile full refunds, partial refunds, failed refunds and disputes from signed Stripe events. The customer policy remains to be approved.</p>
         <section><h2>Before dispatch</h2><p><strong>[CUSTOMER CANCELLATION WINDOW, METHOD, DEDUCTIONS IF ANY, AND REFUND DEADLINE TO BE APPROVED]</strong></p></section>
-        <section><h2>If delivery timing changes</h2><p><strong>[NOTICE, ACCEPTANCE, CONTINUED WAITING AND CANCELLATION OPTIONS TO BE APPROVED]</strong></p></section>
+        <section><h2>If the shipping estimate changes</h2><p><strong>[NOTICE, ACCEPTANCE, CONTINUED WAITING AND CANCELLATION OPTIONS TO BE APPROVED]</strong></p></section>
         <section><h2>After delivery</h2><p><strong>[STATUTORY CANCELLATION, RETURN, FAULTY-GOODS, WARRANTY AND HYGIENE-SAFETY TERMS TO BE APPROVED]</strong></p></section>
         <section><h2>How the implementation processes refunds</h2><p>Refunds are initiated in Stripe test mode. Signed events update the payment and order separately, preserving the amount refunded and an audit event. No card details are stored by Frame.</p></section>
         <section><h2>Requesting help</h2><p>Use the <Link href="/contact?topic=general">Frame contact form</Link> with the order number and purchase email. Never send card details or medical information.</p></section>
