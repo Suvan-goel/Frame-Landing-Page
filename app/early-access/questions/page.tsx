@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 export default async function EarlyAccessQuestionsPage() {
   return (
     <main className="interest-flow">
-      <SiteHeader />
+      <SiteHeader backLabel="Skip survey" arrowDirection="right" />
       <div className="interest-flow__shell">
         <WaitlistSignupProvider
           resumeSurvey

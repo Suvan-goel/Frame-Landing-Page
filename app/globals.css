@@ -180,6 +180,10 @@ h2 {
   line-height: 1;
 }
 
+.site-header__back--forward .site-header__back-arrow {
+  transform: rotate(180deg);
+}
+
 .nav-shell {
   position: fixed;
   z-index: 100;
