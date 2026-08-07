@@ -406,12 +406,12 @@ export function WaitlistSignupProvider({
       setErrors({ primaryInterest: "Choose the one main reason that matters most to you." });
       return;
     }
-    if (surveyStep === 1 && frustration.trim().length < MIN_FRUSTRATION_LENGTH) {
-      setErrors({ frustration: "Write at least 20 characters before continuing." });
+    if (surveyStep === 1 && !monitoringMethod) {
+      setErrors({ monitoringMethod: "Choose how you currently monitor your blood pressure." });
       return;
     }
-    if (surveyStep === 2 && !monitoringMethod) {
-      setErrors({ monitoringMethod: "Choose how you currently monitor your blood pressure." });
+    if (surveyStep === 2 && frustration.trim().length < MIN_FRUSTRATION_LENGTH) {
+      setErrors({ frustration: "Write at least 20 characters before continuing." });
       return;
     }
     setErrors({});
@@ -756,8 +756,8 @@ export function WaitlistSignupFlow({
 
   const title = [
     "What is the main reason you want Frame?",
-    "What would you want Frame to help you understand or do that you can’t easily today?",
     "How do you currently monitor your blood pressure?",
+    "What would you want Frame to help you understand or do that you can’t easily today?",
     "Would you be willing to speak with us for 20 minutes?",
     "A little about you.",
   ][flow.surveyStep];
@@ -771,8 +771,8 @@ export function WaitlistSignupFlow({
     genderValues.has(flow.gender);
   const canContinue =
     (flow.surveyStep === 0 && Boolean(flow.primaryInterest)) ||
-    (flow.surveyStep === 1 && flow.frustration.trim().length >= MIN_FRUSTRATION_LENGTH) ||
-    (flow.surveyStep === 2 && Boolean(flow.monitoringMethod)) ||
+    (flow.surveyStep === 1 && Boolean(flow.monitoringMethod)) ||
+    (flow.surveyStep === 2 && flow.frustration.trim().length >= MIN_FRUSTRATION_LENGTH) ||
     (flow.surveyStep === 3 && Boolean(flow.researchCall));
 
   return (
@@ -895,7 +895,7 @@ export function WaitlistSignupFlow({
               <ChoiceList idPrefix={idPrefix} name="primary-interest" options={PRIMARY_INTEREST_OPTIONS} value={flow.primaryInterest} error={flow.errors.primaryInterest} onChange={flow.setPrimaryInterest} />
             ) : null}
 
-            {flow.surveyStep === 1 ? (
+            {flow.surveyStep === 2 ? (
               <div className="interest-flow__text-response form-field">
                 <label htmlFor={`${idPrefix}-frustration`} className="sr-only">{title}</label>
                 <textarea id={`${idPrefix}-frustration`} name="frustration" value={flow.frustration} onChange={(event) => flow.setFrustration(event.target.value)} required minLength={MIN_FRUSTRATION_LENGTH} maxLength={MAX_LONG_TEXT_LENGTH} aria-invalid={Boolean(flow.errors.frustration)} aria-describedby={`${idPrefix}-frustration-note${flow.errors.frustration ? ` ${idPrefix}-frustration-error` : ""}`} />
@@ -908,7 +908,7 @@ export function WaitlistSignupFlow({
               </div>
             ) : null}
 
-            {flow.surveyStep === 2 ? (
+            {flow.surveyStep === 1 ? (
               <ChoiceList idPrefix={idPrefix} name="monitoring-method" options={MONITORING_METHOD_OPTIONS} value={flow.monitoringMethod} error={flow.errors.monitoringMethod} onChange={flow.setMonitoringMethod} />
             ) : null}
 

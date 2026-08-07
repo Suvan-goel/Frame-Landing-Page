@@ -472,7 +472,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   );
   assert.match(
     waitlistFlow,
-    /const title = \[\s*"What is the main reason you want Frame\?",[\s\S]*?"A little about you\."/,
+    /const title = \[\s*"What is the main reason you want Frame\?",\s*"How do you currently monitor your blood pressure\?",\s*"What would you want Frame to help you understand or do that you can’t easily today\?",[\s\S]*?"A little about you\."/,
   );
   assert.match(
     waitlistFlow,
@@ -481,6 +481,14 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(
     waitlistFlow,
     /flow\.surveyStep === 0 \? \([\s\S]*?name="primary-interest"/,
+  );
+  assert.match(
+    waitlistFlow,
+    /flow\.surveyStep === 1 \? \([\s\S]*?name="monitoring-method"/,
+  );
+  assert.match(
+    waitlistFlow,
+    /flow\.surveyStep === 2 \? \([\s\S]*?name="frustration"/,
   );
   assert.match(waitlistFlow, /flow\.surveyStep === 3 && Boolean\(flow\.researchCall\)/);
   assert.match(waitlistFlow, /disabled=\{!profileIsComplete \|\| flow\.surveyStatus === "submitting"\}/);
