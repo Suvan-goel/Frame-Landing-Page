@@ -450,12 +450,12 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(qualificationPage, /WaitlistQualificationFlow/);
   assert.match(waitlistOptions, /See my blood pressure patterns over time/);
   assert.match(waitlistOptions, /Understand my blood pressure while sleeping/);
-  assert.match(waitlistFlow, /Thank you - your answers have been saved\./);
+  assert.match(waitlistFlow, /Your answers have been saved\./);
   assert.match(
     waitlistFlow,
-    /We genuinely read all responses and[\s\S]*your input is invaluable for Frame’s development\./,
+    /We read every response\. Your input will help shape Frame’s development\./,
   );
-  assert.match(waitlistFlow, /formatName\(flow\.firstName\)/);
+  assert.doesNotMatch(waitlistFlow, /formatName\(flow\.firstName\)|Thanks, \{/);
   assert.match(api, /formatName\(value\)\.slice/);
   assert.match(api, /MIN_FRUSTRATION_LENGTH = 20/);
   assert.match(api, /primaryInterestValues/);

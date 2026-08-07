@@ -13,7 +13,6 @@ import {
   useRef,
   useState,
 } from "react";
-import { formatName } from "@/lib/name-format";
 import {
   GENDER_OPTIONS,
   MONITORING_METHOD_OPTIONS,
@@ -937,8 +936,8 @@ export function WaitlistSignupFlow({
       {flow.stage === "completed" ? (
         <div className="interest-flow__success" aria-live={isActivePlacement ? "polite" : "off"}>
           <p className="eyebrow">Thank you</p>
-          <h2 ref={headingRef} tabIndex={-1}>Thank you - your answers have been saved.</h2>
-          <p>Thanks, {formatName(flow.firstName)}. We genuinely read all responses and your input is invaluable for Frame’s development.</p>
+          <h2 ref={headingRef} tabIndex={-1}>Your answers have been saved.</h2>
+          <p>We read every response. Your input will help shape Frame’s development.</p>
           <div className="interest-flow__success-actions">
             <Link className="button button--dark" href={finishHref}><span aria-hidden="true">←</span> Back to home</Link>
           </div>
