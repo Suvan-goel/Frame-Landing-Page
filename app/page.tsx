@@ -371,8 +371,10 @@ export default async function Home() {
         <div className="container footer-bottom">
           <p>
             Frame is under development and is not currently available for sale.
-            Product concepts and interfaces shown are illustrative. Frame is not
-            intended to diagnose or treat any medical condition.
+            Product concepts and interfaces shown are illustrative. Frame is being
+            developed for general wellness use and is not intended to diagnose,
+            screen for, monitor, treat, or manage any disease or medical condition,
+            guide treatment decisions, or replace an FDA-authorized medical device.
           </p>
           <p>© {new Date().getFullYear()} Frame Health Technologies</p>
         </div>

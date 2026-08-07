@@ -132,6 +132,10 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /Signal integrity/);
   assert.match(html, /Research and engineering inquiries/);
   assert.match(html, /Frame is under development and is not currently available for sale\./);
+  assert.match(
+    html,
+    /Frame is being developed for general wellness use and is not intended to diagnose,\s*(?:<!-- -->)?screen for, monitor, treat, or manage any disease or medical condition,\s*(?:<!-- -->)?guide treatment decisions, or replace an FDA-authorized medical device\./,
+  );
   assert.match(html, /frame-product-concept-realistic-v3-transparent-720w\.webp/);
   assert.match(html, /frame-hero-man-transparent-v3-720w\.webp/);
   assert.match(html, /frame-sensing-concept-realistic-v3-transparent-960w\.webp/);
