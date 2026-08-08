@@ -3,55 +3,15 @@ import {
   getSupabaseAdmin,
   isWaitlistAdmin,
 } from "@/lib/supabase-admin.server";
+import {
+  categorizeVisibleSignups,
+  toWaitlistExportRow,
+  WAITLIST_SIGNUP_SELECT,
+  waitlistExportHeaders,
+  type WaitlistSignup,
+} from "@/lib/waitlist-leads";
 
 export const dynamic = "force-dynamic";
-
-type WaitlistExportRow = {
-  first_name: string | null;
-  last_name: string | null;
-  email: string;
-  gender: string | null;
-  age: number | null;
-  motivation: string | null;
-  placement: string;
-  utm_source: string | null;
-  utm_medium: string | null;
-  utm_campaign: string | null;
-  created_at: string;
-};
-
-function parseQualificationResponse(motivation: string | null) {
-  const fallback = {
-    mainReason: null,
-    recentSituation: motivation,
-    monitoringMethod: null,
-    interviewWillingness: null,
-  };
-  if (!motivation?.startsWith("{")) return fallback;
-
-  try {
-    const parsed = JSON.parse(motivation) as Record<string, unknown>;
-    if (parsed.version !== 2) return fallback;
-    return {
-      mainReason:
-        typeof parsed.mainReason === "string" ? parsed.mainReason : null,
-      recentSituation:
-        typeof parsed.recentSituation === "string"
-          ? parsed.recentSituation
-          : null,
-      monitoringMethod:
-        typeof parsed.monitoringMethod === "string"
-          ? parsed.monitoringMethod
-          : null,
-      interviewWillingness:
-        typeof parsed.interviewWillingness === "string"
-          ? parsed.interviewWillingness
-          : null,
-    };
-  } catch {
-    return fallback;
-  }
-}
 
 function csvCell(value: string | number | null) {
   let safeValue = value === null ? "" : String(value);
@@ -73,12 +33,10 @@ export async function GET() {
   const supabase = await getSupabaseAdmin();
   const { data, error } = await supabase
     .from("waitlist_signups")
-    .select(
-      "first_name,last_name,email,gender,age,motivation,placement,utm_source,utm_medium,utm_campaign,created_at",
-    )
+    .select(WAITLIST_SIGNUP_SELECT)
     .order("created_at", { ascending: false })
     .order("id", { ascending: false })
-    .returns<WaitlistExportRow[]>();
+    .returns<WaitlistSignup[]>();
 
   if (error) {
     console.error("Waitlist CSV query failed", error);
@@ -87,46 +45,11 @@ export async function GET() {
       { status: 503 },
     );
   }
-  const signups = data ?? [];
-
   const rows = [
-    [
-      "first_name",
-      "last_name",
-      "email",
-      "gender",
-      "age",
-      "main_reason",
-      "recent_situation",
-      "monitoring_method",
-      "interview_willingness",
-      "motivation",
-      "placement",
-      "utm_source",
-      "utm_medium",
-      "utm_campaign",
-      "created_at",
-    ],
-    ...signups.map((signup) => {
-      const qualification = parseQualificationResponse(signup.motivation);
-      return [
-        signup.first_name,
-        signup.last_name,
-        signup.email,
-        signup.gender,
-        signup.age,
-        qualification.mainReason,
-        qualification.recentSituation,
-        qualification.monitoringMethod,
-        qualification.interviewWillingness,
-        signup.motivation,
-        signup.placement,
-        signup.utm_source,
-        signup.utm_medium,
-        signup.utm_campaign,
-        signup.created_at,
-      ];
-    }),
+    [...waitlistExportHeaders],
+    ...categorizeVisibleSignups(data ?? []).map(({ signup, qualification }) =>
+      toWaitlistExportRow(signup, qualification),
+    ),
   ];
   const csv = rows.map((row) => row.map(csvCell).join(",")).join("\r\n");
 

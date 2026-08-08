@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { InterestFlow } from "../components/interest-flow";
+import { isFoundingContributorSalesPageEnabled } from "@/lib/contributor-sales-page.server";
 
 export const metadata: Metadata = {
   title: "Register your interest — Frame",
@@ -10,6 +11,12 @@ export const metadata: Metadata = {
   },
 };
 
-export default function InterestPage() {
-  return <InterestFlow />;
+export default async function InterestPage() {
+  return (
+    <InterestFlow
+      showFoundingContributorOffer={
+        await isFoundingContributorSalesPageEnabled()
+      }
+    />
+  );
 }

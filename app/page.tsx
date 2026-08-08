@@ -1,9 +1,13 @@
-"use client";
-
-import Image from "next/image";
+/* eslint-disable @next/next/no-img-element */
+import Link from "next/link";
 import { BrandWordmark } from "./components/brand-wordmark";
-
-const INSTAGRAM_URL = "https://www.instagram.com/framewearable/";
+import { MobileNavigation } from "./components/mobile-navigation";
+import {
+  WaitlistSignupFlow,
+  WaitlistSignupProvider,
+} from "./components/waitlist-signup-flow";
+import { isFoundingContributorSalesPageEnabled } from "@/lib/contributor-sales-page.server";
+import { INSTAGRAM_URL } from "@/lib/site";
 
 const content = {
   navigation: [
@@ -15,7 +19,7 @@ const content = {
     ["Baseline", "What is normal for you during comparable periods."],
     ["Recovery", "How quickly you return toward your usual pattern."],
     ["Response", "How your cardiovascular system changes around meaningful events."],
-    ["Confidence", "What was measured reliably-and what was not."],
+    ["Confidence", "What was measured reliably, and what was not."],
   ],
   principles: [
     ["Personal, not generic", "Interpreted against your own baseline and daily context."],
@@ -34,69 +38,69 @@ function Arrow() {
   return <span aria-hidden="true">↗</span>;
 }
 
-export default function Home() {
+export default async function Home() {
+  const showLocalContributorAreas =
+    await isFoundingContributorSalesPageEnabled();
+  const mobileNavigation = showLocalContributorAreas
+    ? [
+        ...content.navigation,
+        { label: "Contributors", href: "/founding-contributors" },
+      ]
+    : content.navigation;
+
   return (
+    <WaitlistSignupProvider>
     <main>
       <header className="nav-shell">
         <nav className="nav container" aria-label="Primary navigation">
-          <a className="wordmark" href="#top" aria-label="Frame home">
+          <Link className="wordmark" href="/" aria-label="Frame home">
             <BrandWordmark priority />
-          </a>
+          </Link>
           <div className="nav-links">
             {content.navigation.map((item) => (
               <a key={item.href} href={item.href}>
                 {item.label}
               </a>
             ))}
+            {showLocalContributorAreas ? (
+              <a href="/founding-contributors">Contributors</a>
+            ) : null}
           </div>
-          <a className="nav-cta" href="/interest">
-            Interested
+          <a className="nav-cta" href="#homepage-hero-waitlist">
+            Join the waitlist
           </a>
+          <MobileNavigation items={mobileNavigation} />
         </nav>
       </header>
 
-      <section className="hero" id="top">
+      <section className="hero hero--email-first" id="top">
         <div className="hero-grid container">
           <div className="hero-copy">
-            <div className="hero-meta">
-              <p className="eyebrow">MEASURE YOUR BLOOD PRESSURE CONTINUOUSLY</p>
-              <span>Currently in development</span>
-            </div>
+            <p className="eyebrow hero-email-first__eyebrow">
+              MEASURE YOUR BLOOD PRESSURE CONTINUOUSLY
+            </p>
             <h1>See how your cardiovascular system responds to daily life.</h1>
             <p className="hero-intro">
-              Frame is developing a non-invasive upper-arm wearable that uses
-              ultrasound to track blood-pressure patterns through sleep, rest,
-              and recovery-then turns them into clear, personal insight.
+              Frame is developing a non-invasive upper-arm wearable that reveals
+              how blood pressure changes throughout daily life.
             </p>
-            <div className="hero-actions">
-              <a className="button button--dark" href="/interest">
-                Interested?
-              </a>
-              <a className="text-link" href="#how-it-works">
-                How it works <span aria-hidden="true">↓</span>
-              </a>
-            </div>
-            <ul className="attributes" aria-label="Product attributes">
-              <li>Non-invasive</li>
-              <li>Ultrasound-based</li>
-              <li>Screenless</li>
-            </ul>
+            <WaitlistSignupFlow placement="homepage_hero" compact />
           </div>
           <figure className="hero-visuals">
             <div className="hero-lifestyle">
-              <Image
-                src="/frame-hero-man-transparent-v2.png"
+              <img
+                src="/frame-hero-man-transparent-v3-720w.webp"
+                srcSet="/frame-hero-man-transparent-v3-480w.webp 480w, /frame-hero-man-transparent-v3-720w.webp 720w, /frame-hero-man-transparent-v3-960w.webp 960w"
                 alt="Man wearing the Frame wearable concept on his upper arm"
-                width={1092}
-                height={1440}
+                width={1089}
+                height={1444}
                 sizes="(max-width: 680px) 100vw, (max-width: 980px) 56vw, 34vw"
-                quality={88}
-                unoptimized
                 loading="eager"
                 fetchPriority="high"
+                decoding="async"
               />
             </div>
-            <figcaption>Product concept · final industrial design in development</figcaption>
+            <figcaption>Product concept. Final design in development.</figcaption>
           </figure>
         </div>
       </section>
@@ -110,7 +114,7 @@ export default function Home() {
               Blood pressure changes with sleep, movement, stress, exercise,
               food, posture, and recovery. Most people only see an occasional
               snapshot. Frame aims to help make sense of what happens in
-              between-without treating every temporary rise as harmful.
+              between, without treating every temporary rise as harmful.
             </p>
           </div>
           <div className="context-content">
@@ -127,17 +131,18 @@ export default function Home() {
             </div>
             <figure className="product-concept-showcase">
               <div className="product-concept-showcase__media">
-                <Image
-                  src="/frame-product-concept-realistic-v3-transparent.png"
+                <img
+                  src="/frame-product-concept-realistic-v3-transparent-720w.webp"
+                  srcSet="/frame-product-concept-realistic-v3-transparent-480w.webp 480w, /frame-product-concept-realistic-v3-transparent-720w.webp 720w, /frame-product-concept-realistic-v3-transparent-960w.webp 960w"
                   alt="Refined Frame upper-arm wearable concept with an adjustable charcoal knit band, burgundy clasp, and integrated ultrasound sensor"
                   width={1254}
                   height={1254}
                   sizes="(max-width: 680px) 84vw, (max-width: 980px) 480px, 42vw"
-                  quality={88}
-                  unoptimized
+                  loading="lazy"
+                  decoding="async"
                 />
               </div>
-              <figcaption>Product concept · final industrial design in development</figcaption>
+              <figcaption>Product concept · final design in development</figcaption>
             </figure>
             <div className="insight-list" aria-label="Response and confidence">
               {content.insights.slice(2).map(([title, description], index) => (
@@ -168,14 +173,16 @@ export default function Home() {
           <div className="method-layout">
             <figure className="wide-image">
               <div className="wide-image-media image-frame">
-                <Image
-                  src="/frame-sensing-concept-realistic-v3-transparent.png"
+                <img
+                  src="/frame-sensing-concept-realistic-v3-transparent-960w.webp"
+                  srcSet="/frame-sensing-concept-realistic-v3-transparent-640w.webp 640w, /frame-sensing-concept-realistic-v3-transparent-960w.webp 960w, /frame-sensing-concept-realistic-v3-transparent-1280w.webp 1280w"
                   alt="Exploded sensing concept showing the refined Frame ultrasound contact module above skin, tissue, and an artery"
                   className="cover-image"
-                  fill
+                  width={1448}
+                  height={1086}
                   sizes="(max-width: 680px) calc(100vw - 72px), (max-width: 980px) 40vw, 480px"
-                  quality={86}
-                  unoptimized
+                  loading="lazy"
+                  decoding="async"
                 />
               </div>
               <figcaption>
@@ -223,14 +230,16 @@ export default function Home() {
       <section className="software-section section">
         <div className="container software-grid">
           <figure className="software-image image-frame">
-            <Image
-              src="/frame-app-studio-v5.png"
+            <img
+              src="/frame-app-studio-v5-640w.webp"
+              srcSet="/frame-app-studio-v5-480w.webp 480w, /frame-app-studio-v5-640w.webp 640w, /frame-app-studio-v5-896w.webp 896w"
               alt="Refined Frame companion app in an accurately proportioned iPhone 17 mockup, showing 82 percent reliable overnight coverage, a motion interruption, and a late meal timing pattern"
               className="cover-image"
-              fill
+              width={897}
+              height={1752}
               sizes="(max-width: 980px) calc(100vw - 64px), 58vw"
-              quality={86}
-              unoptimized
+              loading="lazy"
+              decoding="async"
             />
           </figure>
           <div className="software-copy">
@@ -293,6 +302,27 @@ export default function Home() {
         </div>
       </section>
 
+      {showLocalContributorAreas ? (
+        <section className="home-contributor-section">
+          <div className="container home-contributor-grid">
+            <div>
+              <p className="eyebrow">Founding Contributors</p>
+              <h2>Join the work, not a product preorder.</h2>
+            </div>
+            <div>
+              <p>
+                A one-time $99 membership for 12 months of private development
+                updates, founder Q&amp;A, briefings, advisory votes, and optional
+                research opportunities. No device is included or guaranteed.
+              </p>
+              <a className="button button--dark" href="/founding-contributors?source=homepage">
+                Explore the membership
+              </a>
+            </div>
+          </div>
+        </section>
+      ) : null}
+
       <section className="final-cta" id="early-access">
         <div className="container final-grid">
           <div className="final-cta__copy">
@@ -300,14 +330,7 @@ export default function Home() {
             <h2>Help shape a new way to understand cardiovascular health.</h2>
           </div>
           <div className="final-cta__form final-cta__action">
-            <p>
-              Do you think Frame sounds interesting? Help us out by answering
-              some short questions and sharing your contact details so we can
-              keep you up to date with Frame&apos;s development!
-            </p>
-            <a className="button button--light" href="/interest">
-              Register your interest.
-            </a>
+            <WaitlistSignupFlow placement="homepage_final" tone="light" />
             <a
               className="collaboration-link"
               href="/contact?topic=research"
@@ -320,16 +343,19 @@ export default function Home() {
 
       <footer className="footer">
         <div className="container footer-top">
-          <a
+          <Link
             className="wordmark wordmark--footer"
-            href="#top"
+            href="/"
             aria-label="Frame home"
           >
             <BrandWordmark variant="light" />
-          </a>
+          </Link>
           <div className="footer-links">
             <a href="#product">Product</a>
             <a href="#research">Research</a>
+            {showLocalContributorAreas ? (
+              <a href="/founding-contributors">Founding Contributors</a>
+            ) : null}
             <a
               href={INSTAGRAM_URL}
               target="_blank"
@@ -345,12 +371,15 @@ export default function Home() {
         <div className="container footer-bottom">
           <p>
             Frame is under development and is not currently available for sale.
-            Product concepts and interfaces shown are illustrative. Frame is not
-            intended to diagnose or treat any medical condition.
+            Product concepts and interfaces shown are illustrative. Frame is being
+            developed for general wellness use and is not intended to diagnose,
+            screen for, monitor, treat, or manage any disease or medical condition,
+            guide treatment decisions, or replace an FDA-authorized medical device.
           </p>
           <p>© {new Date().getFullYear()} Frame Health Technologies</p>
         </div>
       </footer>
     </main>
+    </WaitlistSignupProvider>
   );
 }

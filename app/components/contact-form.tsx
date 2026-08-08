@@ -3,7 +3,6 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 
-const MIN_MESSAGE_LENGTH = 20;
 const MAX_MESSAGE_LENGTH = 3000;
 
 const CONTACT_TOPICS = [
@@ -28,10 +27,13 @@ export function ContactForm() {
   const [submissionError, setSubmissionError] = useState("");
 
   useEffect(() => {
-    const requestedTopic = new URLSearchParams(window.location.search).get("topic");
-    if (CONTACT_TOPICS.some(([value]) => value === requestedTopic)) {
-      setTopic(requestedTopic ?? "general");
-    }
+    const timer = window.setTimeout(() => {
+      const requestedTopic = new URLSearchParams(window.location.search).get("topic");
+      if (CONTACT_TOPICS.some(([value]) => value === requestedTopic)) {
+        setTopic(requestedTopic ?? "general");
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   function clearError(field: FieldName) {
@@ -63,8 +65,8 @@ export function ContactForm() {
     if (!CONTACT_TOPICS.some(([value]) => value === topic)) {
       nextErrors.topic = "Choose what you’d like to discuss.";
     }
-    if (normalizedMessage.length < MIN_MESSAGE_LENGTH) {
-      nextErrors.message = `Write at least ${MIN_MESSAGE_LENGTH} characters.`;
+    if (!normalizedMessage) {
+      nextErrors.message = "Enter a message.";
     } else if (normalizedMessage.length > MAX_MESSAGE_LENGTH) {
       nextErrors.message = `Keep your message to ${MAX_MESSAGE_LENGTH} characters or fewer.`;
     }
@@ -131,7 +133,7 @@ export function ContactForm() {
         </p>
         <div className="contact-form__success-actions">
           <Link className="button button--dark" href="/">
-            Back to Frame
+            <span aria-hidden="true">←</span> Back to home
           </Link>
           <button type="button" onClick={resetForm}>
             Send another message
@@ -243,14 +245,13 @@ export function ContactForm() {
               setMessage(event.target.value);
               clearError("message");
             }}
-            minLength={MIN_MESSAGE_LENGTH}
             maxLength={MAX_MESSAGE_LENGTH}
             aria-invalid={Boolean(errors.message)}
             aria-describedby="contact-message-hint"
             placeholder="Tell us what you’d like to discuss."
           />
           <div className="field-hint" id="contact-message-hint">
-            <span>Minimum {MIN_MESSAGE_LENGTH} characters</span>
+            <span>Up to {MAX_MESSAGE_LENGTH} characters</span>
             <span>{message.trim().length}/{MAX_MESSAGE_LENGTH}</span>
           </div>
           {errors.message ? (

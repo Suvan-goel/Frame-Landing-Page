@@ -1,14 +1,21 @@
 import type { MetadataRoute } from "next";
-
-const siteUrl = "https://frame-blood-pressure.suvang.chatgpt.site";
+import { SITE_URL } from "@/lib/site";
 
 export default function robots(): MetadataRoute.Robots {
   return {
     rules: {
       userAgent: "*",
       allow: ["/", "/privacy"],
-      disallow: ["/admin/", "/api/"],
+      disallow: [
+        "/admin/",
+        "/api/",
+        "/contributors",
+        "/founding-contributors",
+        "/preorder",
+        "/preorders",
+      ],
     },
-    sitemap: `${siteUrl}/sitemap.xml`,
+    sitemap: `${SITE_URL}/sitemap.xml`,
+    host: SITE_URL,
   };
 }

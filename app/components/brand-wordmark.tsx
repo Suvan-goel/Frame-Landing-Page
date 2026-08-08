@@ -1,5 +1,4 @@
-import Image from "next/image";
-
+/* eslint-disable @next/next/no-img-element */
 type BrandWordmarkProps = {
   priority?: boolean;
   variant?: "dark" | "light";
@@ -9,18 +8,21 @@ export function BrandWordmark({
   priority = false,
   variant = "dark",
 }: BrandWordmarkProps) {
+  const source =
+    variant === "light" ? "/frame-wordmark-light" : "/frame-wordmark";
+
   return (
-    <Image
+    <img
       className="wordmark__image"
-      src={
-        variant === "light"
-          ? "/frame-wordmark-light.png"
-          : "/frame-wordmark.png"
-      }
+      src={`${source}-360w.webp`}
+      srcSet={`${source}-240w.webp 240w, ${source}-360w.webp 360w, ${source}-480w.webp 480w`}
+      sizes="(max-width: 680px) 150px, 202px"
       alt=""
       width={1044}
       height={268}
-      priority={priority}
+      loading={priority ? "eager" : "lazy"}
+      fetchPriority={priority ? "high" : "auto"}
+      decoding="async"
     />
   );
 }
