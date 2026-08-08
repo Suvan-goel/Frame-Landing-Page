@@ -6,6 +6,12 @@ import type {
   PreorderDeliveryResponseMode,
 } from "./preorder-delivery-policy";
 import type { PreorderEnvironment } from "./preorder-operations.server";
+import {
+  renderFrameTransactionalEmail,
+  renderTransactionalBodyCopy,
+  renderTransactionalNotice,
+  renderTransactionalSummaryPanel,
+} from "./transactional-email-design";
 
 function escapeHtml(value: string) {
   return value
@@ -440,13 +446,20 @@ export async function sendPreorderShippingEmail(input: {
     input.trackingNumber ? `Tracking number: ${input.trackingNumber}` : null,
     input.trackingUrl ? `Track your shipment: ${input.trackingUrl}` : null,
   ].filter((value): value is string => Boolean(value));
+  const subject = `${sandbox ? "[Sandbox] " : ""}Your Frame pre-order has shipped | ${orderNumber}`;
+  const shipmentRows = [
+    ...(input.carrier ? [{ label: "Carrier", value: input.carrier }] : []),
+    ...(input.trackingNumber
+      ? [{ label: "Tracking number", value: input.trackingNumber }]
+      : []),
+  ];
 
   return sendPreorderEmail({
     preorderId: input.preorderId,
     emailType: "shipping_update",
     recipient: input.email,
     deliveryKey,
-    subject: `${sandbox ? "[Sandbox] " : ""}Your Frame pre-order has shipped | ${orderNumber}`,
+    subject,
     text: [
       `Hello ${input.fullName},`,
       "",
@@ -456,21 +469,38 @@ export async function sendPreorderShippingEmail(input: {
       "",
       "Support: support@framewearable.com",
     ].join("\n"),
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#20211e;line-height:1.6">
-        <p style="font-size:30px;font-family:Georgia,serif;margin-bottom:32px">Frame</p>
-        <p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#7b2937">${sandbox ? "Sandbox · " : ""}${escapeHtml(orderNumber)}</p>
-        <h1 style="font-family:Georgia,serif;font-weight:400;font-size:38px;line-height:1.1">Your Frame has shipped.</h1>
-        <p>Hello ${escapeHtml(input.fullName)}. Your pre-order is on its way.</p>
-        <div style="background:#f3efe6;padding:20px 24px;margin:28px 0">
-          ${input.carrier ? `<p style="margin:0 0 8px"><strong>Carrier:</strong> ${escapeHtml(input.carrier)}</p>` : ""}
-          ${input.trackingNumber ? `<p style="margin:0"><strong>Tracking number:</strong> ${escapeHtml(input.trackingNumber)}</p>` : ""}
-        </div>
-        ${input.trackingUrl ? `<p style="margin:30px 0"><a href="${escapeHtml(input.trackingUrl)}" style="display:inline-block;background:#20211e;color:#faf8f2;padding:13px 20px;text-decoration:none">Track shipment</a></p>` : ""}
-        ${manageUrl ? `<p><a href="${escapeHtml(manageUrl)}">View your order</a></p>` : ""}
-        <p style="color:#686a63">Questions? Contact support@framewearable.com.</p>
-      </div>
-    `,
+    html: renderFrameTransactionalEmail({
+      origin: input.origin,
+      subject,
+      preheader: `Frame pre-order ${orderNumber} is on its way.`,
+      headerLabel: "Order shipped",
+      headerMarker: "check",
+      eyebrow: `${sandbox ? "Sandbox · " : ""}Pre-order ${orderNumber}`,
+      heading: "Your Frame has shipped.",
+      intro: `Hello ${input.fullName}. Your pre-order is on its way.`,
+      bodyHtml: renderTransactionalSummaryPanel({
+        eyebrow: "Shipment details",
+        title: "Frame wearable",
+        rows: shipmentRows.length
+          ? shipmentRows
+          : [{ label: "Status", value: "Preparing carrier details" }],
+      }),
+      cta: input.trackingUrl
+        ? { label: "Track shipment", href: input.trackingUrl }
+        : manageUrl
+          ? { label: "View your order", href: manageUrl }
+          : null,
+      secondaryLink:
+        input.trackingUrl && manageUrl
+          ? { label: "View your order", href: manageUrl }
+          : null,
+      footerNote: `This is a transactional email about pre-order ${orderNumber}.`,
+      footerLinks: [
+        { label: "Pre-order terms", href: `${input.origin}/preorder/terms` },
+        { label: "Cancellation & refunds", href: `${input.origin}/preorder/refunds` },
+        { label: "Product status", href: `${input.origin}/preorder/product-status` },
+      ],
+    }),
   });
 }
 
@@ -500,13 +530,26 @@ export async function sendPreorderOwnerActionEmail(input: {
   const requestedAddress = input.requestedAddress
     ? addressLines(input.requestedAddress)
     : [];
+  const subject = `${sandbox ? "[Sandbox] " : ""}Action required: ${requestLabel} | ${orderNumber}`;
+  const details = renderTransactionalSummaryPanel({
+    eyebrow: "Customer request",
+    title: requestLabel,
+    rows: [
+      { label: "Customer", value: input.fullName },
+      { label: "Email", value: input.customerEmail },
+      ...(input.reason ? [{ label: "Reason", value: input.reason }] : []),
+      ...(requestedAddress.length
+        ? [{ label: "Requested address", value: requestedAddress.join("\n") }]
+        : []),
+    ],
+  });
 
   return sendPreorderEmail({
     preorderId: input.preorderId,
     emailType: "owner_action_required",
     recipient,
     deliveryKey: input.deliveryKey,
-    subject: `${sandbox ? "[Sandbox] " : ""}Action required: ${requestLabel} | ${orderNumber}`,
+    subject,
     text: [
       `Customer action required for ${orderNumber}.`,
       `Request: ${requestLabel}`,
@@ -519,18 +562,28 @@ export async function sendPreorderOwnerActionEmail(input: {
       "",
       `Review order: ${ownerUrl}`,
     ].join("\n"),
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#20211e;line-height:1.6">
-        <p style="font-size:30px;font-family:Georgia,serif;margin-bottom:32px">Frame</p>
-        <p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#7b2937">${sandbox ? "Sandbox · " : ""}${escapeHtml(orderNumber)}</p>
-        <h1 style="font-family:Georgia,serif;font-weight:400;font-size:38px;line-height:1.1">Customer action required.</h1>
-        <p><strong>${escapeHtml(input.fullName)}</strong> submitted a ${escapeHtml(requestLabel)}.</p>
-        ${input.reason ? `<p><strong>Reason:</strong> ${escapeHtml(input.reason)}</p>` : ""}
-        ${requestedAddress.length ? `<p><strong>Requested address</strong><br>${requestedAddress.map(escapeHtml).join("<br>")}</p>` : ""}
-        ${input.requestType === "cancellation" ? '<p style="padding:16px;border-left:4px solid #7b2937;background:#f7ecee"><strong>Refund required.</strong> Submit the full remaining refund within seven working days of cancellation.</p>' : ""}
-        <p style="margin:30px 0"><a href="${escapeHtml(ownerUrl)}" style="display:inline-block;background:#20211e;color:#faf8f2;padding:13px 20px;text-decoration:none">Review order</a></p>
-      </div>
-    `,
+    html: renderFrameTransactionalEmail({
+      origin: input.origin,
+      subject,
+      preheader: `${input.fullName} submitted a ${requestLabel} for ${orderNumber}.`,
+      headerLabel: "Action required",
+      headerMarker: "alert",
+      eyebrow: `${sandbox ? "Sandbox · " : ""}Pre-order ${orderNumber}`,
+      heading: "Customer action required.",
+      intro: `${input.fullName} submitted a ${requestLabel}.`,
+      bodyHtml:
+        details +
+        (input.requestType === "cancellation"
+          ? renderTransactionalNotice({
+              title: "Refund required.",
+              body: "Submit the full remaining refund within seven working days of cancellation.",
+              tone: "warning",
+            })
+          : ""),
+      cta: { label: "Review order", href: ownerUrl },
+      footerNote: `Internal operational email for pre-order ${orderNumber}.`,
+      footerLinks: [{ label: "Open order record", href: ownerUrl }],
+    }),
   });
 }
 
@@ -551,12 +604,13 @@ export async function sendPreorderAddressChangeResolutionEmail(input: {
   const sandbox = input.environment === "test";
   const manageUrl = `${input.origin}${input.managePath}`;
   const shipping = addressLines(input.shippingAddress);
+  const subject = `${sandbox ? "[Sandbox] " : ""}Shipping-address update | ${orderNumber}`;
   return sendPreorderEmail({
     preorderId: input.preorderId,
     emailType: "address_change_resolved",
     recipient: input.email,
     deliveryKey: `preorder-address-change-${input.approved ? "approved" : "declined"}-${input.preorderId}-${input.resolutionVersion}`,
-    subject: `${sandbox ? "[Sandbox] " : ""}Shipping-address update | ${orderNumber}`,
+    subject,
     text: [
       `Hello ${input.fullName},`,
       "",
@@ -569,18 +623,41 @@ export async function sendPreorderAddressChangeResolutionEmail(input: {
       `View your order: ${manageUrl}`,
       "Support: support@framewearable.com",
     ].join("\n"),
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#20211e;line-height:1.6">
-        <p style="font-size:30px;font-family:Georgia,serif;margin-bottom:32px">Frame</p>
-        <p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#7b2937">${sandbox ? "Sandbox · " : ""}${escapeHtml(orderNumber)}</p>
-        <h1 style="font-family:Georgia,serif;font-weight:400;font-size:38px;line-height:1.1">${input.approved ? "Your shipping address is updated." : "Your address request needs another step."}</h1>
-        <p>Hello ${escapeHtml(input.fullName)}. ${input.approved ? "We’ve applied the address you requested." : "We could not apply the requested change."}</p>
-        ${input.resolutionNote ? `<p><strong>Note:</strong> ${escapeHtml(input.resolutionNote)}</p>` : ""}
-        ${input.approved ? `<p><strong>Shipping address</strong><br>${shipping.map(escapeHtml).join("<br>")}</p>` : ""}
-        <p style="margin:30px 0"><a href="${escapeHtml(manageUrl)}" style="display:inline-block;background:#20211e;color:#faf8f2;padding:13px 20px;text-decoration:none">View your order</a></p>
-        <p style="color:#686a63">Questions? Contact support@framewearable.com.</p>
-      </div>
-    `,
+    html: renderFrameTransactionalEmail({
+      origin: input.origin,
+      subject,
+      preheader: input.approved
+        ? `The shipping address for ${orderNumber} has been updated.`
+        : `Your address request for ${orderNumber} needs another step.`,
+      headerLabel: input.approved ? "Address updated" : "Follow-up needed",
+      headerMarker: input.approved ? "check" : "alert",
+      eyebrow: `${sandbox ? "Sandbox · " : ""}Pre-order ${orderNumber}`,
+      heading: input.approved
+        ? "Your shipping address is updated."
+        : "Your address request needs another step.",
+      intro: `Hello ${input.fullName}. ${input.approved ? "We’ve applied the address you requested." : "We could not apply the requested change."}`,
+      bodyHtml:
+        (input.approved
+          ? renderTransactionalSummaryPanel({
+              eyebrow: "Shipping address",
+              title: "Address on file",
+              rows: [{ label: "Deliver to", value: shipping.join("\n") }],
+            })
+          : "") +
+        (input.resolutionNote
+          ? renderTransactionalNotice({
+              title: input.approved ? "Note." : "What we need.",
+              body: input.resolutionNote,
+              tone: input.approved ? "success" : "warning",
+            })
+          : ""),
+      cta: { label: "View your order", href: manageUrl },
+      footerNote: `This is a transactional email about pre-order ${orderNumber}.`,
+      footerLinks: [
+        { label: "Pre-order terms", href: `${input.origin}/preorder/terms` },
+        { label: "Cancellation & refunds", href: `${input.origin}/preorder/refunds` },
+      ],
+    }),
   });
 }
 
@@ -622,12 +699,13 @@ export async function sendPreorderDeliveryUpdateEmail(input: {
   const heading = materialChange
     ? "A proposed change to your Frame pre-order."
     : "An update to your estimated shipping.";
+  const subject = `${sandbox ? "[Sandbox] " : ""}${materialChange ? "Action required: proposed Frame product change" : "Shipping estimate update for your Frame pre-order"} | ${orderNumber}`;
   return sendPreorderEmail({
     preorderId: input.preorderId,
     emailType: "delivery_update",
     recipient: input.email,
     deliveryKey: `preorder-delivery-update-${input.preorderId}-${input.deliveryUpdateVersion}`,
-    subject: `${sandbox ? "[Sandbox] " : ""}${materialChange ? "Action required: proposed Frame product change" : "Shipping estimate update for your Frame pre-order"} | ${orderNumber}`,
+    subject,
     text: [
       `Hello ${input.fullName},`,
       "",
@@ -649,19 +727,42 @@ export async function sendPreorderDeliveryUpdateEmail(input: {
       `Review and respond: ${manageUrl}`,
       "Support: support@framewearable.com",
     ].join("\n"),
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#20211e;line-height:1.6">
-        <p style="font-size:30px;font-family:Georgia,serif;margin-bottom:32px">Frame</p>
-        <p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#7b2937">${sandbox ? "Sandbox · " : ""}${escapeHtml(orderNumber)}</p>
-        <h1 style="font-family:Georgia,serif;font-weight:400;font-size:38px;line-height:1.1">${escapeHtml(heading)}</h1>
-        <p>Hello ${escapeHtml(input.fullName)}. ${materialChange ? "We are proposing a material change to your Frame pre-order." : "The estimated shipping timing for your Frame pre-order has changed."}</p>
-        ${materialChange ? "" : `<div style="background:#f3efe6;padding:20px 24px;margin:28px 0"><p style="margin:0 0 8px"><strong>Previous:</strong> ${escapeHtml(input.previousEstimate)}</p><p style="margin:0"><strong>Current:</strong> ${escapeHtml(input.currentEstimate)}</p></div>`}
-        <p>${escapeHtml(input.message)}</p>
-        <p style="padding:16px;border-left:4px solid #7b2937;background:#f7ecee">${escapeHtml(responseInstruction)}</p>
-        <p style="margin:30px 0"><a href="${escapeHtml(manageUrl)}" style="display:inline-block;background:#20211e;color:#faf8f2;padding:13px 20px;text-decoration:none">Review and respond</a></p>
-        <p style="color:#686a63">You can accept the change or cancel for a full refund of the unshipped order from your order page.</p>
-      </div>
-    `,
+    html: renderFrameTransactionalEmail({
+      origin: input.origin,
+      subject,
+      preheader: materialChange
+        ? `A proposed product change requires your response for ${orderNumber}.`
+        : `Estimated shipping for ${orderNumber} changed from ${input.previousEstimate} to ${input.currentEstimate}.`,
+      headerLabel: materialChange ? "Response required" : "Shipping update",
+      headerMarker: materialChange ? "alert" : "arrow",
+      eyebrow: `${sandbox ? "Sandbox · " : ""}Pre-order ${orderNumber}`,
+      heading,
+      intro: `Hello ${input.fullName}. ${materialChange ? "We are proposing a material change to your Frame pre-order." : "The estimated shipping timing for your Frame pre-order has changed."}`,
+      bodyHtml:
+        (materialChange
+          ? ""
+          : renderTransactionalSummaryPanel({
+              eyebrow: "Revised timeline",
+              title: "Estimated shipping",
+              rows: [
+                { label: "Previous estimate", value: input.previousEstimate },
+                { label: "Current estimate", value: input.currentEstimate, emphasis: true },
+              ],
+            })) +
+        renderTransactionalBodyCopy(input.message) +
+        renderTransactionalNotice({
+          title: materialChange ? "Your response is required." : "Please review your options.",
+          body: responseInstruction,
+          tone: materialChange || input.responseMode !== "silence_is_consent" ? "warning" : "neutral",
+        }),
+      cta: { label: "Review and respond", href: manageUrl },
+      footerNote: `This is a transactional email about pre-order ${orderNumber}.`,
+      footerLinks: [
+        { label: "Pre-order terms", href: `${input.origin}/preorder/terms` },
+        { label: "Cancellation & refunds", href: `${input.origin}/preorder/refunds` },
+        { label: "Product status", href: `${input.origin}/preorder/product-status` },
+      ],
+    }),
   });
 }
 
@@ -682,12 +783,13 @@ export async function sendPreorderRefundUpdateEmail(input: {
   const sandbox = input.environment === "test";
   const manageUrl = `${input.origin}${input.managePath}`;
   const completed = input.status === "completed";
+  const subject = `${sandbox ? "[Sandbox] " : ""}${completed ? "Refund completed" : "Refund started"} | ${orderNumber}`;
   return sendPreorderEmail({
     preorderId: input.preorderId,
     emailType: "refund_update",
     recipient: input.email,
     deliveryKey: `preorder-refund-${input.status}-${input.preorderId}-${input.amountRefunded}`,
-    subject: `${sandbox ? "[Sandbox] " : ""}${completed ? "Refund completed" : "Refund started"} | ${orderNumber}`,
+    subject,
     text: [
       `Hello ${input.fullName},`,
       "",
@@ -699,17 +801,45 @@ export async function sendPreorderRefundUpdateEmail(input: {
       `View your order: ${manageUrl}`,
       "Support: support@framewearable.com",
     ].join("\n"),
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#20211e;line-height:1.6">
-        <p style="font-size:30px;font-family:Georgia,serif;margin-bottom:32px">Frame</p>
-        <p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#7b2937">${sandbox ? "Sandbox · " : ""}${escapeHtml(orderNumber)}</p>
-        <h1 style="font-family:Georgia,serif;font-weight:400;font-size:38px;line-height:1.1">${completed ? "Your refund is complete." : "Your refund has started."}</h1>
-        <p>Hello ${escapeHtml(input.fullName)}. ${completed ? `Stripe has completed a refund of ${escapeHtml(amount)}.` : `We’ve started a refund of ${escapeHtml(amount)}.`}</p>
-        ${completed ? "" : '<p style="color:#686a63">Your bank may take additional time to display the credit.</p>'}
-        <p style="margin:30px 0"><a href="${escapeHtml(manageUrl)}" style="display:inline-block;background:#20211e;color:#faf8f2;padding:13px 20px;text-decoration:none">View your order</a></p>
-        <p style="color:#686a63">Questions? Contact support@framewearable.com.</p>
-      </div>
-    `,
+    html: renderFrameTransactionalEmail({
+      origin: input.origin,
+      subject,
+      preheader: `${completed ? "Refund completed" : "Refund started"} for pre-order ${orderNumber}: ${amount}.`,
+      headerLabel: completed ? "Refund complete" : "Refund processing",
+      headerMarker: completed ? "check" : "arrow",
+      eyebrow: `${sandbox ? "Sandbox · " : ""}Pre-order ${orderNumber}`,
+      heading: completed ? "Your refund is complete." : "Your refund has started.",
+      intro: `Hello ${input.fullName}. ${completed ? `Stripe has completed a refund of ${amount}.` : `We’ve started a refund of ${amount}.`}`,
+      bodyHtml:
+        renderTransactionalSummaryPanel({
+          eyebrow: "Refund summary",
+          title: amount,
+          rows: [
+            { label: "Order", value: orderNumber },
+            {
+              label: "Status",
+              value: completed ? "Completed" : "Processing",
+              emphasis: true,
+            },
+          ],
+        }) +
+        (completed
+          ? renderTransactionalNotice({
+              title: "Refund completed.",
+              body: "The refund has been returned through the original payment method.",
+              tone: "success",
+            })
+          : renderTransactionalNotice({
+              title: "What happens next.",
+              body: "Your bank may take additional time to display the credit.",
+            })),
+      cta: { label: "View your order", href: manageUrl },
+      footerNote: `This is a transactional email about pre-order ${orderNumber}.`,
+      footerLinks: [
+        { label: "Cancellation & refunds", href: `${input.origin}/preorder/refunds` },
+        { label: "Contact", href: `${input.origin}/contact` },
+      ],
+    }),
   });
 }
 
@@ -726,12 +856,13 @@ export async function sendPreorderEmailChangeVerificationEmail(input: {
   const orderNumber = formatPreorderNumber(input.orderNumber);
   const sandbox = input.environment === "test";
   const verificationUrl = `${input.origin}/api/preorders/manage/email-change?token=${encodeURIComponent(input.verificationToken)}`;
+  const subject = `${sandbox ? "[Sandbox] " : ""}Verify your Frame order email | ${orderNumber}`;
   return sendPreorderEmail({
     preorderId: input.preorderId,
     emailType: "email_change_verification",
     recipient: input.newEmail,
     deliveryKey: input.deliveryKey,
-    subject: `${sandbox ? "[Sandbox] " : ""}Verify your Frame order email | ${orderNumber}`,
+    subject,
     text: [
       `Hello ${input.fullName},`,
       "",
@@ -741,16 +872,33 @@ export async function sendPreorderEmailChangeVerificationEmail(input: {
       "If you did not request this change, ignore this email. Your order email will stay the same.",
       "Support: support@framewearable.com",
     ].join("\n"),
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#20211e;line-height:1.6">
-        <p style="font-size:30px;font-family:Georgia,serif;margin-bottom:32px">Frame</p>
-        <p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#7b2937">${sandbox ? "Sandbox · " : ""}${escapeHtml(orderNumber)}</p>
-        <h1 style="font-family:Georgia,serif;font-weight:400;font-size:38px;line-height:1.1">Verify your new order email.</h1>
-        <p>Hello ${escapeHtml(input.fullName)}. Confirm this address within 30 minutes to use it for essential updates about ${escapeHtml(orderNumber)}.</p>
-        <p style="margin:30px 0"><a href="${escapeHtml(verificationUrl)}" style="display:inline-block;background:#20211e;color:#faf8f2;padding:13px 20px;text-decoration:none">Verify email address</a></p>
-        <p style="color:#686a63">If you did not request this change, ignore this email. Your order email will stay the same.</p>
-      </div>
-    `,
+    html: renderFrameTransactionalEmail({
+      origin: input.origin,
+      subject,
+      preheader: `Verify this email address within 30 minutes for pre-order ${orderNumber}.`,
+      headerLabel: "Verification required",
+      headerMarker: "alert",
+      eyebrow: `${sandbox ? "Sandbox · " : ""}Pre-order ${orderNumber}`,
+      heading: "Verify your new order email.",
+      intro: `Hello ${input.fullName}. Confirm this address within 30 minutes to use it for essential updates about ${orderNumber}.`,
+      bodyHtml:
+        renderTransactionalSummaryPanel({
+          eyebrow: "Secure verification",
+          title: "Link expires in 30 minutes",
+          rows: [
+            { label: "Order", value: orderNumber },
+            { label: "New email", value: input.newEmail },
+          ],
+        }) +
+        renderTransactionalNotice({
+          title: "Didn’t request this?",
+          body: "Ignore this email. Your order email will stay the same.",
+          tone: "warning",
+        }),
+      cta: { label: "Verify email address", href: verificationUrl },
+      footerNote: `This is a security email about pre-order ${orderNumber}.`,
+      footerLinks: [{ label: "Contact support", href: `${input.origin}/contact` }],
+    }),
   });
 }
 
@@ -777,12 +925,13 @@ export async function sendPreorderEmailChangeNotice(input: {
   const detail = isPrevious
     ? `The order email for ${orderNumber} was changed from ${input.previousEmail} to ${input.newEmail}.`
     : `${input.newEmail} will now receive essential updates for ${orderNumber}.`;
+  const subject = `${sandbox ? "[Sandbox] " : ""}${heading} | ${orderNumber}`;
   return sendPreorderEmail({
     preorderId: input.preorderId,
     emailType: "email_change_notice",
     recipient: input.recipient,
     deliveryKey: input.deliveryKey,
-    subject: `${sandbox ? "[Sandbox] " : ""}${heading} | ${orderNumber}`,
+    subject,
     text: [
       `Hello ${input.fullName},`,
       "",
@@ -795,14 +944,48 @@ export async function sendPreorderEmailChangeNotice(input: {
       "",
       "Support: support@framewearable.com",
     ].join("\n"),
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#20211e;line-height:1.6">
-        <p style="font-size:30px;font-family:Georgia,serif;margin-bottom:32px">Frame</p>
-        <p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#7b2937">${sandbox ? "Sandbox · " : ""}${escapeHtml(orderNumber)}</p>
-        <h1 style="font-family:Georgia,serif;font-weight:400;font-size:38px;line-height:1.1">${escapeHtml(heading)}</h1>
-        <p>Hello ${escapeHtml(input.fullName)}. ${escapeHtml(detail)}</p>
-        ${isPrevious ? '<p style="padding:16px;border-left:4px solid #7b2937;background:#f7ecee"><strong>Didn’t make this change?</strong> Contact support@framewearable.com immediately.</p>' : manageUrl ? `<p style="margin:30px 0"><a href="${escapeHtml(manageUrl)}" style="display:inline-block;background:#20211e;color:#faf8f2;padding:13px 20px;text-decoration:none">Manage your pre-order</a></p>` : ""}
-      </div>
-    `,
+    html: renderFrameTransactionalEmail({
+      origin: input.origin,
+      subject,
+      preheader: isPrevious
+        ? `The order email for ${orderNumber} was changed.`
+        : `Your email address is now verified for ${orderNumber}.`,
+      headerLabel: isPrevious ? "Email changed" : "Email verified",
+      headerMarker: isPrevious ? "alert" : "check",
+      eyebrow: `${sandbox ? "Sandbox · " : ""}Pre-order ${orderNumber}`,
+      heading,
+      intro: `Hello ${input.fullName}. ${detail}`,
+      bodyHtml:
+        renderTransactionalSummaryPanel({
+          eyebrow: "Order email",
+          title: isPrevious ? "Address changed" : "Verification complete",
+          rows: [
+            { label: "Previous email", value: input.previousEmail },
+            { label: "Current email", value: input.newEmail, emphasis: true },
+          ],
+        }) +
+        (isPrevious
+          ? renderTransactionalNotice({
+              title: "Didn’t make this change?",
+              body: "Contact support@framewearable.com immediately.",
+              tone: "warning",
+            })
+          : renderTransactionalNotice({
+              title: "What happens next.",
+              body: "Essential order updates will now be sent to the verified address.",
+              tone: "success",
+            })),
+      cta:
+        !isPrevious && manageUrl
+          ? { label: "Manage your pre-order", href: manageUrl }
+          : isPrevious
+            ? { label: "Contact support", href: `${input.origin}/contact` }
+            : null,
+      footerNote: `This is a security email about pre-order ${orderNumber}.`,
+      footerLinks: [
+        { label: "Contact support", href: `${input.origin}/contact` },
+        { label: "Privacy", href: `${input.origin}/privacy` },
+      ],
+    }),
   });
 }
