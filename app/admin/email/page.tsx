@@ -23,9 +23,9 @@ export default async function EmailAdminPage() {
             <a className="wordmark" href="/" aria-label="Frame home">
               <BrandWordmark />
             </a>
-            <p className="eyebrow">Owner view</p>
-            <h1>Email</h1>
-            <p>Write, preview, and send updates to selected Frame subscribers.</p>
+            <p className="eyebrow">Owner view · Email studio</p>
+            <h1>Email campaigns</h1>
+            <p>Create a Frame update, check every detail, then choose exactly who receives it.</p>
           </div>
           <div className="admin-actions">
             <a href="/admin/waitlist">Waitlist</a>

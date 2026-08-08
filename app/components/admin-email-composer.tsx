@@ -196,37 +196,58 @@ export function AdminEmailComposer({
 
   return (
     <>
+      <ol className="admin-email-progress" aria-label="Email campaign steps">
+        <li>
+          <span>1</span>
+          <div><strong>Write</strong><small>Create the message</small></div>
+        </li>
+        <li>
+          <span>2</span>
+          <div><strong>Preview</strong><small>Check the final email</small></div>
+        </li>
+        <li>
+          <span>3</span>
+          <div><strong>Audience</strong><small>Select recipients</small></div>
+        </li>
+        <li>
+          <span>4</span>
+          <div><strong>Send</strong><small>Review and confirm</small></div>
+        </li>
+      </ol>
+
       <section className="admin-email-metrics" aria-label="Mailing list overview">
         <article>
-          <span>Subscribed</span>
+          <span>Can receive email</span>
           <strong>{recipients.length}</strong>
-          <small>Available to select</small>
+          <small>Subscribed contacts available to select</small>
         </article>
         <article>
           <span>Survey complete</span>
           <strong>{qualifiedCount}</strong>
-          <small>Qualified waitlist leads</small>
+          <small>Qualified leads in the mailing list</small>
         </article>
         <article>
-          <span>Unsubscribed</span>
+          <span>Suppressed</span>
           <strong>{suppressedCount}</strong>
-          <small>Always excluded from sends</small>
+          <small>Unsubscribed and always excluded</small>
         </article>
       </section>
 
       <div className="admin-email-workspace">
         <section className="admin-email-compose" aria-labelledby="compose-heading">
           <div className="admin-email-section-heading">
+            <span className="admin-email-step-number" aria-hidden="true">1</span>
             <div>
-              <p className="eyebrow">01 · Compose</p>
-              <h2 id="compose-heading">Write your email</h2>
+              <p className="eyebrow">Compose</p>
+              <h2 id="compose-heading">Write the update</h2>
+              <p>Start with what subscribers see in their inbox, then write the message itself.</p>
             </div>
-            <span>Draft stays on this page until sent</span>
+            <span className="admin-email-draft-note">Not saved · stays on this page</span>
           </div>
 
           <div className="admin-email-fields">
             <label>
-              <span>Subject line</span>
+              <span>Subject line <i>Required</i></span>
               <input
                 type="text"
                 value={content.subject}
@@ -237,7 +258,7 @@ export function AdminEmailComposer({
               <small>{content.subject.length}/{EMAIL_SUBJECT_MAX_LENGTH}</small>
             </label>
             <label>
-              <span>Inbox preview text <i>Optional</i></span>
+              <span>Preview text <i>Optional</i></span>
               <input
                 type="text"
                 value={content.previewText}
@@ -248,20 +269,25 @@ export function AdminEmailComposer({
               <small>{content.previewText.length}/{EMAIL_PREVIEW_MAX_LENGTH}</small>
             </label>
             <label>
-              <span>Email content</span>
+              <span>Email content <i>Required</i></span>
               <textarea
                 value={content.body}
                 onChange={(event) => updateContent("body", event.target.value)}
                 maxLength={EMAIL_BODY_MAX_LENGTH}
                 placeholder={`Hi {{first_name}},\n\nHere’s what’s new at Frame…`}
               />
-              <small>
-                Use {"{{first_name}}"} to personalise the message · {content.body.length}/{EMAIL_BODY_MAX_LENGTH}
+              <small className="admin-email-field-meta">
+                <span>Tip: use <code>{"{{first_name}}"}</code> to personalise the message</span>
+                <span>{content.body.length}/{EMAIL_BODY_MAX_LENGTH}</span>
               </small>
             </label>
+            <div className="admin-email-optional-heading">
+              <span>Optional call to action</span>
+              <small>Add both fields to show a button in the email.</small>
+            </div>
             <div className="admin-email-cta-fields">
               <label>
-                <span>Button label <i>Optional</i></span>
+                <span>Button label</span>
                 <input
                   type="text"
                   value={content.ctaLabel}
@@ -271,7 +297,7 @@ export function AdminEmailComposer({
                 />
               </label>
               <label>
-                <span>Button destination</span>
+                <span>Button destination URL</span>
                 <input
                   type="url"
                   value={content.ctaUrl}
@@ -285,13 +311,15 @@ export function AdminEmailComposer({
 
         <section className="admin-email-preview" aria-labelledby="preview-heading">
           <div className="admin-email-section-heading">
+            <span className="admin-email-step-number" aria-hidden="true">2</span>
             <div>
-              <p className="eyebrow">02 · Preview</p>
-              <h2 id="preview-heading">See the final email</h2>
+              <p className="eyebrow">Preview</p>
+              <h2 id="preview-heading">Check before sending</h2>
+              <p>This is the exact email layout your selected recipient will see.</p>
             </div>
           </div>
           <div className="admin-email-preview-controls">
-            <label htmlFor="preview-recipient">Preview as</label>
+            <label htmlFor="preview-recipient">Personalise preview for</label>
             <select
               id="preview-recipient"
               value={previewRecipient?.id ?? ""}
@@ -306,6 +334,10 @@ export function AdminEmailComposer({
             </select>
           </div>
           <div className="admin-email-inbox-preview">
+            <div className="admin-email-preview-chrome">
+              <span></span><span></span><span></span>
+              <strong>Email preview</strong>
+            </div>
             <dl>
               <div><dt>From</dt><dd>Frame Updates &lt;updates@framewearable.com&gt;</dd></div>
               <div><dt>To</dt><dd>{previewRecipient?.email ?? "selected@recipient.com"}</dd></div>
@@ -318,11 +350,13 @@ export function AdminEmailComposer({
 
       <section className="admin-email-audience" aria-labelledby="audience-heading">
         <div className="admin-email-section-heading">
+          <span className="admin-email-step-number" aria-hidden="true">3</span>
           <div>
-            <p className="eyebrow">03 · Audience</p>
-            <h2 id="audience-heading">Choose exactly who receives it</h2>
+            <p className="eyebrow">Audience</p>
+            <h2 id="audience-heading">Choose the recipients</h2>
+            <p>Filter the mailing list, then select only the people who should receive this update.</p>
           </div>
-          <strong>{selectedIds.size} selected</strong>
+          <strong className="admin-email-selected-count">{selectedIds.size} selected</strong>
         </div>
 
         <div className="admin-email-audience-tools">
@@ -374,6 +408,12 @@ export function AdminEmailComposer({
           ) : null}
         </div>
 
+        <div className="admin-email-recipient-header" aria-hidden="true">
+          <span></span>
+          <span>Subscriber</span>
+          <span>Waitlist status</span>
+          <span>Joined</span>
+        </div>
         <div className="admin-email-recipient-list">
           {visibleRecipients.map((recipient) => (
             <label className="admin-email-recipient" key={recipient.id}>
@@ -406,15 +446,16 @@ export function AdminEmailComposer({
       </section>
 
       <section className="admin-email-send-panel" aria-label="Send email">
+        <span className="admin-email-step-number admin-email-step-number--inverse" aria-hidden="true">4</span>
         <div>
-          <p className="eyebrow">Ready to send?</p>
+          <p className="eyebrow">Final check</p>
           <h2>
             {selectedIds.size
               ? `${selectedIds.size} ${selectedIds.size === 1 ? "recipient" : "recipients"} selected`
               : "Choose your recipients"}
           </h2>
           <p>
-            Every person receives a separate email with an unsubscribe link. You’ll confirm once more before anything is sent.
+            Each person receives a separate, personalised email with an unsubscribe link. You’ll confirm once more before anything is sent.
           </p>
         </div>
         <button
@@ -437,8 +478,9 @@ export function AdminEmailComposer({
       <section className="admin-email-history" aria-labelledby="history-heading">
         <div className="admin-email-section-heading">
           <div>
-            <p className="eyebrow">Delivery record</p>
-            <h2 id="history-heading">Recent sends</h2>
+            <p className="eyebrow">Campaign history</p>
+            <h2 id="history-heading">Recent email activity</h2>
+            <p>A record of the latest campaigns and their final delivery status.</p>
           </div>
         </div>
         {campaigns.length ? (
