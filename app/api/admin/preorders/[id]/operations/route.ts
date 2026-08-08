@@ -7,6 +7,10 @@ import {
   authorizePreorderAdminApi,
   isPreorderId,
 } from "@/lib/preorder-admin-api.server";
+import {
+  PREORDER_DELIVERY_NOTICE_TYPES,
+  type PreorderDeliveryNoticeType,
+} from "@/lib/preorder-delivery-policy";
 
 export const dynamic = "force-dynamic";
 
@@ -19,6 +23,7 @@ const fulfillmentStatuses = new Set([
   "delivered",
   "returned",
 ]);
+const deliveryNoticeTypes = new Set<string>(PREORDER_DELIVERY_NOTICE_TYPES);
 
 function response(body: Record<string, unknown>, status = 200) {
   return Response.json(body, {
@@ -71,6 +76,9 @@ export async function PATCH(
     resolutionNote?: unknown;
     currentEstimate?: unknown;
     message?: unknown;
+    noticeType?: unknown;
+    responseDeadline?: unknown;
+    shortDelayEligibilityConfirmed?: unknown;
   };
   try {
     payload = (await request.json()) as typeof payload;
@@ -132,14 +140,26 @@ export async function PATCH(
     if (payload.action === "send_delivery_update") {
       const currentEstimate = cleanText(payload.currentEstimate, 200);
       const message = cleanText(payload.message, 1_000);
-      if (!currentEstimate || !message) {
-        return response({ error: "Add the new estimate and a customer-facing explanation." }, 400);
+      const noticeType = cleanText(payload.noticeType, 100);
+      if (!currentEstimate || !message || !noticeType || !deliveryNoticeTypes.has(noticeType)) {
+        return response({ error: "Choose the notice type and add the customer-facing details." }, 400);
+      }
+      const parsedDeadline =
+        typeof payload.responseDeadline === "string" && payload.responseDeadline
+          ? new Date(payload.responseDeadline)
+          : null;
+      if (parsedDeadline && !Number.isFinite(parsedDeadline.getTime())) {
+        return response({ error: "Choose a valid customer-response deadline." }, 400);
       }
       const result = await sendPreorderDeliveryUpdate({
         origin: new URL(request.url).origin,
         orderId: id,
+        noticeType: noticeType as PreorderDeliveryNoticeType,
+        shortDelayEligibilityConfirmed:
+          payload.shortDelayEligibilityConfirmed === true,
         currentEstimate,
         message,
+        responseDeadline: parsedDeadline?.toISOString() ?? null,
       });
       return response({ status: "sent", customerEmail: result.customerEmail });
     }

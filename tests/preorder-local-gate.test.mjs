@@ -2,8 +2,11 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 import {
+  PREORDER_LEGAL_PACK_VERSION,
+  PREORDER_PRODUCT_STATUS_VERSION,
   PREORDER_SELLER_DETAILS_COMPLETE,
   PREORDER_TERMS_VERSION,
+  PREORDER_WARRANTY_DETAILS_COMPLETE,
 } from "../lib/preorder.ts";
 
 async function render(path = "/", init, origin = "https://framewearable.com", env = {}) {
@@ -26,7 +29,10 @@ async function render(path = "/", init, origin = "https://framewearable.com", en
 
 test("keeps every remote public pre-order surface unavailable while legal versions are draft", async () => {
   assert.match(PREORDER_TERMS_VERSION, /^draft-/);
+  assert.equal(PREORDER_TERMS_VERSION, PREORDER_LEGAL_PACK_VERSION);
+  assert.match(PREORDER_PRODUCT_STATUS_VERSION, /^draft-/);
   assert.equal(PREORDER_SELLER_DETAILS_COMPLETE, false);
+  assert.equal(PREORDER_WARRANTY_DETAILS_COMPLETE, true);
 
   const paths = [
     "/preorder",
@@ -49,6 +55,7 @@ test("keeps every remote public pre-order surface unavailable while legal versio
       render(path, undefined, "https://framewearable.com", {
         PREORDER_MODE: "live",
         PREORDER_LEGAL_APPROVED_VERSION: PREORDER_TERMS_VERSION,
+        PREORDER_PRODUCT_STATUS_APPROVED_VERSION: PREORDER_PRODUCT_STATUS_VERSION,
       }),
     ),
   );
@@ -83,44 +90,121 @@ test("keeps the funnel usable only on loopback during development", async () => 
     PREORDER_MODE: "test",
     PREORDER_SHIPPING_RATE_CENTS: "1900",
   };
-  const [response, productStatusResponse, privacyResponse] = await Promise.all([
+  const [homeResponse, response, productStatusResponse, termsResponse, refundsResponse, privacyResponse] = await Promise.all([
+    render("/", undefined, "http://localhost", environment),
     render("/preorder/review", undefined, "http://localhost", environment),
     render("/preorder/product-status", undefined, "http://localhost", environment),
+    render("/preorder/terms", undefined, "http://localhost", environment),
+    render("/preorder/refunds", undefined, "http://localhost", environment),
     render("/privacy", undefined, "http://localhost", environment),
   ]);
+
+  assert.equal(homeResponse.status, 200);
+  const home = await homeResponse.text();
+  assert.match(home, /Pre-order now/);
+  assert.match(home, /You save/);
+  assert.match(home, /40(?:<!-- -->)?% off/);
+  assert.match(home, /Pre-order now -\s*(?:<!-- -->)?\$299/);
+  assert.doesNotMatch(home, /Pre-order now — \$299/);
+  assert.match(home, /href="\/preorder\/review\?source=homepage_header"/);
+  assert.match(home, /href="\/preorder\/review\?source=homepage_hero"/);
+  assert.match(home, /href="\/preorder\/review\?source=homepage"/);
+  assert.doesNotMatch(home, /Pre-orders are now open\./);
+  assert.match(home, /See details/);
+  assert.doesNotMatch(home, /home-preorder-hero__offer/);
+  assert.doesNotMatch(home, /home-preorder-hero__saving-note/);
+  assert.match(home, /home-preorder-hero__actions/);
+  assert.match(home, /home-preorder-hero__prices/);
+  assert.match(home, /id="homepage-hero-preorder-waitlist-email"/);
+  assert.match(
+    home,
+    /for="homepage-hero-preorder-waitlist-email">[\s\n]*Get updates/,
+  );
+  assert.match(home, /placeholder="you@example\.com"/);
+  assert.ok(
+    home.indexOf('id="homepage-hero-preorder-waitlist-email"') >
+      home.indexOf('href="/preorder/review?source=homepage_hero"'),
+  );
+  assert.match(home, /Save\s*(?:<!-- -->)?\$200/);
+  assert.match(home, /40\s*(?:<!-- -->)?% off the release price/);
+  assert.match(home, /Product development status/);
+  assert.match(home, /US shipping/);
+  assert.match(home, /\$299/);
+  assert.match(home, /\$499/);
+  assert.match(home, /\$19/);
+  assert.match(home, /Q1 2027/);
+  assert.match(home, /Cancellation &amp; Refund Policy/);
+
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /Review your Frame pre-order/);
   assert.match(html, /Product subtotal/);
-  assert.match(html, /Estimated total/);
+  assert.match(html, /Release price/);
+  assert.match(html, /Pre-order saving/);
+  assert.match(html, /Total before tax/);
   assert.match(html, /\$318/);
+  assert.match(html, /\$499/);
+  assert.match(html, /\$200/);
   assert.match(html, /\$19/);
   assert.match(html, /standard US shipping/i);
   assert.match(html, /all 50 states and Washington, DC/);
   assert.match(html, /Estimated shipping/);
-  assert.match(html, /March 2027/);
-  assert.match(html, /not currently FDA cleared or approved/);
-  assert.match(html, /Continue to Secure Checkout/);
+  assert.match(html, /Q1 2027/);
+  assert.match(html, /has not received FDA marketing authorization/);
+  assert.match(html, /Continue to secure checkout/);
+  assert.match(html, /Cancellation and Refund Policy/);
+  assert.match(html, /rel="canonical" href="https:\/\/framewearable\.com\/preorder\/review"/);
+  assert.match(html, /name="email"/);
+  assert.match(html, /name="postalCode"/);
   assert.match(html, /frame-product-concept-realistic-v3-transparent/);
 
   assert.equal(productStatusResponse.status, 200);
   const productStatus = await productStatusResponse.text();
   assert.match(productStatus, /Performance has not been established/);
-  assert.match(productStatus, /not currently FDA cleared or approved/);
+  assert.match(productStatus, /has not received FDA marketing/);
+  assert.match(productStatus, /You pay in full at checkout/);
+  assert.match(productStatus, /Last updated August 8, 2026/);
+
+  assert.equal(termsResponse.status, 200);
+  const terms = await termsResponse.text();
+  assert.match(terms, /Your pre-order at a glance/);
+  assert.match(terms, /Delivery and risk of loss/);
+  assert.match(terms, /Warranty and product problems/);
+  assert.match(terms, /has not received FDA marketing authorization/);
+  assert.match(terms, /Legal pack version draft-2026-08-08-v6/);
+  assert.match(terms, /\$499\s*(?:<!-- -->)? release price/);
+  assert.match(terms, /save\s*(?:<!-- -->)?\$200/);
+  assert.match(terms, /Frame One-Year Limited Warranty/);
+
+  assert.equal(refundsResponse.status, 200);
+  const refunds = await refundsResponse.text();
+  assert.match(refunds, /Legal pack version draft-2026-08-08-v6/);
+  assert.match(refunds, /Policy at a glance/);
+  assert.match(refunds, /Material product changes/);
+  assert.match(refunds, /Frame One-Year Limited/);
+  assert.match(refunds, /rel="canonical" href="https:\/\/framewearable\.com\/preorder\/refunds"/);
 
   assert.equal(privacyResponse.status, 200);
   assert.match(await privacyResponse.text(), /Device pre-orders/);
 });
 
 test("keeps the public homepage free of pre-order discovery and blocks webhook browsing", async () => {
-  const [homeResponse, webhookResponse, worker, robots, metaPixel, environmentExample] =
-    await Promise.all([
+  const [
+    homeResponse,
+    webhookResponse,
+    worker,
+    robots,
+    metaPixel,
+    environmentExample,
+    preorderAccess,
+  ] = await Promise.all([
       render("/"),
       render("/api/stripe/webhook"),
       readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
       readFile(new URL("../app/robots.ts", import.meta.url), "utf8"),
       readFile(new URL("../app/components/meta-pixel.tsx", import.meta.url), "utf8"),
       readFile(new URL("../.env.example", import.meta.url), "utf8"),
+      readFile(new URL("../lib/preorder-access.ts", import.meta.url), "utf8"),
     ]);
 
   assert.equal(homeResponse.status, 200);
@@ -135,4 +219,9 @@ test("keeps the public homepage free of pre-order discovery and blocks webhook b
   assert.match(metaPixel, /PRIVATE_ADDITIONAL_PREFIXES = \["\/preorder", "\/preorders"\]/);
   assert.match(environmentExample, /^PREORDER_MODE=off$/m);
   assert.match(environmentExample, /^PREORDER_LEGAL_APPROVED_VERSION=$/m);
+  assert.match(environmentExample, /^PREORDER_PRODUCT_STATUS_APPROVED_VERSION=$/m);
+  assert.match(environmentExample, /^PREORDER_MAINTENANCE_SECRET=/m);
+  assert.match(preorderAccess, /PREORDER_PRODUCT_STATUS_VERSION/);
+  assert.match(preorderAccess, /approvedProductStatusVersion === PREORDER_PRODUCT_STATUS_VERSION/);
+  assert.match(preorderAccess, /PREORDER_WARRANTY_DETAILS_COMPLETE/);
 });

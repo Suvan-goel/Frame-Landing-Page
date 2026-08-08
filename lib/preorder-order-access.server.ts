@@ -2,11 +2,22 @@ import { getRuntimeValue } from "./runtime-env.server";
 
 const TOKEN_VERSION = 1;
 const TOKEN_TTL_SECONDS = 540 * 24 * 60 * 60;
+const EMAIL_CHANGE_TOKEN_TTL_SECONDS = 30 * 60;
 
 type ManageTokenPayload = {
   v: number;
   orderId: string;
   tokenVersion: number;
+  expiresAt: number;
+};
+
+type EmailChangeTokenPayload = {
+  v: number;
+  kind: "email_change";
+  orderId: string;
+  tokenVersion: number;
+  currentEmail: string;
+  newEmail: string;
   expiresAt: number;
 };
 
@@ -39,16 +50,7 @@ async function signingKey() {
   );
 }
 
-export async function createPreorderManageToken(input: {
-  orderId: string;
-  tokenVersion: number;
-}) {
-  const payload: ManageTokenPayload = {
-    v: TOKEN_VERSION,
-    orderId: input.orderId,
-    tokenVersion: input.tokenVersion,
-    expiresAt: Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS,
-  };
+async function signPayload(payload: Record<string, unknown>) {
   const encodedPayload = base64UrlEncode(
     new TextEncoder().encode(JSON.stringify(payload)),
   );
@@ -60,15 +62,7 @@ export async function createPreorderManageToken(input: {
   return `${encodedPayload}.${base64UrlEncode(new Uint8Array(signature))}`;
 }
 
-export async function createPreorderManagePath(input: {
-  orderId: string;
-  tokenVersion: number;
-}) {
-  const token = await createPreorderManageToken(input);
-  return `/preorder/manage?token=${encodeURIComponent(token)}`;
-}
-
-export async function verifyPreorderManageToken(token: string) {
+async function verifiedPayload(token: string) {
   if (!token || token.length > 1_500) return null;
   const [encodedPayload, encodedSignature, extra] = token.split(".");
   if (!encodedPayload || !encodedSignature || extra) return null;
@@ -81,23 +75,84 @@ export async function verifyPreorderManageToken(token: string) {
       new TextEncoder().encode(encodedPayload),
     );
     if (!verified) return null;
-
-    const payload = JSON.parse(
+    return JSON.parse(
       new TextDecoder().decode(base64UrlDecode(encodedPayload)),
-    ) as Partial<ManageTokenPayload>;
-    if (
-      payload.v !== TOKEN_VERSION ||
-      typeof payload.orderId !== "string" ||
-      !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(payload.orderId) ||
-      !Number.isSafeInteger(payload.tokenVersion) ||
-      Number(payload.tokenVersion) < 1 ||
-      !Number.isSafeInteger(payload.expiresAt) ||
-      Number(payload.expiresAt) <= Math.floor(Date.now() / 1000)
-    ) {
-      return null;
-    }
-    return payload as ManageTokenPayload;
+    ) as Record<string, unknown>;
   } catch {
     return null;
   }
+}
+
+function validOrderAccessPayload(payload: Record<string, unknown>) {
+  return (
+    payload.v === TOKEN_VERSION &&
+    typeof payload.orderId === "string" &&
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(payload.orderId) &&
+    Number.isSafeInteger(payload.tokenVersion) &&
+    Number(payload.tokenVersion) >= 1 &&
+    Number.isSafeInteger(payload.expiresAt) &&
+    Number(payload.expiresAt) > Math.floor(Date.now() / 1000)
+  );
+}
+
+export async function createPreorderManageToken(input: {
+  orderId: string;
+  tokenVersion: number;
+}) {
+  const payload: ManageTokenPayload = {
+    v: TOKEN_VERSION,
+    orderId: input.orderId,
+    tokenVersion: input.tokenVersion,
+    expiresAt: Math.floor(Date.now() / 1000) + TOKEN_TTL_SECONDS,
+  };
+  return signPayload(payload);
+}
+
+export async function createPreorderManagePath(input: {
+  orderId: string;
+  tokenVersion: number;
+}) {
+  const token = await createPreorderManageToken(input);
+  return `/preorder/manage?token=${encodeURIComponent(token)}`;
+}
+
+export async function verifyPreorderManageToken(token: string) {
+  const payload = await verifiedPayload(token);
+  if (!payload || payload.kind || !validOrderAccessPayload(payload)) return null;
+  return payload as ManageTokenPayload;
+}
+
+export async function createPreorderEmailChangeToken(input: {
+  orderId: string;
+  tokenVersion: number;
+  currentEmail: string;
+  newEmail: string;
+}) {
+  const payload: EmailChangeTokenPayload = {
+    v: TOKEN_VERSION,
+    kind: "email_change",
+    orderId: input.orderId,
+    tokenVersion: input.tokenVersion,
+    currentEmail: input.currentEmail,
+    newEmail: input.newEmail,
+    expiresAt: Math.floor(Date.now() / 1000) + EMAIL_CHANGE_TOKEN_TTL_SECONDS,
+  };
+  return signPayload(payload);
+}
+
+export async function verifyPreorderEmailChangeToken(token: string) {
+  const payload = await verifiedPayload(token);
+  if (
+    !payload ||
+    payload.kind !== "email_change" ||
+    !validOrderAccessPayload(payload) ||
+    typeof payload.currentEmail !== "string" ||
+    typeof payload.newEmail !== "string" ||
+    payload.currentEmail.length > 254 ||
+    payload.newEmail.length > 254 ||
+    payload.currentEmail === payload.newEmail
+  ) {
+    return null;
+  }
+  return payload as EmailChangeTokenPayload;
 }

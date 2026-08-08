@@ -5,8 +5,9 @@ import { PreorderSuccess } from "../../components/preorder-success";
 import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
 
 export const metadata: Metadata = {
-  title: "Your Frame pre-order is confirmed",
-  description: "Your Frame pre-order confirmation and estimated shipping details.",
+  title: "Frame pre-order confirmation",
+  description: "Review your Frame pre-order confirmation, receipt, and estimated shipping details.",
+  alternates: { canonical: "/preorder/success" },
   robots: { index: false, follow: false },
 };
 

@@ -28,7 +28,7 @@ export default async function EmailAdminPage() {
             <p>Create a Frame update, check every detail, then choose exactly who receives it.</p>
           </div>
           <div className="admin-actions">
-            <a href="/admin/waitlist">Waitlist</a>
+            <a href="/admin/waitlist">Subscribers</a>
             <a href="/admin/preorders">Pre-orders</a>
             <a className="text-link" href={chatGPTSignOutPath("/")}>Sign out</a>
           </div>

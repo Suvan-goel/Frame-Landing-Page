@@ -3,22 +3,60 @@
 import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
+import {
+  parsePreorderCheckoutRequestKey,
+  parsePreorderDeliveryDraft,
+  PREORDER_CHECKOUT_REQUEST_KEY,
+  PREORDER_DELIVERY_DRAFT_KEY,
+  serializePreorderCheckoutRequestKey,
+  serializePreorderDeliveryDraft,
+  type PreorderDeliveryDraft,
+} from "@/lib/preorder-checkout-draft";
 import { PREORDER_US_STATE_OPTIONS } from "@/lib/preorder-shipping";
+
+function readCheckoutDraft(key: string) {
+  try {
+    return window.sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function saveCheckoutDraft(delivery: PreorderDeliveryDraft, requestKey: string) {
+  try {
+    window.sessionStorage.setItem(
+      PREORDER_DELIVERY_DRAFT_KEY,
+      serializePreorderDeliveryDraft(delivery),
+    );
+    window.sessionStorage.setItem(
+      PREORDER_CHECKOUT_REQUEST_KEY,
+      serializePreorderCheckoutRequestKey(requestKey),
+    );
+  } catch {
+    // Storage may be unavailable; checkout must still continue.
+  }
+}
 
 export function PreorderCheckoutReview({
   priceLabel,
+  releasePriceLabel,
+  savingsLabel,
+  discountPercent,
   shippingPriceLabel,
   estimatedTotalLabel,
   estimatedShipping,
 }: {
   priceLabel: string;
+  releasePriceLabel: string;
+  savingsLabel: string;
+  discountPercent: number;
   shippingPriceLabel: string;
   estimatedTotalLabel: string;
   estimatedShipping: string;
 }) {
   const [productStatusAcknowledged, setProductStatusAcknowledged] = useState(false);
   const [termsAcknowledged, setTermsAcknowledged] = useState(false);
-  const [delivery, setDelivery] = useState({
+  const [delivery, setDelivery] = useState<PreorderDeliveryDraft>({
     email: "",
     fullName: "",
     line1: "",
@@ -29,15 +67,39 @@ export function PreorderCheckoutReview({
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const [acknowledgementError, setAcknowledgementError] = useState<
+    "product-status" | "terms" | null
+  >(null);
   const [cancelled, setCancelled] = useState(false);
   const requestKey = useRef<string | null>(null);
+  const productStatusCheckbox = useRef<HTMLInputElement>(null);
+  const termsCheckbox = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      setCancelled(new URLSearchParams(window.location.search).get("cancelled") === "1");
+      const checkoutWasCancelled = new URLSearchParams(window.location.search).get("cancelled") === "1";
+      setCancelled(checkoutWasCancelled);
+      if (checkoutWasCancelled) {
+        const restored = parsePreorderDeliveryDraft(
+          readCheckoutDraft(PREORDER_DELIVERY_DRAFT_KEY),
+        );
+        if (restored) setDelivery(restored);
+        requestKey.current = parsePreorderCheckoutRequestKey(
+          readCheckoutDraft(PREORDER_CHECKOUT_REQUEST_KEY),
+        );
+      }
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);
+
+  function updateDelivery(
+    field: keyof PreorderDeliveryDraft,
+    value: string,
+  ) {
+    requestKey.current = null;
+    setDelivery((current) => ({ ...current, [field]: value }));
+    setError("");
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -47,17 +109,22 @@ export function PreorderCheckoutReview({
     }
     if (!productStatusAcknowledged) {
       setError("Confirm that you understand Frame is still in development.");
+      setAcknowledgementError("product-status");
+      window.requestAnimationFrame(() => productStatusCheckbox.current?.focus());
       return;
     }
     if (!termsAcknowledged) {
       setError("Accept the Pre-order Terms to continue.");
+      setAcknowledgementError("terms");
+      window.requestAnimationFrame(() => termsCheckbox.current?.focus());
       return;
     }
 
     setSubmitting(true);
     setError("");
     const query = new URLSearchParams(window.location.search);
-    requestKey.current ??= window.crypto.randomUUID();
+    const checkoutRequestKey =
+      (requestKey.current ??= window.crypto.randomUUID());
     try {
       const response = await fetch("/api/preorders/checkout", {
         method: "POST",
@@ -82,13 +149,14 @@ export function PreorderCheckoutReview({
           utmSource: query.get("utm_source"),
           utmMedium: query.get("utm_medium"),
           utmCampaign: query.get("utm_campaign"),
-          requestKey: requestKey.current,
+          requestKey: checkoutRequestKey,
         }),
       });
       const result = (await response.json()) as { url?: string; error?: string };
       if (!response.ok || !result.url) {
         throw new Error(result.error ?? "Secure payment is temporarily unavailable.");
       }
+      saveCheckoutDraft(delivery, checkoutRequestKey);
       window.location.assign(result.url);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Secure payment is temporarily unavailable.");
@@ -123,6 +191,11 @@ export function PreorderCheckoutReview({
               <h2 id="preorder-order-title">Frame</h2>
               <span>Qty 1</span>
             </div>
+            <p className="preorder-order-summary__offer">
+              <span>Pre-order saving</span>
+              <strong>Save {savingsLabel}</strong>
+              <small>{discountPercent}% off the {releasePriceLabel} release price</small>
+            </p>
             <p className="preorder-order-summary__shipping">
               <span>Estimated shipping</span>
               <strong>{estimatedShipping}</strong>
@@ -131,10 +204,16 @@ export function PreorderCheckoutReview({
 
           <div className="preorder-order-summary__checkout">
             <dl className="preorder-order-summary__prices">
+              <div className="preorder-order-summary__release-price">
+                <dt>Release price</dt><dd><del>{releasePriceLabel}</del></dd>
+              </div>
+              <div className="preorder-order-summary__saving">
+                <dt>Pre-order saving</dt><dd>−{savingsLabel}</dd>
+              </div>
               <div><dt>Product subtotal</dt><dd>{priceLabel}</dd></div>
               <div><dt>Standard US shipping</dt><dd>{shippingPriceLabel}</dd></div>
               <div className="preorder-order-summary__total">
-                <dt>Estimated total</dt><dd>{estimatedTotalLabel}</dd>
+                <dt>Total before tax</dt><dd>{estimatedTotalLabel}</dd>
               </div>
             </dl>
             <p className="preorder-order-summary__tax">Sales tax is calculated at Stripe Checkout.</p>
@@ -143,89 +222,85 @@ export function PreorderCheckoutReview({
 
         <div className="preorder-checkout-body">
           <div className="preorder-checkout-body__delivery">
-            <fieldset className="preorder-delivery-details">
+            <fieldset className="preorder-delivery-details" aria-describedby="preorder-country-note">
               <legend>Delivery details</legend>
               <p>
-                Enter the US address where you expect Frame to be shipped. Stripe
-                uses it to calculate applicable sales tax.
+                Enter the US address where you’d like us to ship your Frame. Stripe
+                will use it to calculate sales tax.
               </p>
               <div className="preorder-delivery-details__grid">
-                <label>
+                <label htmlFor="preorder-delivery-email">
                   <span>Email address</span>
                   <input
+                    id="preorder-delivery-email"
+                    name="email"
                     required
                     type="email"
                     autoComplete="email"
                     maxLength={254}
                     value={delivery.email}
-                    onChange={(event) => {
-                      setDelivery((current) => ({ ...current, email: event.target.value }));
-                      setError("");
-                    }}
+                    onChange={(event) => updateDelivery("email", event.target.value)}
                   />
                 </label>
-                <label>
+                <label htmlFor="preorder-delivery-name">
                   <span>Full name</span>
                   <input
+                    id="preorder-delivery-name"
+                    name="fullName"
                     required
                     autoComplete="name"
                     minLength={2}
                     maxLength={120}
                     value={delivery.fullName}
-                    onChange={(event) => {
-                      setDelivery((current) => ({ ...current, fullName: event.target.value }));
-                      setError("");
-                    }}
+                    onChange={(event) => updateDelivery("fullName", event.target.value)}
                   />
                 </label>
-                <label className="preorder-delivery-details__wide">
+                <label className="preorder-delivery-details__wide" htmlFor="preorder-delivery-line1">
                   <span>Address line 1</span>
                   <input
+                    id="preorder-delivery-line1"
+                    name="addressLine1"
                     required
                     autoComplete="shipping address-line1"
+                    minLength={3}
                     maxLength={200}
                     value={delivery.line1}
-                    onChange={(event) => {
-                      setDelivery((current) => ({ ...current, line1: event.target.value }));
-                      setError("");
-                    }}
+                    onChange={(event) => updateDelivery("line1", event.target.value)}
                   />
                 </label>
-                <label className="preorder-delivery-details__wide">
+                <label className="preorder-delivery-details__wide" htmlFor="preorder-delivery-line2">
                   <span>Address line 2 <small>Optional</small></span>
                   <input
+                    id="preorder-delivery-line2"
+                    name="addressLine2"
                     autoComplete="shipping address-line2"
                     maxLength={200}
                     value={delivery.line2}
-                    onChange={(event) => {
-                      setDelivery((current) => ({ ...current, line2: event.target.value }));
-                      setError("");
-                    }}
+                    onChange={(event) => updateDelivery("line2", event.target.value)}
                   />
                 </label>
-                <label className="preorder-delivery-details__compact preorder-delivery-details__city">
+                <label className="preorder-delivery-details__compact preorder-delivery-details__city" htmlFor="preorder-delivery-city">
                   <span>City</span>
                   <input
+                    id="preorder-delivery-city"
+                    name="city"
                     required
                     autoComplete="shipping address-level2"
+                    minLength={2}
                     maxLength={100}
                     value={delivery.city}
-                    onChange={(event) => {
-                      setDelivery((current) => ({ ...current, city: event.target.value }));
-                      setError("");
-                    }}
+                    onChange={(event) => updateDelivery("city", event.target.value)}
                   />
                 </label>
-                <label className="preorder-delivery-details__compact preorder-delivery-details__state">
+                <label className="preorder-delivery-details__compact preorder-delivery-details__state" htmlFor="preorder-delivery-state">
                   <span>State</span>
                   <select
+                    id="preorder-delivery-state"
+                    name="state"
                     required
                     autoComplete="shipping address-level1"
                     value={delivery.state}
-                    onChange={(event) => {
-                      setDelivery((current) => ({ ...current, state: event.target.value }));
-                      setError("");
-                    }}
+                    onChange={(event) => updateDelivery("state", event.target.value)}
                   >
                     <option value="">Select a state</option>
                     {PREORDER_US_STATE_OPTIONS.map(([code, label]) => (
@@ -233,19 +308,18 @@ export function PreorderCheckoutReview({
                     ))}
                   </select>
                 </label>
-                <label className="preorder-delivery-details__compact preorder-delivery-details__zip">
+                <label className="preorder-delivery-details__compact preorder-delivery-details__zip" htmlFor="preorder-delivery-postal-code">
                   <span>ZIP code</span>
                   <input
+                    id="preorder-delivery-postal-code"
+                    name="postalCode"
                     required
                     inputMode="numeric"
                     autoComplete="shipping postal-code"
                     pattern="[0-9]{5}(-[0-9]{4})?"
                     maxLength={10}
                     value={delivery.postalCode}
-                    onChange={(event) => {
-                      setDelivery((current) => ({ ...current, postalCode: event.target.value }));
-                      setError("");
-                    }}
+                    onChange={(event) => updateDelivery("postalCode", event.target.value)}
                   />
                 </label>
               </div>
@@ -261,9 +335,10 @@ export function PreorderCheckoutReview({
               <div>
                 <h2 id="preorder-development-title">Frame is still in development.</h2>
                 <p>
-                  Performance is not yet validated. Specifications and timing may
-                  change. Frame is not currently FDA cleared or approved and is not
-                  for medical decisions.
+                  Frame is being developed solely for general-wellness use. It has not
+                  received FDA marketing authorization as a blood-pressure monitor, and
+                  its performance has not been established for medical use. Do not use
+                  Frame for medical decisions.
                 </p>
               </div>
               <Link href="/preorder/product-status">Read Product Status →</Link>
@@ -271,12 +346,16 @@ export function PreorderCheckoutReview({
 
             <fieldset className="checkout-review__acknowledgements">
               <legend>Before you continue</legend>
-              <div className="checkout-checkbox checkout-checkbox--required">
+              <div className={`checkout-checkbox checkout-checkbox--required${acknowledgementError === "product-status" ? " checkout-checkbox--invalid" : ""}`}>
                 <input
+                  ref={productStatusCheckbox}
                   id="preorder-product-status-acknowledgement"
                   type="checkbox"
+                  aria-required="true"
+                  aria-invalid={acknowledgementError === "product-status"}
+                  aria-describedby={acknowledgementError === "product-status" ? "preorder-acknowledgement-error" : undefined}
                   checked={productStatusAcknowledged}
-                  onChange={(event) => { setProductStatusAcknowledged(event.target.checked); setError(""); }}
+                  onChange={(event) => { setProductStatusAcknowledged(event.target.checked); setAcknowledgementError(null); setError(""); }}
                 />
                 <span className="checkout-checkbox__copy">
                   <label htmlFor="preorder-product-status-acknowledgement">
@@ -285,12 +364,16 @@ export function PreorderCheckoutReview({
                   <span>Specifications, validation and shipping timing may change. Frame is not for medical decisions.</span>
                 </span>
               </div>
-              <div className="checkout-checkbox checkout-checkbox--required preorder-checkout-review__second-check">
+              <div className={`checkout-checkbox checkout-checkbox--required preorder-checkout-review__second-check${acknowledgementError === "terms" ? " checkout-checkbox--invalid" : ""}`}>
                 <input
+                  ref={termsCheckbox}
                   id="preorder-terms-acknowledgement"
                   type="checkbox"
+                  aria-required="true"
+                  aria-invalid={acknowledgementError === "terms"}
+                  aria-describedby={acknowledgementError === "terms" ? "preorder-acknowledgement-error" : undefined}
                   checked={termsAcknowledged}
-                  onChange={(event) => { setTermsAcknowledged(event.target.checked); setError(""); }}
+                  onChange={(event) => { setTermsAcknowledged(event.target.checked); setAcknowledgementError(null); setError(""); }}
                 />
                 <span className="checkout-checkbox__copy">
                   <label htmlFor="preorder-terms-acknowledgement">
@@ -298,30 +381,41 @@ export function PreorderCheckoutReview({
                   </label>
                   <span>
                     Review the <Link href="/preorder/terms">Pre-order Terms</Link> and{" "}
-                    <Link href="/preorder/refunds">Refund Policy</Link>.
+                    <Link href="/preorder/refunds">Cancellation and Refund Policy</Link>.
                   </span>
                 </span>
               </div>
             </fieldset>
 
+            {acknowledgementError ? (
+              <p
+                id="preorder-acknowledgement-error"
+                className="form-error preorder-checkout-review__acknowledgement-error"
+                role="alert"
+              >
+                {error}
+              </p>
+            ) : null}
+
           </div>
         </div>
 
         <footer className="preorder-checkout-footer">
-          {error ? <p className="form-error checkout-review__error" role="alert">{error}</p> : null}
+          {error && !acknowledgementError ? <p className="form-error checkout-review__error" role="alert">{error}</p> : null}
           <div className="preorder-checkout-action">
             <button className="button button--dark checkout-review__submit" type="submit" disabled={submitting}>
-              {submitting ? "Opening secure checkout…" : "Continue to Secure Checkout"}
+              {submitting ? "Opening secure checkout…" : "Continue to secure checkout"}
             </button>
             <p className="preorder-checkout-action__promise">
-              One-time payment · Cancel before dispatch for a full refund
+              You’ll review the final total, including tax, before payment. One-time
+              payment; cancel before fulfilment for a full refund.
             </p>
           </div>
 
           <div className="checkout-review__policies">
             <Link href="/preorder/product-status">Product Status</Link>
             <Link href="/preorder/terms">Pre-order Terms</Link>
-            <Link href="/preorder/refunds">Refund Policy</Link>
+            <Link href="/preorder/refunds">Cancellation and Refund Policy</Link>
             <Link href="/privacy">Privacy Notice</Link>
           </div>
         </footer>

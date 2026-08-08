@@ -1,6 +1,10 @@
 import { getSupabaseAdmin } from "./supabase-admin.server";
 import { getRuntimeValue } from "./runtime-env.server";
 import { formatPreorderMoney, formatPreorderNumber } from "./preorder";
+import type {
+  PreorderDeliveryNoticeType,
+  PreorderDeliveryResponseMode,
+} from "./preorder-delivery-policy";
 import type { PreorderEnvironment } from "./preorder-operations.server";
 
 function escapeHtml(value: string) {
@@ -34,7 +38,9 @@ async function sendPreorderEmail(input: {
     | "cancellation_declined"
     | "address_change_resolved"
     | "delivery_update"
-    | "refund_update";
+    | "refund_update"
+    | "email_change_verification"
+    | "email_change_notice";
   recipient: string;
   deliveryKey: string;
   subject: string;
@@ -257,7 +263,7 @@ export async function sendPreorderConfirmationEmail(input: {
           <p style="margin:0"><strong>Placed:</strong> ${escapeHtml(placedAt)}</p>
         </div>
         <p><strong>Estimated shipping:</strong> ${escapeHtml(input.estimatedShipping)}</p>
-        <p style="padding:16px;border-left:4px solid #7b2937;background:#f7ecee"><strong>Frame remains under development.</strong> It is not currently FDA cleared or approved and is not for medical decisions. You may cancel for a full refund at any time before dispatch.</p>
+        <p style="padding:16px;border-left:4px solid #7b2937;background:#f7ecee"><strong>Frame remains under development.</strong> It is not currently FDA cleared or approved and is not for medical decisions. You may cancel for a full refund before fulfilment begins.</p>
         <p><strong>Shipping address</strong><br>${shipping.map(escapeHtml).join("<br>")}</p>
         ${sandbox ? '<p style="padding:16px;border-left:4px solid #7b2937;background:#f7ecee"><strong>Sandbox order.</strong> No live charge was made.</p>' : ""}
         ${manageUrl ? `<p style="margin:30px 0"><a href="${escapeHtml(manageUrl)}" style="display:inline-block;background:#20211e;color:#faf8f2;padding:13px 20px;text-decoration:none">Manage your pre-order</a></p>` : ""}
@@ -443,27 +449,58 @@ export async function sendPreorderDeliveryUpdateEmail(input: {
   previousEstimate: string;
   currentEstimate: string;
   message: string;
+  noticeType: PreorderDeliveryNoticeType;
+  responseMode: PreorderDeliveryResponseMode;
+  responseDeadline: string | null;
   managePath: string;
   deliveryUpdateVersion: number;
 }) {
   const orderNumber = formatPreorderNumber(input.orderNumber);
   const sandbox = input.environment === "test";
   const manageUrl = `${input.origin}${input.managePath}`;
+  const materialChange = input.noticeType === "material_product_change";
+  const responseDeadline = input.responseDeadline
+    ? new Intl.DateTimeFormat("en-US", {
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+        timeZone: "UTC",
+        timeZoneName: "short",
+      }).format(new Date(input.responseDeadline))
+    : null;
+  const responseInstruction =
+    input.responseMode === "silence_is_consent"
+      ? "This is the first delay and the definite revised shipping date is no more than 30 days later. If you do not respond before we ship, we will treat your silence as consent to this short delay. You may cancel before fulfilment begins."
+      : `Please affirmatively accept by ${responseDeadline}. If you do not accept by that deadline, we will automatically cancel the unshipped order and refund the full amount to your original payment method.`;
+  const heading = materialChange
+    ? "A proposed change to your Frame pre-order."
+    : "An update to your estimated shipping.";
   return sendPreorderEmail({
     preorderId: input.preorderId,
     emailType: "delivery_update",
     recipient: input.email,
     deliveryKey: `preorder-delivery-update-${input.preorderId}-${input.deliveryUpdateVersion}`,
-    subject: `${sandbox ? "[Sandbox] " : ""}Shipping estimate update for your Frame pre-order — ${orderNumber}`,
+    subject: `${sandbox ? "[Sandbox] " : ""}${materialChange ? "Action required: proposed Frame product change" : "Shipping estimate update for your Frame pre-order"} — ${orderNumber}`,
     text: [
       `Hello ${input.fullName},`,
       "",
-      `The estimated shipping timing for ${orderNumber} has changed.`,
-      `Previous estimate: ${input.previousEstimate}`,
-      `Current estimate: ${input.currentEstimate}`,
+      materialChange
+        ? `We are proposing a material change to ${orderNumber}.`
+        : `The estimated shipping timing for ${orderNumber} has changed.`,
+      ...(materialChange
+        ? []
+        : [
+            `Previous estimate: ${input.previousEstimate}`,
+            `Current estimate: ${input.currentEstimate}`,
+          ]),
       `Update: ${input.message}`,
       "",
-      "You can accept the updated estimate or cancel for a full refund of the unshipped order.",
+      materialChange
+        ? "You can accept the proposed product change or cancel for a full refund of the unshipped order."
+        : "You can accept the updated estimate or cancel for a full refund of the unshipped order.",
+      responseInstruction,
       `Review and respond: ${manageUrl}`,
       "Support: support@framewearable.com",
     ].join("\n"),
@@ -471,15 +508,13 @@ export async function sendPreorderDeliveryUpdateEmail(input: {
       <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#20211e;line-height:1.6">
         <p style="font-size:30px;font-family:Georgia,serif;margin-bottom:32px">Frame</p>
         <p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#7b2937">${sandbox ? "Sandbox · " : ""}${escapeHtml(orderNumber)}</p>
-        <h1 style="font-family:Georgia,serif;font-weight:400;font-size:38px;line-height:1.1">An update to your estimated shipping.</h1>
-        <p>Hello ${escapeHtml(input.fullName)}. The estimated shipping timing for your Frame pre-order has changed.</p>
-        <div style="background:#f3efe6;padding:20px 24px;margin:28px 0">
-          <p style="margin:0 0 8px"><strong>Previous:</strong> ${escapeHtml(input.previousEstimate)}</p>
-          <p style="margin:0"><strong>Current:</strong> ${escapeHtml(input.currentEstimate)}</p>
-        </div>
+        <h1 style="font-family:Georgia,serif;font-weight:400;font-size:38px;line-height:1.1">${escapeHtml(heading)}</h1>
+        <p>Hello ${escapeHtml(input.fullName)}. ${materialChange ? "We are proposing a material change to your Frame pre-order." : "The estimated shipping timing for your Frame pre-order has changed."}</p>
+        ${materialChange ? "" : `<div style="background:#f3efe6;padding:20px 24px;margin:28px 0"><p style="margin:0 0 8px"><strong>Previous:</strong> ${escapeHtml(input.previousEstimate)}</p><p style="margin:0"><strong>Current:</strong> ${escapeHtml(input.currentEstimate)}</p></div>`}
         <p>${escapeHtml(input.message)}</p>
-        <p style="margin:30px 0"><a href="${escapeHtml(manageUrl)}" style="display:inline-block;background:#20211e;color:#faf8f2;padding:13px 20px;text-decoration:none">Review shipping update</a></p>
-        <p style="color:#686a63">You can accept the updated estimate or cancel for a full refund of the unshipped order from your order page.</p>
+        <p style="padding:16px;border-left:4px solid #7b2937;background:#f7ecee">${escapeHtml(responseInstruction)}</p>
+        <p style="margin:30px 0"><a href="${escapeHtml(manageUrl)}" style="display:inline-block;background:#20211e;color:#faf8f2;padding:13px 20px;text-decoration:none">Review and respond</a></p>
+        <p style="color:#686a63">You can accept the change or cancel for a full refund of the unshipped order from your order page.</p>
       </div>
     `,
   });
@@ -528,6 +563,100 @@ export async function sendPreorderRefundUpdateEmail(input: {
         ${completed ? "" : '<p style="color:#686a63">Your bank may take additional time to display the credit.</p>'}
         <p style="margin:30px 0"><a href="${escapeHtml(manageUrl)}" style="display:inline-block;background:#20211e;color:#faf8f2;padding:13px 20px;text-decoration:none">View your order</a></p>
         <p style="color:#686a63">Questions? Contact support@framewearable.com.</p>
+      </div>
+    `,
+  });
+}
+
+export async function sendPreorderEmailChangeVerificationEmail(input: {
+  origin: string;
+  preorderId: string;
+  orderNumber: number;
+  environment: PreorderEnvironment;
+  fullName: string;
+  newEmail: string;
+  verificationToken: string;
+  deliveryKey: string;
+}) {
+  const orderNumber = formatPreorderNumber(input.orderNumber);
+  const sandbox = input.environment === "test";
+  const verificationUrl = `${input.origin}/api/preorders/manage/email-change?token=${encodeURIComponent(input.verificationToken)}`;
+  return sendPreorderEmail({
+    preorderId: input.preorderId,
+    emailType: "email_change_verification",
+    recipient: input.newEmail,
+    deliveryKey: input.deliveryKey,
+    subject: `${sandbox ? "[Sandbox] " : ""}Verify your Frame order email — ${orderNumber}`,
+    text: [
+      `Hello ${input.fullName},`,
+      "",
+      `Use the secure link below within 30 minutes to make this the order email for ${orderNumber}:`,
+      verificationUrl,
+      "",
+      "If you did not request this change, ignore this email. Your order email will stay the same.",
+      "Support: support@framewearable.com",
+    ].join("\n"),
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#20211e;line-height:1.6">
+        <p style="font-size:30px;font-family:Georgia,serif;margin-bottom:32px">Frame</p>
+        <p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#7b2937">${sandbox ? "Sandbox · " : ""}${escapeHtml(orderNumber)}</p>
+        <h1 style="font-family:Georgia,serif;font-weight:400;font-size:38px;line-height:1.1">Verify your new order email.</h1>
+        <p>Hello ${escapeHtml(input.fullName)}. Confirm this address within 30 minutes to use it for essential updates about ${escapeHtml(orderNumber)}.</p>
+        <p style="margin:30px 0"><a href="${escapeHtml(verificationUrl)}" style="display:inline-block;background:#20211e;color:#faf8f2;padding:13px 20px;text-decoration:none">Verify email address</a></p>
+        <p style="color:#686a63">If you did not request this change, ignore this email. Your order email will stay the same.</p>
+      </div>
+    `,
+  });
+}
+
+export async function sendPreorderEmailChangeNotice(input: {
+  origin: string;
+  preorderId: string;
+  orderNumber: number;
+  environment: PreorderEnvironment;
+  fullName: string;
+  recipient: string;
+  previousEmail: string;
+  newEmail: string;
+  managePath: string | null;
+  audience: "previous" | "new";
+  deliveryKey: string;
+}) {
+  const orderNumber = formatPreorderNumber(input.orderNumber);
+  const sandbox = input.environment === "test";
+  const isPrevious = input.audience === "previous";
+  const manageUrl = input.managePath ? `${input.origin}${input.managePath}` : null;
+  const heading = isPrevious
+    ? "Your Frame order email was changed."
+    : "Your order email is verified.";
+  const detail = isPrevious
+    ? `The order email for ${orderNumber} was changed from ${input.previousEmail} to ${input.newEmail}.`
+    : `${input.newEmail} will now receive essential updates for ${orderNumber}.`;
+  return sendPreorderEmail({
+    preorderId: input.preorderId,
+    emailType: "email_change_notice",
+    recipient: input.recipient,
+    deliveryKey: input.deliveryKey,
+    subject: `${sandbox ? "[Sandbox] " : ""}${heading} — ${orderNumber}`,
+    text: [
+      `Hello ${input.fullName},`,
+      "",
+      detail,
+      ...(isPrevious
+        ? ["If you did not make this change, contact support immediately."]
+        : manageUrl
+          ? [`Manage your order: ${manageUrl}`]
+          : []),
+      "",
+      "Support: support@framewearable.com",
+    ].join("\n"),
+    html: `
+      <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#20211e;line-height:1.6">
+        <p style="font-size:30px;font-family:Georgia,serif;margin-bottom:32px">Frame</p>
+        <p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#7b2937">${sandbox ? "Sandbox · " : ""}${escapeHtml(orderNumber)}</p>
+        <h1 style="font-family:Georgia,serif;font-weight:400;font-size:38px;line-height:1.1">${escapeHtml(heading)}</h1>
+        <p>Hello ${escapeHtml(input.fullName)}. ${escapeHtml(detail)}</p>
+        ${isPrevious ? '<p style="padding:16px;border-left:4px solid #7b2937;background:#f7ecee"><strong>Didn’t make this change?</strong> Contact support@framewearable.com immediately.</p>' : manageUrl ? `<p style="margin:30px 0"><a href="${escapeHtml(manageUrl)}" style="display:inline-block;background:#20211e;color:#faf8f2;padding:13px 20px;text-decoration:none">Manage your pre-order</a></p>` : ""}
       </div>
     `,
   });

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useRef, useState } from "react";
+import type { PreorderDeliveryNoticeType } from "@/lib/preorder-delivery-policy";
 
 const fulfillmentOptions = [
   ["on_hold", "On hold"],
@@ -24,6 +25,18 @@ function addressLines(address: Record<string, unknown> | null) {
   ].filter((value): value is string => typeof value === "string" && Boolean(value));
 }
 
+function formatUtcDateTime(value: string) {
+  return new Intl.DateTimeFormat("en-GB", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "UTC",
+    timeZoneName: "short",
+  }).format(new Date(value));
+}
+
 export function PreorderOrderOperations({
   orderId,
   environment,
@@ -34,7 +47,11 @@ export function PreorderOrderOperations({
   requestedShippingAddress,
   addressChangeReason,
   currentEstimatedDelivery,
+  deliveryUpdateVersion,
   deliveryUpdateStatus,
+  deliveryUpdateNoticeType,
+  deliveryUpdateResponseMode,
+  deliveryUpdateResponseDeadline,
   deliveryUpdateMessage: initialDeliveryUpdateMessage,
   carrier: initialCarrier,
   trackingNumber: initialTrackingNumber,
@@ -51,7 +68,11 @@ export function PreorderOrderOperations({
   requestedShippingAddress: Record<string, unknown> | null;
   addressChangeReason: string | null;
   currentEstimatedDelivery: string;
+  deliveryUpdateVersion: number;
   deliveryUpdateStatus: string;
+  deliveryUpdateNoticeType: string;
+  deliveryUpdateResponseMode: string;
+  deliveryUpdateResponseDeadline: string | null;
   deliveryUpdateMessage: string | null;
   carrier: string | null;
   trackingNumber: string | null;
@@ -72,6 +93,13 @@ export function PreorderOrderOperations({
   const [ownerNote, setOwnerNote] = useState(initialOwnerNote ?? "");
   const [addressResolutionNote, setAddressResolutionNote] = useState("");
   const [deliveryEstimate, setDeliveryEstimate] = useState(currentEstimatedDelivery);
+  const [deliveryNoticeType, setDeliveryNoticeType] =
+    useState<PreorderDeliveryNoticeType>(
+      deliveryUpdateVersion === 0 ? "first_short_delay" : "consent_required_delay",
+    );
+  const [deliveryResponseDeadline, setDeliveryResponseDeadline] = useState("");
+  const [shortDelayEligibilityConfirmed, setShortDelayEligibilityConfirmed] =
+    useState(false);
   const [deliveryMessage, setDeliveryMessage] = useState(
     initialDeliveryUpdateMessage ?? "",
   );
@@ -176,11 +204,21 @@ export function PreorderOrderOperations({
 
   async function sendDeliveryUpdate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!deliveryEstimate.trim() || !deliveryMessage.trim()) {
+    const materialChange = deliveryNoticeType === "material_product_change";
+    const affirmativeConsent = deliveryNoticeType !== "first_short_delay";
+    if ((!materialChange && !deliveryEstimate.trim()) || !deliveryMessage.trim()) {
       setError("Add the new estimate and a customer-facing explanation.");
       return;
     }
-    if (!window.confirm("Send this delivery update to the customer?")) return;
+    if (affirmativeConsent && !deliveryResponseDeadline) {
+      setError("Choose the deadline for the customer’s affirmative response.");
+      return;
+    }
+    if (!affirmativeConsent && !shortDelayEligibilityConfirmed) {
+      setError("Confirm that this is the first definite delay and is no more than 30 days later.");
+      return;
+    }
+    if (!window.confirm("Send this order-change notice to the customer?")) return;
     setBusy("delivery-update");
     try {
       await request(
@@ -190,11 +228,16 @@ export function PreorderOrderOperations({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             action: "send_delivery_update",
+            noticeType: deliveryNoticeType,
+            shortDelayEligibilityConfirmed,
             currentEstimate: deliveryEstimate,
             message: deliveryMessage,
+            responseDeadline: affirmativeConsent
+              ? new Date(deliveryResponseDeadline).toISOString()
+              : null,
           }),
         },
-        "Delivery update recorded and queued for the customer.",
+        "Order-change notice recorded and queued for the customer.",
       );
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The delivery update could not be sent.");
@@ -285,16 +328,49 @@ export function PreorderOrderOperations({
 
       <section className="preorder-owner-card">
         <div className="preorder-owner-card__heading">
-          <div><p className="eyebrow">Customer communication</p><h2>Delivery estimate</h2></div>
+          <div><p className="eyebrow">Customer communication</p><h2>Order-change notice</h2></div>
           <span className={`admin-status admin-status--${deliveryUpdateStatus}`}>
             {deliveryUpdateStatus.replaceAll("_", " ")}
           </span>
         </div>
-        <p>Use this when the estimate changes after purchase. The customer can accept the new timing or request cancellation.</p>
+        <p>Use this for a shipping delay or a material product change. The notice records whether silence can keep the order active or affirmative consent is required.</p>
+        {deliveryUpdateStatus === "pending" ? (
+          <p className="preorder-manage-form-note">
+            <strong>Pending notice:</strong>{" "}
+            {deliveryUpdateNoticeType.replaceAll("_", " ")} · {deliveryUpdateResponseMode.replaceAll("_", " ")}
+            {deliveryUpdateResponseDeadline
+              ? ` · response due ${formatUtcDateTime(deliveryUpdateResponseDeadline)}`
+              : ""}
+          </p>
+        ) : null}
         <form className="preorder-owner-delivery-form" onSubmit={sendDeliveryUpdate}>
-          <label><span>Current estimate</span><input required maxLength={200} value={deliveryEstimate} onChange={(event) => setDeliveryEstimate(event.target.value)} /></label>
+          <label>
+            <span>Notice type</span>
+            <select value={deliveryNoticeType} onChange={(event) => setDeliveryNoticeType(event.target.value as PreorderDeliveryNoticeType)}>
+              <option value="first_short_delay" disabled={deliveryUpdateVersion !== 0}>First definite delay of 30 days or less</option>
+              <option value="consent_required_delay">Long, unknown, or subsequent delay</option>
+              <option value="material_product_change">Material product change</option>
+            </select>
+          </label>
+          {deliveryNoticeType !== "material_product_change" ? (
+            <label><span>Current estimate</span><input required maxLength={200} value={deliveryEstimate} onChange={(event) => setDeliveryEstimate(event.target.value)} /></label>
+          ) : null}
+          {deliveryNoticeType !== "first_short_delay" ? (
+            <label><span>Response deadline</span><input required type="datetime-local" value={deliveryResponseDeadline} onChange={(event) => setDeliveryResponseDeadline(event.target.value)} /></label>
+          ) : null}
+          {deliveryNoticeType === "first_short_delay" ? (
+            <label className="preorder-owner-policy-confirmation">
+              <input type="checkbox" checked={shortDelayEligibilityConfirmed} onChange={(event) => setShortDelayEligibilityConfirmed(event.target.checked)} />
+              <span>I confirm this is the first delay and the definite revised shipping date is no more than 30 days later.</span>
+            </label>
+          ) : null}
           <label><span>Customer-facing explanation</span><textarea required rows={4} maxLength={1000} value={deliveryMessage} onChange={(event) => setDeliveryMessage(event.target.value)} placeholder="Explain what changed and what the customer can expect." /></label>
-          <button className="button button--secondary" type="submit" disabled={Boolean(busy)}>{busy === "delivery-update" ? "Sending…" : "Send delivery update"}</button>
+          <p className="preorder-manage-form-note">
+            {deliveryNoticeType === "first_short_delay"
+              ? "Silence may count as consent only for this first, definite delay of no more than 30 days."
+              : "The customer must accept by the deadline or the unshipped order will be cancelled and refunded automatically."}
+          </p>
+          <button className="button button--secondary" type="submit" disabled={Boolean(busy)}>{busy === "delivery-update" ? "Sending…" : "Send order-change notice"}</button>
         </form>
       </section>
 

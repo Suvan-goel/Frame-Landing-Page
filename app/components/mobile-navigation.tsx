@@ -9,8 +9,10 @@ type MobileNavigationItem = {
 
 export function MobileNavigation({
   items,
+  primaryItem = { label: "Register your interest", href: "/interest" },
 }: {
   items: readonly MobileNavigationItem[];
+  primaryItem?: MobileNavigationItem;
 }) {
   const [open, setOpen] = useState(false);
   const toggleRef = useRef<HTMLButtonElement>(null);
@@ -58,10 +60,10 @@ export function MobileNavigation({
             ))}
             <a
               className="mobile-nav__primary"
-              href="/interest"
+              href={primaryItem.href}
               onClick={() => setOpen(false)}
             >
-              Register your interest
+              {primaryItem.label}
             </a>
           </div>
         </div>

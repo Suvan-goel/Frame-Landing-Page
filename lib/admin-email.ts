@@ -112,7 +112,7 @@ function textLineToHtml(value: string) {
     const index = match.index ?? 0;
     const url = match[0];
     result += escapeHtml(value.slice(cursor, index));
-    result += `<a href="${escapeHtml(url)}" style="color:#7b2937;text-decoration:underline;text-underline-offset:3px">${escapeHtml(url)}</a>`;
+    result += `<a href="${escapeHtml(url)}" style="color:#7b2937;text-decoration:underline">${escapeHtml(url)}</a>`;
     cursor = index + url.length;
   }
 
@@ -120,11 +120,11 @@ function textLineToHtml(value: string) {
 }
 
 function bodyToHtml(value: string) {
-  return value
-    .split(/\n{2,}/)
+  const paragraphs = value.split(/\n{2,}/);
+  return paragraphs
     .map(
-      (paragraph) =>
-        `<p style="margin:0 0 22px;color:#353632;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.72">${paragraph
+      (paragraph, index) =>
+        `<p style="margin:0 0 ${index === paragraphs.length - 1 ? "0" : "22px"};color:#41423e;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.72">${paragraph
           .split("\n")
           .map(textLineToHtml)
           .join("<br>")}</p>`,
@@ -148,10 +148,12 @@ export function renderFrameCampaignEmail(input: {
     input.content.ctaLabel,
     input.firstName,
   );
+  const inboxPreview = previewText || "A new update from Frame.";
   const safeUnsubscribeUrl = escapeHtml(input.unsubscribeUrl);
   const safeSiteUrl = escapeHtml(input.siteUrl);
+  const year = new Date().getFullYear();
   const cta = ctaLabel
-    ? `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:32px 0 38px"><tr><td style="background:#20211e"><a href="${escapeHtml(input.content.ctaUrl)}" style="display:inline-block;padding:15px 24px;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:600;text-decoration:none">${escapeHtml(ctaLabel)}</a></td></tr></table>`
+    ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:32px 0 0"><tr><td style="padding:0 0 4px;border-bottom:1px solid #7b2937"><a href="${escapeHtml(input.content.ctaUrl)}" style="display:inline-block;color:#7b2937;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;letter-spacing:.01em;line-height:1.5;text-decoration:none">${escapeHtml(ctaLabel)}&nbsp;&nbsp;&rarr;</a></td></tr></table>`
     : "";
 
   const html = `<!doctype html>
@@ -159,33 +161,72 @@ export function renderFrameCampaignEmail(input: {
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
     <title>${escapeHtml(subject)}</title>
+    <style>
+      body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+      table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+      table { border-collapse: collapse !important; }
+      a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; }
+      @media only screen and (max-width: 620px) {
+        .email-outer { padding: 16px 0 22px !important; }
+        .email-card { width: 100% !important; border-left: 0 !important; border-right: 0 !important; }
+        .email-header { padding: 25px 24px 23px !important; }
+        .email-content { padding: 38px 24px 44px !important; }
+        .email-footer { padding: 24px 24px 0 !important; }
+        .email-heading { font-size: 29px !important; line-height: 1.15 !important; }
+      }
+    </style>
   </head>
-  <body style="margin:0;padding:0;background:#ebe6dc;color:#20211e">
-    <div style="display:none;max-height:0;overflow:hidden;opacity:0">${escapeHtml(previewText)}</div>
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="width:100%;background:#ebe6dc">
+  <body style="margin:0;padding:0;background:#f3f2ef;color:#20211e">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;line-height:1px">${escapeHtml(inboxPreview)}&#847;&nbsp;&zwnj;&nbsp;&#847;&nbsp;&zwnj;&nbsp;&#847;&nbsp;&zwnj;&nbsp;&#847;</div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#f3f2ef" style="width:100%;background:#f3f2ef">
       <tr>
-        <td align="center" style="padding:32px 14px">
-          <table role="presentation" width="620" cellspacing="0" cellpadding="0" style="width:100%;max-width:620px;background:#faf8f2;border-top:4px solid #7b2937">
+        <td class="email-outer" align="center" style="padding:38px 16px 28px">
+          <table class="email-card" role="presentation" width="580" cellspacing="0" cellpadding="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:580px;background:#ffffff;border:1px solid #e2e0da">
             <tr>
-              <td style="padding:42px 48px 20px">
-                <a href="${safeSiteUrl}" style="color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:31px;letter-spacing:-1px;text-decoration:none">Frame</a>
+              <td class="email-header" style="padding:29px 42px 27px;border-bottom:1px solid #eceae5">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                  <tr>
+                    <td align="left" valign="middle">
+                      <a href="${safeSiteUrl}" style="color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:24px;font-weight:700;letter-spacing:-.7px;line-height:1;text-decoration:none">Frame</a>
+                    </td>
+                    <td align="right" valign="middle">
+                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="right">
+                        <tr>
+                          <td width="7" height="7" bgcolor="#7b2937" style="width:7px;height:7px;background:#7b2937;font-size:0;line-height:0">&nbsp;</td>
+                          <td width="9" style="width:9px;font-size:0;line-height:0">&nbsp;</td>
+                          <td style="color:#777870;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase">Frame notes</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
               </td>
             </tr>
             <tr>
-              <td style="padding:20px 48px 30px">
+              <td class="email-content" style="padding:49px 42px 55px">
+                <p style="margin:0 0 16px;color:#7b2937;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;letter-spacing:.17em;line-height:1.4;text-transform:uppercase">A note from Frame</p>
+                <h1 class="email-heading" style="margin:0 0 29px;color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:32px;font-weight:400;letter-spacing:-.55px;line-height:1.17">${escapeHtml(subject)}</h1>
                 ${bodyToHtml(body)}
                 ${cta}
               </td>
             </tr>
+          </table>
+          <table role="presentation" width="580" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:580px">
             <tr>
-              <td style="padding:28px 48px 36px;border-top:1px solid #ded8cd;color:#777870;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.65">
-                You’re receiving this email because you joined Frame early access.<br>
-                <a href="${safeUnsubscribeUrl}" style="color:#55564f;text-decoration:underline">Unsubscribe</a>
-                &nbsp;·&nbsp;
-                <a href="${safeSiteUrl}/privacy" style="color:#55564f;text-decoration:underline">Privacy</a>
-                &nbsp;·&nbsp;
-                <a href="${safeSiteUrl}/contact" style="color:#55564f;text-decoration:underline">Contact Frame</a>
+              <td class="email-footer" style="padding:23px 10px 0;color:#85867f;font-family:Arial,Helvetica,sans-serif;font-size:10px;line-height:1.65;text-align:left">
+                <p style="margin:0 0 8px">
+                  <a href="${safeSiteUrl}" style="color:#62635e;text-decoration:underline">framewearable.com</a>
+                  &nbsp;&nbsp;·&nbsp;&nbsp;
+                  <a href="${safeSiteUrl}/contact" style="color:#62635e;text-decoration:underline">Contact</a>
+                  &nbsp;&nbsp;·&nbsp;&nbsp;
+                  <a href="${safeSiteUrl}/privacy" style="color:#62635e;text-decoration:underline">Privacy</a>
+                  &nbsp;&nbsp;·&nbsp;&nbsp;
+                  <a href="${safeUnsubscribeUrl}" style="color:#62635e;text-decoration:underline">Unsubscribe</a>
+                </p>
+                <p style="margin:0">You’re receiving this because you signed up for Frame updates. &copy; ${year} Frame Health Technologies.</p>
               </td>
             </tr>
           </table>
@@ -199,9 +240,10 @@ export function renderFrameCampaignEmail(input: {
     body,
     ...(ctaLabel ? ["", `${ctaLabel}: ${input.content.ctaUrl}`] : []),
     "",
-    "You’re receiving this email because you joined Frame early access.",
+    "You’re receiving this email because you signed up for updates from Frame.",
     `Unsubscribe: ${input.unsubscribeUrl}`,
     `Privacy: ${input.siteUrl}/privacy`,
+    `Contact: ${input.siteUrl}/contact`,
   ].join("\n");
 
   return { subject, html, text };

@@ -3,14 +3,47 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PreorderHeader } from "../../components/preorder-chrome";
 import {
+  formatPreorderMoney,
+  PREORDER_DEFAULT_CURRENCY,
+  PREORDER_DEFAULT_PRICE_CENTS,
   PREORDER_ESTIMATED_SHIPPING,
-  PREORDER_PRODUCT_STATUS_VERSION,
+  PREORDER_PRODUCT_STATUS_UPDATED,
+  PREORDER_RELEASE_PRICE_CENTS,
+  PREORDER_SAVINGS_CENTS,
 } from "@/lib/preorder";
 import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
 
+const PRODUCT_STATUS_TITLE = "Frame Product Status Disclosure";
+const PRODUCT_STATUS_DESCRIPTION =
+  "Important development and intended-use information for Frame pre-orders.";
+const PREORDER_PRICE = formatPreorderMoney(
+  PREORDER_DEFAULT_PRICE_CENTS,
+  PREORDER_DEFAULT_CURRENCY,
+);
+const RELEASE_PRICE = formatPreorderMoney(
+  PREORDER_RELEASE_PRICE_CENTS,
+  PREORDER_DEFAULT_CURRENCY,
+);
+const PREORDER_SAVING = formatPreorderMoney(
+  PREORDER_SAVINGS_CENTS,
+  PREORDER_DEFAULT_CURRENCY,
+);
+
 export const metadata: Metadata = {
-  title: "Frame Product Status Disclosure — launch candidate",
-  description: "Important development and intended-use information for Frame pre-orders.",
+  title: PRODUCT_STATUS_TITLE,
+  description: PRODUCT_STATUS_DESCRIPTION,
+  alternates: { canonical: "/preorder/product-status" },
+  openGraph: {
+    title: PRODUCT_STATUS_TITLE,
+    description: PRODUCT_STATUS_DESCRIPTION,
+    type: "website",
+    url: "/preorder/product-status",
+  },
+  twitter: {
+    card: "summary",
+    title: PRODUCT_STATUS_TITLE,
+    description: PRODUCT_STATUS_DESCRIPTION,
+  },
   robots: { index: false, follow: false },
 };
 
@@ -19,81 +52,110 @@ export const dynamic = "force-dynamic";
 export default async function PreorderProductStatusPage() {
   if (!(await isPreorderSalesPageEnabled())) notFound();
   return (
-    <main className="legal-page">
+    <main className="legal-page product-status-page">
       <PreorderHeader backHref="/preorder/review" backLabel="Pre-order review" />
       <article className="legal-shell">
         <div className="legal-draft-banner" role="note">
-          Launch candidate — Frame remains under development
+          Frame is still under development
         </div>
         <p className="eyebrow">Important pre-order information</p>
         <h1>Product Status Disclosure</h1>
-        <p className="legal-updated">
-          Candidate version {PREORDER_PRODUCT_STATUS_VERSION} · August 7, 2026
-        </p>
+        <p className="legal-updated">{`Last updated ${PREORDER_PRODUCT_STATUS_UPDATED}`}</p>
         <p className="legal-intro">
           Frame is a future product, not a finished device. Read this disclosure before deciding whether
           the uncertainty of a development-stage pre-order is right for you.
         </p>
 
-        <section>
-          <h2>Under development</h2>
-          <p>
-            Frame is being developed as a non-invasive, upper-arm wearable intended to help people explore
-            blood-pressure patterns across everyday contexts such as sleep, stress, exercise, and recovery.
-            Engineering, validation, manufacturing, and fulfilment work remain. Product images and prototypes
-            may not show the final device.
-          </p>
+        <section className="product-status-summary" aria-labelledby="product-status-summary-heading">
+          <div className="product-status-summary__heading">
+            <p className="eyebrow">At a glance</p>
+            <h2 id="product-status-summary-heading">Before you pre-order.</h2>
+          </div>
+          <ol>
+            <li>
+              <span aria-hidden="true">01</span>
+              <p><strong>Frame is still being developed.</strong> Final design, specifications, and performance may change.</p>
+            </li>
+            <li>
+              <span aria-hidden="true">02</span>
+              <p><strong>Performance has not been established.</strong> Accuracy and measurement availability are not yet final.</p>
+            </li>
+            <li>
+              <span aria-hidden="true">03</span>
+              <p><strong>Frame is not for medical decisions.</strong> It is being developed solely for general-wellness use.</p>
+            </li>
+            <li>
+              <span aria-hidden="true">04</span>
+              <p><strong>The pre-order price is {PREORDER_PRICE}.</strong> That is {PREORDER_SAVING} below the {RELEASE_PRICE} release price. You pay in full at checkout, shipping is estimated for {PREORDER_ESTIMATED_SHIPPING}, and you may cancel for a full refund before fulfilment begins.</p>
+            </li>
+          </ol>
         </section>
 
         <section>
-          <h2>Performance has not been established</h2>
+          <h2>What is still being developed</h2>
           <p>
-            Final accuracy, measurement availability, battery life, fit, supported arm sizes, materials,
-            connectivity, software features, and compatibility have not yet been established. Frame will not
-            represent development targets as validated performance. Material changes will be explained before
-            shipment and you will retain the option to cancel for a full refund.
+            Frame is being developed as a non-invasive, upper-arm wearable intended to help people explore
+            blood-pressure patterns across everyday contexts such as sleep, stress, exercise, and recovery.
+            Engineering, validation, manufacturing, and fulfillment work remain, so final design, accuracy,
+            measurement availability, battery life, fit, supported arm sizes, materials, connectivity, software
+            features, and compatibility have not yet been established.
+          </p>
+          <p>
+            Development targets are not validated performance claims. Product images and prototypes may not show
+            the final device. If we propose a material change before shipping, we will explain it and ask you to
+            accept by a stated deadline or cancel for a full refund. If you do not affirmatively accept, we will
+            cancel and refund the unshipped order automatically.
           </p>
         </section>
 
         <section>
           <h2>Not for medical decisions</h2>
           <p>
-            Frame is being developed for general wellness use. It is not currently FDA cleared or approved.
+            Frame is being developed solely for general-wellness use. It has not received FDA marketing
+            authorization as a blood-pressure monitor, and its performance has not been established for medical use.
             It is not intended to diagnose, screen for, monitor, treat, or manage any disease or medical
             condition, guide treatment or medication decisions, provide emergency alerts, or replace an
             FDA-authorized blood-pressure monitor or professional medical care.
           </p>
           <p>
-            Do not ignore symptoms, delay medical attention, change medication, or make any health decision
-            based on Frame. If your care depends on blood-pressure measurements, use an appropriate authorized
-            device and speak with a qualified healthcare professional.
-          </p>
-        </section>
-
-        <section>
-          <h2>Shipping remains an estimate</h2>
-          <p>
-            The current estimate is to ship in <strong>{PREORDER_ESTIMATED_SHIPPING}</strong>. Development,
-            validation, regulatory, supply-chain, manufacturing, or quality work could cause delay or make the
-            product unavailable. If Frame cannot meet the estimate, it will provide the choices described in the
-            <Link href="/preorder/refunds"> Cancellation and Refund Policy</Link>. You may cancel at any time
-            before dispatch.
+            Do not use Frame to diagnose a condition, change medication or treatment, delay medical care, or decide
+            whether to seek emergency help. If your care depends on blood-pressure measurements, use an appropriate
+            FDA-authorized device and speak with a qualified healthcare professional.
           </p>
         </section>
 
         <section>
           <h2>What your payment means</h2>
           <p>
-            The pre-order is a purchase of one future Frame device and is charged in full at checkout. It does
-            not buy equity, a research role, medical services, or guaranteed access to future features. If Frame
-            determines it cannot supply the product, it will cancel the order and refund the full amount paid.
+            Your payment purchases one future Frame device and is charged in full at checkout. It is not an
+            investment, subscription, participation in research, or payment for medical services. If we cannot
+            supply Frame, we will cancel your order and issue a full refund.
+          </p>
+        </section>
+
+        <section>
+          <h2>Shipping remains an estimate</h2>
+          <p>
+            Based on our current development and manufacturing plan, we estimate shipping in
+            <strong> {PREORDER_ESTIMATED_SHIPPING}</strong>. This is an estimate, not a guaranteed ship date.
+            Development, validation, regulatory, supply-chain, manufacturing, or quality work could cause delay
+            or make the product unavailable.
+          </p>
+          <p>
+            If we expect a delay, we will email you with a revised date, when available, and a way to accept the
+            delay or cancel for a full refund. The notice will explain whether silence keeps a short first delay
+            active or whether affirmative consent is required. Read the
+            <Link href="/preorder/refunds"> Cancellation and Refund Policy</Link> for details.
           </p>
         </section>
 
         <p className="legal-disclaimer">
-          By continuing, you acknowledge this development status separately from accepting the Pre-order Terms.
+          At checkout, you will be asked to acknowledge this development status separately from accepting the
+          Pre-order Terms. The version you accept will be recorded with your order.
         </p>
-        <Link className="text-link" href="/preorder/review">← Back to pre-order review</Link>
+        <Link className="button button--secondary product-status-return" href="/preorder/review">
+          Return to order review
+        </Link>
       </article>
     </main>
   );

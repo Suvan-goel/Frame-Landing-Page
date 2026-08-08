@@ -6,6 +6,12 @@ import {
   sendPreorderRefundUpdateEmail,
   sendPreorderShippingEmail,
 } from "./preorder-email.server";
+import {
+  canSendPreorderDeliveryNotice,
+  deliveryResponseModeForNotice,
+  type PreorderDeliveryNoticeType,
+  validPreorderDeliveryResponseDeadline,
+} from "./preorder-delivery-policy";
 import { createPreorderManagePath } from "./preorder-order-access.server";
 import { reconcilePreorderRefund } from "./preorder-payments.server";
 import type { PreorderEnvironment } from "./preorder-operations.server";
@@ -43,9 +49,13 @@ type OperationalOrder = {
   address_change_resolution_note: string | null;
   delivery_update_version: number;
   delivery_update_status: string;
+  delivery_update_notice_type: string;
+  delivery_update_response_mode: string;
+  delivery_update_response_deadline: string | null;
   delivery_update_message: string | null;
   delivery_update_sent_at: string | null;
   delivery_update_acknowledged_at: string | null;
+  delivery_update_expired_at: string | null;
   carrier: string | null;
   tracking_number: string | null;
   tracking_url: string | null;
@@ -53,7 +63,7 @@ type OperationalOrder = {
 };
 
 const operationalOrderColumns =
-  "id,order_number,environment,manage_token_version,email,full_name,shipping_address,order_status,payment_status,fulfillment_status,cancellation_status,confirmation_email_sent_at,amount_subtotal,amount_shipping,amount_tax,amount_total,amount_refunded,currency,estimated_delivery,current_estimated_delivery,placed_at,address_change_status,address_change_requested_at,requested_shipping_address,address_change_reason,address_change_resolved_at,address_change_resolution_note,delivery_update_version,delivery_update_status,delivery_update_message,delivery_update_sent_at,delivery_update_acknowledged_at,carrier,tracking_number,tracking_url,shipped_at";
+  "id,order_number,environment,manage_token_version,email,full_name,shipping_address,order_status,payment_status,fulfillment_status,cancellation_status,confirmation_email_sent_at,amount_subtotal,amount_shipping,amount_tax,amount_total,amount_refunded,currency,estimated_delivery,current_estimated_delivery,placed_at,address_change_status,address_change_requested_at,requested_shipping_address,address_change_reason,address_change_resolved_at,address_change_resolution_note,delivery_update_version,delivery_update_status,delivery_update_notice_type,delivery_update_response_mode,delivery_update_response_deadline,delivery_update_message,delivery_update_sent_at,delivery_update_acknowledged_at,delivery_update_expired_at,carrier,tracking_number,tracking_url,shipped_at";
 
 async function getOperationalOrder(orderId: string) {
   const supabase = await getSupabaseAdmin();
@@ -98,9 +108,16 @@ export async function updatePreorderFulfillment(input: {
   }
   if (
     ["requested", "processing"].includes(order.cancellation_status) &&
-    ["shipped", "delivered"].includes(input.fulfillmentStatus)
+    ["processing", "shipped", "delivered"].includes(input.fulfillmentStatus)
   ) {
-    throw new Error("Resolve the cancellation request before shipping this order.");
+    throw new Error("Resolve the cancellation request before beginning fulfilment.");
+  }
+  if (
+    order.delivery_update_status === "pending" &&
+    order.delivery_update_response_mode === "affirmative_consent_required" &&
+    ["processing", "shipped", "delivered"].includes(input.fulfillmentStatus)
+  ) {
+    throw new Error("The customer must accept the pending order change before fulfilment begins.");
   }
   if (
     ["requested", "processing"].includes(order.address_change_status) &&
@@ -270,8 +287,11 @@ export async function resolvePreorderAddressChange(input: {
 export async function sendPreorderDeliveryUpdate(input: {
   origin: string;
   orderId: string;
+  noticeType: PreorderDeliveryNoticeType;
+  shortDelayEligibilityConfirmed: boolean;
   currentEstimate: string;
   message: string;
+  responseDeadline: string | null;
 }) {
   const order = await getOperationalOrder(input.orderId);
   if (
@@ -284,8 +304,42 @@ export async function sendPreorderDeliveryUpdate(input: {
   if (["requested", "processing"].includes(order.cancellation_status)) {
     throw new Error("Resolve the cancellation request before sending a delivery update.");
   }
+  if (
+    order.delivery_update_status === "pending" &&
+    order.delivery_update_response_mode === "affirmative_consent_required"
+  ) {
+    throw new Error("Resolve the pending customer-consent notice before sending another update.");
+  }
+  if (
+    !canSendPreorderDeliveryNotice({
+      currentVersion: order.delivery_update_version,
+      noticeType: input.noticeType,
+    })
+  ) {
+    throw new Error("Only the first shipping delay may use silence as consent.");
+  }
+  if (
+    input.noticeType === "first_short_delay" &&
+    !input.shortDelayEligibilityConfirmed
+  ) {
+    throw new Error("Confirm that the first revised shipping date is definite and no more than 30 days later.");
+  }
 
   const now = new Date().toISOString();
+  const responseMode = deliveryResponseModeForNotice(input.noticeType);
+  if (
+    !validPreorderDeliveryResponseDeadline({
+      responseMode,
+      responseDeadline: input.responseDeadline,
+      now: new Date(now),
+    })
+  ) {
+    throw new Error(
+      responseMode === "affirmative_consent_required"
+        ? "Choose a response deadline within the next 30 days."
+        : "A short first delay must not set an affirmative-response deadline.",
+    );
+  }
   const nextVersion = order.delivery_update_version + 1;
   const supabase = await getSupabaseAdmin();
   const updated = await supabase
@@ -294,9 +348,13 @@ export async function sendPreorderDeliveryUpdate(input: {
       current_estimated_delivery: input.currentEstimate,
       delivery_update_version: nextVersion,
       delivery_update_status: "pending",
+      delivery_update_notice_type: input.noticeType,
+      delivery_update_response_mode: responseMode,
+      delivery_update_response_deadline: input.responseDeadline,
       delivery_update_message: input.message,
       delivery_update_sent_at: now,
       delivery_update_acknowledged_at: null,
+      delivery_update_expired_at: null,
       updated_at: now,
     })
     .eq("id", order.id)
@@ -308,8 +366,15 @@ export async function sendPreorderDeliveryUpdate(input: {
 
   await recordOwnerEvent({
     orderId: order.id,
-    eventType: "delivery_update_sent",
+    eventType: "order_change_notice_sent",
     detail: {
+      notice_type: input.noticeType,
+      response_mode: responseMode,
+      response_deadline: input.responseDeadline,
+      short_delay_eligibility_confirmed:
+        input.noticeType === "first_short_delay"
+          ? input.shortDelayEligibilityConfirmed
+          : null,
       previous_estimate: order.current_estimated_delivery,
       current_estimate: input.currentEstimate,
       message: input.message,
@@ -333,15 +398,18 @@ export async function sendPreorderDeliveryUpdate(input: {
       previousEstimate: order.current_estimated_delivery,
       currentEstimate: input.currentEstimate,
       message: input.message,
+      noticeType: input.noticeType,
+      responseMode,
+      responseDeadline: input.responseDeadline,
       managePath,
       deliveryUpdateVersion: nextVersion,
     });
   } catch (error) {
     customerEmail = "failed";
-    console.error("Pre-order delivery update email failed", error);
+    console.error("Pre-order order-change notice email failed", error);
     await recordOwnerEvent({
       orderId: order.id,
-      eventType: "delivery_update_email_failed",
+      eventType: "order_change_notice_email_failed",
       detail: {
         delivery_update_version: nextVersion,
         error: error instanceof Error ? error.message.slice(0, 300) : "Unknown error",
@@ -401,13 +469,17 @@ export async function initiatePreorderFullRefund(input: {
   origin: string;
   orderId: string;
   requestKey: string;
+  trigger?: "customer_request" | "delivery_consent_expired";
 }) {
   const order = await getOperationalOrder(input.orderId);
   if (!["paid", "partially_refunded", "refund_failed"].includes(order.payment_status)) {
     throw new Error("This order is not eligible for another refund.");
   }
 
-  const secretKey = await getRuntimeValue("STRIPE_SECRET_KEY");
+  const secretKey =
+    (await getRuntimeValue(
+      order.environment === "live" ? "STRIPE_LIVE_SECRET_KEY" : "STRIPE_TEST_SECRET_KEY",
+    )) ?? (await getRuntimeValue("STRIPE_SECRET_KEY"));
   if (
     (order.environment === "test" && !secretKey?.startsWith("sk_test_")) ||
     (order.environment === "live" && !secretKey?.startsWith("sk_live_"))
@@ -471,12 +543,15 @@ export async function initiatePreorderFullRefund(input: {
       {
         payment_intent: payment.data.stripe_payment_intent_id,
         amount: remaining,
-        reason: "requested_by_customer",
+        ...(input.trigger === "delivery_consent_expired"
+          ? {}
+          : { reason: "requested_by_customer" as const }),
         metadata: {
           flow: "frame_preorder",
           preorder_id: order.id,
           order_number: String(order.order_number),
           environment: order.environment,
+          refund_trigger: input.trigger ?? "customer_request",
         },
       },
       { idempotencyKey: `frame-preorder-refund-${order.id}-${input.requestKey}` },

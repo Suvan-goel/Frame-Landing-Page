@@ -25,6 +25,18 @@ const EMPTY_CONTENT: EmailCampaignContent = {
   ctaUrl: "",
 };
 
+const PREVIEW_SAMPLE_CONTENT: EmailCampaignContent = {
+  subject: "A closer look at what we’re building",
+  previewText: "A short progress update from the Frame team.",
+  body: `Hi {{first_name}},
+
+We’ve been making thoughtful progress on Frame, refining both the wearable and the experience around it. Our focus remains simple: build technology that fits naturally into everyday life.
+
+Thank you for being part of the journey. We’ll share more as the next stage takes shape.`,
+  ctaLabel: "Discover Frame",
+  ctaUrl: "https://framewearable.com",
+};
+
 function recipientName(recipient: MailingListRecipient) {
   return [recipient.firstName, recipient.lastName].filter(Boolean).join(" ") || "Name not provided";
 }
@@ -90,13 +102,16 @@ export function AdminEmailComposer({
     recipients.find((recipient) => recipient.id === previewRecipientId) ??
     recipients[0] ??
     null;
-  const previewContent: EmailCampaignContent = {
-    subject: content.subject || "Your subject line will appear here",
-    previewText: content.previewText,
-    body: content.body || "Start writing your Frame update to see it here.",
-    ctaLabel: content.ctaLabel && content.ctaUrl ? content.ctaLabel : "",
-    ctaUrl: content.ctaLabel && content.ctaUrl ? content.ctaUrl : "",
-  };
+  const isEmptyDraft = Object.values(content).every((value) => !value.trim());
+  const previewContent: EmailCampaignContent = isEmptyDraft
+    ? PREVIEW_SAMPLE_CONTENT
+    : {
+        subject: content.subject || "Your Frame update",
+        previewText: content.previewText,
+        body: content.body || "Your message will appear here.",
+        ctaLabel: content.ctaLabel && content.ctaUrl ? content.ctaLabel : "",
+        ctaUrl: content.ctaLabel && content.ctaUrl ? content.ctaUrl : "",
+      };
   const preview = renderFrameCampaignEmail({
     content: previewContent,
     firstName: previewRecipient?.firstName ?? null,
@@ -315,7 +330,7 @@ export function AdminEmailComposer({
             <div>
               <p className="eyebrow">Preview</p>
               <h2 id="preview-heading">Check before sending</h2>
-              <p>This is the exact email layout your selected recipient will see.</p>
+              <p>{isEmptyDraft ? "A sample message shows the finished design. Start writing to preview your exact email." : "This is the exact email layout your selected recipient will see."}</p>
             </div>
           </div>
           <div className="admin-email-preview-controls">
@@ -411,8 +426,8 @@ export function AdminEmailComposer({
         <div className="admin-email-recipient-header" aria-hidden="true">
           <span></span>
           <span>Subscriber</span>
-          <span>Waitlist status</span>
-          <span>Joined</span>
+          <span>Subscription status</span>
+          <span>Subscribed</span>
         </div>
         <div className="admin-email-recipient-list">
           {visibleRecipients.map((recipient) => (

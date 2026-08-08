@@ -268,7 +268,7 @@ async function skipQualification(payload: Record<string, unknown>, request: Requ
   } catch (error) {
     console.error("Waitlist qualification skip failed", error);
     return jsonResponse(
-      { error: "Your waitlist place is safe, but we couldn’t record the skipped survey." },
+      { error: "Your subscription is safe, but we couldn’t record the skipped survey." },
       503,
     );
   }

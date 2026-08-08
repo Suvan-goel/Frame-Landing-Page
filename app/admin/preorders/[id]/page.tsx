@@ -46,9 +46,13 @@ type OrderDetail = {
   address_change_resolution_note: string | null;
   delivery_update_version: number;
   delivery_update_status: string;
+  delivery_update_notice_type: string;
+  delivery_update_response_mode: string;
+  delivery_update_response_deadline: string | null;
   delivery_update_message: string | null;
   delivery_update_sent_at: string | null;
   delivery_update_acknowledged_at: string | null;
+  delivery_update_expired_at: string | null;
   confirmation_email_sent_at: string | null;
   carrier: string | null;
   tracking_number: string | null;
@@ -96,7 +100,7 @@ async function AuthenticatedOrderDetail({ id }: { id: string }) {
   const [orderResult, itemsResult, paymentsResult, eventsResult, emailsResult] = await Promise.all([
     supabase
       .from("preorders")
-      .select("id,order_number,environment,manage_token_version,full_name,email,phone,shipping_address,order_status,payment_status,fulfillment_status,cancellation_status,cancellation_requested_at,cancellation_reason,cancellation_resolved_at,cancellation_resolution_note,amount_total,amount_refunded,currency,estimated_delivery,current_estimated_delivery,placed_at,address_change_status,address_change_requested_at,requested_shipping_address,address_change_reason,address_change_resolved_at,address_change_resolution_note,delivery_update_version,delivery_update_status,delivery_update_message,delivery_update_sent_at,delivery_update_acknowledged_at,confirmation_email_sent_at,carrier,tracking_number,tracking_url,shipped_at,delivered_at,owner_note")
+      .select("id,order_number,environment,manage_token_version,full_name,email,phone,shipping_address,order_status,payment_status,fulfillment_status,cancellation_status,cancellation_requested_at,cancellation_reason,cancellation_resolved_at,cancellation_resolution_note,amount_total,amount_refunded,currency,estimated_delivery,current_estimated_delivery,placed_at,address_change_status,address_change_requested_at,requested_shipping_address,address_change_reason,address_change_resolved_at,address_change_resolution_note,delivery_update_version,delivery_update_status,delivery_update_notice_type,delivery_update_response_mode,delivery_update_response_deadline,delivery_update_message,delivery_update_sent_at,delivery_update_acknowledged_at,delivery_update_expired_at,confirmation_email_sent_at,carrier,tracking_number,tracking_url,shipped_at,delivered_at,owner_note")
       .eq("id", id)
       .maybeSingle<OrderDetail>(),
     supabase.from("preorder_order_items").select("id,product_name,sku,quantity,unit_amount,currency").eq("preorder_id", id).returns<OrderItem[]>(),
@@ -222,7 +226,11 @@ async function AuthenticatedOrderDetail({ id }: { id: string }) {
               requestedShippingAddress={order.requested_shipping_address}
               addressChangeReason={order.address_change_reason}
               currentEstimatedDelivery={order.current_estimated_delivery}
+              deliveryUpdateVersion={order.delivery_update_version}
               deliveryUpdateStatus={order.delivery_update_status}
+              deliveryUpdateNoticeType={order.delivery_update_notice_type}
+              deliveryUpdateResponseMode={order.delivery_update_response_mode}
+              deliveryUpdateResponseDeadline={order.delivery_update_response_deadline}
               deliveryUpdateMessage={order.delivery_update_message}
               carrier={order.carrier}
               trackingNumber={order.tracking_number}

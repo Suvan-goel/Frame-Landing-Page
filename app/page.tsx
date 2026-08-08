@@ -7,6 +7,14 @@ import {
   WaitlistSignupProvider,
 } from "./components/waitlist-signup-flow";
 import { isFoundingContributorSalesPageEnabled } from "@/lib/contributor-sales-page.server";
+import { getPreorderConfiguration } from "@/lib/preorder-config.server";
+import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
+import {
+  formatPreorderMoney,
+  PREORDER_DISCOUNT_PERCENT,
+  PREORDER_RELEASE_PRICE_CENTS,
+  PREORDER_SHIPPING_RATE_CENTS,
+} from "@/lib/preorder";
 import { INSTAGRAM_URL } from "@/lib/site";
 
 const content = {
@@ -39,14 +47,40 @@ function Arrow() {
 }
 
 export default async function Home() {
-  const showLocalContributorAreas =
-    await isFoundingContributorSalesPageEnabled();
-  const mobileNavigation = showLocalContributorAreas
-    ? [
-        ...content.navigation,
-        { label: "Contributors", href: "/founding-contributors" },
-      ]
-    : content.navigation;
+  const [showLocalContributorAreas, showPreorderAreas] = await Promise.all([
+    isFoundingContributorSalesPageEnabled(),
+    isPreorderSalesPageEnabled(),
+  ]);
+  const preorderOffer = showPreorderAreas
+    ? await getPreorderConfiguration()
+    : null;
+  const preorderShippingCents =
+    preorderOffer?.shippingRateCents ?? PREORDER_SHIPPING_RATE_CENTS;
+  const preorderPriceLabel = preorderOffer
+    ? formatPreorderMoney(preorderOffer.priceCents, preorderOffer.currency)
+    : null;
+  const preorderShippingLabel = preorderOffer
+    ? formatPreorderMoney(preorderShippingCents, preorderOffer.currency)
+    : null;
+  const preorderReleasePriceLabel = preorderOffer
+    ? formatPreorderMoney(PREORDER_RELEASE_PRICE_CENTS, preorderOffer.currency)
+    : null;
+  const preorderSavingsCents = preorderOffer
+    ? Math.max(0, PREORDER_RELEASE_PRICE_CENTS - preorderOffer.priceCents)
+    : 0;
+  const preorderSavingsLabel = preorderOffer
+    ? formatPreorderMoney(preorderSavingsCents, preorderOffer.currency)
+    : null;
+  const preorderHref = "/preorder/review?source=homepage";
+  const mobileNavigation = [
+    ...content.navigation,
+    ...(preorderOffer
+      ? [{ label: "Pre-order", href: "#preorder" } as const]
+      : []),
+    ...(showLocalContributorAreas
+      ? [{ label: "Contributors", href: "/founding-contributors" } as const]
+      : []),
+  ];
 
   return (
     <WaitlistSignupProvider>
@@ -62,14 +96,34 @@ export default async function Home() {
                 {item.label}
               </a>
             ))}
+            {preorderOffer ? <a href="#preorder">Pre-order</a> : null}
             {showLocalContributorAreas ? (
               <a href="/founding-contributors">Contributors</a>
             ) : null}
           </div>
-          <a className="nav-cta" href="#homepage-hero-waitlist">
-            Join the waitlist
+          <a
+            className="nav-cta"
+            href={
+              preorderOffer
+                ? "/preorder/review?source=homepage_header"
+                : "#homepage-hero-waitlist"
+            }
+          >
+            {preorderOffer
+              ? `Pre-order now - ${preorderPriceLabel}`
+              : "Get updates"}
           </a>
-          <MobileNavigation items={mobileNavigation} />
+          <MobileNavigation
+            items={mobileNavigation}
+            primaryItem={
+              preorderOffer
+                ? {
+                    label: `Pre-order now - ${preorderPriceLabel}`,
+                    href: "/preorder/review?source=homepage_mobile",
+                  }
+                : undefined
+            }
+          />
         </nav>
       </header>
 
@@ -81,10 +135,53 @@ export default async function Home() {
             </p>
             <h1>See how your cardiovascular system responds to daily life.</h1>
             <p className="hero-intro">
-              Frame is developing a non-invasive upper-arm wearable that reveals
-              how blood pressure changes throughout daily life.
+              Frame is a non-invasive wearable designed for continuous blood
+              pressure tracking.
             </p>
-            <WaitlistSignupFlow placement="homepage_hero" compact />
+            {preorderOffer ? (
+              <div className="home-preorder-hero">
+                <div className="home-preorder-hero__actions">
+                  <a
+                    className="button home-preorder-hero__preorder-button"
+                    href="/preorder/review?source=homepage_hero"
+                  >
+                    Pre-order now
+                  </a>
+                  <a className="home-preorder-hero__details-button" href="#preorder">
+                    See details <span aria-hidden="true">↓</span>
+                  </a>
+                </div>
+                <dl
+                  className="home-preorder-hero__prices"
+                  aria-label="Frame pre-order pricing"
+                >
+                  <div>
+                    <dt>Pre-order price</dt>
+                    <dd>{preorderPriceLabel}</dd>
+                  </div>
+                  <div>
+                    <dt>Release price</dt>
+                    <dd><del>{preorderReleasePriceLabel}</del></dd>
+                  </div>
+                  <div className="home-preorder-hero__saving">
+                    <div>
+                      <dt>You save</dt>
+                      <dd>{preorderSavingsLabel}</dd>
+                    </div>
+                    <span>{PREORDER_DISCOUNT_PERCENT}% off</span>
+                  </div>
+                </dl>
+                <p className="home-preorder-hero__shipping">
+                  Estimated shipping {preorderOffer.estimatedShipping} · US delivery only
+                </p>
+                <WaitlistSignupFlow
+                  placement="homepage_hero_preorder_waitlist"
+                  compact
+                />
+              </div>
+            ) : (
+              <WaitlistSignupFlow placement="homepage_hero" compact />
+            )}
           </div>
           <figure className="hero-visuals">
             <div className="hero-lifestyle">
@@ -105,8 +202,8 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="context-section section" id="product">
-        <div className="container context-container">
+      <section className="context-section section">
+        <div className="container context-container" id="product">
           <div className="context-intro">
             <p className="eyebrow">Why context matters</p>
             <h2>A single reading cannot show a pattern.</h2>
@@ -159,8 +256,8 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="method-section section" id="how-it-works">
-        <div className="container">
+      <section className="method-section section">
+        <div className="container" id="how-it-works">
           <div className="section-heading">
             <p className="eyebrow">How it works</p>
             <h2>Ultrasound, made wearable.</h2>
@@ -260,8 +357,79 @@ export default async function Home() {
         </div>
       </section>
 
-      <section className="principles-section section" id="research">
-        <div className="container principles-grid">
+      {preorderOffer ? (
+        <section className="home-preorder-section">
+          <div className="container home-preorder-container" id="preorder">
+            <div className="home-preorder-layout">
+              <div className="home-preorder-copy">
+                <p className="eyebrow">Frame pre-order</p>
+                <h2>Frame, coming Q1 2027.</h2>
+                <p className="home-preorder-copy__intro">
+                  Pre-orders are now open for US delivery. Frame is still in
+                  development, and the shipping window is an estimate rather
+                  than a guaranteed date.
+                </p>
+
+                <p className="home-preorder-saving">
+                  <span>Pre-order offer</span>
+                  <strong>Save {preorderSavingsLabel}</strong>
+                  <span>{PREORDER_DISCOUNT_PERCENT}% off the release price</span>
+                </p>
+
+                <dl className="home-preorder-facts">
+                  <div>
+                    <dt>Pre-order price</dt>
+                    <dd>
+                      {preorderPriceLabel}
+                      <del>{preorderReleasePriceLabel}</del>
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>US shipping</dt>
+                    <dd>{preorderShippingLabel}</dd>
+                  </div>
+                  <div>
+                    <dt>Estimated delivery</dt>
+                    <dd>{preorderOffer.estimatedShipping}</dd>
+                  </div>
+                </dl>
+
+                <div className="home-preorder-actions">
+                  <a className="button button--dark" href={preorderHref}>
+                    Pre-order now <Arrow />
+                  </a>
+                  <a className="text-link" href="/preorder/product-status">
+                    Product development status <Arrow />
+                  </a>
+                </div>
+
+                <div className="home-preorder-links" aria-label="Pre-order policies">
+                  <a href="/preorder/terms">Pre-order Terms</a>
+                  <a href="/preorder/refunds">Cancellation &amp; Refund Policy</a>
+                </div>
+              </div>
+
+              <figure className="home-preorder-visual home-preorder-visual--device-cutout">
+                <img
+                  src="/generated/frame-device-front-reference-clasp-transparent-v4.png"
+                  alt="Front-facing Frame wearable concept with a centered inner sensor and opposing rose-metal clasp"
+                  width={1254}
+                  height={1254}
+                  loading="lazy"
+                  decoding="async"
+                />
+                <figcaption>
+                  <span>Product concept</span>
+                </figcaption>
+              </figure>
+            </div>
+
+          </div>
+        </section>
+      ) : null}
+
+      <section className="principles-section section">
+        <div className="container principles-grid" id="research">
           <div className="principles-copy">
             <p className="eyebrow">Product principles</p>
             <h2>
@@ -326,7 +494,7 @@ export default async function Home() {
       <section className="final-cta" id="early-access">
         <div className="container final-grid">
           <div className="final-cta__copy">
-            <p className="eyebrow">Early access</p>
+            <p className="eyebrow">Get updates</p>
             <h2>Help shape a new way to understand cardiovascular health.</h2>
           </div>
           <div className="final-cta__form final-cta__action">
@@ -370,7 +538,10 @@ export default async function Home() {
         </div>
         <div className="container footer-bottom">
           <p>
-            Frame is under development and is not currently available for sale.
+            {preorderOffer
+              ? `Frame is under development. Pre-order shipping is estimated for ${preorderOffer.estimatedShipping} and is not guaranteed.`
+              : "Frame is under development and is not currently available for sale."}
+            {" "}
             Product concepts and interfaces shown are illustrative. Frame is being
             developed for general wellness use and is not intended to diagnose,
             screen for, monitor, treat, or manage any disease or medical condition,

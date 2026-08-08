@@ -2,6 +2,8 @@
 import { handleImageOptimization, DEFAULT_DEVICE_SIZES, DEFAULT_IMAGE_SIZES } from "vinext/server/image-optimization";
 import handler from "vinext/server/app-router-entry";
 import {
+  isContributorFeatureEnabled,
+  isContributorFeaturePath,
   isContributorLocalOnlyPath,
   isLoopbackHost,
 } from "../lib/contributor-local-only";
@@ -33,12 +35,20 @@ interface Env {
   };
   PREORDER_MODE?: string;
   PREORDER_LEGAL_APPROVED_VERSION?: string;
+  PREORDER_PRODUCT_STATUS_APPROVED_VERSION?: string;
   PREORDER_STAGING_ACCESS_SECRET?: string;
+  PREORDER_MAINTENANCE_SECRET?: string;
+  CONTRIBUTOR_FEATURE_ENABLED?: string;
 }
 
 interface ExecutionContext {
   waitUntil(promise: Promise<unknown>): void;
   passThroughOnException(): void;
+}
+
+interface ScheduledEvent {
+  cron: string;
+  scheduledTime: number;
 }
 
 const STATIC_CONTENT_TYPES: Record<string, string> = {
@@ -79,7 +89,12 @@ function withPublicResponseHeaders(response: Response, url: URL) {
   }
 
   if (headers.get("content-type")?.startsWith("text/html")) {
-    headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+    headers.set(
+      "Referrer-Policy",
+      url.pathname === "/preorder/manage"
+        ? "no-referrer"
+        : "strict-origin-when-cross-origin",
+    );
     headers.set("X-Content-Type-Options", "nosniff");
   }
 
@@ -174,6 +189,16 @@ const worker = {
       }));
     const optimizedImageSource =
       url.pathname === "/_vinext/image" ? url.searchParams.get("url") : null;
+    const contributorFeatureEnabled = isContributorFeatureEnabled(
+      env.CONTRIBUTOR_FEATURE_ENABLED,
+    );
+    const isContributorFeatureRequest =
+      isContributorFeaturePath(url.pathname) ||
+      (optimizedImageSource
+        ? isContributorFeaturePath(
+            new URL(optimizedImageSource, url).pathname,
+          )
+        : false);
     const isContributorRequest =
       isContributorLocalOnlyPath(url.pathname) ||
       (optimizedImageSource
@@ -189,9 +214,11 @@ const worker = {
         host: url.host,
         mode: env.PREORDER_MODE,
         approvedTermsVersion: env.PREORDER_LEGAL_APPROVED_VERSION,
+        approvedProductStatusVersion: env.PREORDER_PRODUCT_STATUS_APPROVED_VERSION,
       }) || stagingRequestAllowed;
 
     if (
+      (isContributorFeatureRequest && !contributorFeatureEnabled) ||
       (isContributorRequest && !isLocalRequest) ||
       (isPublicPreorderRequest && !preorderRequestAllowed) ||
       (isSharedStripeWebhook && request.method !== "POST")
@@ -221,7 +248,7 @@ const worker = {
     const appHeaders = new Headers(request.headers);
     appHeaders.set(
       "x-frame-contributor-local-request",
-      isLocalRequest ? "1" : "0",
+      isLocalRequest && contributorFeatureEnabled ? "1" : "0",
     );
     appHeaders.set(
       "x-frame-preorder-sales-request",
@@ -243,6 +270,30 @@ const worker = {
     );
 
     return withPublicResponseHeaders(response, url);
+  },
+  async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
+    if (!env.PREORDER_MAINTENANCE_SECRET) {
+      console.error("PREORDER_MAINTENANCE_SECRET is not configured; delivery deadlines were not processed.");
+      return;
+    }
+    const request = new Request(
+      "https://framewearable.com/api/internal/preorders/delivery-delay-expirations",
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${env.PREORDER_MAINTENANCE_SECRET}`,
+        },
+      },
+    );
+    ctx.waitUntil(
+      handler.fetch(request, env, ctx).then(async (response) => {
+        if (!response.ok) {
+          console.error(
+            `Pre-order delivery deadline task failed with status ${response.status}.`,
+          );
+        }
+      }),
+    );
   },
 };
 

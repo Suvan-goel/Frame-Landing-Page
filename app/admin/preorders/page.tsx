@@ -151,7 +151,7 @@ export default async function PreorderAdminPage({
           <div className="admin-actions">
             <a href={`/api/admin/preorders.csv?environment=${environment}`}>Download CSV</a>
             <a href="/admin/email">Email</a>
-            <a href="/admin/waitlist">Waitlist</a>
+            <a href="/admin/waitlist">Subscribers</a>
             <a className="text-link" href={chatGPTSignOutPath("/")}>Sign out</a>
           </div>
         </header>

@@ -785,8 +785,8 @@ export function WaitlistSignupFlow({
         <>
           {!compact ? (
             <div className="waitlist-signup__intro">
-              <strong>Join Frame early access</strong>
-              <p>Get development updates and the opportunity to help shape Frame.</p>
+              <strong>Get updates</strong>
+              <p>Receive Frame development news and help shape what comes next.</p>
             </div>
           ) : null}
           <form onSubmit={handleEmailSubmit} noValidate>
@@ -801,7 +801,9 @@ export function WaitlistSignupFlow({
               />
             </div>
             <div className="form-field waitlist-signup__email-field">
-              <label htmlFor={`${idPrefix}-email`}>Email address</label>
+              <label htmlFor={`${idPrefix}-email`}>
+                {compact ? "Get updates" : "Email address"}
+              </label>
               <div className="waitlist-signup__email-row">
                 <input
                   id={`${idPrefix}-email`}
@@ -809,6 +811,7 @@ export function WaitlistSignupFlow({
                   type="email"
                   inputMode="email"
                   autoComplete="email"
+                  placeholder={compact ? "Enter your email" : undefined}
                   value={flow.email}
                   onChange={(event) => flow.setEmail(event.target.value)}
                   maxLength={254}
@@ -826,7 +829,7 @@ export function WaitlistSignupFlow({
                   type="submit"
                   disabled={flow.emailStatus === "submitting"}
                 >
-                  {flow.emailStatus === "submitting" ? "Joining…" : "Join the waitlist"}
+                  {flow.emailStatus === "submitting" ? "Signing up…" : "Sign up"}
                 </button>
               </div>
               {isActivePlacement && flow.errors.email ? (
@@ -855,7 +858,7 @@ export function WaitlistSignupFlow({
             <span>05</span>
           </div>
           <div className="interest-flow__content">
-            <p className="eyebrow">You’re on the list - the following questions are optional.</p>
+            <p className="eyebrow">You’re subscribed — the following questions are optional.</p>
             <h2 id={`${idPrefix}-survey-title`} ref={headingRef} tabIndex={-1}>{title}</h2>
 
             {flow.surveyStep === 4 ? (
@@ -954,8 +957,8 @@ export function WaitlistSignupFlow({
 
       {flow.stage === "skipped" || flow.stage === "finished" ? (
         <div className="interest-flow__success" aria-live={isActivePlacement ? "polite" : "off"}>
-          <p className="eyebrow">Early access confirmed</p>
-          <h2 ref={headingRef} tabIndex={-1}>You’re on the list.</h2>
+          <p className="eyebrow">Updates confirmed</p>
+          <h2 ref={headingRef} tabIndex={-1}>You’re subscribed.</h2>
           <p>{flow.stage === "finished" ? "Thank you for helping shape Frame." : "No problem—you can answer the optional questions another time."}</p>
           <div className="interest-flow__success-actions">
             <Link className="button button--dark" href={finishHref}><span aria-hidden="true">←</span> Back to home</Link>
@@ -988,7 +991,7 @@ export function WaitlistQualificationFlow({
       <div className="qualification-page__message">
         <p className="eyebrow">Optional research survey</p>
         <h1>Start with your email.</h1>
-        <p>Join Frame early access first, then you can answer the optional questions.</p>
+        <p>Sign up for Frame updates first, then you can answer the optional questions.</p>
         <Link className="button button--dark" href="/#homepage-hero-waitlist">
           Return to Frame
         </Link>

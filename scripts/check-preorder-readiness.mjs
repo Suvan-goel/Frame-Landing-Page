@@ -3,8 +3,12 @@ import { readFile } from "node:fs/promises";
 import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 import {
+  preorderStripeProductDescription,
+  PREORDER_PRODUCT_STATUS_VERSION,
   PREORDER_SELLER_DETAILS_COMPLETE,
+  PREORDER_STRIPE_PRODUCT_TAX_CODE,
   PREORDER_TERMS_VERSION,
+  PREORDER_WARRANTY_DETAILS_COMPLETE,
 } from "../lib/preorder.ts";
 
 const target = process.argv.includes("--launch")
@@ -87,7 +91,7 @@ const allowedCountries = (process.env.PREORDER_ALLOWED_COUNTRIES ?? "US")
 const estimatedShipping =
   process.env.PREORDER_ESTIMATED_SHIPPING ??
   process.env.PREORDER_ESTIMATED_DELIVERY ??
-  "March 2027";
+  "Q1 2027";
 const shippingRateCents = Number(process.env.PREORDER_SHIPPING_RATE_CENTS ?? "");
 
 if (target === "launch") {
@@ -135,6 +139,7 @@ if (target === "launch") {
 for (const [name, label] of [
   ["PREORDER_ORDER_ACCESS_SECRET", "Order-management signing"],
   ["PREORDER_RATE_LIMIT_SECRET", "Endpoint-protection signing"],
+  ["PREORDER_MAINTENANCE_SECRET", "Delivery-deadline processing"],
 ]) {
   if (configured(name, 32)) {
     pass(label, "A dedicated secret is configured.");
@@ -152,6 +157,16 @@ if (
   fail("Signing-secret isolation", "Order-link and endpoint-protection secrets must be different.");
 } else {
   pass("Signing-secret isolation", "Dedicated signing secrets are isolated.");
+}
+if (
+  configured("PREORDER_MAINTENANCE_SECRET", 32) &&
+  ["PREORDER_ORDER_ACCESS_SECRET", "PREORDER_RATE_LIMIT_SECRET"].some(
+    (name) => process.env[name] === process.env.PREORDER_MAINTENANCE_SECRET,
+  )
+) {
+  fail("Maintenance-secret isolation", "Delivery-deadline processing must use its own unique secret.");
+} else {
+  pass("Maintenance-secret isolation", "Delivery-deadline processing uses independent signing material.");
 }
 
 if (configured("PREORDER_STAGING_ACCESS_SECRET", 32)) {
@@ -193,9 +208,9 @@ if (
   expectedCurrency === "usd" &&
   allowedCountries.length === 1 &&
   allowedCountries[0] === "US" &&
-  estimatedShipping === "March 2027"
+  estimatedShipping === "Q1 2027"
 ) {
-  pass("Reviewed offer", "$299 USD, one device, US-only and March 2027 estimated shipping are configured.");
+  pass("Reviewed offer", "$299 USD, one device, US-only and Q1 2027 estimated shipping are configured.");
 } else {
   fail("Reviewed offer", "The runtime offer differs from the reviewed pre-order configuration.");
 }
@@ -207,18 +222,37 @@ if (shippingRateCents === 1_900) {
 
 const termsVersion = PREORDER_TERMS_VERSION;
 const approvedTermsVersion = process.env.PREORDER_LEGAL_APPROVED_VERSION ?? "";
+const productStatusVersion = PREORDER_PRODUCT_STATUS_VERSION;
+const approvedProductStatusVersion =
+  process.env.PREORDER_PRODUCT_STATUS_APPROVED_VERSION ?? "";
 if (target === "launch") {
   if (
     PREORDER_SELLER_DETAILS_COMPLETE &&
+    PREORDER_WARRANTY_DETAILS_COMPLETE &&
     !termsVersion.startsWith("draft") &&
-    approvedTermsVersion === termsVersion
+    approvedTermsVersion === termsVersion &&
+    !productStatusVersion.startsWith("draft") &&
+    approvedProductStatusVersion === productStatusVersion
   ) {
-    pass("Legal launch gate", "The active approved terms version matches the checkout version.");
+    pass(
+      "Legal launch gate",
+      "The approved legal pack and Product Status Disclosure versions match checkout.",
+    );
   } else {
-    fail("Legal launch gate", "Incorporated seller details and approved, non-draft terms are not active.");
+    fail(
+      "Legal launch gate",
+      "Seller details, warranty terms, and approved non-draft legal disclosure versions are not all active.",
+    );
   }
 } else {
-  if (!PREORDER_SELLER_DETAILS_COMPLETE && termsVersion.startsWith("draft") && !approvedTermsVersion) {
+  if (
+    !PREORDER_SELLER_DETAILS_COMPLETE &&
+    PREORDER_WARRANTY_DETAILS_COMPLETE &&
+    termsVersion.startsWith("draft") &&
+    !approvedTermsVersion &&
+    productStatusVersion.startsWith("draft") &&
+    !approvedProductStatusVersion
+  ) {
     pass("Legal launch gate", "The live gate remains deliberately closed during testing.");
   } else {
     warn("Legal launch gate", "Review the configured legal version before continuing.");
@@ -386,12 +420,46 @@ if (secretKey && priceId) {
     } else {
       fail("Stripe price", "The configured price does not match the reviewed pre-order offer.");
     }
-    if (product?.tax_code) {
-      pass("Stripe product tax code", "An explicit product tax code is configured.");
+    if (product?.tax_code === PREORDER_STRIPE_PRODUCT_TAX_CODE) {
+      pass("Stripe product tax code", "General - Tangible Goods is configured explicitly.");
     } else if (target === "launch") {
       fail("Stripe product tax code", "Assign the adviser-approved tax code to the live Stripe Product.");
     } else {
       warn("Stripe product tax code", "Assign the approved product tax code before launch; test Checkout can use the account preset.");
+    }
+    const expectedDescription = preorderStripeProductDescription({
+      estimatedShipping,
+      sandbox: targetEnvironment === "test",
+    });
+    if (product?.description === expectedDescription) {
+      pass("Stripe product copy", `The Stripe product uses the reviewed ${estimatedShipping} shipping estimate.`);
+    } else {
+      fail("Stripe product copy", "The Stripe product description does not match the reviewed shipping copy.");
+    }
+
+    const [taxSettings, taxRegistrations] = await Promise.all([
+      stripe.tax.settings.retrieve(),
+      stripe.tax.registrations.list({ status: "active", limit: 100 }),
+    ]);
+    if (
+      taxSettings.status === "active" &&
+      taxSettings.head_office?.address?.country === "US" &&
+      taxSettings.defaults?.tax_behavior === "exclusive" &&
+      taxSettings.defaults?.tax_code === PREORDER_STRIPE_PRODUCT_TAX_CODE
+    ) {
+      pass("Stripe Tax settings", "US tax settings are active with exclusive physical-goods tax treatment.");
+    } else {
+      fail("Stripe Tax settings", "Review the US head office, exclusive tax behavior, and tangible-goods default in Stripe Tax.");
+    }
+    const activeUsRegistrations = taxRegistrations.data.filter(
+      (registration) => registration.country === "US",
+    );
+    if (activeUsRegistrations.length) {
+      pass("Stripe Tax registrations", `${activeUsRegistrations.length} active US registration${activeUsRegistrations.length === 1 ? "" : "s"} configured for ${targetEnvironment} mode.`);
+    } else if (target === "launch") {
+      fail("Stripe Tax registrations", "Add every legally required live US tax registration before launch.");
+    } else {
+      warn("Stripe Tax registrations", "Add a sandbox US registration before testing tax calculations.");
     }
   } catch (error) {
     fail("Stripe price", error instanceof Error ? error.message : "The Stripe price could not be loaded.");
