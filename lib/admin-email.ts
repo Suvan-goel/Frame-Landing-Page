@@ -267,22 +267,12 @@ export function renderFrameCampaignEmail(input: {
                     <td align="left" valign="middle">
                       <a href="${safeSiteUrl}" style="color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:24px;font-weight:700;letter-spacing:-.7px;line-height:1;text-decoration:none">Frame</a>
                     </td>
-                    <td align="right" valign="middle">
-                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="right">
-                        <tr>
-                          <td width="7" height="7" bgcolor="#7b2937" style="width:7px;height:7px;background:#7b2937;font-size:0;line-height:0">&nbsp;</td>
-                          <td width="9" style="width:9px;font-size:0;line-height:0">&nbsp;</td>
-                          <td style="color:#777870;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase">Frame notes</td>
-                        </tr>
-                      </table>
-                    </td>
                   </tr>
                 </table>
               </td>
             </tr>
             <tr>
               <td class="email-content" style="padding:49px 42px 55px">
-                <p style="margin:0 0 16px;color:#7b2937;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;letter-spacing:.17em;line-height:1.4;text-transform:uppercase">A note from Frame</p>
                 <h1 class="email-heading" style="margin:0 0 29px;color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:32px;font-weight:400;letter-spacing:-.55px;line-height:1.17">${escapeHtml(subject)}</h1>
                 ${bodyToHtml(body)}
                 ${cta}
