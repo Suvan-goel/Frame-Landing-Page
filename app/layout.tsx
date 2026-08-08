@@ -95,8 +95,8 @@ export default function RootLayout({
     <html lang="en-GB">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <StructuredData />
-        <MetaPixelRouteGuard />
         {children}
+        <MetaPixelRouteGuard />
       </body>
     </html>
   );

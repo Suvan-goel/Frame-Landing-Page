@@ -643,6 +643,8 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(metaPixel, /Decline optional/);
   assert.match(metaPixel, /Allow optional/);
   assert.match(metaPixel, /Privacy choices/);
+  assert.match(metaPixel, /const showBanner = preferencesOpen/);
+  assert.match(metaPixel, /style=\{\{ position: "fixed", zIndex: 1100, bottom: 16, left: 16 \}\}/);
   assert.doesNotMatch(metaPixel, /setTimeout\(loadPixel/);
   assert.match(metaPixel, /1068997465474786/);
   assert.match(metaPixel, /PRIVATE_PREFIXES = \["\/contributors", "\/admin", "\/api"\]/);
@@ -663,6 +665,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(contributorPayments, /existingContributor\.checkout_intent_id === intent\.id/);
   assert.doesNotMatch(page, /Connect a real waitlist API/);
   assert.match(layout, /url: "\/og-launch-v2\.png"/);
+  assert.match(layout, /\{children\}[\s\S]*?<MetaPixelRouteGuard \/>/);
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
   assert.match(api, /from\("waitlist_signups"\)/);
   assert.match(api, /first_name: update\.firstName/);

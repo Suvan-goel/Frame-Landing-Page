@@ -179,7 +179,7 @@ export function MetaPixelRouteGuard() {
 
   if (!consentReady || !pixelAllowedOnRoute) return null;
 
-  const showBanner = consent === null || preferencesOpen;
+  const showBanner = preferencesOpen;
 
   return (
     <>
@@ -188,6 +188,13 @@ export function MetaPixelRouteGuard() {
           className="tracking-consent"
           aria-labelledby="tracking-consent-title"
           aria-describedby="tracking-consent-description"
+          style={{
+            position: "fixed",
+            zIndex: 1200,
+            right: 24,
+            bottom: 24,
+            left: 24,
+          }}
         >
           <div className="tracking-consent__copy">
             <p className="eyebrow">Privacy choices</p>
@@ -223,6 +230,7 @@ export function MetaPixelRouteGuard() {
           className="tracking-consent-trigger"
           type="button"
           onClick={() => setPreferencesOpen(true)}
+          style={{ position: "fixed", zIndex: 1100, bottom: 16, left: 16 }}
         >
           Privacy choices
         </button>
