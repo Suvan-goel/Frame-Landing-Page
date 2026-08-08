@@ -81,7 +81,7 @@ export default async function ContributorAdminPage() {
             <p className="eyebrow">Owner view</p><h1>Founding Contributors</h1>
             <p>Payments, access, profile completion, and member-content readiness.</p>
           </div>
-          <div className="admin-actions"><a href="/admin/preorders">Pre-orders</a><a href="/admin/waitlist">Waitlist</a><a className="text-link" href={chatGPTSignOutPath("/")}>Sign out</a></div>
+          <div className="admin-actions"><a href="/admin/email">Email</a><a href="/admin/preorders">Pre-orders</a><a href="/admin/waitlist">Waitlist</a><a className="text-link" href={chatGPTSignOutPath("/")}>Sign out</a></div>
         </header>
 
         <section className="admin-metrics" aria-label="Contributor programme metrics">

@@ -141,6 +141,7 @@ async function AuthenticatedOrderDetail({ id }: { id: string }) {
           </div>
           <div className="admin-actions">
             <a href={`/admin/preorders?environment=${order.environment}`}>All pre-orders</a>
+            <a href="/admin/email">Email</a>
             {managePath ? <a href={managePath} target="_blank" rel="noreferrer">Customer view</a> : null}
             <a className="text-link" href={chatGPTSignOutPath("/")}>Sign out</a>
           </div>

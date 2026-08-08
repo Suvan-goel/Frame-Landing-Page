@@ -141,6 +141,13 @@ function waitlistRepository(supabase: SupabaseClient): WaitlistRepository {
       if (error) throw error;
       return toRecord(data);
     },
+    async resubscribe(id) {
+      const { error } = await supabase
+        .from("waitlist_signups")
+        .update({ email_unsubscribed_at: null })
+        .eq("id", id);
+      if (error) throw error;
+    },
     async findByToken(signupToken) {
       const { data, error } = await supabase
         .from("waitlist_signups")

@@ -124,6 +124,7 @@ export default async function WaitlistAdminPage({
             <a className="button button--dark" href="/api/admin/waitlist.xlsx">
               Export spreadsheet
             </a>
+            <a href="/admin/email">Email</a>
             <a href="/admin/preorders">Pre-orders</a>
             <a className="text-link" href={chatGPTSignOutPath("/")}>
               Sign out
