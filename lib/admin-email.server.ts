@@ -1,6 +1,8 @@
 import {
   EMAIL_CONFIRMATION_MINUTES,
   EMAIL_MAX_RECIPIENTS,
+  RESEND_WEBHOOK_ENDPOINT,
+  RESEND_WEBHOOK_EVENTS,
   renderFrameCampaignEmail,
   type EmailCampaignContent,
   type EmailCampaignDetail,
@@ -9,7 +11,6 @@ import {
   type MailingListRecipient,
 } from "./admin-email";
 import {
-  createResendWebhook,
   getMailingRuntimeConfiguration,
   RESEND_BATCH_SIZE,
   sendResendBatch,
@@ -207,6 +208,7 @@ export async function getMailingListAdminData(createdBy: string) {
       postalAddress: runtime.postalAddress,
       postalAddressConfigured: Boolean(runtime.postalAddress),
       webhookConfigured: Boolean(webhook?.secret_value),
+      webhookVerified: Boolean(webhook?.secret_value && webhook.metadata?.verifiedAt),
     },
   };
 }
@@ -707,22 +709,38 @@ export async function retryFailedEmailCampaign(input: {
   return { sentCount, failedCount, status };
 }
 
-export async function enableResendWebhookProtection() {
-  const existing = await getWebhookSetting();
-  if (existing?.secret_value) return { configured: true, created: false };
-  const webhook = await createResendWebhook();
+export async function getResendWebhookProtectionStatus() {
+  const webhook = await getWebhookSetting();
+  return {
+    configured: Boolean(webhook?.secret_value),
+    verified: Boolean(webhook?.secret_value && webhook.metadata?.verifiedAt),
+  };
+}
+
+export async function configureResendWebhookProtection(input: {
+  signingSecret: string;
+  configuredBy: string;
+}) {
   const supabase = await getSupabaseAdmin();
+  const configuredAt = new Date().toISOString();
   const { error } = await supabase.from("email_provider_settings").upsert(
     {
       key: WEBHOOK_SETTINGS_KEY,
-      secret_value: webhook.signing_secret,
-      metadata: { provider: "resend", webhookId: webhook.id },
-      updated_at: new Date().toISOString(),
+      secret_value: input.signingSecret,
+      metadata: {
+        provider: "resend",
+        setupMode: "manual",
+        endpoint: RESEND_WEBHOOK_ENDPOINT,
+        events: [...RESEND_WEBHOOK_EVENTS],
+        configuredBy: input.configuredBy.trim().toLowerCase(),
+        configuredAt,
+      },
+      updated_at: configuredAt,
     },
     { onConflict: "key" },
   );
   if (error) throw error;
-  return { configured: true, created: true };
+  return { configured: true, verified: false };
 }
 
 export async function getResendWebhookSecret() {
@@ -739,6 +757,23 @@ export async function processResendWebhookEvent(input: {
 }) {
   const supabase = await getSupabaseAdmin();
   const emailId = input.event.data?.email_id ?? null;
+  const webhook = await getWebhookSetting();
+  const verifiedAt = new Date().toISOString();
+  if (webhook?.secret_value) {
+    const verification = await supabase
+      .from("email_provider_settings")
+      .update({
+        metadata: {
+          ...webhook.metadata,
+          verifiedAt,
+          lastVerifiedEventId: input.eventId,
+          lastVerifiedEventType: input.event.type,
+        },
+        updated_at: verifiedAt,
+      })
+      .eq("key", WEBHOOK_SETTINGS_KEY);
+    if (verification.error) throw verification.error;
+  }
   const inserted = await supabase.from("email_webhook_events").insert({
     event_id: input.eventId,
     event_type: input.event.type,

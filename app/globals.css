@@ -979,6 +979,132 @@
   color: var(--burgundy);
 }
 
+.admin-email-webhook-setup {
+  display: grid;
+  gap: 18px;
+  margin-top: 12px;
+  padding: 24px 28px;
+  border: 1px solid rgba(141, 62, 70, 0.2);
+  border-radius: 16px;
+  background: rgba(255, 253, 249, 0.82);
+}
+
+.admin-email-webhook-setup__heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 28px;
+  align-items: end;
+}
+
+.admin-email-webhook-setup__heading .eyebrow {
+  margin: 0 0 5px;
+  color: var(--burgundy);
+}
+
+.admin-email-webhook-setup__heading h3 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: 1.5rem;
+  font-weight: 400;
+  letter-spacing: -0.03em;
+}
+
+.admin-email-webhook-setup__heading > p,
+.admin-email-webhook-test-note {
+  max-width: 470px;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.66rem;
+  line-height: 1.55;
+}
+
+.admin-email-webhook-setup ol {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding-left: 22px;
+  color: var(--ink-soft);
+  font-size: 0.68rem;
+  line-height: 1.55;
+}
+
+.admin-email-webhook-setup a,
+.admin-email-webhook-endpoint button {
+  color: var(--burgundy);
+  text-underline-offset: 3px;
+}
+
+.admin-email-webhook-endpoint {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 6px;
+}
+
+.admin-email-webhook-endpoint code,
+.admin-email-webhook-events code,
+.admin-email-webhook-setup li > code {
+  padding: 4px 7px;
+  border: 1px solid var(--admin-border);
+  border-radius: 4px;
+  background: var(--admin-card);
+  color: var(--ink);
+  font-size: 0.61rem;
+  overflow-wrap: anywhere;
+}
+
+.admin-email-webhook-endpoint code {
+  min-width: 0;
+}
+
+.admin-email-webhook-endpoint button {
+  flex: 0 0 auto;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  text-decoration: underline;
+}
+
+.admin-email-webhook-events {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.admin-email-webhook-secret {
+  display: grid;
+  gap: 7px;
+  max-width: 700px;
+  font-size: 0.68rem;
+}
+
+.admin-email-webhook-secret span {
+  font-weight: 650;
+}
+
+.admin-email-webhook-secret input {
+  width: 100%;
+  min-height: 48px;
+  padding: 11px 13px;
+  border: 1px solid var(--admin-border);
+  border-radius: 6px;
+  background: var(--admin-card);
+  color: var(--ink);
+  font: inherit;
+}
+
+.admin-email-webhook-secret small {
+  color: var(--ink-soft);
+}
+
+.admin-email-webhook-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
 .admin-email-capacity-warning {
   padding: 13px 15px;
   border: 1px solid rgba(141, 62, 70, 0.24);
@@ -1323,6 +1449,21 @@
 
   .admin-email-readiness {
     padding: 22px 18px;
+  }
+
+  .admin-email-webhook-setup {
+    padding: 22px 18px;
+  }
+
+  .admin-email-webhook-setup__heading,
+  .admin-email-webhook-endpoint {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .admin-email-webhook-endpoint code {
+    width: 100%;
   }
 
   .admin-email-send-actions {
