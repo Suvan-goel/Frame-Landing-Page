@@ -6119,6 +6119,12 @@ h2 {
   }
 }
 
+@media (max-width: 373px) {
+  .product-status-page .legal-shell > section:not(.product-status-summary) h2 {
+    line-height: 1.15;
+  }
+}
+
 .preorder-terms-page .legal-shell {
   width: min(1080px, calc(100% - 64px));
 }
@@ -8763,6 +8769,13 @@ h2 {
     border-bottom: 1px solid var(--preorder-card-divider);
   }
 
+}
+
+@media (min-width: 681px) and (max-width: 780px) {
+  .preorder-confirmation__shipping {
+    grid-template-columns: 1fr;
+    gap: 24px;
+  }
 }
 
 @media (max-width: 680px) {
