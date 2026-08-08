@@ -2,6 +2,7 @@ import {
   ADMIN_TIME_ZONES,
   type AdminTimeZone,
 } from "@/lib/admin-time-zone";
+import { AdminTimeZoneClock } from "./admin-time-zone-clock";
 
 type WaitlistView = "qualified" | "unqualified" | "insights";
 
@@ -40,7 +41,10 @@ export function AdminTimeZoneForm({
       <button className="admin-timezone__submit" type="submit">
         Apply
       </button>
-      <p>Showing lead times in {selectedTimeZoneLabel}.</p>
+      <AdminTimeZoneClock
+        label={selectedTimeZoneLabel}
+        timeZone={selectedTimeZone}
+      />
     </form>
   );
 }
