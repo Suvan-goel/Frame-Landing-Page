@@ -4,6 +4,10 @@ import {
   type AdminTimeZone,
 } from "./admin-time-zone";
 import { getSupabaseAdmin } from "./supabase-admin.server";
+import {
+  isSupabaseJwtIssuedAtFutureError,
+  retrySupabaseReadOnJwtIssuedAtFuture,
+} from "./supabase-retry";
 
 const GLOBAL_ADMIN_SETTINGS_ID = "global";
 
@@ -13,14 +17,27 @@ type AdminSettingsRow = {
 
 export async function getPersistedAdminTimeZone(): Promise<AdminTimeZone> {
   const supabase = await getSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("admin_settings")
-    .select("time_zone")
-    .eq("id", GLOBAL_ADMIN_SETTINGS_ID)
-    .maybeSingle<AdminSettingsRow>();
+  const { data, error } = await retrySupabaseReadOnJwtIssuedAtFuture(
+    () =>
+      supabase
+        .from("admin_settings")
+        .select("time_zone")
+        .eq("id", GLOBAL_ADMIN_SETTINGS_ID)
+        .maybeSingle<AdminSettingsRow>(),
+    {
+      onRetry: (_error, retryNumber) => {
+        console.warn(
+          `Admin time zone lookup hit transient Supabase JWT clock skew; retrying (${retryNumber}).`,
+        );
+      },
+    },
+  );
 
   if (error) {
     console.error("Admin time zone lookup failed", error);
+    if (isSupabaseJwtIssuedAtFutureError(error)) {
+      return resolveAdminTimeZone();
+    }
     throw new Error("The saved admin time zone is temporarily unavailable.");
   }
 

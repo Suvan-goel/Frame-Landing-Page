@@ -9,6 +9,7 @@ import {
 import { DeleteWaitlistSignupButton } from "@/app/components/delete-waitlist-signup-button";
 import { QualifiedLeadInsights } from "./qualified-lead-insights";
 import { getPersistedAdminTimeZone } from "@/lib/admin-settings.server";
+import { retrySupabaseReadOnJwtIssuedAtFuture } from "@/lib/supabase-retry";
 import {
   categorizeVisibleSignups,
   genderLabels,
@@ -29,6 +30,25 @@ function waitlistTabHref(tab: WaitlistView) {
   return `/admin/waitlist?tab=${tab}`;
 }
 
+function WaitlistUnavailable({ userEmail }: { userEmail: string }) {
+  return (
+    <AdminDashboardShell
+      activeSection="waitlist"
+      description="The lead workspace is temporarily unavailable."
+      title="Waitlist"
+      userEmail={userEmail}
+    >
+      <div className="admin-empty" role="alert">
+        <h2>The waitlist could not be loaded.</h2>
+        <p>
+          The data connection was briefly unavailable. No data was changed. {" "}
+          <a href="/admin/waitlist">Try again</a>.
+        </p>
+      </div>
+    </AdminDashboardShell>
+  );
+}
+
 export default async function WaitlistAdminPage({
   searchParams,
 }: {
@@ -43,19 +63,29 @@ export default async function WaitlistAdminPage({
 
   const supabase = await getSupabaseAdmin();
   const [{ data, error }, selectedTimeZone] = await Promise.all([
-    supabase
-      .from("waitlist_signups")
-      .select(WAITLIST_SIGNUP_SELECT)
-      .order("created_at", { ascending: false })
-      .order("id", { ascending: false })
-      .limit(500)
-      .returns<WaitlistSignup[]>(),
+    retrySupabaseReadOnJwtIssuedAtFuture(
+      () =>
+        supabase
+          .from("waitlist_signups")
+          .select(WAITLIST_SIGNUP_SELECT)
+          .order("created_at", { ascending: false })
+          .order("id", { ascending: false })
+          .limit(500)
+          .returns<WaitlistSignup[]>(),
+      {
+        onRetry: (_error, retryNumber) => {
+          console.warn(
+            `Waitlist dashboard query hit transient Supabase JWT clock skew; retrying (${retryNumber}).`,
+          );
+        },
+      },
+    ),
     getPersistedAdminTimeZone(),
   ]);
 
   if (error) {
     console.error("Waitlist dashboard query failed", error);
-    throw new Error("The waitlist is temporarily unavailable.");
+    return <WaitlistUnavailable userEmail={user.email} />;
   }
   const resolvedSearchParams = await searchParams;
   const requestedTab = resolvedSearchParams?.tab;

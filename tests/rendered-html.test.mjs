@@ -12,6 +12,10 @@ import {
   skipWaitlistQualification,
 } from "../lib/waitlist-service.server.ts";
 import { resolveAdminTimeZone } from "../lib/admin-time-zone.ts";
+import {
+  isSupabaseJwtIssuedAtFutureError,
+  retrySupabaseReadOnJwtIssuedAtFuture,
+} from "../lib/supabase-retry.ts";
 
 function createWaitlistRepositoryFixture() {
   const records = [];
@@ -817,12 +821,62 @@ test("accepts a persisted admin time zone and rejects invalid values", () => {
   assert.equal(resolveAdminTimeZone("invalid"), "UTC");
 });
 
+test("retries only the transient Supabase JWT issued-at-future failure", async () => {
+  const jwtClockSkewError = {
+    code: "PGRST303",
+    message: "JWT issued at future",
+  };
+  let attempts = 0;
+
+  const recovered = await retrySupabaseReadOnJwtIssuedAtFuture(
+    async () => {
+      attempts += 1;
+      return attempts === 1
+        ? { data: null, error: jwtClockSkewError }
+        : { data: ["recovered"], error: null };
+    },
+    { retryDelaysMs: [0, 0] },
+  );
+
+  assert.equal(attempts, 2);
+  assert.deepEqual(recovered.data, ["recovered"]);
+  assert.equal(recovered.error, null);
+  assert.equal(isSupabaseJwtIssuedAtFutureError(jwtClockSkewError), true);
+  assert.equal(
+    isSupabaseJwtIssuedAtFutureError({
+      code: "PGRST303",
+      message: "Another JWT validation failure",
+    }),
+    false,
+  );
+});
+
+test("does not retry unrelated Supabase failures", async () => {
+  let attempts = 0;
+  const originalFailure = {
+    data: null,
+    error: { code: "42P01", message: "relation does not exist" },
+  };
+
+  const result = await retrySupabaseReadOnJwtIssuedAtFuture(
+    async () => {
+      attempts += 1;
+      return originalFailure;
+    },
+    { retryDelaysMs: [0, 0] },
+  );
+
+  assert.equal(attempts, 1);
+  assert.equal(result, originalFailure);
+});
+
 test("separates, visualizes, exports, and permanently deletes admin leads", async () => {
-  const [adminPage, timeZoneForm, timeZoneHelpers, adminSettings, timeZoneRoute, timeZoneMigration, insights, leadHelpers, csvRoute, workbookRoute, deleteRoute, timeZoneClock, css] = await Promise.all([
+  const [adminPage, timeZoneForm, timeZoneHelpers, adminSettings, supabaseRetry, timeZoneRoute, timeZoneMigration, insights, leadHelpers, csvRoute, workbookRoute, deleteRoute, timeZoneClock, css] = await Promise.all([
     readFile(new URL("../app/admin/waitlist/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/admin-time-zone-form.tsx", import.meta.url), "utf8"),
     readFile(new URL("../lib/admin-time-zone.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/admin-settings.server.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/supabase-retry.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/time-zone/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../supabase/migrations/20260808140000_persist_admin_time_zone.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/waitlist/qualified-lead-insights.tsx", import.meta.url), "utf8"),
@@ -856,6 +910,11 @@ test("separates, visualizes, exports, and permanently deletes admin leads", asyn
   assert.match(timeZoneForm, /method="post"/);
   assert.match(adminSettings, /from\("admin_settings"\)/);
   assert.match(adminSettings, /setPersistedAdminTimeZone/);
+  assert.match(adminPage, /retrySupabaseReadOnJwtIssuedAtFuture/);
+  assert.match(adminPage, /WaitlistUnavailable userEmail=\{user\.email\}/);
+  assert.match(adminSettings, /isSupabaseJwtIssuedAtFutureError/);
+  assert.match(supabaseRetry, /code === "PGRST303"/);
+  assert.match(supabaseRetry, /jwt issued at future/i);
   assert.match(timeZoneRoute, /isWaitlistAdmin\(user\.email\)/);
   assert.match(timeZoneRoute, /setPersistedAdminTimeZone\(timeZone, user\.email\)/);
   assert.match(timeZoneRoute, /status: 303/);
