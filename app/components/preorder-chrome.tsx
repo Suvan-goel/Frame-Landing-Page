@@ -23,7 +23,6 @@ export async function PreorderHeader({
       <SiteHeader
         backHref={backHref}
         backLabel={backLabel}
-        links={[{ href: "/preorder/terms", label: "Pre-order terms" }]}
       />
     </>
   );

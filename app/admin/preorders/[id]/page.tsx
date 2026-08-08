@@ -7,7 +7,10 @@ import { formatPreorderMoney, formatPreorderNumber } from "@/lib/preorder";
 import { isPreorderId } from "@/lib/preorder-admin-api.server";
 import { createPreorderManagePath } from "@/lib/preorder-order-access.server";
 import type { PreorderEnvironment } from "@/lib/preorder-operations.server";
-import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
+import {
+  isPreorderAdminPageEnabled,
+  isPreorderSalesPageEnabled,
+} from "@/lib/preorder-sales-page.server";
 import { getSupabaseAdmin, isWaitlistAdmin } from "@/lib/supabase-admin.server";
 
 export const dynamic = "force-dynamic";
@@ -84,9 +87,10 @@ export default async function PreorderOrderPage({
 }
 
 async function AuthenticatedOrderDetail({ id }: { id: string }) {
-  if (!(await isPreorderSalesPageEnabled()) || !isPreorderId(id)) notFound();
+  if (!(await isPreorderAdminPageEnabled()) || !isPreorderId(id)) notFound();
   const user = await requireChatGPTUser(`/admin/preorders/${id}`);
   if (!(await isWaitlistAdmin(user.email))) notFound();
+  const publicSalesPageEnabled = await isPreorderSalesPageEnabled();
 
   const supabase = await getSupabaseAdmin();
   const [orderResult, itemsResult, paymentsResult, eventsResult, emailsResult] = await Promise.all([
@@ -115,7 +119,9 @@ async function AuthenticatedOrderDetail({ id }: { id: string }) {
   const amountRemaining = Math.max(order.amount_total - order.amount_refunded, 0);
   let managePath: string | null = null;
   try {
-    managePath = await createPreorderManagePath({ orderId: order.id, tokenVersion: order.manage_token_version });
+    managePath = publicSalesPageEnabled
+      ? await createPreorderManagePath({ orderId: order.id, tokenVersion: order.manage_token_version })
+      : null;
   } catch (error) {
     console.error("Owner order-management link creation failed", error);
   }

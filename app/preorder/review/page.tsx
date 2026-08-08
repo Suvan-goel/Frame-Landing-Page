@@ -29,27 +29,26 @@ export default async function PreorderReviewPage() {
   return (
     <main className="checkout-page preorder-checkout-page">
       <PreorderHeader backHref="/" backLabel="Back to home" />
-      <div className="checkout-page__layout">
-        <aside className="preorder-review-intro">
-          <p className="eyebrow">Secure pre-order</p>
-          <h2>Review your Frame pre-order.</h2>
+      <div className="preorder-review-shell">
+        <header className="preorder-review-heading">
+          <p className="eyebrow">Frame pre-order</p>
+          <h1>Review your order.</h1>
           <p>
-            Confirm the details and important product information before continuing to secure payment.
+            Confirm your shipping details before continuing to secure checkout.
           </p>
-          <ul aria-label="Payment and order information">
-            <li><span>01</span><strong>One-time payment</strong></li>
-            <li><span>02</span><strong>Secure checkout by Stripe</strong></li>
-            <li><span>03</span><strong>Confirmation sent by email</strong></li>
-          </ul>
-        </aside>
+        </header>
         <PreorderCheckoutReview
           priceLabel={formatPreorderMoney(offer.priceCents, offer.currency)}
           shippingPriceLabel={formatPreorderMoney(
             offer.shippingRateCents ?? PREORDER_SHIPPING_RATE_CENTS,
             offer.currency,
           )}
+          estimatedTotalLabel={formatPreorderMoney(
+            offer.priceCents +
+              (offer.shippingRateCents ?? PREORDER_SHIPPING_RATE_CENTS),
+            offer.currency,
+          )}
           estimatedShipping={shippingLabel}
-          allowedCountries={offer.allowedCountries}
         />
       </div>
     </main>

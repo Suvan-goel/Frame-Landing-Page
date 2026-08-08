@@ -6,7 +6,8 @@ import {
   isLoopbackHost,
 } from "../lib/contributor-local-only";
 import {
-  isPreorderPath,
+  isPreorderAdminPath,
+  isPublicPreorderPath,
   isPreorderRequestAllowed,
 } from "../lib/preorder-access";
 import {
@@ -180,7 +181,8 @@ const worker = {
             new URL(optimizedImageSource, url).pathname,
           )
         : false);
-    const isPreorderRequest = isPreorderPath(url.pathname);
+    const isPreorderAdminRequest = isPreorderAdminPath(url.pathname);
+    const isPublicPreorderRequest = isPublicPreorderPath(url.pathname);
     const isSharedStripeWebhook = url.pathname === "/api/stripe/webhook";
     const preorderRequestAllowed =
       isPreorderRequestAllowed({
@@ -191,7 +193,7 @@ const worker = {
 
     if (
       (isContributorRequest && !isLocalRequest) ||
-      (isPreorderRequest && !preorderRequestAllowed) ||
+      (isPublicPreorderRequest && !preorderRequestAllowed) ||
       (isSharedStripeWebhook && request.method !== "POST")
     ) {
       return new Response("Not found", {
@@ -224,6 +226,10 @@ const worker = {
     appHeaders.set(
       "x-frame-preorder-sales-request",
       preorderRequestAllowed ? "1" : "0",
+    );
+    appHeaders.set(
+      "x-frame-preorder-admin-request",
+      isPreorderAdminRequest ? "1" : "0",
     );
     appHeaders.set(
       "x-frame-preorder-staging-request",

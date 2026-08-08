@@ -2,6 +2,7 @@
 import type { Metadata } from "next";
 import { SiteHeader } from "../components/site-header";
 import { isFoundingContributorSalesPageEnabled } from "@/lib/contributor-sales-page.server";
+import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
 
 export const metadata: Metadata = {
   title: "Privacy — Frame",
@@ -16,8 +17,10 @@ export const metadata: Metadata = {
 };
 
 export default async function PrivacyPage() {
-  const showLocalContributorAreas =
-    await isFoundingContributorSalesPageEnabled();
+  const [showContributorAreas, showPreorderAreas] = await Promise.all([
+    isFoundingContributorSalesPageEnabled(),
+    isPreorderSalesPageEnabled(),
+  ]);
 
   return (
     <main className="legal-page">
@@ -31,8 +34,11 @@ export default async function PrivacyPage() {
           This notice explains how Frame Health Technologies handles information
           submitted through the Frame website, including its research and
           early-access waitlist and contact form.
-          {showLocalContributorAreas
+          {showContributorAreas
             ? " It also covers the locally tested Founding Contributor membership experience."
+            : null}
+          {showPreorderAreas
+            ? " It also covers the Frame device pre-order and customer order-management experience."
             : null}
         </p>
 
@@ -45,7 +51,7 @@ export default async function PrivacyPage() {
           </p>
         </section>
 
-        {showLocalContributorAreas ? (
+        {showContributorAreas ? (
           <section>
             <h2>Founding Contributor membership</h2>
             <p>
@@ -62,6 +68,27 @@ export default async function PrivacyPage() {
               feedback, questions, advisory votes, event participation, and
               optional research applications. Please do not submit diagnoses,
               symptoms, test results, or other medical information.
+            </p>
+          </section>
+        ) : null}
+
+        {showPreorderAreas ? (
+          <section>
+            <h2>Device pre-orders</h2>
+            <p>
+              If you place a pre-order, we collect your name, email address,
+              US shipping and billing address, order items and amounts, tax and
+              shipping amounts, payment and refund status, the policy versions
+              and acknowledgements recorded at checkout, marketing choice,
+              attribution information, and order-support history. We also keep
+              fulfilment, tracking, address-change, cancellation, delay-response,
+              and customer-communication records needed to manage the order.
+            </p>
+            <p>
+              Stripe processes the payment and related fraud-prevention information.
+              Frame receives payment status and identifiers but does not receive or
+              store your full card number. Do not submit diagnoses, symptoms, test
+              results, or other private medical information when contacting Frame.
             </p>
           </section>
         ) : null}
@@ -94,6 +121,22 @@ export default async function PrivacyPage() {
             abuse and respond to messages sent through the contact form.
             Joining the waitlist does not enroll you in a study or make you
             a research participant.
+            {showPreorderAreas
+              ? " Pre-order information is also used to take payment, calculate tax, reserve inventory, confirm and support orders, communicate delays, process cancellations and refunds, prevent fraud and abuse, meet accounting and legal duties, and arrange fulfilment."
+              : null}
+          </p>
+        </section>
+
+        <section>
+          <h2>Legal bases</h2>
+          <p>
+            We process information where it is necessary to take steps at your
+            request or perform a contract, comply with legal obligations, and
+            pursue legitimate interests such as securing the website, maintaining
+            reliable records, understanding demand, and improving Frame. We rely
+            on consent for optional marketing and similar technologies where
+            consent is required. You can withdraw marketing consent at any time
+            without affecting earlier lawful processing.
           </p>
         </section>
 
@@ -106,8 +149,11 @@ export default async function PrivacyPage() {
             technologies, which Meta processes under its own privacy policy. We
             do not send your name, email address, age, gender, or written
             responses to Meta through the Pixel.
-            {showLocalContributorAreas
+            {showContributorAreas
               ? " The Pixel is not initialized on checkout review, payment-success, member sign-in, contributor-profile, private contributor-hub, or administration routes."
+              : null}
+            {showPreorderAreas
+              ? " The Pixel is not initialized on pre-order review, payment confirmation, customer order-management, or pre-order administration routes."
               : null}
           </p>
         </section>
@@ -120,21 +166,36 @@ export default async function PrivacyPage() {
             submissions, and deliver messages, or when required by law. These
             providers currently include Supabase for data storage, Resend for
             email delivery, and our website hosting provider.
-            {showLocalContributorAreas
+            {showContributorAreas
               ? " The local membership flow also uses Stripe for payments and Supabase for member authentication."
               : null}
-            {" "}We keep submitted information while Frame is in development,
-            for the period needed to provide the relevant service and meet
-            legal or accounting duties, or until you ask us to delete
-            information we are not required to retain.
+            {showPreorderAreas
+              ? " The pre-order flow also uses Stripe for payment and tax calculation, Supabase for order storage, and Resend for transactional email."
+              : null}
+            {" "}Some providers may process information outside the UK. Where
+            restricted transfers apply, we use an applicable adequacy mechanism
+            or contractual safeguards provided for that service.
+          </p>
+          <p>
+            We keep information only for as long as needed for the purpose for
+            which it was collected. Order and payment records are retained for the
+            period needed to fulfil and support the order and meet tax, accounting,
+            fraud-prevention, dispute, and consumer-protection obligations. Marketing
+            records are retained until you unsubscribe or they are no longer useful,
+            subject to a minimal suppression record that prevents further marketing.
+            Security logs are retained for a shorter period proportionate to the risk.
           </p>
         </section>
 
         <section>
           <h2>Your choices</h2>
           <p>
-            You can unsubscribe from any update using the link in that message.
-            To ask what information we hold or request deletion, use our{" "}
+            You can unsubscribe from marketing using the link in that message;
+            essential order messages will continue while an order is active. Depending
+            on the circumstances, you may ask for access, correction, deletion,
+            restriction, objection, or portability of your personal information, and
+            you may complain to the UK Information Commissioner. To exercise a right,
+            use our{" "}
             <a href="/contact?topic=privacy">contact page</a>.
           </p>
         </section>

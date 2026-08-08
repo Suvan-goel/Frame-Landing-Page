@@ -1,16 +1,20 @@
 import {
   isDraftPreorderVersion,
+  PREORDER_SELLER_DETAILS_COMPLETE,
   PREORDER_TERMS_VERSION,
 } from "./preorder";
 import { isLoopbackHost } from "./contributor-local-only";
 
-const PREORDER_ROUTE_ROOTS = [
+const PREORDER_PUBLIC_ROUTE_ROOTS = [
   "/preorder",
   "/preorders",
+  "/api/preorders",
+] as const;
+
+const PREORDER_ADMIN_ROUTE_ROOTS = [
   "/admin/preorders",
   "/api/admin/preorders",
   "/api/admin/preorders.csv",
-  "/api/preorders",
 ] as const;
 
 export type PreorderMode = "off" | "test" | "live";
@@ -25,6 +29,7 @@ export function isPreorderLiveApproved(input: {
 }) {
   return (
     normalizePreorderMode(input.mode) === "live" &&
+    PREORDER_SELLER_DETAILS_COMPLETE &&
     !isDraftPreorderVersion(PREORDER_TERMS_VERSION) &&
     input.approvedTermsVersion === PREORDER_TERMS_VERSION
   );
@@ -39,7 +44,7 @@ export function isPreorderRequestAllowed(input: {
   return isPreorderLiveApproved(input);
 }
 
-export function isPreorderPath(pathname: string) {
+function normalizePathname(pathname: string) {
   let normalizedPath = pathname;
   for (let attempt = 0; attempt < 2; attempt += 1) {
     try {
@@ -52,7 +57,25 @@ export function isPreorderPath(pathname: string) {
   }
   normalizedPath = normalizedPath.replaceAll("\\", "/").replace(/\/{2,}/g, "/");
 
-  return PREORDER_ROUTE_ROOTS.some(
+  return normalizedPath;
+}
+
+function matchesRouteRoot(pathname: string, roots: readonly string[]) {
+  const normalizedPath = normalizePathname(pathname);
+
+  return roots.some(
     (root) => normalizedPath === root || normalizedPath.startsWith(`${root}/`),
   );
+}
+
+export function isPublicPreorderPath(pathname: string) {
+  return matchesRouteRoot(pathname, PREORDER_PUBLIC_ROUTE_ROOTS);
+}
+
+export function isPreorderAdminPath(pathname: string) {
+  return matchesRouteRoot(pathname, PREORDER_ADMIN_ROUTE_ROOTS);
+}
+
+export function isPreorderPath(pathname: string) {
+  return isPublicPreorderPath(pathname) || isPreorderAdminPath(pathname);
 }

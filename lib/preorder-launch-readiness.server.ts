@@ -7,6 +7,7 @@ import {
   PREORDER_DEFAULT_PRICE_CENTS,
   PREORDER_ESTIMATED_SHIPPING,
   PREORDER_MAX_INVENTORY_UNITS,
+  PREORDER_SELLER_DETAILS_COMPLETE,
   PREORDER_SHIPPING_RATE_CENTS,
 } from "./preorder";
 import { getPreorderSalesSnapshot } from "./preorder-operations.server";
@@ -76,6 +77,9 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
   const stripeWebhookSecret = dedicatedLiveStripeWebhookSecret;
 
   const blockers: string[] = [];
+  if (!PREORDER_SELLER_DETAILS_COMPLETE) {
+    blockers.push("The incorporated seller's legal identity and contact details are not complete.");
+  }
   if (!isPreorderLiveApproved({ mode, approvedTermsVersion })) {
     blockers.push("Approved, non-draft pre-order terms are not active in live mode.");
   }

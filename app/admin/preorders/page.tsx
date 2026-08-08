@@ -13,7 +13,10 @@ import {
   type PreorderEnvironment,
 } from "@/lib/preorder-operations.server";
 import { formatPreorderMoney, formatPreorderNumber } from "@/lib/preorder";
-import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
+import {
+  isPreorderAdminPageEnabled,
+  isPreorderSalesPageEnabled,
+} from "@/lib/preorder-sales-page.server";
 import { isStripeWebhookRecoveryEligible } from "@/lib/stripe-webhook-recovery";
 import { getSupabaseAdmin, isWaitlistAdmin } from "@/lib/supabase-admin.server";
 
@@ -52,9 +55,10 @@ export default async function PreorderAdminPage({
 }: {
   searchParams?: Promise<{ environment?: string | string[] }>;
 }) {
-  if (!(await isPreorderSalesPageEnabled())) notFound();
+  if (!(await isPreorderAdminPageEnabled())) notFound();
   const user = await requireChatGPTUser("/admin/preorders");
   if (!(await isWaitlistAdmin(user.email))) notFound();
+  const publicSalesPageEnabled = await isPreorderSalesPageEnabled();
 
   const requestedEnvironment = (await searchParams)?.environment;
   const environment: PreorderEnvironment =
@@ -229,7 +233,7 @@ export default async function PreorderAdminPage({
           <div className="admin-empty">
             <h2>No {environmentLabel.toLowerCase()} pre-orders yet.</h2>
             <p>{environment === "test" ? "Complete a Stripe sandbox payment to exercise the order pipeline." : "Live orders will appear here after launch."}</p>
-            {environment === "test" ? <a className="button button--dark" href="/preorder/review?source=admin_empty">Open pre-order review</a> : null}
+            {environment === "test" && publicSalesPageEnabled ? <a className="button button--dark" href="/preorder/review?source=admin_empty">Open pre-order review</a> : null}
           </div>
         )}
       </div>

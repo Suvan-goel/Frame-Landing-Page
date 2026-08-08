@@ -1,7 +1,10 @@
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
-import { PREORDER_TERMS_VERSION } from "../lib/preorder.ts";
+import {
+  PREORDER_SELLER_DETAILS_COMPLETE,
+  PREORDER_TERMS_VERSION,
+} from "../lib/preorder.ts";
 
 async function render(path = "/", init, origin = "https://framewearable.com", env = {}) {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -21,8 +24,9 @@ async function render(path = "/", init, origin = "https://framewearable.com", en
   );
 }
 
-test("keeps every remote pre-order surface unavailable while legal versions are draft", async () => {
+test("keeps every remote public pre-order surface unavailable while legal versions are draft", async () => {
   assert.match(PREORDER_TERMS_VERSION, /^draft-/);
+  assert.equal(PREORDER_SELLER_DETAILS_COMPLETE, false);
 
   const paths = [
     "/preorder",
@@ -31,13 +35,11 @@ test("keeps every remote pre-order surface unavailable while legal versions are 
     "/preorder/manage",
     "/preorder/terms",
     "/preorder/refunds",
+    "/preorder/product-status",
     "/preorders",
-    "/admin/preorders",
     "/api/preorders/checkout",
     "/api/preorders/status",
     "/api/preorders/manage",
-    "/api/admin/preorders/order-id/refund",
-    "/api/admin/preorders.csv",
     "/preorder%2Freview",
     "/api%2Fpreorders%2Fstatus",
   ];
@@ -56,25 +58,58 @@ test("keeps every remote pre-order surface unavailable while legal versions are 
   }
 });
 
-test("keeps the funnel usable only on loopback during development", async () => {
-  const response = await render(
-    "/preorder/review",
-    undefined,
-    "http://localhost",
-    {
-      PREORDER_MODE: "test",
-      PREORDER_SHIPPING_RATE_CENTS: "1900",
-    },
+test("publishes pre-order administration behind owner authentication only", async () => {
+  const [pageResponse, exportResponse, operationResponse] = await Promise.all([
+    render("/admin/preorders"),
+    render("/api/admin/preorders.csv"),
+    render("/api/admin/preorders/00000000-0000-4000-8000-000000000000/refund", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ requestKey: "00000000-0000-4000-8000-000000000000" }),
+    }),
+  ]);
+
+  assert.equal(pageResponse.status, 307);
+  assert.match(
+    pageResponse.headers.get("location") ?? "",
+    /\/signin-with-chatgpt\?return_to=%2Fadmin%2Fpreorders$/,
   );
+  assert.equal(exportResponse.status, 401);
+  assert.equal(operationResponse.status, 401);
+});
+
+test("keeps the funnel usable only on loopback during development", async () => {
+  const environment = {
+    PREORDER_MODE: "test",
+    PREORDER_SHIPPING_RATE_CENTS: "1900",
+  };
+  const [response, productStatusResponse, privacyResponse] = await Promise.all([
+    render("/preorder/review", undefined, "http://localhost", environment),
+    render("/preorder/product-status", undefined, "http://localhost", environment),
+    render("/privacy", undefined, "http://localhost", environment),
+  ]);
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /Review your Frame pre-order/);
   assert.match(html, /Product subtotal/);
+  assert.match(html, /Estimated total/);
+  assert.match(html, /\$318/);
   assert.match(html, /\$19/);
-  assert.match(html, /standard US shipping/);
+  assert.match(html, /standard US shipping/i);
   assert.match(html, /all 50 states and Washington, DC/);
   assert.match(html, /Estimated shipping/);
   assert.match(html, /March 2027/);
+  assert.match(html, /not currently FDA cleared or approved/);
+  assert.match(html, /Continue to Secure Checkout/);
+  assert.match(html, /frame-product-concept-realistic-v3-transparent/);
+
+  assert.equal(productStatusResponse.status, 200);
+  const productStatus = await productStatusResponse.text();
+  assert.match(productStatus, /Performance has not been established/);
+  assert.match(productStatus, /not currently FDA cleared or approved/);
+
+  assert.equal(privacyResponse.status, 200);
+  assert.match(await privacyResponse.text(), /Device pre-orders/);
 });
 
 test("keeps the public homepage free of pre-order discovery and blocks webhook browsing", async () => {
@@ -92,7 +127,8 @@ test("keeps the public homepage free of pre-order discovery and blocks webhook b
   const home = await homeResponse.text();
   assert.doesNotMatch(home, /href=["']\/preorder/i);
   assert.equal(webhookResponse.status, 404);
-  assert.match(worker, /isPreorderRequest && !preorderRequestAllowed/);
+  assert.match(worker, /isPublicPreorderRequest && !preorderRequestAllowed/);
+  assert.match(worker, /x-frame-preorder-admin-request/);
   assert.match(worker, /isSharedStripeWebhook && request\.method !== "POST"/);
   assert.match(robots, /"\/preorder"/);
   assert.match(robots, /"\/preorders"/);

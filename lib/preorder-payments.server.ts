@@ -6,6 +6,7 @@ import {
 } from "./preorder-email.server";
 import { createPreorderManagePath } from "./preorder-order-access.server";
 import { PREORDER_PRODUCT_NAME } from "./preorder";
+import { isAllowedPreorderUsState } from "./preorder-shipping";
 import { getStripe, getStripePreorderPriceId } from "./stripe.server";
 import { getSupabaseAdmin } from "./supabase-admin.server";
 
@@ -119,20 +120,39 @@ export async function fulfillPreorderCheckout(
     throw new Error("Checkout Session contains an unexpected pre-order line item.");
   }
 
-  const email = session.customer_details?.email?.trim().toLowerCase();
-  const shipping = session.collected_information?.shipping_details;
+  const customerId = stripeId(session.customer);
+  const savedCustomer = customerId ? await stripe.customers.retrieve(customerId) : null;
+  const activeCustomer = savedCustomer && !savedCustomer.deleted ? savedCustomer : null;
+  const collectedShipping = session.collected_information?.shipping_details;
+  const shipping = collectedShipping ?? activeCustomer?.shipping ?? null;
+  const email = (
+    session.customer_details?.email ?? activeCustomer?.email
+  )?.trim().toLowerCase();
   const fullName =
     shipping?.name?.trim().replace(/\s+/g, " ") ||
     session.collected_information?.individual_name?.trim().replace(/\s+/g, " ") ||
-    session.customer_details?.name?.trim().replace(/\s+/g, " ");
+    session.customer_details?.name?.trim().replace(/\s+/g, " ") ||
+    activeCustomer?.name?.trim().replace(/\s+/g, " ");
   if (!email || !fullName || !shipping?.address) {
     throw new Error("Checkout Session is missing the pre-order customer or shipping address.");
+  }
+
+  if (
+    !collectedShipping &&
+    (activeCustomer?.metadata.flow !== "frame_preorder" ||
+      activeCustomer.metadata.checkout_intent_id !== intent.id ||
+      activeCustomer.metadata.environment !== environment)
+  ) {
+    throw new Error("Stripe Customer does not match the reviewed pre-order delivery details.");
   }
 
   const config = await getPreorderConfiguration();
   const shippingCountry = shipping.address.country?.toUpperCase();
   if (!shippingCountry || !config.allowedCountries.includes(shippingCountry)) {
     throw new Error("Checkout Session contains an unsupported shipping country.");
+  }
+  if (!isAllowedPreorderUsState(shipping.address.state)) {
+    throw new Error("Checkout Session contains an unsupported US shipping region.");
   }
 
   const existing = await supabase
@@ -146,7 +166,6 @@ export async function fulfillPreorderCheckout(
   }
 
   const paymentIntentId = stripeId(session.payment_intent);
-  const customerId = stripeId(session.customer);
   const placedAt = new Date(session.created * 1000).toISOString();
   const totalDetails = session.total_details;
   let order = existing.data;

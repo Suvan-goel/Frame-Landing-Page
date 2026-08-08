@@ -188,6 +188,7 @@ export function PreorderSuccess() {
       </div>
 
       <nav className="preorder-confirmation__policies" aria-label="Order policies">
+        <Link href="/preorder/product-status">Product status</Link>
         <Link href="/preorder/terms">Pre-order terms</Link>
         <Link href="/preorder/refunds">Cancellation and refunds</Link>
         <Link href="/privacy">Privacy</Link>

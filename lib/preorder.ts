@@ -1,7 +1,10 @@
 export const PREORDER_SKU = "frame-device-preorder-v1";
 export const PREORDER_PRODUCT_NAME = "Frame device pre-order";
-export const PREORDER_TERMS_VERSION = "draft-2026-08-07-v2";
-export const PREORDER_PRODUCT_STATUS_VERSION = "draft-2026-08-07-v2";
+export const PREORDER_TERMS_VERSION = "draft-2026-08-07-v3";
+export const PREORDER_PRODUCT_STATUS_VERSION = "draft-2026-08-07-v3";
+// This is deliberately false until the incorporated seller's legal name,
+// company number, registered office, and support details are in the policies.
+export const PREORDER_SELLER_DETAILS_COMPLETE = false;
 export const PREORDER_DEFAULT_PRICE_CENTS = 29_900;
 export const PREORDER_SHIPPING_RATE_CENTS = 1_900;
 export const PREORDER_DEFAULT_CURRENCY = "usd";

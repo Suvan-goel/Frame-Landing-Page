@@ -204,6 +204,7 @@ export async function sendPreorderConfirmationEmail(input: {
   const shipping = addressLines(input.shippingAddress);
   const termsUrl = `${input.origin}/preorder/terms`;
   const refundsUrl = `${input.origin}/preorder/refunds`;
+  const productStatusUrl = `${input.origin}/preorder/product-status`;
   const manageUrl = input.managePath ? `${input.origin}${input.managePath}` : null;
   const sandbox = input.environment === "test";
   const subject = `${sandbox ? "[Sandbox] " : ""}Frame pre-order confirmation — ${orderNumber}`;
@@ -228,12 +229,14 @@ export async function sendPreorderConfirmationEmail(input: {
       `Quantity: ${input.quantity}`,
       `Placed: ${placedAt}`,
       `Estimated shipping: ${input.estimatedShipping}`,
+      "Frame remains under development and is not currently FDA cleared or approved. It is not for medical decisions.",
       "",
       "Shipping address:",
       ...shipping,
       ...sandboxText,
       "",
       ...(manageUrl ? [`Manage your pre-order: ${manageUrl}`] : []),
+      `Product status disclosure: ${productStatusUrl}`,
       `Pre-order terms: ${termsUrl}`,
       `Cancellation and refunds: ${refundsUrl}`,
       "",
@@ -254,10 +257,11 @@ export async function sendPreorderConfirmationEmail(input: {
           <p style="margin:0"><strong>Placed:</strong> ${escapeHtml(placedAt)}</p>
         </div>
         <p><strong>Estimated shipping:</strong> ${escapeHtml(input.estimatedShipping)}</p>
+        <p style="padding:16px;border-left:4px solid #7b2937;background:#f7ecee"><strong>Frame remains under development.</strong> It is not currently FDA cleared or approved and is not for medical decisions. You may cancel for a full refund at any time before dispatch.</p>
         <p><strong>Shipping address</strong><br>${shipping.map(escapeHtml).join("<br>")}</p>
         ${sandbox ? '<p style="padding:16px;border-left:4px solid #7b2937;background:#f7ecee"><strong>Sandbox order.</strong> No live charge was made.</p>' : ""}
         ${manageUrl ? `<p style="margin:30px 0"><a href="${escapeHtml(manageUrl)}" style="display:inline-block;background:#20211e;color:#faf8f2;padding:13px 20px;text-decoration:none">Manage your pre-order</a></p>` : ""}
-        <p><a href="${escapeHtml(termsUrl)}">Pre-order terms</a> · <a href="${escapeHtml(refundsUrl)}">Cancellation and refunds</a></p>
+        <p><a href="${escapeHtml(productStatusUrl)}">Product status</a> · <a href="${escapeHtml(termsUrl)}">Pre-order terms</a> · <a href="${escapeHtml(refundsUrl)}">Cancellation and refunds</a></p>
         <p style="color:#686a63">Questions? Contact support@framewearable.com.</p>
       </div>
     `,
@@ -358,6 +362,9 @@ export async function sendPreorderOwnerActionEmail(input: {
       `Customer: ${input.fullName} (${input.customerEmail})`,
       ...(input.reason ? [`Reason: ${input.reason}`] : []),
       ...(requestedAddress.length ? ["", "Requested address:", ...requestedAddress] : []),
+      ...(input.requestType === "cancellation"
+        ? ["", "Policy deadline: submit the full refund within seven working days of cancellation."]
+        : []),
       "",
       `Review order: ${ownerUrl}`,
     ].join("\n"),
@@ -369,49 +376,8 @@ export async function sendPreorderOwnerActionEmail(input: {
         <p><strong>${escapeHtml(input.fullName)}</strong> submitted a ${escapeHtml(requestLabel)}.</p>
         ${input.reason ? `<p><strong>Reason:</strong> ${escapeHtml(input.reason)}</p>` : ""}
         ${requestedAddress.length ? `<p><strong>Requested address</strong><br>${requestedAddress.map(escapeHtml).join("<br>")}</p>` : ""}
+        ${input.requestType === "cancellation" ? '<p style="padding:16px;border-left:4px solid #7b2937;background:#f7ecee"><strong>Refund required.</strong> Submit the full remaining refund within seven working days of cancellation.</p>' : ""}
         <p style="margin:30px 0"><a href="${escapeHtml(ownerUrl)}" style="display:inline-block;background:#20211e;color:#faf8f2;padding:13px 20px;text-decoration:none">Review order</a></p>
-      </div>
-    `,
-  });
-}
-
-export async function sendPreorderCancellationDeclinedEmail(input: {
-  origin: string;
-  preorderId: string;
-  orderNumber: number;
-  environment: PreorderEnvironment;
-  email: string;
-  fullName: string;
-  resolutionNote: string;
-  managePath: string;
-}) {
-  const orderNumber = formatPreorderNumber(input.orderNumber);
-  const sandbox = input.environment === "test";
-  const manageUrl = `${input.origin}${input.managePath}`;
-  return sendPreorderEmail({
-    preorderId: input.preorderId,
-    emailType: "cancellation_declined",
-    recipient: input.email,
-    deliveryKey: `preorder-cancellation-declined-${input.preorderId}-${Date.now()}`,
-    subject: `${sandbox ? "[Sandbox] " : ""}Update on your Frame cancellation request — ${orderNumber}`,
-    text: [
-      `Hello ${input.fullName},`,
-      "",
-      `We reviewed the cancellation request for ${orderNumber}. The pre-order remains active.`,
-      `Reason: ${input.resolutionNote}`,
-      "",
-      `View your order: ${manageUrl}`,
-      "Support: support@framewearable.com",
-    ].join("\n"),
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#20211e;line-height:1.6">
-        <p style="font-size:30px;font-family:Georgia,serif;margin-bottom:32px">Frame</p>
-        <p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#7b2937">${sandbox ? "Sandbox · " : ""}${escapeHtml(orderNumber)}</p>
-        <h1 style="font-family:Georgia,serif;font-weight:400;font-size:38px;line-height:1.1">Your pre-order remains active.</h1>
-        <p>Hello ${escapeHtml(input.fullName)}. We reviewed your cancellation request.</p>
-        <p><strong>Reason:</strong> ${escapeHtml(input.resolutionNote)}</p>
-        <p style="margin:30px 0"><a href="${escapeHtml(manageUrl)}" style="display:inline-block;background:#20211e;color:#faf8f2;padding:13px 20px;text-decoration:none">View your order</a></p>
-        <p style="color:#686a63">Questions? Contact support@framewearable.com.</p>
       </div>
     `,
   });
@@ -497,6 +463,7 @@ export async function sendPreorderDeliveryUpdateEmail(input: {
       `Current estimate: ${input.currentEstimate}`,
       `Update: ${input.message}`,
       "",
+      "You can accept the updated estimate or cancel for a full refund of the unshipped order.",
       `Review and respond: ${manageUrl}`,
       "Support: support@framewearable.com",
     ].join("\n"),
@@ -512,7 +479,7 @@ export async function sendPreorderDeliveryUpdateEmail(input: {
         </div>
         <p>${escapeHtml(input.message)}</p>
         <p style="margin:30px 0"><a href="${escapeHtml(manageUrl)}" style="display:inline-block;background:#20211e;color:#faf8f2;padding:13px 20px;text-decoration:none">Review shipping update</a></p>
-        <p style="color:#686a63">You can accept the updated estimate or request cancellation from your order page.</p>
+        <p style="color:#686a63">You can accept the updated estimate or cancel for a full refund of the unshipped order from your order page.</p>
       </div>
     `,
   });

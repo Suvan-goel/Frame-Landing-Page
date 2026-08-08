@@ -70,7 +70,6 @@ export function PreorderOrderOperations({
   );
   const [trackingUrl, setTrackingUrl] = useState(initialTrackingUrl ?? "");
   const [ownerNote, setOwnerNote] = useState(initialOwnerNote ?? "");
-  const [resolutionNote, setResolutionNote] = useState("");
   const [addressResolutionNote, setAddressResolutionNote] = useState("");
   const [deliveryEstimate, setDeliveryEstimate] = useState(currentEstimatedDelivery);
   const [deliveryMessage, setDeliveryMessage] = useState(
@@ -142,33 +141,6 @@ export function PreorderOrderOperations({
       );
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Email could not be sent.");
-    } finally {
-      setBusy(null);
-    }
-  }
-
-  async function declineCancellation() {
-    if (!resolutionNote.trim()) {
-      setError("Add a reason before declining the cancellation request.");
-      return;
-    }
-    if (!window.confirm("Decline this customer’s cancellation request?")) return;
-    setBusy("decline");
-    try {
-      await request(
-        `/api/admin/preorders/${orderId}/operations`,
-        {
-          method: "PATCH",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "decline_cancellation",
-            resolutionNote,
-          }),
-        },
-        "Cancellation request declined.",
-      );
-    } catch (caught) {
-      setError(caught instanceof Error ? caught.message : "The request could not be resolved.");
     } finally {
       setBusy(null);
     }
@@ -288,10 +260,8 @@ export function PreorderOrderOperations({
       {["requested", "processing"].includes(cancellationStatus) ? (
         <section className="preorder-owner-card preorder-owner-card--attention">
           <p className="eyebrow">Customer request</p>
-          <h2>Cancellation needs review.</h2>
-          <p>Issue the full refund below to accept it, or record why the request was declined.</p>
-          <label><span>Resolution note</span><textarea rows={3} maxLength={1000} value={resolutionNote} onChange={(event) => setResolutionNote(event.target.value)} /></label>
-          <button className="button button--secondary" type="button" onClick={declineCancellation} disabled={Boolean(busy)}>{busy === "decline" ? "Saving…" : "Decline request"}</button>
+          <h2>Cancellation requires a full refund.</h2>
+          <p>Issue the full remaining refund below as soon as possible and no later than seven working days after the request. The order is blocked from shipment while cancellation is pending.</p>
         </section>
       ) : null}
 

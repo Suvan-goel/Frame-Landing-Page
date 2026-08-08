@@ -2,7 +2,10 @@ import { randomBytes } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
-import { PREORDER_TERMS_VERSION } from "../lib/preorder.ts";
+import {
+  PREORDER_SELLER_DETAILS_COMPLETE,
+  PREORDER_TERMS_VERSION,
+} from "../lib/preorder.ts";
 
 const target = process.argv.includes("--launch")
   ? "launch"
@@ -51,6 +54,11 @@ function fail(name, detail) {
 
 function configured(name, minimumLength = 1) {
   return Boolean(process.env[name] && process.env[name].length >= minimumLength);
+}
+
+function isReservedTestRecipient(recipient) {
+  const domain = String(recipient ?? "").trim().toLowerCase().split("@").pop();
+  return domain === "example.com" || domain === "example.net" || domain === "example.org";
 }
 
 const mode = process.env.PREORDER_MODE ?? "off";
@@ -200,13 +208,17 @@ if (shippingRateCents === 1_900) {
 const termsVersion = PREORDER_TERMS_VERSION;
 const approvedTermsVersion = process.env.PREORDER_LEGAL_APPROVED_VERSION ?? "";
 if (target === "launch") {
-  if (!termsVersion.startsWith("draft") && approvedTermsVersion === termsVersion) {
+  if (
+    PREORDER_SELLER_DETAILS_COMPLETE &&
+    !termsVersion.startsWith("draft") &&
+    approvedTermsVersion === termsVersion
+  ) {
     pass("Legal launch gate", "The active approved terms version matches the checkout version.");
   } else {
-    fail("Legal launch gate", "Approved, non-draft terms are not active.");
+    fail("Legal launch gate", "Incorporated seller details and approved, non-draft terms are not active.");
   }
 } else {
-  if (termsVersion.startsWith("draft") && !approvedTermsVersion) {
+  if (!PREORDER_SELLER_DETAILS_COMPLETE && termsVersion.startsWith("draft") && !approvedTermsVersion) {
     pass("Legal launch gate", "The live gate remains deliberately closed during testing.");
   } else {
     warn("Legal launch gate", "Review the configured legal version before continuing.");
@@ -340,7 +352,7 @@ if (supabase) {
       if (!latestByDeliveryStream.has(key)) latestByDeliveryStream.set(key, delivery);
     }
     const unresolvedFailures = [...latestByDeliveryStream.values()].filter(
-      (delivery) => delivery.status === "failed",
+      (delivery) => delivery.status === "failed" && !isReservedTestRecipient(delivery.recipient),
     ).length;
     if (unresolvedFailures) {
       warn(

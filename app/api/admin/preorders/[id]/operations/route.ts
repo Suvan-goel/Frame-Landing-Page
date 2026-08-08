@@ -1,5 +1,4 @@
 import {
-  declinePreorderCancellation,
   resolvePreorderAddressChange,
   sendPreorderDeliveryUpdate,
   updatePreorderFulfillment,
@@ -107,19 +106,6 @@ export async function PATCH(
         ownerNote: cleanText(payload.ownerNote, 2_000),
       });
       return response({ status: "updated", shippingEmail: result.shippingEmail });
-    }
-
-    if (payload.action === "decline_cancellation") {
-      const resolutionNote = cleanText(payload.resolutionNote, 1_000);
-      if (!resolutionNote) {
-        return response({ error: "Add a reason before declining the request." }, 400);
-      }
-      const result = await declinePreorderCancellation({
-        origin: new URL(request.url).origin,
-        orderId: id,
-        resolutionNote,
-      });
-      return response({ status: "declined", customerEmail: result.customerEmail });
     }
 
     if (

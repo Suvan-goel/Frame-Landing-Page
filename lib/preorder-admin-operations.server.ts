@@ -1,7 +1,6 @@
 import type Stripe from "stripe";
 import {
   sendPreorderAddressChangeResolutionEmail,
-  sendPreorderCancellationDeclinedEmail,
   sendPreorderConfirmationEmail,
   sendPreorderDeliveryUpdateEmail,
   sendPreorderRefundUpdateEmail,
@@ -188,66 +187,6 @@ export async function updatePreorderFulfillment(input: {
     }
   }
   return { order: updated.data, shippingEmail };
-}
-
-export async function declinePreorderCancellation(input: {
-  origin: string;
-  orderId: string;
-  resolutionNote: string;
-}) {
-  const order = await getOperationalOrder(input.orderId);
-  if (!["requested", "processing"].includes(order.cancellation_status)) {
-    throw new Error("This order does not have an active cancellation request.");
-  }
-  const now = new Date().toISOString();
-  const supabase = await getSupabaseAdmin();
-  const updated = await supabase
-    .from("preorders")
-    .update({
-      cancellation_status: "declined",
-      cancellation_resolved_at: now,
-      cancellation_resolution_note: input.resolutionNote,
-      updated_at: now,
-    })
-    .eq("id", order.id)
-    .in("cancellation_status", ["requested", "processing"])
-    .select("id")
-    .maybeSingle();
-  if (updated.error) throw updated.error;
-  if (!updated.data) throw new Error("The cancellation request changed before it was resolved.");
-  await recordOwnerEvent({
-    orderId: order.id,
-    eventType: "cancellation_declined",
-    detail: { resolution_note: input.resolutionNote },
-  });
-  let customerEmail: "sent" | "failed" = "sent";
-  try {
-    const managePath = await createPreorderManagePath({
-      orderId: order.id,
-      tokenVersion: order.manage_token_version,
-    });
-    await sendPreorderCancellationDeclinedEmail({
-      origin: input.origin,
-      preorderId: order.id,
-      orderNumber: order.order_number,
-      environment: order.environment,
-      email: order.email,
-      fullName: order.full_name,
-      resolutionNote: input.resolutionNote,
-      managePath,
-    });
-  } catch (error) {
-    customerEmail = "failed";
-    console.error("Pre-order cancellation resolution email failed", error);
-    await recordOwnerEvent({
-      orderId: order.id,
-      eventType: "cancellation_resolution_email_failed",
-      detail: {
-        error: error instanceof Error ? error.message.slice(0, 300) : "Unknown error",
-      },
-    });
-  }
-  return { customerEmail };
 }
 
 export async function resolvePreorderAddressChange(input: {

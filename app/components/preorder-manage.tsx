@@ -168,7 +168,7 @@ export function PreorderManage() {
     await submitAction(
       "request_cancellation",
       { reason: cancellationReason },
-      "Your cancellation request has been submitted.",
+      "Your cancellation has been recorded. We’ll email you when the full refund has been submitted.",
     );
   }
 
@@ -332,8 +332,8 @@ export function PreorderManage() {
       {cancellationPending ? (
         <section className="preorder-manage-cancellation preorder-manage-cancellation--pending">
           <p className="eyebrow">Request received</p>
-          <h2>We’re reviewing your cancellation.</h2>
-          <p>Your order has not been shipped. We’ll email you when the request and any applicable refund have been processed.</p>
+          <h2>Your cancellation is being processed.</h2>
+          <p>Your order is blocked from shipment. We’ll submit the full remaining refund as soon as possible and no later than seven working days after cancellation, then email you with the status.</p>
         </section>
       ) : cancelled ? (
         <section className="preorder-manage-cancellation preorder-manage-cancellation--pending">
@@ -344,12 +344,12 @@ export function PreorderManage() {
       ) : order.canRequestCancellation && !order.requiresDeliveryResponse ? (
         <section className="preorder-manage-cancellation">
           <p className="eyebrow">Need to cancel?</p>
-          <h2>Request pre-order cancellation.</h2>
-          <p>This submits a request for review. It does not immediately cancel the order or issue a refund.</p>
+          <h2>Cancel your pre-order.</h2>
+          <p>You can cancel for any reason before dispatch. We’ll refund the full remaining amount to the original payment method.</p>
           <form onSubmit={requestCancellation}>
             <label htmlFor="cancellation-reason">Reason <span>(optional)</span></label>
             <textarea id="cancellation-reason" rows={4} maxLength={1_000} value={cancellationReason} onChange={(event) => setCancellationReason(event.target.value)} placeholder="Tell us why you’d like to cancel" />
-            <button className="button button--dark" type="submit" disabled={Boolean(busy)}>{busy === "request_cancellation" ? "Submitting…" : "Submit cancellation request"}</button>
+            <button className="button button--dark" type="submit" disabled={Boolean(busy)}>{busy === "request_cancellation" ? "Submitting…" : "Cancel pre-order"}</button>
           </form>
         </section>
       ) : !order.requiresDeliveryResponse ? (
@@ -362,6 +362,7 @@ export function PreorderManage() {
       ) : null}
 
       <nav className="preorder-manage-policies" aria-label="Order policies">
+        <Link href="/preorder/product-status">Product status</Link>
         <Link href="/preorder/terms">Pre-order terms</Link>
         <Link href="/preorder/refunds">Cancellation and refunds</Link>
         <Link href="/privacy">Privacy</Link>

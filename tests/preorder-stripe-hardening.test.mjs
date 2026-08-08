@@ -90,13 +90,67 @@ test("keeps the reviewed subtotal, shipping, tax and inventory controls explicit
   assert.match(offer, /PREORDER_ESTIMATED_SHIPPING = "March 2027"/);
   assert.match(offer, /PREORDER_MAX_INVENTORY_UNITS = 1_000/);
   assert.match(checkout, /shipping_options:/);
+  assert.match(checkout, /stripe\.customers\.create/);
+  assert.match(checkout, /customer: stripeCustomer\.id/);
+  assert.doesNotMatch(checkout, /shipping_address_collection:/);
   assert.match(checkout, /amount: config\.shippingRateCents/);
   assert.match(checkout, /config\.shippingRateCents !== PREORDER_SHIPPING_RATE_CENTS/);
   assert.match(checkout, /automatic_tax: \{ enabled: true \}/);
+  assert.match(checkout, /adaptive_pricing: \{ enabled: false \}/);
   assert.match(checkout, /price\.tax_behavior !== "exclusive"/);
+  assert.match(
+    checkout,
+    /\[Frame Pre-order Terms\]\(\$\{SITE_URL\}\/preorder\/terms\)/,
+  );
+  assert.match(
+    checkout,
+    /\[Cancellation and Refund Policy\]\(\$\{SITE_URL\}\/preorder\/refunds\)/,
+  );
   assert.match(migration, /inventory_limit = 1000/);
   assert.match(migration, /unit_limit <= inventory_limit/);
   assert.match(initialRelease, /sales_status = 'paused'/);
   assert.match(initialRelease, /unit_limit = 100/);
   assert.match(readiness, /reviewed \$19 USD rate/i);
+});
+
+test("allows only the 50 states and Washington DC for launch shipping", async () => {
+  const { isAllowedPreorderUsState, PREORDER_US_STATE_OPTIONS } = await import(
+    "../lib/preorder-shipping.ts"
+  );
+
+  assert.equal(PREORDER_US_STATE_OPTIONS.length, 51);
+  assert.equal(isAllowedPreorderUsState("NJ"), true);
+  assert.equal(isAllowedPreorderUsState("dc"), true);
+  for (const territory of ["PR", "GU", "VI", "AS", "MP", "FM", "MH", "PW", "AA", "AE", "AP"]) {
+    assert.equal(isAllowedPreorderUsState(territory), false);
+  }
+});
+
+test("keeps launch-candidate policies aligned with cancellation operations", async () => {
+  const [terms, refunds, productStatus, ownerOperations, ownerInterface, customerInterface] =
+    await Promise.all([
+      readFile(new URL("../app/preorder/terms/page.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../app/preorder/refunds/page.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../app/preorder/product-status/page.tsx", import.meta.url), "utf8"),
+      readFile(
+        new URL("../app/api/admin/preorders/[id]/operations/route.ts", import.meta.url),
+        "utf8",
+      ),
+      readFile(
+        new URL("../app/components/preorder-order-operations.tsx", import.meta.url),
+        "utf8",
+      ),
+      readFile(new URL("../app/components/preorder-manage.tsx", import.meta.url), "utf8"),
+    ]);
+
+  assert.match(terms, /cancel for any reason at any time before dispatch/);
+  assert.match(terms, /full refund/);
+  assert.match(refunds, /no later\s*\n?\s*than seven working days/);
+  assert.match(refunds, /30 calendar days after delivery/);
+  assert.match(productStatus, /Performance has not been established/);
+  assert.match(productStatus, /not currently FDA cleared or approved/);
+  assert.doesNotMatch(ownerOperations, /decline_cancellation/);
+  assert.doesNotMatch(ownerInterface, /declineCancellation|decline_cancellation/);
+  assert.match(ownerInterface, /no later than seven working days/);
+  assert.match(customerInterface, /full remaining amount/);
 });

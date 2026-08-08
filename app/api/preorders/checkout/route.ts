@@ -1,4 +1,3 @@
-import type Stripe from "stripe";
 import { getPreorderConfiguration } from "@/lib/preorder-config.server";
 import { isPreorderLiveApproved } from "@/lib/preorder-access";
 import {
@@ -23,6 +22,8 @@ import {
 import { consumePreorderRateLimit } from "@/lib/preorder-rate-limit.server";
 import { getStripe, getStripePreorderPriceId } from "@/lib/stripe.server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin.server";
+import { isAllowedPreorderUsState } from "@/lib/preorder-shipping";
+import { SITE_URL } from "@/lib/site";
 
 export const dynamic = "force-dynamic";
 
@@ -42,6 +43,54 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
       "X-Content-Type-Options": "nosniff",
     },
   });
+}
+
+function cleanCustomerField(value: unknown, maximumLength: number) {
+  if (typeof value !== "string") return "";
+  return value.trim().replace(/\s+/g, " ").slice(0, maximumLength);
+}
+
+function reviewedCustomer(value: unknown) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
+  const customer = value as Record<string, unknown>;
+  const addressValue = customer.shippingAddress;
+  if (!addressValue || typeof addressValue !== "object" || Array.isArray(addressValue)) {
+    return null;
+  }
+  const address = addressValue as Record<string, unknown>;
+  const email = cleanCustomerField(customer.email, 254).toLowerCase();
+  const fullName = cleanCustomerField(customer.fullName, 120);
+  const line1 = cleanCustomerField(address.line1, 200);
+  const line2 = cleanCustomerField(address.line2, 200);
+  const city = cleanCustomerField(address.city, 100);
+  const state = cleanCustomerField(address.state, 2).toUpperCase();
+  const postalCode = cleanCustomerField(address.postalCode, 10).toUpperCase();
+  const country = cleanCustomerField(address.country, 2).toUpperCase();
+
+  if (
+    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
+    fullName.length < 2 ||
+    !line1 ||
+    !city ||
+    country !== "US" ||
+    !isAllowedPreorderUsState(state) ||
+    !/^\d{5}(?:-\d{4})?$/.test(postalCode)
+  ) {
+    return null;
+  }
+
+  return {
+    email,
+    fullName,
+    shippingAddress: {
+      line1,
+      ...(line2 ? { line2 } : {}),
+      city,
+      state,
+      postal_code: postalCode,
+      country: "US" as const,
+    },
+  };
 }
 
 export async function POST(request: Request) {
@@ -70,6 +119,7 @@ export async function POST(request: Request) {
     utmMedium?: unknown;
     utmCampaign?: unknown;
     requestKey?: unknown;
+    customer?: unknown;
   };
   try {
     payload = (await request.json()) as typeof payload;
@@ -85,6 +135,14 @@ export async function POST(request: Request) {
   }
   if (payload.termsAcknowledged !== true) {
     return jsonResponse({ error: "Accept the Pre-order Terms to continue." }, 400);
+  }
+
+  const customer = reviewedCustomer(payload.customer);
+  if (!customer) {
+    return jsonResponse(
+      { error: "Enter a valid delivery address in one of the 50 states or Washington, DC." },
+      400,
+    );
   }
 
   const quantity = typeof payload.quantity === "number" ? payload.quantity : 1;
@@ -187,21 +245,33 @@ export async function POST(request: Request) {
       marketingConsentAt: marketingOptIn ? now.toISOString() : null,
     });
 
-    const allowedCountries = config.allowedCountries as Array<
-      Stripe.Checkout.SessionCreateParams.ShippingAddressCollection.AllowedCountry
-    >;
+    const stripeCustomer = await stripe.customers.create(
+      {
+        email: customer.email,
+        name: customer.fullName,
+        shipping: {
+          name: customer.fullName,
+          address: customer.shippingAddress,
+        },
+        metadata: {
+          flow: "frame_preorder",
+          checkout_intent_id: reservedIntentId,
+          environment,
+        },
+      },
+      { idempotencyKey: `frame-preorder-customer-${reservedIntentId}` },
+    );
+
     const session = await stripe.checkout.sessions.create(
       {
         mode: "payment",
+        adaptive_pricing: { enabled: false },
         payment_method_types: ["card"],
         line_items: [{ price: priceId, quantity }],
         client_reference_id: reservedIntentId,
-        customer_creation: "always",
-        name_collection: {
-          individual: { enabled: true, optional: false },
-        },
+        customer: stripeCustomer.id,
+        customer_update: { address: "auto" },
         billing_address_collection: "required",
-        shipping_address_collection: { allowed_countries: allowedCountries },
         shipping_options: [
           {
             shipping_rate_data: {
@@ -225,7 +295,7 @@ export async function POST(request: Request) {
                 : `The ${productPriceLabel} product subtotal excludes ${shippingPriceLabel} standard US shipping and applicable sales tax. Frame is still in development and is estimated to ship in ${config.estimatedShipping}.`,
           },
           terms_of_service_acceptance: {
-            message: "I agree to the Frame Pre-order Terms and Refund Policy.",
+            message: `I agree to the [Frame Pre-order Terms](${SITE_URL}/preorder/terms) and [Cancellation and Refund Policy](${SITE_URL}/preorder/refunds).`,
           },
         },
         submit_type: "pay",
@@ -264,6 +334,7 @@ export async function POST(request: Request) {
       .update({
         status: "checkout_open",
         stripe_checkout_session_id: session.id,
+        stripe_customer_id: stripeCustomer.id,
         expires_at: new Date(session.expires_at * 1000).toISOString(),
         updated_at: new Date().toISOString(),
       })
