@@ -207,6 +207,36 @@ test("keeps checkout review recovery, consent feedback, and proxy origins safe",
   );
 });
 
+test("preserves only clean scalar attribution through the pre-order entry redirect", async () => {
+  const [worker, attribution] = await Promise.all([
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+    import("../lib/attribution.ts"),
+  ]);
+
+  assert.equal(attribution.cleanAttribution("  launch   email  "), "launch email");
+  assert.equal(attribution.cleanAttribution("x".repeat(101)), "x".repeat(100));
+  assert.equal(attribution.cleanAttribution(["email", "social"]), null);
+  assert.equal(attribution.cleanAttribution("   "), null);
+  assert.equal(
+    attribution.preorderReviewRedirectPath(
+      new URLSearchParams({
+        source: "email_launch",
+        utm_source: "founders list",
+        utm_medium: "email",
+        utm_campaign: "q1 2027",
+      }),
+    ),
+    "/preorder/review?source=email_launch&utm_source=founders+list&utm_medium=email&utm_campaign=q1+2027",
+  );
+  const duplicateSource = new URLSearchParams("source=first&source=second&utm_campaign=launch");
+  assert.equal(
+    attribution.preorderReviewRedirectPath(duplicateSource),
+    "/preorder/review?source=preorder_redirect&utm_campaign=launch",
+  );
+  assert.match(worker, /url\.pathname === "\/preorder"/);
+  assert.match(worker, /Location: preorderReviewRedirectPath\(url\.searchParams\)/);
+});
+
 test("keeps launch-candidate policies aligned with cancellation operations", async () => {
   const [terms, refunds, productStatus, ownerOperations, ownerInterface, customerInterface] =
     await Promise.all([

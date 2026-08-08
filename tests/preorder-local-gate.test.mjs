@@ -111,27 +111,33 @@ test("keeps the funnel usable only on loopback during development", async () => 
   assert.match(home, /href="\/preorder\/review\?source=homepage"/);
   assert.doesNotMatch(home, /Pre-orders are now open\./);
   assert.match(home, /See details/);
-  assert.doesNotMatch(home, /home-preorder-hero__offer/);
+  assert.match(home, /home-preorder-hero__offer-line/);
+  assert.match(home, /Pre order offer/);
+  assert.match(
+    home,
+    /Pre-order today and save\s*(?:<!-- -->)?40\s*(?:<!-- -->)?%/,
+  );
   assert.doesNotMatch(home, /home-preorder-hero__saving-note/);
   assert.match(home, /home-preorder-hero__actions/);
-  assert.match(home, /home-preorder-hero__prices/);
+  assert.match(home, /hero-email-first__shipping-pill/);
+  assert.match(home, /Shipping est\.\s*(?:<!-- -->)?Q1 2027/);
+  assert.doesNotMatch(home, /home-preorder-hero__shipping/);
+  assert.match(home, /home-preorder-price-comparison/);
   assert.match(home, /id="homepage-hero-preorder-waitlist-email"/);
   assert.match(
     home,
-    /for="homepage-hero-preorder-waitlist-email">[\s\n]*Get updates/,
+    /<label[^>]*class="sr-only"[^>]*>[\s\n]*Get updates[\s\n]*<\/label>/,
   );
-  assert.match(home, /placeholder="you@example\.com"/);
+  assert.match(home, />[\s\n]*Get updates[\s\n]*<\/button>/);
+  assert.match(home, /placeholder="Enter your email"/);
   assert.ok(
     home.indexOf('id="homepage-hero-preorder-waitlist-email"') >
       home.indexOf('href="/preorder/review?source=homepage_hero"'),
   );
-  assert.match(home, /Save\s*(?:<!-- -->)?\$200/);
-  assert.match(home, /40\s*(?:<!-- -->)?% off the release price/);
+  assert.doesNotMatch(home, /home-preorder-saving--hero/);
   assert.match(home, /Product development status/);
-  assert.match(home, /US shipping/);
   assert.match(home, /\$299/);
   assert.match(home, /\$499/);
-  assert.match(home, /\$19/);
   assert.match(home, /Q1 2027/);
   assert.match(home, /Cancellation &amp; Refund Policy/);
 

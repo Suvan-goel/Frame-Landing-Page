@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PreorderHeader } from "../../components/preorder-chrome";
+import { HistoryBackLink } from "../../components/history-back-link";
 import {
   formatPreorderMoney,
   PREORDER_DEFAULT_CURRENCY,
@@ -74,11 +75,8 @@ export default async function PreorderTermsPage() {
   if (!(await isPreorderSalesPageEnabled())) notFound();
   return (
     <main className="legal-page preorder-terms-page">
-      <PreorderHeader backHref="/preorder/review" backLabel="Pre-order review" />
+      <PreorderHeader backHref="/preorder/review" backLabel="Back" historyBack />
       <article className="legal-shell">
-        <div className="legal-draft-banner" role="note">
-          Launch candidate — incorporated seller identity still required
-        </div>
         <p className="eyebrow">Frame device pre-order</p>
         <h1>Pre-order Terms</h1>
         <p className="legal-updated">
@@ -330,9 +328,12 @@ export default async function PreorderTermsPage() {
           Launch safeguard: this legal pack remains marked as a draft, and public sales remain blocked while the
           incorporated seller identity and final legal approval are pending.
         </p>
-        <Link className="button button--secondary preorder-terms-return" href="/preorder/review">
-          Return to order review
-        </Link>
+        <HistoryBackLink
+          className="button button--secondary preorder-terms-return"
+          fallbackHref="/preorder/review"
+        >
+          Exit
+        </HistoryBackLink>
       </article>
     </main>
   );

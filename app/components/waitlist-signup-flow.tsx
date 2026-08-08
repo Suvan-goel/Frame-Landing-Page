@@ -801,7 +801,10 @@ export function WaitlistSignupFlow({
               />
             </div>
             <div className="form-field waitlist-signup__email-field">
-              <label htmlFor={`${idPrefix}-email`}>
+              <label
+                htmlFor={`${idPrefix}-email`}
+                className={compact ? "sr-only" : undefined}
+              >
                 {compact ? "Get updates" : "Email address"}
               </label>
               <div className="waitlist-signup__email-row">
@@ -811,7 +814,7 @@ export function WaitlistSignupFlow({
                   type="email"
                   inputMode="email"
                   autoComplete="email"
-                  placeholder={compact ? "you@example.com" : undefined}
+                  placeholder={compact ? "Enter your email" : undefined}
                   value={flow.email}
                   onChange={(event) => flow.setEmail(event.target.value)}
                   maxLength={254}
@@ -829,7 +832,13 @@ export function WaitlistSignupFlow({
                   type="submit"
                   disabled={flow.emailStatus === "submitting"}
                 >
-                  {flow.emailStatus === "submitting" ? "Signing up…" : "Sign up"}
+                  {flow.emailStatus === "submitting"
+                    ? compact
+                      ? "Getting updates…"
+                      : "Signing up…"
+                    : compact
+                      ? "Get updates"
+                      : "Sign up"}
                 </button>
               </div>
               {isActivePlacement && flow.errors.email ? (

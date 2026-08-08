@@ -29,16 +29,11 @@ import { getSupabaseAdmin } from "@/lib/supabase-admin.server";
 import { isAllowedPreorderUsState } from "@/lib/preorder-shipping";
 import { SITE_URL } from "@/lib/site";
 import { verifiedRequestOrigin } from "@/lib/request-origin.server";
+import { cleanAttribution } from "@/lib/attribution";
 
 export const dynamic = "force-dynamic";
 
 const MAX_BODY_BYTES = 8_192;
-
-function cleanAttribution(value: unknown) {
-  if (typeof value !== "string") return null;
-  const cleaned = value.trim().replace(/\s+/g, " ").slice(0, 100);
-  return cleaned || null;
-}
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return Response.json(body, {
