@@ -179,13 +179,21 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /href="\/preorder\/review\?source=homepage_hero"/);
   assert.doesNotMatch(html, /Pre-orders are now open\./);
   assert.match(html, /See details/);
-  assert.doesNotMatch(html, /home-preorder-hero__offer/);
+  assert.match(html, /home-preorder-hero__offer-line/);
+  assert.match(html, /Pre order offer/);
+  assert.match(
+    html,
+    /Pre-order today and save\s*(?:<!-- -->)?40\s*(?:<!-- -->)?%/,
+  );
   assert.doesNotMatch(html, /home-preorder-hero__saving-note/);
   assert.match(html, /home-preorder-hero__actions/);
-  assert.match(html, /home-preorder-hero__prices/);
+  assert.match(html, /hero-email-first__shipping-pill/);
+  assert.match(html, /Shipping est\.\s*(?:<!-- -->)?Q1 2027/);
+  assert.doesNotMatch(html, /home-preorder-hero__shipping/);
+  assert.match(html, /home-preorder-price-comparison/);
   assert.match(html, /id="homepage-hero-preorder-waitlist-email"/);
   assert.doesNotMatch(html, /Not ready to pre-order\?/);
-  assert.match(html, /Save\s*(?:<!-- -->)?\$200/);
+  assert.doesNotMatch(html, /home-preorder-saving--hero/);
   assert.match(html, /\$499/);
   assert.match(html, /Q1 2027/);
   assert.doesNotMatch(html, /What is the main reason you want Frame\?/);

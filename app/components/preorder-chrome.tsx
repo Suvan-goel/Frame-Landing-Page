@@ -5,9 +5,11 @@ import { PREORDER_STAGING_EXIT_PATH } from "@/lib/preorder-staging-access";
 export async function PreorderHeader({
   backHref = "/",
   backLabel = "Back to home",
+  historyBack = false,
 }: {
   backHref?: string;
   backLabel?: string;
+  historyBack?: boolean;
 }) {
   const requestHeaders = await headers();
   const privateStaging =
@@ -23,6 +25,7 @@ export async function PreorderHeader({
       <SiteHeader
         backHref={backHref}
         backLabel={backLabel}
+        historyBack={historyBack}
       />
     </>
   );

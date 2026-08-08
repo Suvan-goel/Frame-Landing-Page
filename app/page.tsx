@@ -13,7 +13,6 @@ import {
   formatPreorderMoney,
   PREORDER_DISCOUNT_PERCENT,
   PREORDER_RELEASE_PRICE_CENTS,
-  PREORDER_SHIPPING_RATE_CENTS,
 } from "@/lib/preorder";
 import { INSTAGRAM_URL } from "@/lib/site";
 
@@ -54,13 +53,8 @@ export default async function Home() {
   const preorderOffer = showPreorderAreas
     ? await getPreorderConfiguration()
     : null;
-  const preorderShippingCents =
-    preorderOffer?.shippingRateCents ?? PREORDER_SHIPPING_RATE_CENTS;
   const preorderPriceLabel = preorderOffer
     ? formatPreorderMoney(preorderOffer.priceCents, preorderOffer.currency)
-    : null;
-  const preorderShippingLabel = preorderOffer
-    ? formatPreorderMoney(preorderShippingCents, preorderOffer.currency)
     : null;
   const preorderReleasePriceLabel = preorderOffer
     ? formatPreorderMoney(PREORDER_RELEASE_PRICE_CENTS, preorderOffer.currency)
@@ -131,7 +125,12 @@ export default async function Home() {
         <div className="hero-grid container">
           <div className="hero-copy">
             <p className="eyebrow hero-email-first__eyebrow">
-              MEASURE YOUR BLOOD PRESSURE CONTINUOUSLY
+              <span>MEASURE YOUR BLOOD PRESSURE CONTINUOUSLY</span>
+              {preorderOffer ? (
+                <span className="hero-email-first__shipping-pill">
+                  Shipping est. {preorderOffer.estimatedShipping}
+                </span>
+              ) : null}
             </p>
             <h1>See how your cardiovascular system responds to daily life.</h1>
             <p className="hero-intro">
@@ -140,6 +139,12 @@ export default async function Home() {
             </p>
             {preorderOffer ? (
               <div className="home-preorder-hero">
+                <p className="home-preorder-hero__offer-line">
+                  <span className="home-preorder-hero__offer-tag">Pre order offer</span>
+                  <span className="home-preorder-hero__offer-message">
+                    Pre-order today and save {PREORDER_DISCOUNT_PERCENT}%
+                  </span>
+                </p>
                 <div className="home-preorder-hero__actions">
                   <a
                     className="button home-preorder-hero__preorder-button"
@@ -148,32 +153,10 @@ export default async function Home() {
                     Pre-order now
                   </a>
                   <a className="home-preorder-hero__details-button" href="#preorder">
-                    See details <span aria-hidden="true">↓</span>
+                    <span className="home-preorder-hero__details-label">See details</span>
+                    <span aria-hidden="true">↓</span>
                   </a>
                 </div>
-                <dl
-                  className="home-preorder-hero__prices"
-                  aria-label="Frame pre-order pricing"
-                >
-                  <div>
-                    <dt>Pre-order price</dt>
-                    <dd>{preorderPriceLabel}</dd>
-                  </div>
-                  <div>
-                    <dt>Release price</dt>
-                    <dd><del>{preorderReleasePriceLabel}</del></dd>
-                  </div>
-                  <div className="home-preorder-hero__saving">
-                    <div>
-                      <dt>You save</dt>
-                      <dd>{preorderSavingsLabel}</dd>
-                    </div>
-                    <span>{PREORDER_DISCOUNT_PERCENT}% off</span>
-                  </div>
-                </dl>
-                <p className="home-preorder-hero__shipping">
-                  Estimated shipping {preorderOffer.estimatedShipping} · US delivery only
-                </p>
                 <WaitlistSignupFlow
                   placement="homepage_hero_preorder_waitlist"
                   compact
@@ -370,27 +353,26 @@ export default async function Home() {
                   than a guaranteed date.
                 </p>
 
-                <p className="home-preorder-saving">
-                  <span>Pre-order offer</span>
-                  <strong>Save {preorderSavingsLabel}</strong>
-                  <span>{PREORDER_DISCOUNT_PERCENT}% off the release price</span>
-                </p>
-
-                <dl className="home-preorder-facts">
-                  <div>
-                    <dt>Pre-order price</dt>
-                    <dd>
-                      {preorderPriceLabel}
-                      <del>{preorderReleasePriceLabel}</del>
-                    </dd>
+                <dl
+                  className="home-preorder-price-comparison home-preorder-price-comparison--section"
+                  aria-label="Frame pre-order pricing"
+                >
+                  <div className="home-preorder-price-comparison__pair">
+                    <div>
+                      <dt>Pre-order price</dt>
+                      <dd>{preorderPriceLabel}</dd>
+                    </div>
+                    <div>
+                      <dt>Release price</dt>
+                      <dd><del>{preorderReleasePriceLabel}</del></dd>
+                    </div>
                   </div>
-                  <div>
-                    <dt>US shipping</dt>
-                    <dd>{preorderShippingLabel}</dd>
-                  </div>
-                  <div>
-                    <dt>Estimated delivery</dt>
-                    <dd>{preorderOffer.estimatedShipping}</dd>
+                  <div className="home-preorder-price-comparison__saving">
+                    <div>
+                      <dt>You save</dt>
+                      <dd>{preorderSavingsLabel}</dd>
+                    </div>
+                    <span>{PREORDER_DISCOUNT_PERCENT}% off</span>
                   </div>
                 </dl>
 

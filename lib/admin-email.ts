@@ -153,7 +153,7 @@ export function renderFrameCampaignEmail(input: {
   const safeSiteUrl = escapeHtml(input.siteUrl);
   const year = new Date().getFullYear();
   const cta = ctaLabel
-    ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:32px 0 0"><tr><td style="padding:0 0 4px;border-bottom:1px solid #7b2937"><a href="${escapeHtml(input.content.ctaUrl)}" style="display:inline-block;color:#7b2937;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;letter-spacing:.01em;line-height:1.5;text-decoration:none">${escapeHtml(ctaLabel)}&nbsp;&nbsp;&rarr;</a></td></tr></table>`
+    ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:34px 0 0"><tr><td bgcolor="#963f49" style="background:#963f49;border-radius:2px"><a class="email-cta-link" href="${escapeHtml(input.content.ctaUrl)}" style="display:inline-block;padding:14px 22px;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;letter-spacing:.01em;line-height:1.4;text-decoration:none">${escapeHtml(ctaLabel)}&nbsp;&nbsp;&rarr;</a></td></tr></table>`
     : "";
 
   const html = `<!doctype html>
@@ -170,34 +170,38 @@ export function renderFrameCampaignEmail(input: {
       table { border-collapse: collapse !important; }
       a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; }
       @media only screen and (max-width: 620px) {
-        .email-outer { padding: 16px 0 22px !important; }
+        .email-outer { padding: 12px 0 20px !important; }
         .email-card { width: 100% !important; border-left: 0 !important; border-right: 0 !important; }
-        .email-header { padding: 25px 24px 23px !important; }
+        .email-header { padding: 24px !important; }
+        .email-header-note { display: none !important; }
         .email-content { padding: 38px 24px 44px !important; }
-        .email-footer { padding: 24px 24px 0 !important; }
-        .email-heading { font-size: 29px !important; line-height: 1.15 !important; }
+        .email-footer { padding: 24px !important; }
+        .email-heading { font-size: 30px !important; line-height: 1.14 !important; }
       }
     </style>
   </head>
-  <body style="margin:0;padding:0;background:#f3f2ef;color:#20211e">
+  <body style="margin:0;padding:0;background:#f2efe9;color:#20211e">
     <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;line-height:1px">${escapeHtml(inboxPreview)}&#847;&nbsp;&zwnj;&nbsp;&#847;&nbsp;&zwnj;&nbsp;&#847;&nbsp;&zwnj;&nbsp;&#847;</div>
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#f3f2ef" style="width:100%;background:#f3f2ef">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#f2efe9" style="width:100%;background:#f2efe9">
       <tr>
-        <td class="email-outer" align="center" style="padding:38px 16px 28px">
-          <table class="email-card" role="presentation" width="580" cellspacing="0" cellpadding="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:580px;background:#ffffff;border:1px solid #e2e0da">
+        <td class="email-outer" align="center" style="padding:40px 16px 28px">
+          <table class="email-card" role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:600px;background:#ffffff;border:1px solid #ddd9d1">
             <tr>
-              <td class="email-header" style="padding:29px 42px 27px;border-bottom:1px solid #eceae5">
+              <td height="4" bgcolor="#963f49" style="height:4px;background:#963f49;font-size:0;line-height:0">&nbsp;</td>
+            </tr>
+            <tr>
+              <td class="email-header" style="padding:28px 44px 24px;border-bottom:1px solid #ebe7df">
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                   <tr>
                     <td align="left" valign="middle">
-                      <a href="${safeSiteUrl}" style="color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:24px;font-weight:700;letter-spacing:-.7px;line-height:1;text-decoration:none">Frame</a>
+                      <a href="${safeSiteUrl}" style="color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:27px;font-weight:400;letter-spacing:-.8px;line-height:1;text-decoration:none">Frame<span style="color:#963f49">.</span></a>
                     </td>
-                    <td align="right" valign="middle">
+                    <td class="email-header-note" align="right" valign="middle">
                       <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="right">
                         <tr>
-                          <td width="7" height="7" bgcolor="#7b2937" style="width:7px;height:7px;background:#7b2937;font-size:0;line-height:0">&nbsp;</td>
-                          <td width="9" style="width:9px;font-size:0;line-height:0">&nbsp;</td>
-                          <td style="color:#777870;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;letter-spacing:.15em;text-transform:uppercase">Frame notes</td>
+                          <td width="6" height="6" bgcolor="#963f49" style="width:6px;height:6px;background:#963f49;border-radius:50%;font-size:0;line-height:0">&nbsp;</td>
+                          <td width="10" style="width:10px;font-size:0;line-height:0">&nbsp;</td>
+                          <td style="color:#77746d;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase">Frame notes</td>
                         </tr>
                       </table>
                     </td>
@@ -206,25 +210,25 @@ export function renderFrameCampaignEmail(input: {
               </td>
             </tr>
             <tr>
-              <td class="email-content" style="padding:49px 42px 55px">
-                <p style="margin:0 0 16px;color:#7b2937;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;letter-spacing:.17em;line-height:1.4;text-transform:uppercase">A note from Frame</p>
-                <h1 class="email-heading" style="margin:0 0 29px;color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:32px;font-weight:400;letter-spacing:-.55px;line-height:1.17">${escapeHtml(subject)}</h1>
+              <td class="email-content" style="padding:48px 44px 54px">
+                <p style="margin:0 0 14px;color:#963f49;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;letter-spacing:.17em;line-height:1.4;text-transform:uppercase">A note from Frame</p>
+                <h1 class="email-heading" style="margin:0;color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:35px;font-weight:400;letter-spacing:-.7px;line-height:1.15">${escapeHtml(subject)}</h1>
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:24px 0 29px"><tr><td width="42" height="2" bgcolor="#963f49" style="width:42px;height:2px;background:#963f49;font-size:0;line-height:0">&nbsp;</td></tr></table>
                 ${bodyToHtml(body)}
                 ${cta}
               </td>
             </tr>
-          </table>
-          <table role="presentation" width="580" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:580px">
             <tr>
-              <td class="email-footer" style="padding:23px 10px 0;color:#85867f;font-family:Arial,Helvetica,sans-serif;font-size:10px;line-height:1.65;text-align:left">
+              <td class="email-footer" bgcolor="#f7f4ee" style="padding:25px 44px 27px;border-top:1px solid #ebe7df;background:#f7f4ee;color:#77766f;font-family:Arial,Helvetica,sans-serif;font-size:10px;line-height:1.65;text-align:left">
+                <p style="margin:0 0 9px;color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:17px;line-height:1">Frame<span style="color:#963f49">.</span></p>
                 <p style="margin:0 0 8px">
-                  <a href="${safeSiteUrl}" style="color:#62635e;text-decoration:underline">framewearable.com</a>
+                  <a href="${safeSiteUrl}" style="color:#5f605b;text-decoration:underline">framewearable.com</a>
                   &nbsp;&nbsp;·&nbsp;&nbsp;
-                  <a href="${safeSiteUrl}/contact" style="color:#62635e;text-decoration:underline">Contact</a>
+                  <a href="${safeSiteUrl}/contact" style="color:#5f605b;text-decoration:underline">Contact</a>
                   &nbsp;&nbsp;·&nbsp;&nbsp;
-                  <a href="${safeSiteUrl}/privacy" style="color:#62635e;text-decoration:underline">Privacy</a>
+                  <a href="${safeSiteUrl}/privacy" style="color:#5f605b;text-decoration:underline">Privacy</a>
                   &nbsp;&nbsp;·&nbsp;&nbsp;
-                  <a href="${safeUnsubscribeUrl}" style="color:#62635e;text-decoration:underline">Unsubscribe</a>
+                  <a href="${safeUnsubscribeUrl}" style="color:#5f605b;text-decoration:underline">Unsubscribe</a>
                 </p>
                 <p style="margin:0">You’re receiving this because you signed up for Frame updates. &copy; ${year} Frame Health Technologies.</p>
               </td>

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PreorderHeader } from "../../components/preorder-chrome";
+import { HistoryBackLink } from "../../components/history-back-link";
 import {
   formatPreorderMoney,
   PREORDER_DEFAULT_CURRENCY,
@@ -58,11 +59,8 @@ export default async function PreorderRefundsPage() {
   if (!(await isPreorderSalesPageEnabled())) notFound();
   return (
     <main className="legal-page preorder-terms-page preorder-refunds-page">
-      <PreorderHeader backHref="/preorder/review" backLabel="Pre-order review" />
+      <PreorderHeader backHref="/preorder/review" backLabel="Back" historyBack />
       <article className="legal-shell">
-        <div className="legal-draft-banner" role="note">
-          Launch candidate — incorporated seller details still required
-        </div>
         <p className="eyebrow">Frame device pre-order</p>
         <h1>Cancellation and Refund Policy</h1>
         <p className="legal-updated">
@@ -244,9 +242,12 @@ export default async function PreorderRefundsPage() {
           <Link className="button button--dark" href="/contact?topic=preorder">
             Contact pre-order support
           </Link>
-          <Link className="button button--secondary" href="/preorder/review">
-            Return to order review
-          </Link>
+          <HistoryBackLink
+            className="button button--secondary"
+            fallbackHref="/preorder/review"
+          >
+            Exit
+          </HistoryBackLink>
         </nav>
       </article>
     </main>

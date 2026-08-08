@@ -68,7 +68,7 @@ export function PreorderCheckoutReview({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [acknowledgementError, setAcknowledgementError] = useState<
-    "product-status" | "terms" | null
+    "product-status" | "terms" | "both" | null
   >(null);
   const [cancelled, setCancelled] = useState(false);
   const requestKey = useRef<string | null>(null);
@@ -101,22 +101,60 @@ export function PreorderCheckoutReview({
     setError("");
   }
 
+  function updateAcknowledgementError(
+    nextProductStatusAcknowledged: boolean,
+    nextTermsAcknowledged: boolean,
+  ) {
+    if (!acknowledgementError || (nextProductStatusAcknowledged && nextTermsAcknowledged)) {
+      setAcknowledgementError(null);
+      setError("");
+      return;
+    }
+    if (!nextProductStatusAcknowledged && !nextTermsAcknowledged) {
+      setAcknowledgementError("both");
+      setError("Tick both highlighted checkboxes to continue to secure checkout.");
+      return;
+    }
+    if (!nextProductStatusAcknowledged) {
+      setAcknowledgementError("product-status");
+      setError("Confirm that you understand Frame is still in development.");
+      return;
+    }
+    setAcknowledgementError("terms");
+    setError("Accept the Pre-order Terms to continue.");
+  }
+
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!event.currentTarget.checkValidity()) {
       event.currentTarget.reportValidity();
       return;
     }
-    if (!productStatusAcknowledged) {
-      setError("Confirm that you understand Frame is still in development.");
-      setAcknowledgementError("product-status");
-      window.requestAnimationFrame(() => productStatusCheckbox.current?.focus());
-      return;
-    }
-    if (!termsAcknowledged) {
-      setError("Accept the Pre-order Terms to continue.");
-      setAcknowledgementError("terms");
-      window.requestAnimationFrame(() => termsCheckbox.current?.focus());
+    if (!productStatusAcknowledged || !termsAcknowledged) {
+      const missingBoth = !productStatusAcknowledged && !termsAcknowledged;
+      setError(
+        missingBoth
+          ? "Tick both highlighted checkboxes to continue to secure checkout."
+          : !productStatusAcknowledged
+            ? "Confirm that you understand Frame is still in development."
+            : "Accept the Pre-order Terms to continue.",
+      );
+      setAcknowledgementError(
+        missingBoth
+          ? "both"
+          : !productStatusAcknowledged
+            ? "product-status"
+            : "terms",
+      );
+      window.requestAnimationFrame(() => {
+        if (!productStatusAcknowledged) {
+          productStatusCheckbox.current?.focus();
+          productStatusCheckbox.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+          return;
+        }
+        termsCheckbox.current?.focus();
+        termsCheckbox.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      });
       return;
     }
 
@@ -344,18 +382,35 @@ export function PreorderCheckoutReview({
               <Link href="/preorder/product-status">Read Product Status →</Link>
             </section>
 
-            <fieldset className="checkout-review__acknowledgements">
+            <fieldset className={`checkout-review__acknowledgements${acknowledgementError ? " checkout-review__acknowledgements--invalid" : ""}`}>
               <legend>Before you continue</legend>
-              <div className={`checkout-checkbox checkout-checkbox--required${acknowledgementError === "product-status" ? " checkout-checkbox--invalid" : ""}`}>
+              {acknowledgementError ? (
+                <div
+                  id="preorder-acknowledgement-error"
+                  className="preorder-checkout-review__acknowledgement-alert"
+                  role="alert"
+                >
+                  <span className="preorder-checkout-review__acknowledgement-alert-icon" aria-hidden="true">!</span>
+                  <span>
+                    <strong>Required confirmations are missing</strong>
+                    <span>{error}</span>
+                  </span>
+                </div>
+              ) : null}
+              <div className={`checkout-checkbox checkout-checkbox--required${acknowledgementError === "product-status" || acknowledgementError === "both" ? " checkout-checkbox--invalid" : ""}`}>
                 <input
                   ref={productStatusCheckbox}
                   id="preorder-product-status-acknowledgement"
                   type="checkbox"
                   aria-required="true"
-                  aria-invalid={acknowledgementError === "product-status"}
-                  aria-describedby={acknowledgementError === "product-status" ? "preorder-acknowledgement-error" : undefined}
+                  aria-invalid={acknowledgementError === "product-status" || acknowledgementError === "both"}
+                  aria-describedby={acknowledgementError === "product-status" || acknowledgementError === "both" ? "preorder-acknowledgement-error" : undefined}
                   checked={productStatusAcknowledged}
-                  onChange={(event) => { setProductStatusAcknowledged(event.target.checked); setAcknowledgementError(null); setError(""); }}
+                  onChange={(event) => {
+                    const checked = event.target.checked;
+                    setProductStatusAcknowledged(checked);
+                    updateAcknowledgementError(checked, termsAcknowledged);
+                  }}
                 />
                 <span className="checkout-checkbox__copy">
                   <label htmlFor="preorder-product-status-acknowledgement">
@@ -364,16 +419,20 @@ export function PreorderCheckoutReview({
                   <span>Specifications, validation and shipping timing may change. Frame is not for medical decisions.</span>
                 </span>
               </div>
-              <div className={`checkout-checkbox checkout-checkbox--required preorder-checkout-review__second-check${acknowledgementError === "terms" ? " checkout-checkbox--invalid" : ""}`}>
+              <div className={`checkout-checkbox checkout-checkbox--required preorder-checkout-review__second-check${acknowledgementError === "terms" || acknowledgementError === "both" ? " checkout-checkbox--invalid" : ""}`}>
                 <input
                   ref={termsCheckbox}
                   id="preorder-terms-acknowledgement"
                   type="checkbox"
                   aria-required="true"
-                  aria-invalid={acknowledgementError === "terms"}
-                  aria-describedby={acknowledgementError === "terms" ? "preorder-acknowledgement-error" : undefined}
+                  aria-invalid={acknowledgementError === "terms" || acknowledgementError === "both"}
+                  aria-describedby={acknowledgementError === "terms" || acknowledgementError === "both" ? "preorder-acknowledgement-error" : undefined}
                   checked={termsAcknowledged}
-                  onChange={(event) => { setTermsAcknowledged(event.target.checked); setAcknowledgementError(null); setError(""); }}
+                  onChange={(event) => {
+                    const checked = event.target.checked;
+                    setTermsAcknowledged(checked);
+                    updateAcknowledgementError(productStatusAcknowledged, checked);
+                  }}
                 />
                 <span className="checkout-checkbox__copy">
                   <label htmlFor="preorder-terms-acknowledgement">
@@ -386,16 +445,6 @@ export function PreorderCheckoutReview({
                 </span>
               </div>
             </fieldset>
-
-            {acknowledgementError ? (
-              <p
-                id="preorder-acknowledgement-error"
-                className="form-error preorder-checkout-review__acknowledgement-error"
-                role="alert"
-              >
-                {error}
-              </p>
-            ) : null}
 
           </div>
         </div>

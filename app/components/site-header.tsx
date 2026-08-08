@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { BrandWordmark } from "./brand-wordmark";
+import { HistoryBackLink } from "./history-back-link";
 
 type SiteHeaderLink = {
   href: string;
@@ -9,11 +10,13 @@ type SiteHeaderLink = {
 export function SiteHeader({
   backHref = "/",
   backLabel = "Back to home",
+  historyBack = false,
   arrowDirection = "left",
   links = [],
 }: {
   backHref?: string;
   backLabel?: string;
+  historyBack?: boolean;
   arrowDirection?: "left" | "right";
   links?: readonly SiteHeaderLink[];
 }) {
@@ -32,15 +35,27 @@ export function SiteHeader({
             {link.label}
           </Link>
         ))}
-        <Link
-          className={`site-header__back${arrowDirection === "right" ? " site-header__back--forward" : ""}`}
-          href={backHref}
-          aria-label={backLabel}
-        >
-          {arrowDirection === "left" ? arrow : null}
-          <span className="site-header__back-label">{backLabel}</span>
-          {arrowDirection === "right" ? arrow : null}
-        </Link>
+        {historyBack ? (
+          <HistoryBackLink
+            ariaLabel={backLabel}
+            className={`site-header__back${arrowDirection === "right" ? " site-header__back--forward" : ""}`}
+            fallbackHref={backHref}
+          >
+            {arrowDirection === "left" ? arrow : null}
+            <span className="site-header__back-label">{backLabel}</span>
+            {arrowDirection === "right" ? arrow : null}
+          </HistoryBackLink>
+        ) : (
+          <Link
+            className={`site-header__back${arrowDirection === "right" ? " site-header__back--forward" : ""}`}
+            href={backHref}
+            aria-label={backLabel}
+          >
+            {arrowDirection === "left" ? arrow : null}
+            <span className="site-header__back-label">{backLabel}</span>
+            {arrowDirection === "right" ? arrow : null}
+          </Link>
+        )}
       </nav>
     </header>
   );

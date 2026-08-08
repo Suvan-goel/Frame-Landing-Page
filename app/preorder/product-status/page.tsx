@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { PreorderHeader } from "../../components/preorder-chrome";
+import { HistoryBackLink } from "../../components/history-back-link";
 import {
   formatPreorderMoney,
   PREORDER_DEFAULT_CURRENCY,
@@ -53,11 +54,8 @@ export default async function PreorderProductStatusPage() {
   if (!(await isPreorderSalesPageEnabled())) notFound();
   return (
     <main className="legal-page product-status-page">
-      <PreorderHeader backHref="/preorder/review" backLabel="Pre-order review" />
+      <PreorderHeader backHref="/preorder/review" backLabel="Back" historyBack />
       <article className="legal-shell">
-        <div className="legal-draft-banner" role="note">
-          Frame is still under development
-        </div>
         <p className="eyebrow">Important pre-order information</p>
         <h1>Product Status Disclosure</h1>
         <p className="legal-updated">{`Last updated ${PREORDER_PRODUCT_STATUS_UPDATED}`}</p>
@@ -153,9 +151,12 @@ export default async function PreorderProductStatusPage() {
           At checkout, you will be asked to acknowledge this development status separately from accepting the
           Pre-order Terms. The version you accept will be recorded with your order.
         </p>
-        <Link className="button button--secondary product-status-return" href="/preorder/review">
-          Return to order review
-        </Link>
+        <HistoryBackLink
+          className="button button--secondary product-status-return"
+          fallbackHref="/preorder/review"
+        >
+          Exit
+        </HistoryBackLink>
       </article>
     </main>
   );

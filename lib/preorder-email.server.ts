@@ -178,7 +178,7 @@ async function preorderOperationsRecipient() {
     .find(Boolean) ?? null;
 }
 
-export async function sendPreorderConfirmationEmail(input: {
+export type PreorderConfirmationEmailInput = {
   origin: string;
   preorderId: string;
   orderNumber: number;
@@ -196,9 +196,11 @@ export async function sendPreorderConfirmationEmail(input: {
   shippingAddress: Record<string, unknown>;
   managePath?: string | null;
   deliveryKey?: string;
-}) {
-  const deliveryKey =
-    input.deliveryKey ?? `preorder-confirmation-${input.preorderId}`;
+};
+
+export function renderPreorderConfirmationEmail(
+  input: PreorderConfirmationEmailInput,
+) {
   const orderNumber = formatPreorderNumber(input.orderNumber);
   const subtotal = formatPreorderMoney(input.amountSubtotal, input.currency);
   const shippingAmount = formatPreorderMoney(input.amountShipping, input.currency);
@@ -217,14 +219,7 @@ export async function sendPreorderConfirmationEmail(input: {
   const sandboxText = sandbox
     ? ["", "Sandbox order: no live charge was made."]
     : [];
-
-  return sendPreorderEmail({
-    preorderId: input.preorderId,
-    emailType: "order_confirmation",
-    recipient: input.email,
-    deliveryKey,
-    subject,
-    text: [
+  const text = [
       `Hello ${input.fullName},`,
       "",
       `Your Frame pre-order is confirmed. Order ${orderNumber}.`,
@@ -247,30 +242,180 @@ export async function sendPreorderConfirmationEmail(input: {
       `Cancellation and refunds: ${refundsUrl}`,
       "",
       "Support: support@framewearable.com",
-    ].join("\n"),
-    html: `
-      <div style="font-family:Arial,sans-serif;max-width:640px;margin:0 auto;color:#20211e;line-height:1.6">
-        <p style="font-size:30px;font-family:Georgia,serif;margin-bottom:32px">Frame</p>
-        <p style="font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:#7b2937">${sandbox ? "Sandbox · " : ""}Pre-order ${escapeHtml(orderNumber)}</p>
-        <h1 style="font-family:Georgia,serif;font-weight:400;font-size:38px;line-height:1.1">Your Frame pre-order is confirmed.</h1>
-        <p>Hello ${escapeHtml(input.fullName)}. We’ve received your payment and recorded your place in the pre-order queue.</p>
-        <div style="background:#f3efe6;padding:20px 24px;margin:28px 0">
-          <p style="margin:0 0 8px"><strong>Product subtotal:</strong> ${escapeHtml(subtotal)}</p>
-          <p style="margin:0 0 8px"><strong>Shipping:</strong> ${escapeHtml(shippingAmount)}</p>
-          <p style="margin:0 0 8px"><strong>Sales tax:</strong> ${escapeHtml(taxAmount)}</p>
-          <p style="margin:0 0 8px"><strong>Total paid:</strong> ${escapeHtml(amount)}</p>
-          <p style="margin:0 0 8px"><strong>Quantity:</strong> ${input.quantity}</p>
-          <p style="margin:0"><strong>Placed:</strong> ${escapeHtml(placedAt)}</p>
-        </div>
-        <p><strong>Estimated shipping:</strong> ${escapeHtml(input.estimatedShipping)}</p>
-        <p style="padding:16px;border-left:4px solid #7b2937;background:#f7ecee"><strong>Frame remains under development.</strong> It is not currently FDA cleared or approved and is not for medical decisions. You may cancel for a full refund before fulfilment begins.</p>
-        <p><strong>Shipping address</strong><br>${shipping.map(escapeHtml).join("<br>")}</p>
-        ${sandbox ? '<p style="padding:16px;border-left:4px solid #7b2937;background:#f7ecee"><strong>Sandbox order.</strong> No live charge was made.</p>' : ""}
-        ${manageUrl ? `<p style="margin:30px 0"><a href="${escapeHtml(manageUrl)}" style="display:inline-block;background:#20211e;color:#faf8f2;padding:13px 20px;text-decoration:none">Manage your pre-order</a></p>` : ""}
-        <p><a href="${escapeHtml(productStatusUrl)}">Product status</a> · <a href="${escapeHtml(termsUrl)}">Pre-order terms</a> · <a href="${escapeHtml(refundsUrl)}">Cancellation and refunds</a></p>
-        <p style="color:#686a63">Questions? Contact support@framewearable.com.</p>
-      </div>
-    `,
+    ].join("\n");
+  const safeOrigin = escapeHtml(input.origin);
+  const safeOrderNumber = escapeHtml(orderNumber);
+  const safeManageUrl = manageUrl ? escapeHtml(manageUrl) : null;
+  const shippingHtml = shipping.length
+    ? shipping.map(escapeHtml).join("<br>")
+    : "Address provided at checkout";
+  const preheader = `Payment received for Frame pre-order ${orderNumber}. Estimated shipping: ${input.estimatedShipping}.`;
+  const html = `<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light">
+    <meta name="supported-color-schemes" content="light">
+    <title>${escapeHtml(subject)}</title>
+    <style>
+      body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+      table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+      table { border-collapse: collapse !important; }
+      img { border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+      a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; }
+      @media only screen and (max-width: 620px) {
+        .email-outer { padding: 0 !important; }
+        .email-card { width: 100% !important; border-left: 0 !important; border-right: 0 !important; }
+        .email-header { padding: 24px !important; }
+        .email-content { padding: 38px 24px 42px !important; }
+        .email-footer { padding: 28px 24px !important; }
+        .email-heading { font-size: 36px !important; line-height: 1.03 !important; }
+        .email-summary { padding: 24px 20px !important; }
+        .email-delivery { padding: 22px 20px !important; }
+        .email-secondary-column { width: 100% !important; display: block !important; padding: 24px 0 0 !important; }
+        .email-primary-column { width: 100% !important; display: block !important; }
+        .email-mobile-left { text-align: left !important; }
+        .email-button-link { display: block !important; text-align: center !important; }
+      }
+    </style>
+  </head>
+  <body style="margin:0;padding:0;background:#eee9df;color:#20211e">
+    <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;line-height:1px">${escapeHtml(preheader)}&#847;&nbsp;&zwnj;&nbsp;&#847;&nbsp;&zwnj;&nbsp;&#847;&nbsp;&zwnj;&nbsp;&#847;</div>
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#eee9df" style="width:100%;background:#eee9df">
+      <tr>
+        <td class="email-outer" align="center" style="padding:40px 16px">
+          <table class="email-card" role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" bgcolor="#fffdf8" style="width:100%;max-width:600px;background:#fffdf8;border:1px solid #dcd6cc">
+            <tr>
+              <td height="5" bgcolor="#8d3e46" style="height:5px;background:#8d3e46;font-size:0;line-height:0">&nbsp;</td>
+            </tr>
+            <tr>
+              <td class="email-header" style="padding:25px 42px;border-bottom:1px solid #e5dfd5">
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                  <tr>
+                    <td align="left" valign="middle">
+                      <a href="${safeOrigin}" style="color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;letter-spacing:-1px;line-height:1;text-decoration:none">Frame<span style="color:#8d3e46">.</span></a>
+                    </td>
+                    <td align="right" valign="middle" style="color:#66645e;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;letter-spacing:.12em;line-height:1.4;text-transform:uppercase">
+                      <span style="color:#8d3e46;font-size:15px;vertical-align:-1px">&#10003;</span>&nbsp;&nbsp;Order confirmed
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td class="email-content" style="padding:50px 42px 48px">
+                <p style="margin:0 0 15px;color:#8d3e46;font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:700;letter-spacing:.16em;line-height:1.4;text-transform:uppercase">${sandbox ? "Sandbox &middot; " : ""}Pre-order ${safeOrderNumber}</p>
+                <h1 class="email-heading" style="margin:0;color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:44px;font-weight:400;letter-spacing:-1.3px;line-height:1.04">Your Frame pre-order is confirmed.</h1>
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:25px 0 25px"><tr><td width="42" height="2" bgcolor="#8d3e46" style="width:42px;height:2px;background:#8d3e46;font-size:0;line-height:0">&nbsp;</td></tr></table>
+                <p style="margin:0 0 34px;color:#4f504b;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.7">Hello ${escapeHtml(input.fullName)}. We’ve received your payment and reserved your place in the pre-order queue. We’ll keep you informed as Frame moves toward shipping.</p>
+
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#f3efe6" style="width:100%;background:#f3efe6;border:1px solid #e4ddd1">
+                  <tr>
+                    <td class="email-summary" style="padding:28px 28px 26px">
+                      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                        <tr>
+                          <td style="padding:0 0 20px;border-bottom:1px solid #d8d1c5">
+                            <p style="margin:0 0 5px;color:#74716a;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;letter-spacing:.14em;line-height:1.4;text-transform:uppercase">Order summary</p>
+                            <p style="margin:0;color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:24px;line-height:1.2">Frame wearable</p>
+                          </td>
+                          <td align="right" valign="bottom" style="padding:0 0 20px;border-bottom:1px solid #d8d1c5;color:#4f504b;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.4">Qty ${input.quantity}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding:20px 0 7px;color:#5d5d57;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.45">Product subtotal</td>
+                          <td align="right" style="padding:20px 0 7px;color:#20211e;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.45">${escapeHtml(subtotal)}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding:7px 0;color:#5d5d57;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.45">Shipping</td>
+                          <td align="right" style="padding:7px 0;color:#20211e;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.45">${escapeHtml(shippingAmount)}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding:7px 0 20px;color:#5d5d57;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.45">Sales tax</td>
+                          <td align="right" style="padding:7px 0 20px;color:#20211e;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.45">${escapeHtml(taxAmount)}</td>
+                        </tr>
+                        <tr>
+                          <td style="padding:18px 0 0;border-top:1px solid #d8d1c5;color:#20211e;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;line-height:1.45">Total paid</td>
+                          <td align="right" style="padding:18px 0 0;border-top:1px solid #d8d1c5;color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:24px;line-height:1.2">${escapeHtml(amount)}</td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;margin:16px 0 0;border:1px solid #ded8ce">
+                  <tr>
+                    <td class="email-delivery" style="padding:24px 28px">
+                      <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
+                        <tr>
+                          <td class="email-primary-column" width="56%" valign="top">
+                            <p style="margin:0 0 7px;color:#74716a;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;letter-spacing:.14em;line-height:1.4;text-transform:uppercase">Estimated shipping</p>
+                            <p style="margin:0;color:#8d3e46;font-family:Georgia,'Times New Roman',serif;font-size:29px;line-height:1.15">${escapeHtml(input.estimatedShipping)}</p>
+                          </td>
+                          <td class="email-secondary-column email-mobile-left" width="44%" align="right" valign="top">
+                            <p style="margin:0 0 7px;color:#74716a;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;letter-spacing:.14em;line-height:1.4;text-transform:uppercase">Order placed</p>
+                            <p style="margin:0;color:#20211e;font-family:Arial,Helvetica,sans-serif;font-size:14px;line-height:1.5">${escapeHtml(placedAt)}</p>
+                          </td>
+                        </tr>
+                      </table>
+                    </td>
+                  </tr>
+                </table>
+
+                ${sandbox ? `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#f8ebed" style="width:100%;margin:16px 0 0;background:#f8ebed;border-left:3px solid #8d3e46"><tr><td style="padding:14px 17px;color:#4f504b;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.55"><strong style="color:#20211e">Sandbox order.</strong> No live charge was made.</td></tr></table>` : ""}
+
+                ${safeManageUrl ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:30px 0 37px"><tr><td bgcolor="#20211e" style="background:#20211e"><a class="email-button-link" href="${safeManageUrl}" style="display:inline-block;padding:15px 22px;color:#fffdf8;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;letter-spacing:.01em;line-height:1.4;text-decoration:none">Manage your pre-order&nbsp;&nbsp;&rarr;</a></td></tr></table>` : '<div style="height:37px;line-height:37px">&nbsp;</div>'}
+
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-top:1px solid #e0dbd1">
+                  <tr>
+                    <td class="email-primary-column" width="50%" valign="top" style="padding:28px 18px 0 0">
+                      <p style="margin:0 0 9px;color:#20211e;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;line-height:1.4;text-transform:uppercase">Shipping address</p>
+                      <p style="margin:0;color:#5e5e58;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.65">${shippingHtml}</p>
+                    </td>
+                    <td class="email-secondary-column email-mobile-left" width="50%" align="right" valign="top" style="padding:28px 0 0 18px">
+                      <p style="margin:0 0 9px;color:#20211e;font-family:Arial,Helvetica,sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;line-height:1.4;text-transform:uppercase">What happens next</p>
+                      <p style="margin:0;color:#5e5e58;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.65">We’ll email you if the shipping estimate or product status changes.</p>
+                    </td>
+                  </tr>
+                </table>
+
+                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#f7f4ee" style="width:100%;margin:36px 0 0;background:#f7f4ee;border-left:3px solid #a8a39a">
+                  <tr>
+                    <td style="padding:18px 20px;color:#5c5c56;font-family:Arial,Helvetica,sans-serif;font-size:11px;line-height:1.65"><strong style="color:#20211e">Product status.</strong> Frame remains under development. It is not currently FDA cleared or approved and is not for medical decisions. You may cancel for a full refund before fulfilment begins. <a href="${escapeHtml(productStatusUrl)}" style="color:#8d3e46;text-decoration:underline">Read the product status</a>.</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            <tr>
+              <td class="email-footer" bgcolor="#20211e" style="padding:30px 42px;background:#20211e;color:#b9b8b1;font-family:Arial,Helvetica,sans-serif;font-size:10px;line-height:1.7">
+                <p style="margin:0 0 11px;color:#fffdf8;font-family:Georgia,'Times New Roman',serif;font-size:20px;line-height:1">Frame<span style="color:#bd6871">.</span></p>
+                <p style="margin:0 0 8px">Questions? <a href="mailto:support@framewearable.com" style="color:#fffdf8;text-decoration:underline">support@framewearable.com</a></p>
+                <p style="margin:0"><a href="${escapeHtml(termsUrl)}" style="color:#b9b8b1;text-decoration:underline">Pre-order terms</a>&nbsp;&nbsp;&middot;&nbsp;&nbsp;<a href="${escapeHtml(refundsUrl)}" style="color:#b9b8b1;text-decoration:underline">Cancellation &amp; refunds</a>&nbsp;&nbsp;&middot;&nbsp;&nbsp;<a href="${escapeHtml(productStatusUrl)}" style="color:#b9b8b1;text-decoration:underline">Product status</a></p>
+                <p style="margin:14px 0 0;color:#8f8f89">This is a transactional email about pre-order ${safeOrderNumber}.</p>
+              </td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>`;
+
+  return { subject, text, html };
+}
+
+export async function sendPreorderConfirmationEmail(
+  input: PreorderConfirmationEmailInput,
+) {
+  const deliveryKey =
+    input.deliveryKey ?? `preorder-confirmation-${input.preorderId}`;
+  const email = renderPreorderConfirmationEmail(input);
+
+  return sendPreorderEmail({
+    preorderId: input.preorderId,
+    emailType: "order_confirmation",
+    recipient: input.email,
+    deliveryKey,
+    ...email,
   });
 }
 

@@ -22,6 +22,7 @@ import {
   PREORDER_STAGING_EXIT_PATH,
   preorderStagingCookieHeader,
 } from "../lib/preorder-staging-access";
+import { preorderReviewRedirectPath } from "../lib/attribution";
 
 interface Env {
   ASSETS: Fetcher;
@@ -228,6 +229,21 @@ const worker = {
         headers: {
           "Cache-Control": "no-store",
           "Content-Type": "text/plain; charset=utf-8",
+          "X-Content-Type-Options": "nosniff",
+          "X-Robots-Tag": "noindex, nofollow",
+        },
+      });
+    }
+
+    if (
+      url.pathname === "/preorder" &&
+      (request.method === "GET" || request.method === "HEAD")
+    ) {
+      return new Response(null, {
+        status: 307,
+        headers: {
+          "Cache-Control": "no-store",
+          Location: preorderReviewRedirectPath(url.searchParams),
           "X-Content-Type-Options": "nosniff",
           "X-Robots-Tag": "noindex, nofollow",
         },
