@@ -426,6 +426,36 @@ test("uses one canonical Possibly response while accepting legacy Maybe values",
   assert.equal(normalizeResearchCallValue("maybe"), "possibly");
 });
 
+test("keeps Possibly aligned across waitlist writers and database storage", async () => {
+  const [legacySubmission, storageMigration] = await Promise.all([
+    readFile(
+      new URL("../lib/legacy-waitlist-submission.server.ts", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL(
+        "../supabase/migrations/20260808203000_align_waitlist_research_call_value.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  ]);
+
+  assert.match(
+    legacySubmission,
+    /open_to_research_call:\s*interviewWillingness/,
+  );
+  assert.doesNotMatch(legacySubmission, /interviewWillingness === "possibly"/);
+  assert.match(
+    storageMigration,
+    /set open_to_research_call = 'possibly'[\s\S]*where open_to_research_call = 'maybe'/,
+  );
+  assert.match(
+    storageMigration,
+    /open_to_research_call in \('yes', 'possibly', 'no'\)/,
+  );
+});
+
 test("uses generated raster visuals and keeps the page editable", async () => {
   const [
     page,
