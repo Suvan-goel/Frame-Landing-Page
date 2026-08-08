@@ -111,7 +111,7 @@ export function CheckoutReview() {
 
       {error ? <p className="form-error checkout-review__error" role="alert">{error}</p> : null}
       <button className="button button--dark checkout-review__submit" type="submit" disabled={submitting}>
-        {submitting ? "Opening secure checkout…" : "Continue to secure checkout — $99"}
+        {submitting ? "Opening secure checkout…" : "Continue to secure checkout · $99"}
       </button>
       <p className="checkout-review__footnote">
         Payment details are entered on Stripe’s secure checkout. Frame does not receive or store your card number. Automatic tax is disabled during testing.

@@ -270,7 +270,7 @@ export default async function WaitlistAdminPage({
                         </td>
                         <td>
                           {qualification.mainReason
-                            ? `${mainReasonLabels[qualification.mainReason] ?? qualification.mainReason}${qualification.mainReasonOther ? ` — ${qualification.mainReasonOther}` : ""}`
+                            ? `${mainReasonLabels[qualification.mainReason] ?? qualification.mainReason}${qualification.mainReasonOther ? `: ${qualification.mainReasonOther}` : ""}`
                             : "Legacy signup"}
                         </td>
                         <td className="admin-motivation">
@@ -279,14 +279,14 @@ export default async function WaitlistAdminPage({
                         </td>
                         <td>
                           {qualification.monitoringMethod
-                            ? `${monitoringLabels[qualification.monitoringMethod] ?? qualification.monitoringMethod}${qualification.monitoringMethodOther ? ` — ${qualification.monitoringMethodOther}` : ""}`
-                            : "—"}
+                            ? `${monitoringLabels[qualification.monitoringMethod] ?? qualification.monitoringMethod}${qualification.monitoringMethodOther ? `: ${qualification.monitoringMethodOther}` : ""}`
+                            : "N/A"}
                         </td>
                         <td>
                           {qualification.interviewWillingness
                             ? interviewLabels[qualification.interviewWillingness] ??
                               qualification.interviewWillingness.replaceAll("_", " ")
-                            : "—"}
+                            : "N/A"}
                         </td>
                         <td className="admin-source">
                           <span>{signup.placement.replaceAll("_", " ")}</span>

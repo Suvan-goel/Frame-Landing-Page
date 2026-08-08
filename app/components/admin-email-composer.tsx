@@ -653,7 +653,7 @@ export function AdminEmailComposer({
                     </div>
                     <div className="email-preview-controls">
                       <label htmlFor="preview-search-v2"><span>Find subscriber</span><input id="preview-search-v2" type="search" value={previewSearch} onChange={(event) => setPreviewSearch(event.target.value)} placeholder="Search name or email" /></label>
-                      <label htmlFor="preview-recipient-v2"><span>Preview as</span><select id="preview-recipient-v2" value={previewRecipient?.id ?? ""} onChange={(event) => setPreviewRecipientId(Number(event.target.value))} disabled={!recipients.length}>{previewOptions.map((recipient) => <option key={recipient.id} value={recipient.id}>{recipientName(recipient)} — {recipient.email}</option>)}</select></label>
+                      <label htmlFor="preview-recipient-v2"><span>Preview as</span><select id="preview-recipient-v2" value={previewRecipient?.id ?? ""} onChange={(event) => setPreviewRecipientId(Number(event.target.value))} disabled={!recipients.length}>{previewOptions.map((recipient) => <option key={recipient.id} value={recipient.id}>{recipientName(recipient)} | {recipient.email}</option>)}</select></label>
                     </div>
                     <div className="email-preview-window">
                       <div className="email-preview-window__bar"><span></span><span></span><span></span><strong>Email preview</strong></div>

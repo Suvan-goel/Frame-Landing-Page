@@ -4,7 +4,7 @@ import { SiteHeader } from "../../components/site-header";
 import { CONTRIBUTOR_TERMS_VERSION } from "@/lib/contributor-membership";
 
 export const metadata: Metadata = {
-  title: "Founding Contributor Membership Terms — Frame",
+  title: "Founding Contributor Membership Terms | Frame",
   description: "Draft terms for the Frame Founding Contributor Membership testing flow.",
   robots: { index: false, follow: false },
 };
@@ -15,7 +15,7 @@ export default function ContributorTermsPage() {
       <SiteHeader backHref="/founding-contributors/review" backLabel="Membership review" />
       <article className="legal-shell">
         <div className="legal-draft-banner" role="note">
-          Draft for testing — not approved for live sales
+          Draft for testing. Not approved for live sales.
         </div>
         <p className="eyebrow">Founding Contributor Membership</p>
         <h1>Membership Terms</h1>

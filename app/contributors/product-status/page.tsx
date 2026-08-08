@@ -3,7 +3,7 @@ import Link from "next/link";
 import { SiteHeader } from "../../components/site-header";
 
 export const metadata: Metadata = {
-  title: "Important Product Status Disclosure — Frame",
+  title: "Important Product Status Disclosure | Frame",
   description: "Important information about Frame’s early development status.",
   robots: { index: false, follow: false },
 };

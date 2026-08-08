@@ -39,7 +39,7 @@ export const contributorPreviewDashboard: ContributorDashboard = {
   updates: [
     {
       id: "briefing-01",
-      title: "Development briefing 01 — proving the signal",
+      title: "Development briefing 01: Proving the signal",
       summary:
         "The first phase is about learning whether the proposed ultrasound approach can capture a repeatable arterial signal before wearability work begins.",
       body:
@@ -72,7 +72,7 @@ export const contributorPreviewDashboard: ContributorDashboard = {
   events: [
     {
       id: "event-01",
-      title: "Founding Contributor briefing — the first 90 days",
+      title: "Founding Contributor briefing: The first 90 days",
       description:
         "A live walkthrough of the initial technical plan, measurement questions, and how contributor feedback will be used.",
       startsAt: nextBriefing.toISOString(),

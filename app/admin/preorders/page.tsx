@@ -218,7 +218,7 @@ export default async function PreorderAdminPage({
                     <td><span className={`admin-status admin-status--${order.payment_status}`}>{order.payment_status.replaceAll("_", " ")}</span></td>
                     <td><span className={`admin-status admin-status--${order.fulfillment_status}`}>{order.fulfillment_status.replaceAll("_", " ")}</span></td>
                     <td>{formatPreorderMoney(order.amount_total, order.currency)}{order.amount_refunded ? <><br /><small>{formatPreorderMoney(order.amount_refunded, order.currency)} refunded</small></> : null}</td>
-                    <td>{order.shipping_address?.country ?? "—"}</td>
+                    <td>{order.shipping_address?.country ?? "N/A"}</td>
                     <td>{order.confirmation_email_sent_at ? "Sent" : "Pending / failed"}</td>
                     <td><time dateTime={order.placed_at}>{new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(new Date(order.placed_at))}</time></td>
                   </tr>

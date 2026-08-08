@@ -33,7 +33,7 @@ test("renders the pre-order confirmation as a responsive transactional receipt",
 
   assert.equal(
     rendered.subject,
-    "Frame pre-order confirmation — FR-001042",
+    "Frame pre-order confirmation | FR-001042",
   );
   assert.match(rendered.html, /^<!doctype html>/);
   assert.match(rendered.html, /Payment received for Frame pre-order FR-001042/);

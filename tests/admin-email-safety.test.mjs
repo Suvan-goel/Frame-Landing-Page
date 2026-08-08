@@ -70,7 +70,7 @@ test("renders administrator tests without a subscriber unsubscribe action", () =
     firstName: "there",
     unsubscribeUrl: "",
     siteUrl: "https://framewearable.com",
-    postalAddress: "Postal address not configured — test email only",
+    postalAddress: "Postal address not configured (test email only)",
     testMode: true,
   });
   assert.match(rendered.html, /test email sent only to the Frame administrator/i);

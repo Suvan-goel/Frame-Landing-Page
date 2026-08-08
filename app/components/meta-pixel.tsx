@@ -1,10 +1,19 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
 
 export const META_PIXEL_ID = "1068997465474786";
 const META_LEAD_RECORDED_STORAGE_KEY = "frame-meta-lead-recorded-v1";
+export const OPTIONAL_TRACKING_CONSENT_STORAGE_KEY =
+  "frame-optional-tracking-consent-v1";
+
+type OptionalTrackingConsent = "granted" | "denied";
+type OptionalTrackingConsentSnapshot = OptionalTrackingConsent | null | "pending";
+
+const OPTIONAL_TRACKING_CONSENT_EVENT = "frame:optional-tracking-consent";
+let inMemoryTrackingConsent: OptionalTrackingConsent | null = null;
 
 export type WaitlistAnalyticsEvent =
   | "waitlist_form_viewed"
@@ -48,6 +57,64 @@ function isLocalBrowserHost() {
   );
 }
 
+function readOptionalTrackingConsent(): OptionalTrackingConsent | null {
+  try {
+    const value = window.localStorage.getItem(
+      OPTIONAL_TRACKING_CONSENT_STORAGE_KEY,
+    );
+    if (value === "granted" || value === "denied") {
+      inMemoryTrackingConsent = value;
+      return value;
+    }
+    return inMemoryTrackingConsent;
+  } catch {
+    return inMemoryTrackingConsent;
+  }
+}
+
+function subscribeToOptionalTrackingConsent(onChange: () => void) {
+  const syncConsentAcrossTabs = (event: StorageEvent) => {
+    if (event.key !== OPTIONAL_TRACKING_CONSENT_STORAGE_KEY) return;
+    inMemoryTrackingConsent =
+      event.newValue === "granted" || event.newValue === "denied"
+        ? event.newValue
+        : null;
+    onChange();
+  };
+
+  window.addEventListener("storage", syncConsentAcrossTabs);
+  window.addEventListener(OPTIONAL_TRACKING_CONSENT_EVENT, onChange);
+  return () => {
+    window.removeEventListener("storage", syncConsentAcrossTabs);
+    window.removeEventListener(OPTIONAL_TRACKING_CONSENT_EVENT, onChange);
+  };
+}
+
+function readServerOptionalTrackingConsent(): OptionalTrackingConsentSnapshot {
+  return "pending";
+}
+
+function removeMetaPixel() {
+  document.getElementById("meta-pixel")?.remove();
+  document
+    .querySelectorAll('script[src*="connect.facebook.net"]')
+    .forEach((script) => script.remove());
+  window.fbq = undefined;
+  (window as Window & { _fbq?: unknown })._fbq = undefined;
+}
+
+function clearMetaCookies() {
+  const metaCookieNames = document.cookie
+    .split(";")
+    .map((cookie) => cookie.split("=")[0]?.trim())
+    .filter((name): name is string => Boolean(name?.startsWith("_fb")));
+
+  for (const name of metaCookieNames) {
+    document.cookie = `${name}=; Max-Age=0; Path=/; SameSite=Lax`;
+    document.cookie = `${name}=; Max-Age=0; Path=/; Domain=.framewearable.com; SameSite=Lax`;
+  }
+}
+
 export function isMetaPixelAllowed(pathname: string) {
   return (
     !PRIVATE_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)) &&
@@ -58,47 +125,110 @@ export function isMetaPixelAllowed(pathname: string) {
 
 export function MetaPixelRouteGuard() {
   const pathname = usePathname();
+  const consent = useSyncExternalStore(
+    subscribeToOptionalTrackingConsent,
+    readOptionalTrackingConsent,
+    readServerOptionalTrackingConsent,
+  );
+  const [preferencesOpen, setPreferencesOpen] = useState(false);
+  const pixelAllowedOnRoute = isMetaPixelAllowed(pathname);
+  const consentReady = consent !== "pending";
 
   useEffect(() => {
-    if (isLocalBrowserHost() || !isMetaPixelAllowed(pathname)) {
-      document.getElementById("meta-pixel")?.remove();
-      document
-        .querySelectorAll('script[src*="connect.facebook.net"]')
-        .forEach((script) => script.remove());
-      window.fbq = undefined;
+    if (!consentReady) return;
+
+    if (
+      isLocalBrowserHost() ||
+      !pixelAllowedOnRoute ||
+      consent !== "granted"
+    ) {
+      removeMetaPixel();
+      if (consent !== "granted") clearMetaCookies();
       return;
     }
+
     if (typeof window.fbq === "function") {
       window.fbq("trackSingle", META_PIXEL_ID, "PageView");
       return;
     }
     if (document.getElementById("meta-pixel")) return;
 
-    const loadPixel = () => {
-      if (document.getElementById("meta-pixel")) return;
-      const script = document.createElement("script");
-      script.id = "meta-pixel";
-      script.text = META_PIXEL_BOOTSTRAP;
-      document.head.appendChild(script);
-    };
+    const script = document.createElement("script");
+    script.id = "meta-pixel";
+    script.text = META_PIXEL_BOOTSTRAP;
+    document.head.appendChild(script);
+  }, [consent, consentReady, pathname, pixelAllowedOnRoute]);
 
-    // Keep third-party tracking out of the critical rendering path while still
-    // recording engaged visits immediately on their first interaction.
-    const timerId = window.setTimeout(loadPixel, 3500);
-    window.addEventListener("pointerdown", loadPixel, {
-      once: true,
-      passive: true,
-    });
-    window.addEventListener("keydown", loadPixel, { once: true });
+  function recordConsent(value: OptionalTrackingConsent) {
+    inMemoryTrackingConsent = value;
+    try {
+      window.localStorage.setItem(
+        OPTIONAL_TRACKING_CONSENT_STORAGE_KEY,
+        value,
+      );
+    } catch {
+      // The choice still applies for this page when browser storage is unavailable.
+    }
+    window.dispatchEvent(new Event(OPTIONAL_TRACKING_CONSENT_EVENT));
+    setPreferencesOpen(false);
+    if (value === "denied") {
+      removeMetaPixel();
+      clearMetaCookies();
+    }
+  }
 
-    return () => {
-      window.clearTimeout(timerId);
-      window.removeEventListener("pointerdown", loadPixel);
-      window.removeEventListener("keydown", loadPixel);
-    };
-  }, [pathname]);
+  if (!consentReady || !pixelAllowedOnRoute) return null;
 
-  return null;
+  const showBanner = consent === null || preferencesOpen;
+
+  return (
+    <>
+      {showBanner ? (
+        <section
+          className="tracking-consent"
+          aria-labelledby="tracking-consent-title"
+          aria-describedby="tracking-consent-description"
+        >
+          <div className="tracking-consent__copy">
+            <p className="eyebrow">Privacy choices</p>
+            <h2 id="tracking-consent-title">Optional advertising measurement.</h2>
+            <p id="tracking-consent-description">
+              We use Meta’s optional technology to understand which campaigns
+              are useful. It stays off unless you allow it. Your choice does not
+              affect how the site works.
+            </p>
+            <Link href="/privacy">Read our privacy notice</Link>
+          </div>
+          <div className="tracking-consent__actions" aria-label="Optional tracking choices">
+            <button
+              className="tracking-consent__button"
+              type="button"
+              aria-pressed={consent === "denied"}
+              onClick={() => recordConsent("denied")}
+            >
+              Decline optional
+            </button>
+            <button
+              className="tracking-consent__button"
+              type="button"
+              aria-pressed={consent === "granted"}
+              onClick={() => recordConsent("granted")}
+            >
+              Allow optional
+            </button>
+          </div>
+        </section>
+      ) : (
+        <button
+          className="tracking-consent-trigger"
+          type="button"
+          onClick={() => setPreferencesOpen(true)}
+        >
+          Privacy choices
+        </button>
+      )}
+    </>
+  );
 }
 
 function trackMetaConversion(

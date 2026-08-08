@@ -1,4 +1,4 @@
-/* Admin workspace — unified navigation and operational hierarchy. */
+/* Admin workspace: unified navigation and operational hierarchy. */
 .admin-email-review-button,
 .admin-email-send-panel .button--light {
   background: var(--paper);
@@ -912,7 +912,7 @@
 }
 
 
-/* Pre-order operations — clearer review, controls and order workflow. */
+/* Pre-order operations: clearer review, controls and order workflow. */
 .admin-preorders .preorder-environment-panel {
   margin-bottom: 18px;
 }

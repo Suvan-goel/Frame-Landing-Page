@@ -404,7 +404,7 @@ export async function sendTestEmail(input: {
 }) {
   const runtime = await getMailingRuntimeConfiguration();
   if (!runtime.apiKey) throw new Error("Email delivery is not configured yet.");
-  const postalAddress = runtime.postalAddress || "Postal address not configured — test email only";
+  const postalAddress = runtime.postalAddress || "Postal address not configured (test email only)";
   const email = renderFrameCampaignEmail({
     content: input.content,
     firstName: "there",

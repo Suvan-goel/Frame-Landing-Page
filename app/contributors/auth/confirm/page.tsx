@@ -3,7 +3,7 @@ import { ContributorAuthConfirm } from "@/app/components/contributor-auth-confir
 import { ContributorHeader } from "@/app/components/contributor-chrome";
 
 export const metadata: Metadata = {
-  title: "Signing in — Frame Founding Contributors",
+  title: "Signing in | Frame Founding Contributors",
   robots: { index: false, follow: false },
 };
 

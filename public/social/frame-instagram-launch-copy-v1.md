@@ -12,7 +12,7 @@ Meet Frame.
 
 We’re developing a screenless upper-arm wearable that uses ultrasound to explore blood-pressure patterns across sleep, rest, stress, exercise and recovery.
 
-A single reading is a moment. Frame is being designed to help make patterns easier to understand—with context, confidence and honest gaps.
+A single reading is a moment. Frame is being designed to help make patterns easier to understand through context, confidence and honest gaps.
 
 Frame is under development and is not currently available for sale. Product concepts are illustrative. Frame is not intended to diagnose or treat any medical condition.
 
@@ -34,10 +34,13 @@ A blood-pressure reading can be useful. On its own, it cannot show what happened
 
 That’s why Frame is being built around four ideas:
 
-• Baseline — what is normal for you during comparable periods  
-• Response — how the pattern changes around meaningful events  
-• Recovery — how it returns toward baseline  
-• Confidence — what was measured reliably, and what wasn’t
+• Baseline: what is normal for you during comparable periods
+
+• Response: how the pattern changes around meaningful events
+
+• Recovery: how it returns toward baseline
+
+• Confidence: what was measured reliably, and what wasn’t
 
 Patterns over moments. Context before judgment.
 
@@ -62,7 +65,7 @@ The concept:
 1. Observe vascular motion using an upper-arm ultrasound sensor.  
 2. Interpret repeated patterns against a personal baseline.  
 3. Add context from sleep, rest, exercise and recovery.  
-4. Show what the system can support with confidence—and remain honest about gaps.
+4. Show what the system can support with confidence while remaining honest about gaps.
 
 This exploded view is an illustrative research-stage concept, not a depiction of validated performance. Frame is under development, is not currently available for sale and is not intended to diagnose or treat any medical condition.
 
@@ -76,4 +79,4 @@ An exploded conceptual view of a black knitted Frame wearable above simplified t
 
 ## Posting order
 
-For a brand-new account, upload the posts in reverse order—Post 3, then Post 2, then Post 1—so the profile grid reads Meet Frame, Why context matters and How it works from left to right. Pin all three afterward.
+For a brand-new account, upload the posts in reverse order: Post 3, then Post 2, then Post 1, so the profile grid reads Meet Frame, Why context matters and How it works from left to right. Pin all three afterward.

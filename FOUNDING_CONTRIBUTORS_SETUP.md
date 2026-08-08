@@ -1,4 +1,4 @@
-# Frame Founding Contributors — private test setup
+# Frame Founding Contributors: private test setup
 
 The Founding Contributor membership is disabled by default and locked to local
 development when explicitly enabled. Its pages, homepage and waitlist sections,

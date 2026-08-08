@@ -175,7 +175,6 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /You save/);
   assert.match(html, /40(?:<!-- -->)?% off/);
   assert.match(html, /Pre-order now -\s*(?:<!-- -->)?\$299/);
-  assert.doesNotMatch(html, /Pre-order now — \$299/);
   assert.match(html, /href="\/preorder\/review\?source=homepage_hero"/);
   assert.doesNotMatch(html, /Pre-orders are now open\./);
   assert.match(html, /See details/);
@@ -254,7 +253,7 @@ test("server-renders the Founding Contributor funnel locally", async () => {
   assert.match(membership, /No automatic renewal/);
   assert.match(membership, /12 months of community access/);
   assert.match(membership, /share your perspective, and help shape what comes next/);
-  assert.match(membership, /Membership only—does not include or reserve a Frame device/);
+  assert.match(membership, /Membership only\. This does not include or reserve a Frame device/);
   assert.doesNotMatch(membership, /founding-disclosure/);
   assert.match(membership, /A thank-you for joining us early\./);
   assert.match(membership, /10% off at launch, up to \$50/);
@@ -284,7 +283,7 @@ test("server-renders the Founding Contributor funnel locally", async () => {
   assert.match(review, /not ordering, reserving, pre-ordering/);
   assert.match(review, /Membership refund period/);
   assert.match(review, /14 days/);
-  assert.match(review, /Continue to secure checkout — \$99/);
+  assert.match(review, /Continue to secure checkout · \$99/);
   assert.match(review, /Automatic tax is disabled during testing/);
   assert.doesNotMatch(review, /facebook\.com\/tr\?id=/);
 
@@ -400,7 +399,7 @@ test("renders draft contributor policies and keeps member routes private", async
     render("/contributors/onboarding", undefined, "http://localhost", CONTRIBUTOR_TEST_ENV),
   ]);
 
-  assert.match(await terms.text(), /Draft for testing — not approved for live sales/);
+  assert.match(await terms.text(), /Draft for testing\. Not approved for live sales\./);
   assert.match(await refunds.text(), /Full refund within 14 days/);
   assert.match(await productStatus.text(), /No finished Frame product currently exists/);
   assert.match(await hub.text(), /Loading your contributor hub/);
@@ -424,6 +423,36 @@ test("uses one canonical Possibly response while accepting legacy Maybe values",
   ]);
   assert.equal(normalizeResearchCallValue("possibly"), "possibly");
   assert.equal(normalizeResearchCallValue("maybe"), "possibly");
+});
+
+test("keeps Possibly aligned across waitlist writers and database storage", async () => {
+  const [legacySubmission, storageMigration] = await Promise.all([
+    readFile(
+      new URL("../lib/legacy-waitlist-submission.server.ts", import.meta.url),
+      "utf8",
+    ),
+    readFile(
+      new URL(
+        "../supabase/migrations/20260808203000_align_waitlist_research_call_value.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  ]);
+
+  assert.match(
+    legacySubmission,
+    /open_to_research_call:\s*interviewWillingness/,
+  );
+  assert.doesNotMatch(legacySubmission, /interviewWillingness === "possibly"/);
+  assert.match(
+    storageMigration,
+    /set open_to_research_call = 'possibly'[\s\S]*where open_to_research_call = 'maybe'/,
+  );
+  assert.match(
+    storageMigration,
+    /open_to_research_call in \('yes', 'possibly', 'no'\)/,
+  );
 });
 
 test("uses generated raster visuals and keeps the page editable", async () => {
@@ -609,6 +638,12 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     /window\.fbq\("trackSingle", META_PIXEL_ID, "Lead"/,
   );
   assert.match(metaPixel, /frame-meta-lead-recorded-v1/);
+  assert.match(metaPixel, /frame-optional-tracking-consent-v1/);
+  assert.match(metaPixel, /consent !== "granted"/);
+  assert.match(metaPixel, /Decline optional/);
+  assert.match(metaPixel, /Allow optional/);
+  assert.match(metaPixel, /Privacy choices/);
+  assert.doesNotMatch(metaPixel, /setTimeout\(loadPixel/);
   assert.match(metaPixel, /1068997465474786/);
   assert.match(metaPixel, /PRIVATE_PREFIXES = \["\/contributors", "\/admin", "\/api"\]/);
   assert.match(metaPixel, /"\/founding-contributors\/review"/);
@@ -643,7 +678,8 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(demographicsMigration, /add column if not exists gender text/);
   assert.match(demographicsMigration, /add column if not exists age smallint/);
   assert.match(privacy, /We do not sell your information\./);
-  assert.match(privacy, /We use the Meta Pixel/);
+  assert.match(privacy, /we use the Meta Pixel/);
+  assert.match(privacy, /The Pixel stays off unless you choose/);
   assert.deepEqual(
     [
       "frame-app-studio.png",

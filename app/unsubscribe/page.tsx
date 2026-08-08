@@ -4,7 +4,7 @@ import { BrandWordmark } from "@/app/components/brand-wordmark";
 import { UnsubscribeControl } from "@/app/components/unsubscribe-control";
 
 export const metadata: Metadata = {
-  title: "Email preferences — Frame",
+  title: "Email preferences | Frame",
   robots: { index: false, follow: false },
 };
 

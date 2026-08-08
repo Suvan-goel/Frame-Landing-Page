@@ -156,8 +156,7 @@ export async function submitLegacyWaitlist(payload: Record<string, unknown>) {
     primary_interest: mainReason,
     current_monitoring_method: monitoringMethod,
     frustration_or_missing_need: recentSituation,
-    open_to_research_call:
-      interviewWillingness === "possibly" ? "maybe" : interviewWillingness,
+    open_to_research_call: interviewWillingness,
     survey_completed_at: completedAt,
     qualification_skipped_at: null,
   };
