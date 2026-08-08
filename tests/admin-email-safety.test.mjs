@@ -70,12 +70,13 @@ test("renders administrator tests without a subscriber unsubscribe action", () =
 });
 
 test("requires a server review and typed confirmation before any subscriber send", async () => {
-  const [api, review, auth, sender, composer, provider, webhookSetup, unsubscribe, migration, hardening] = await Promise.all([
+  const [api, review, auth, sender, composer, styles, provider, webhookSetup, unsubscribe, migration, hardening] = await Promise.all([
     readFile(new URL("../app/api/admin/email/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/email/review/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/admin-email-api.server.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/admin-email.server.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/components/admin-email-composer.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
     readFile(new URL("../lib/resend-mailing.server.ts", import.meta.url), "utf8"),
     readFile(
       new URL("../app/api/admin/email/webhook-protection/route.ts", import.meta.url),
@@ -109,6 +110,8 @@ test("requires a server review and typed confirmation before any subscriber send
   assert.match(sender, /`SEND \$\{input\.recipientIds\.length\}`/);
   assert.doesNotMatch(composer, /window\.confirm/);
   assert.match(composer, /Send test to me/);
+  assert.match(styles, /\.admin-email-send-panel \.button--light[^{]*\{[^}]*color: var\(--ink\) !important;[^}]*-webkit-text-fill-color: var\(--ink\);/s);
+  assert.match(styles, /\.email-send-actions__test[^{]*\{[^}]*color: var\(--ink\) !important;[^}]*-webkit-text-fill-color: var\(--ink\);/s);
   assert.match(composer, /Type <strong>\{review\.confirmationText\}/);
   assert.match(composer, /renderFrameCampaignEmail/);
   assert.match(sender, /!row\.email_unsubscribed_at/);
@@ -116,13 +119,14 @@ test("requires a server review and typed confirmation before any subscriber send
   assert.match(sender, /categorizeVisibleSignups\(eligibleRows\)/);
   assert.match(sender, /to: \[input\.recipient\.email\]/);
   assert.match(provider, /RESEND_BATCH_SIZE = 100/);
+  assert.match(provider, /Frame <updates@framewearable\.com>/);
   assert.match(provider, /"Idempotency-Key": idempotencyKey/);
   assert.doesNotMatch(provider, /api\.resend\.com\/webhooks/);
   assert.match(webhookSetup, /RESEND_SIGNING_SECRET_PATTERN/);
   assert.match(webhookSetup, /configureResendWebhookProtection/);
   assert.doesNotMatch(webhookSetup, /error instanceof Error \? error\.message/);
   assert.match(composer, /Save signing secret/);
-  assert.match(composer, /Send test event/);
+  assert.match(composer, /Use <strong>Send test to me<\/strong> below/);
   assert.match(composer, /Check connection/);
   assert.match(sender, /webhookVerified: Boolean/);
   assert.match(sender, /verifiedAt/);

@@ -17,7 +17,7 @@ export async function getMailingRuntimeConfiguration() {
   const apiKey = (await getRuntimeValue("RESEND_API_KEY"))?.trim() ?? "";
   const from =
     (await getRuntimeValue("MAILING_FROM_EMAIL"))?.trim() ||
-    "Frame Updates <updates@framewearable.com>";
+    "Frame <updates@framewearable.com>";
   const replyTo =
     (await getRuntimeValue("MAILING_REPLY_TO_EMAIL"))?.trim() ||
     "support@framewearable.com";
