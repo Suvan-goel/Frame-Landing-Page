@@ -811,13 +811,14 @@ test("surfaces waitlist storage failures without reporting success", async () =>
 });
 
 test("separates, visualizes, exports, and permanently deletes admin leads", async () => {
-  const [adminPage, insights, leadHelpers, csvRoute, workbookRoute, deleteRoute, css] = await Promise.all([
+  const [adminPage, insights, leadHelpers, csvRoute, workbookRoute, deleteRoute, timeZoneClock, css] = await Promise.all([
     readFile(new URL("../app/admin/waitlist/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/waitlist/qualified-lead-insights.tsx", import.meta.url), "utf8"),
     readFile(new URL("../lib/waitlist-leads.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/waitlist.csv/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/waitlist.xlsx/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/waitlist/[id]/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/time-zone-clock.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
 
@@ -839,6 +840,11 @@ test("separates, visualizes, exports, and permanently deletes admin leads", asyn
   assert.match(adminPage, /America\/New_York/);
   assert.match(adminPage, /timezone=\$\{encodeURIComponent\(timeZone\)\}/);
   assert.match(adminPage, /timeZone: selectedTimeZone/);
+  assert.match(adminPage, /<TimeZoneClock/);
+  assert.match(timeZoneClock, /Current time/);
+  assert.match(timeZoneClock, /second: "2-digit"/);
+  assert.match(timeZoneClock, /setInterval\(\(\) => setNow\(new Date\(\)\), 1_000\)/);
+  assert.match(css, /\.admin-timezone-clock/);
   assert.doesNotMatch(adminPage, /Manage hidden test entries/);
   assert.match(adminPage, /DeleteWaitlistSignupButton/);
   assert.match(insights, /admin-age-chart/);

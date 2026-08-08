@@ -9301,6 +9301,38 @@ h2 {
   background: var(--admin-card);
 }
 
+.admin-timezone-clock {
+  display: grid;
+  min-width: 240px;
+  margin-left: auto;
+  padding: 8px 0 7px 20px;
+  border-left: 1px solid var(--admin-border);
+}
+
+.admin-timezone-clock > span {
+  color: var(--ink-soft);
+  font-size: 0.54rem;
+  font-weight: 680;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.admin-timezone-clock strong {
+  margin-top: 3px;
+  color: var(--ink);
+  font-size: 1.18rem;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+}
+
+.admin-timezone-clock small {
+  margin-top: 3px;
+  color: var(--ink-soft);
+  font-size: 0.61rem;
+  line-height: 1.35;
+}
+
 .admin-app .admin-tabs {
   gap: 8px;
   margin-top: 22px;
@@ -9666,6 +9698,15 @@ h2 {
   .admin-app .admin-timezone select,
   .admin-app .admin-timezone__submit {
     width: 100%;
+  }
+
+  .admin-timezone-clock {
+    width: 100%;
+    min-width: 0;
+    margin: 4px 0 0;
+    padding: 14px 0 0;
+    border-top: 1px solid var(--admin-border);
+    border-left: 0;
   }
 
   .admin-app .admin-timezone p {

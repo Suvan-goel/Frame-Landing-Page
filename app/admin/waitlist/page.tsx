@@ -7,6 +7,7 @@ import {
   isWaitlistAdmin,
 } from "@/lib/supabase-admin.server";
 import { DeleteWaitlistSignupButton } from "@/app/components/delete-waitlist-signup-button";
+import { TimeZoneClock } from "@/app/components/time-zone-clock";
 import { QualifiedLeadInsights } from "./qualified-lead-insights";
 import {
   categorizeVisibleSignups,
@@ -153,7 +154,11 @@ export default async function WaitlistAdminPage({
           <button className="admin-timezone__submit" type="submit">
             Apply
           </button>
-          <p>Showing lead times in {selectedTimeZoneLabel}.</p>
+          <TimeZoneClock
+            initialDateTime={new Date().toISOString()}
+            timeZone={selectedTimeZone}
+            timeZoneLabel={selectedTimeZoneLabel}
+          />
         </form>
 
         <nav className="admin-tabs" aria-label="Waitlist dashboard views">
