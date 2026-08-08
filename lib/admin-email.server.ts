@@ -8,18 +8,17 @@ import {
 import { getRuntimeValue } from "./runtime-env.server";
 import { SITE_URL } from "./site";
 import { getSupabaseAdmin } from "./supabase-admin.server";
+import {
+  categorizeVisibleSignups,
+  WAITLIST_SIGNUP_SELECT,
+  type WaitlistSignup,
+} from "./waitlist-leads";
 
 const SUPABASE_PAGE_SIZE = 1_000;
 const RESEND_BATCH_SIZE = 100;
 const DATABASE_WRITE_SIZE = 500;
 
-type MailingListRow = {
-  id: number;
-  email: string;
-  first_name: string | null;
-  last_name: string | null;
-  qualification_status: string;
-  created_at: string;
+type MailingListRow = WaitlistSignup & {
   email_unsubscribe_token: string;
   email_unsubscribed_at: string | null;
 };
@@ -51,9 +50,7 @@ async function getAllWaitlistRows() {
   for (let start = 0; start < EMAIL_MAX_RECIPIENTS; start += SUPABASE_PAGE_SIZE) {
     const { data, error } = await supabase
       .from("waitlist_signups")
-      .select(
-        "id,email,first_name,last_name,qualification_status,created_at,email_unsubscribe_token,email_unsubscribed_at",
-      )
+      .select(`${WAITLIST_SIGNUP_SELECT},email_unsubscribe_token,email_unsubscribed_at`)
       .order("created_at", { ascending: false })
       .order("id", { ascending: false })
       .range(start, start + SUPABASE_PAGE_SIZE - 1)
@@ -85,15 +82,15 @@ export async function getMailingListAdminData() {
 
   if (campaignResult.error) throw campaignResult.error;
 
-  const recipients: MailingListRecipient[] = rows
-    .filter((row) => !row.email_unsubscribed_at)
-    .map((row) => ({
-      id: row.id,
-      email: row.email,
-      firstName: row.first_name,
-      lastName: row.last_name,
-      qualificationStatus: row.qualification_status,
-      joinedAt: row.created_at,
+  const subscribedRows = rows.filter((row) => !row.email_unsubscribed_at);
+  const recipients: MailingListRecipient[] = categorizeVisibleSignups(subscribedRows)
+    .map(({ signup, qualificationStatus }) => ({
+      id: signup.id,
+      email: signup.email,
+      firstName: signup.first_name,
+      lastName: signup.last_name,
+      qualificationStatus,
+      joinedAt: signup.created_at,
     }));
   const campaigns: EmailCampaignSummary[] = (campaignResult.data ?? []).map(
     (row) => ({
