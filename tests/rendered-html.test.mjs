@@ -11,6 +11,7 @@ import {
   completeWaitlistQualification,
   skipWaitlistQualification,
 } from "../lib/waitlist-service.server.ts";
+import { resolveAdminTimeZone } from "../lib/admin-time-zone.ts";
 
 function createWaitlistRepositoryFixture() {
   const records = [];
@@ -810,9 +811,20 @@ test("surfaces waitlist storage failures without reporting success", async () =>
   );
 });
 
+test("restores the stored admin time zone unless the URL selects another", () => {
+  assert.equal(resolveAdminTimeZone(undefined, "Europe%2FRome"), "Europe/Rome");
+  assert.equal(
+    resolveAdminTimeZone("America/New_York", "Europe%2FRome"),
+    "America/New_York",
+  );
+  assert.equal(resolveAdminTimeZone("invalid", "invalid"), "UTC");
+});
+
 test("separates, visualizes, exports, and permanently deletes admin leads", async () => {
-  const [adminPage, insights, leadHelpers, csvRoute, workbookRoute, deleteRoute, timeZoneClock, css] = await Promise.all([
+  const [adminPage, timeZoneForm, timeZoneHelpers, insights, leadHelpers, csvRoute, workbookRoute, deleteRoute, timeZoneClock, css] = await Promise.all([
     readFile(new URL("../app/admin/waitlist/page.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/components/admin-time-zone-form.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../lib/admin-time-zone.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/waitlist/qualified-lead-insights.tsx", import.meta.url), "utf8"),
     readFile(new URL("../lib/waitlist-leads.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/waitlist.csv/route.ts", import.meta.url), "utf8"),
@@ -835,12 +847,17 @@ test("separates, visualizes, exports, and permanently deletes admin leads", asyn
   assert.match(adminPage, /waitlistTabHref\("insights", selectedTimeZone\)/);
   assert.match(adminPage, /What Frame should help with/);
   assert.match(adminPage, /Export spreadsheet/);
-  assert.match(adminPage, /Lead time zone/);
-  assert.match(adminPage, /Europe\/Rome/);
-  assert.match(adminPage, /America\/New_York/);
+  assert.match(adminPage, /AdminTimeZoneForm/);
+  assert.match(timeZoneForm, /Lead time zone/);
+  assert.match(timeZoneHelpers, /Europe\/Rome/);
+  assert.match(timeZoneHelpers, /America\/New_York/);
+  assert.match(adminPage, /cookieStore\.get\(ADMIN_TIME_ZONE_COOKIE\)/);
+  assert.match(adminPage, /resolveAdminTimeZone/);
+  assert.match(timeZoneForm, /document\.cookie/);
+  assert.match(timeZoneForm, /Path=\/admin/);
   assert.match(adminPage, /timezone=\$\{encodeURIComponent\(timeZone\)\}/);
-  assert.match(adminPage, /timeZone: selectedTimeZone/);
-  assert.match(adminPage, /<TimeZoneClock/);
+  assert.match(adminPage, /selectedTimeZone=\{selectedTimeZone\}/);
+  assert.match(timeZoneForm, /<TimeZoneClock/);
   assert.match(timeZoneClock, /Current time/);
   assert.match(timeZoneClock, /second: "2-digit"/);
   assert.match(timeZoneClock, /setInterval\(\(\) => setNow\(new Date\(\)\), 1_000\)/);

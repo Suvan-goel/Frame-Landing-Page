@@ -1,14 +1,18 @@
-/* eslint-disable @next/next/no-html-link-for-pages */
 import { notFound } from "next/navigation";
+import { cookies } from "next/headers";
 import { requireChatGPTUser } from "@/app/chatgpt-auth";
 import { AdminDashboardShell } from "@/app/components/admin-dashboard-shell";
+import { AdminTimeZoneForm } from "@/app/components/admin-time-zone-form";
 import {
   getSupabaseAdmin,
   isWaitlistAdmin,
 } from "@/lib/supabase-admin.server";
 import { DeleteWaitlistSignupButton } from "@/app/components/delete-waitlist-signup-button";
-import { TimeZoneClock } from "@/app/components/time-zone-clock";
 import { QualifiedLeadInsights } from "./qualified-lead-insights";
+import {
+  ADMIN_TIME_ZONE_COOKIE,
+  resolveAdminTimeZone,
+} from "@/lib/admin-time-zone";
 import {
   categorizeVisibleSignups,
   genderLabels,
@@ -24,23 +28,6 @@ import {
 export const dynamic = "force-dynamic";
 
 type WaitlistView = LeadTab | "insights";
-
-const ADMIN_TIME_ZONES = [
-  { value: "UTC", label: "UTC" },
-  { value: "Europe/London", label: "London (UK)" },
-  { value: "Europe/Rome", label: "Rome / Central Europe" },
-  { value: "America/New_York", label: "New York (Eastern)" },
-  { value: "America/Chicago", label: "Chicago (Central)" },
-  { value: "America/Denver", label: "Denver (Mountain)" },
-  { value: "America/Los_Angeles", label: "Los Angeles (Pacific)" },
-  { value: "America/Sao_Paulo", label: "São Paulo" },
-  { value: "Asia/Dubai", label: "Dubai" },
-  { value: "Asia/Kolkata", label: "India" },
-  { value: "Asia/Singapore", label: "Singapore" },
-  { value: "Asia/Tokyo", label: "Tokyo" },
-  { value: "Australia/Sydney", label: "Sydney" },
-  { value: "Pacific/Auckland", label: "Auckland" },
-] as const;
 
 function waitlistTabHref(tab: WaitlistView, timeZone: string) {
   return `/admin/waitlist?tab=${tab}&timezone=${encodeURIComponent(timeZone)}`;
@@ -79,14 +66,11 @@ export default async function WaitlistAdminPage({
       ? requestedTab
       : "qualified";
   const requestedTimeZone = resolvedSearchParams?.timezone;
-  const selectedTimeZone =
-    typeof requestedTimeZone === "string" &&
-    ADMIN_TIME_ZONES.some((option) => option.value === requestedTimeZone)
-      ? requestedTimeZone
-      : "UTC";
-  const selectedTimeZoneLabel =
-    ADMIN_TIME_ZONES.find((option) => option.value === selectedTimeZone)
-      ?.label ?? "UTC";
+  const cookieStore = await cookies();
+  const selectedTimeZone = resolveAdminTimeZone(
+    typeof requestedTimeZone === "string" ? requestedTimeZone : undefined,
+    cookieStore.get(ADMIN_TIME_ZONE_COOKIE)?.value,
+  );
   const dateFormatter = new Intl.DateTimeFormat("en", {
     dateStyle: "medium",
     timeStyle: "short",
@@ -135,31 +119,11 @@ export default async function WaitlistAdminPage({
           <p>Switch lead groups or localise timestamps without losing your place.</p>
         </div>
 
-        <form className="admin-timezone" action="/admin/waitlist" method="get">
-          <input type="hidden" name="tab" value={activeTab} />
-          <div className="admin-timezone__field">
-            <label htmlFor="admin-timezone-select">Lead time zone</label>
-            <select
-              id="admin-timezone-select"
-              name="timezone"
-              defaultValue={selectedTimeZone}
-            >
-              {ADMIN_TIME_ZONES.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          <button className="admin-timezone__submit" type="submit">
-            Apply
-          </button>
-          <TimeZoneClock
-            initialDateTime={new Date().toISOString()}
-            timeZone={selectedTimeZone}
-            timeZoneLabel={selectedTimeZoneLabel}
-          />
-        </form>
+        <AdminTimeZoneForm
+          activeTab={activeTab}
+          initialDateTime={new Date().toISOString()}
+          selectedTimeZone={selectedTimeZone}
+        />
 
         <nav className="admin-tabs" aria-label="Waitlist dashboard views">
           <a
