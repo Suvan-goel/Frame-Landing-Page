@@ -1193,9 +1193,11 @@
   min-width: 170px;
 }
 
-.admin-email-review-button {
+.admin-email-review-button,
+.admin-email-send-panel .button--light {
   background: var(--paper);
   color: var(--ink) !important;
+  -webkit-text-fill-color: var(--ink);
 }
 
 .admin-email-modal-backdrop {
@@ -2578,7 +2580,14 @@
 .email-send-actions__test {
   border: 1px solid var(--studio-border-strong);
   background: #fff;
-  color: var(--ink);
+  color: var(--ink) !important;
+  -webkit-text-fill-color: var(--ink);
+}
+
+.email-send-actions__test:disabled {
+  color: var(--ink) !important;
+  -webkit-text-fill-color: var(--ink);
+  opacity: 0.68;
 }
 
 .email-send-note {

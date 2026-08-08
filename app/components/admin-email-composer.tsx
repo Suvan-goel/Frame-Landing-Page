@@ -405,7 +405,7 @@ export function AdminEmailComposer({
       setWebhookVerified(false);
       setWebhookSecret("");
       setWebhookStatus("idle");
-      setWebhookMessage("Secret saved. In Resend, send a test event to the webhook, then check the connection here.");
+      setWebhookMessage("Secret saved. Send a test email only to yourself below, wait a few seconds, then check the connection.");
     } catch (error) {
       setWebhookStatus("error");
       setWebhookMessage(error instanceof Error ? error.message : "The signing secret could not be saved.");
@@ -431,7 +431,7 @@ export function AdminEmailComposer({
         setWebhookStatus("idle");
         setWebhookMessage(
           configured
-            ? "No verified event yet. Send a test event from the Resend webhook page, then check again."
+            ? "No verified event yet. Use Send test to me below, wait a few seconds, then check again."
             : "No signing secret is configured yet.",
         );
       }
@@ -738,7 +738,7 @@ export function AdminEmailComposer({
                           <button className="button button--dark" type="button" onClick={saveWebhookSecret} disabled={webhookStatus === "working" || !webhookSecret.trim()}>{webhookStatus === "working" ? "Working…" : webhookConfigured ? "Replace signing secret" : "Save signing secret"}</button>
                           {webhookConfigured ? <button className="button button--light" type="button" onClick={checkWebhookConnection} disabled={webhookStatus === "working"}>Check connection</button> : null}
                         </div>
-                        {webhookConfigured ? <p className="admin-email-webhook-test-note">Use <strong>Send test event</strong> in Resend, then check the connection here.</p> : null}
+                        {webhookConfigured ? <p className="admin-email-webhook-test-note">Use <strong>Send test to me</strong> below, wait a few seconds, then check the connection here.</p> : null}
                       </section>
                     ) : null}
                     {webhookMessage ? <p className={`admin-email-inline-message is-${webhookStatus}`} role={webhookStatus === "error" ? "alert" : "status"}>{webhookMessage}</p> : null}
