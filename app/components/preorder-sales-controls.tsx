@@ -90,12 +90,12 @@ export function PreorderSalesControls({
 
       <dl className="preorder-sales-controls__numbers">
         <div><dt>Paid units</dt><dd>{snapshot.paidUnits}</dd></div>
-        <div><dt>Active reservations</dt><dd>{snapshot.reservedUnits}</dd></div>
+        <div><dt>Reserved units</dt><dd>{snapshot.reservedUnits}</dd></div>
         <div>
-          <dt>Available in release</dt>
+          <dt>Available now</dt>
           <dd>{snapshot.remainingUnits}</dd>
         </div>
-        <div><dt>Lifetime units left</dt><dd>{snapshot.inventoryRemainingUnits}</dd></div>
+        <div><dt>Lifetime remaining</dt><dd>{snapshot.inventoryRemainingUnits}</dd></div>
       </dl>
 
       <form onSubmit={save} aria-busy={saving}>
@@ -135,7 +135,7 @@ export function PreorderSalesControls({
           </small>
         </label>
         <button className="button button--dark" type="submit" disabled={saving || !hasChanges}>
-          {saving ? "Saving…" : "Save controls"}
+          {saving ? "Saving…" : hasChanges ? "Save controls" : "No changes to save"}
         </button>
       </form>
 

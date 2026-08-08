@@ -9863,12 +9863,44 @@ h2 {
 
 .admin-app .preorder-sales-controls__numbers {
   grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0;
   margin: 22px 0;
+  overflow: hidden;
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  background: transparent;
 }
 
 .admin-app .preorder-sales-controls__numbers > div {
-  min-height: 96px;
-  padding: 16px;
+  display: grid;
+  min-height: 92px;
+  align-content: center;
+  gap: 8px;
+  padding: 17px 19px;
+  border-right: 1px solid var(--admin-border);
+  border-radius: 0;
+  background: rgba(243, 239, 230, 0.48);
+}
+
+.admin-app .preorder-sales-controls__numbers > div:last-child {
+  border-right: 0;
+}
+
+.admin-app .preorder-sales-controls__numbers dt {
+  line-height: 1.3;
+}
+
+.admin-app .preorder-sales-controls__numbers dd {
+  margin: 0;
+  font-size: 1.72rem;
+  line-height: 1;
+}
+
+.admin-app .preorder-sales-controls form .button:disabled {
+  border: 1px solid var(--admin-border);
+  background: rgba(32, 33, 30, 0.055);
+  color: var(--ink-soft);
+  opacity: 1;
 }
 
 .preorder-sales-controls form label small {
@@ -10255,6 +10287,18 @@ h2 {
 
   .admin-app .preorder-sales-controls__numbers {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-app .preorder-sales-controls__numbers > div {
+    border-bottom: 1px solid var(--admin-border);
+  }
+
+  .admin-app .preorder-sales-controls__numbers > div:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .admin-app .preorder-sales-controls__numbers > div:nth-last-child(-n + 2) {
+    border-bottom: 0;
   }
 
   .preorder-review-summary,
