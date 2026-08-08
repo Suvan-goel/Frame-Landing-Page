@@ -25,7 +25,7 @@ export default async function EmailAdminPage() {
     <AdminDashboardShell
       activeSection="email"
       className="admin-email-shell admin-email-page"
-      description="Create a Frame update, check every detail, then choose exactly who receives it."
+      description="Write the update, choose the audience, then complete a final safety review."
       title="Email campaigns"
       userEmail={user.email}
     >

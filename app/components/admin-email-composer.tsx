@@ -20,6 +20,7 @@ import {
 
 type AudienceFilter = "all" | "qualified" | "incomplete";
 type RequestStatus = "idle" | "working" | "success" | "error";
+type WorkflowStep = "compose" | "audience" | "review";
 
 const EMPTY_CONTENT: EmailCampaignContent = {
   subject: "",
@@ -114,6 +115,7 @@ export function AdminEmailComposer({
   const [detailMessage, setDetailMessage] = useState("");
   const [retryInput, setRetryInput] = useState("");
   const [retryStatus, setRetryStatus] = useState<RequestStatus>("idle");
+  const [workflowStep, setWorkflowStep] = useState<WorkflowStep>("compose");
 
   const qualifiedCount = useMemo(
     () => recipients.filter((recipient) => recipient.qualificationStatus === "completed").length,
@@ -169,6 +171,7 @@ export function AdminEmailComposer({
     !webhookConfigured ? "Enable bounce and complaint protection" : "",
     capacityExceeded ? "The list exceeds the current 5,000-recipient safety limit" : "",
   ].filter(Boolean);
+  const messageReady = validateEmailCampaignContent(content).ok;
   const emailLinks = useMemo(() => {
     const values = [
       ...extractHttpUrls(content.body),
@@ -356,6 +359,7 @@ export function AdminEmailComposer({
       setContent(EMPTY_CONTENT);
       setDraftStatus("idle");
       setDraftMessage("");
+      setWorkflowStep("compose");
       router.refresh();
     } catch (error) {
       setSendStatus("error");
@@ -435,118 +439,261 @@ export function AdminEmailComposer({
     }
   }
 
+  let reviewStepStatus = "Available";
+  if (!messageReady) reviewStepStatus = "Message needed";
+  else if (!selectedIds.size) reviewStepStatus = "Audience needed";
+  else if (liveBlockingReasons.length) reviewStepStatus = `${liveBlockingReasons.length} blocked`;
+
+  const workflowSteps: Array<{
+    id: WorkflowStep;
+    label: string;
+    description: string;
+    status: string;
+  }> = [
+    {
+      id: "compose",
+      label: "Message",
+      description: "Write and preview",
+      status: messageReady ? "Ready" : "In progress",
+    },
+    {
+      id: "audience",
+      label: "Audience",
+      description: "Choose recipients",
+      status: selectedIds.size ? `${selectedIds.size} selected` : "None selected",
+    },
+    {
+      id: "review",
+      label: "Review",
+      description: "Test and confirm",
+      status: reviewStepStatus,
+    },
+  ];
+
   return (
     <>
-      <ol className="admin-email-progress" aria-label="Email campaign steps">
-        <li><span>1</span><div><strong>Write</strong><small>Create the message</small></div></li>
-        <li><span>2</span><div><strong>Preview</strong><small>Check the final email</small></div></li>
-        <li><span>3</span><div><strong>Audience</strong><small>Select recipients</small></div></li>
-        <li><span>4</span><div><strong>Send</strong><small>Test, review and confirm</small></div></li>
-      </ol>
+      <section className="email-studio" aria-label="Create an email campaign">
+        <header className="email-studio__header">
+          <div>
+            <p className="eyebrow">New campaign</p>
+            <h2>Create an email update</h2>
+            <p>Move through one clear stage at a time. Your work saves automatically.</p>
+          </div>
+          <div className="email-studio__draft" aria-live="polite">
+            <span className={`is-${draftStatus}`}>{draftMessage || "No draft changes yet"}</span>
+            {draftHasContent ? <button type="button" onClick={clearDraft}>Delete draft</button> : null}
+          </div>
+        </header>
 
-      <section className="admin-email-metrics" aria-label="Mailing list overview">
-        <article><span>Can receive email</span><strong>{recipients.length}</strong><small>Subscribed contacts available to select</small></article>
-        <article><span>Survey complete</span><strong>{qualifiedCount}</strong><small>Qualified leads in the mailing list</small></article>
-        <article><span>Unsubscribed</span><strong>{unsubscribedCount}</strong><small>Always excluded from sends</small></article>
-        <article><span>Delivery blocked</span><strong>{deliverySuppressedCount}</strong><small>Bounces and complaints</small></article>
-      </section>
+        <div className="email-studio__layout">
+          <aside className="email-studio__sidebar">
+            <nav aria-label="Campaign workflow">
+              <ol className="email-studio__steps">
+                {workflowSteps.map((step, index) => (
+                  <li key={step.id}>
+                    <button
+                      type="button"
+                      className={workflowStep === step.id ? "is-active" : undefined}
+                      aria-current={workflowStep === step.id ? "step" : undefined}
+                      onClick={() => setWorkflowStep(step.id)}
+                    >
+                      <span className="email-studio__step-number">{index + 1}</span>
+                      <span className="email-studio__step-copy">
+                        <strong>{step.label}</strong>
+                        <small>{step.description}</small>
+                      </span>
+                      <span className="email-studio__step-status">{step.status}</span>
+                    </button>
+                  </li>
+                ))}
+              </ol>
+            </nav>
 
-      <section className="admin-email-readiness" aria-label="Live sending readiness">
-        <div>
-          <p className="eyebrow">Live sending safeguards</p>
-          <h2>{liveBlockingReasons.length ? "Live campaigns are safely blocked" : "Ready for reviewed campaigns"}</h2>
-          <p>
-            Test emails can only go to <strong>{ownerEmail}</strong>. A live campaign requires an exact audience review, a single-use server approval, and typed confirmation.
-          </p>
+            <section className="email-studio__list-summary" aria-label="Mailing list overview">
+              <p>Mailing list</p>
+              <dl>
+                <div><dt>Available</dt><dd>{recipients.length}</dd></div>
+                <div><dt>Survey complete</dt><dd>{qualifiedCount}</dd></div>
+                <div><dt>Unsubscribed</dt><dd>{unsubscribedCount}</dd></div>
+                <div><dt>Delivery blocked</dt><dd>{deliverySuppressedCount}</dd></div>
+              </dl>
+              <a href="#email-campaign-history">View campaign history</a>
+            </section>
+          </aside>
+
+          <div className="email-studio__main">
+            {workflowStep === "compose" ? (
+              <section className="email-stage" aria-labelledby="email-message-heading">
+                <header className="email-stage__header">
+                  <div>
+                    <p className="eyebrow">Step 1 of 3</p>
+                    <h2 id="email-message-heading">Write and preview</h2>
+                    <p>Build the message on the left and check the exact email on the right.</p>
+                  </div>
+                  <span className={`email-stage__status ${messageReady ? "is-ready" : ""}`}>
+                    {messageReady ? "Message ready" : "Subject and message required"}
+                  </span>
+                </header>
+
+                <div className="email-compose-grid">
+                  <section className="email-card email-message-card" aria-label="Email message fields">
+                    <div className="email-card__heading">
+                      <div><span>Message</span><strong>What subscribers will read</strong></div>
+                    </div>
+                    <div className="email-form">
+                      <label className="email-field">
+                        <span>Subject line <i>Required</i></span>
+                        <input type="text" value={content.subject} onChange={(event) => updateContent("subject", event.target.value)} maxLength={EMAIL_SUBJECT_MAX_LENGTH} placeholder="A meaningful update from Frame" />
+                        <small>{content.subject.length}/{EMAIL_SUBJECT_MAX_LENGTH}</small>
+                      </label>
+                      <label className="email-field">
+                        <span>Inbox preview <i>Optional</i></span>
+                        <input type="text" value={content.previewText} onChange={(event) => updateContent("previewText", event.target.value)} maxLength={EMAIL_PREVIEW_MAX_LENGTH} placeholder="A short line shown beside the subject" />
+                        <small>{content.previewText.length}/{EMAIL_PREVIEW_MAX_LENGTH}</small>
+                      </label>
+                      <label className="email-field">
+                        <span>Email message <i>Required</i></span>
+                        <textarea value={content.body} onChange={(event) => updateContent("body", event.target.value)} maxLength={EMAIL_BODY_MAX_LENGTH} placeholder={`Hi {{first_name}},\n\nHere’s what’s new at Frame…`} />
+                        <small className="email-field__meta"><span>Use <code>{"{{first_name}}"}</code> to personalise</span><span>{content.body.length}/{EMAIL_BODY_MAX_LENGTH}</span></small>
+                      </label>
+                      <fieldset className="email-cta">
+                        <legend>Optional button</legend>
+                        <p>Add both fields to include a call-to-action button.</p>
+                        <div>
+                          <label className="email-field"><span>Button label</span><input type="text" value={content.ctaLabel} onChange={(event) => updateContent("ctaLabel", event.target.value)} maxLength={EMAIL_CTA_LABEL_MAX_LENGTH} placeholder="Read the update" /></label>
+                          <label className="email-field"><span>Destination URL</span><input type="url" value={content.ctaUrl} onChange={(event) => updateContent("ctaUrl", event.target.value)} placeholder="https://framewearable.com/…" /></label>
+                        </div>
+                      </fieldset>
+                    </div>
+                  </section>
+
+                  <aside className="email-card email-preview-card" aria-labelledby="email-preview-heading">
+                    <div className="email-card__heading email-card__heading--preview">
+                      <div><span>Live preview</span><strong id="email-preview-heading">Check it as a subscriber</strong></div>
+                      <span>{previewRecipient ? recipientName(previewRecipient) : "No recipient"}</span>
+                    </div>
+                    <div className="email-preview-controls">
+                      <label htmlFor="preview-search-v2"><span>Find subscriber</span><input id="preview-search-v2" type="search" value={previewSearch} onChange={(event) => setPreviewSearch(event.target.value)} placeholder="Search name or email" /></label>
+                      <label htmlFor="preview-recipient-v2"><span>Preview as</span><select id="preview-recipient-v2" value={previewRecipient?.id ?? ""} onChange={(event) => setPreviewRecipientId(Number(event.target.value))} disabled={!recipients.length}>{previewOptions.map((recipient) => <option key={recipient.id} value={recipient.id}>{recipientName(recipient)} — {recipient.email}</option>)}</select></label>
+                    </div>
+                    <div className="email-preview-window">
+                      <div className="email-preview-window__bar"><span></span><span></span><span></span><strong>Email preview</strong></div>
+                      <dl><div><dt>From</dt><dd>{readiness.from}</dd></div><div><dt>To</dt><dd>{previewRecipient?.email ?? "selected@recipient.com"}</dd></div><div><dt>Subject</dt><dd>{preview.subject}</dd></div></dl>
+                      <iframe title="Email body preview" srcDoc={preview.html} sandbox="" tabIndex={-1} />
+                    </div>
+                    <div className="email-link-check"><strong>Links</strong>{emailLinks.length ? <ul>{emailLinks.map((url) => <li key={url}><a href={url} target="_blank" rel="noreferrer">{url}</a></li>)}</ul> : <span>No links in this draft.</span>}</div>
+                  </aside>
+                </div>
+
+                <footer className="email-stage__actions">
+                  <div><strong>Happy with the message?</strong><span>Choose who should receive it next.</span></div>
+                  <button className="button button--dark" type="button" onClick={() => setWorkflowStep("audience")}>Choose audience</button>
+                </footer>
+              </section>
+            ) : null}
+
+            {workflowStep === "audience" ? (
+              <section className="email-stage" aria-labelledby="email-audience-heading">
+                <header className="email-stage__header">
+                  <div>
+                    <p className="eyebrow">Step 2 of 3</p>
+                    <h2 id="email-audience-heading">Choose the audience</h2>
+                    <p>Filter the mailing list, then select exactly who should receive this update.</p>
+                  </div>
+                  <span className={`email-stage__status ${selectedIds.size ? "is-ready" : ""}`}>{selectedIds.size} selected</span>
+                </header>
+
+                <section className="email-card email-audience-card">
+                  <div className="email-audience-tools">
+                    <div className="email-filter-tabs" role="group" aria-label="Filter mailing list">
+                      {([ ["all", `All ${recipients.length}`], ["qualified", `Survey complete ${qualifiedCount}`], ["incomplete", `Survey incomplete ${recipients.length - qualifiedCount}`] ] as const).map(([value, label]) => <button key={value} type="button" className={audienceFilter === value ? "is-active" : undefined} onClick={() => setAudienceFilter(value)}>{label}</button>)}
+                    </div>
+                    <label className="email-search"><span className="sr-only">Search mailing list</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search name or email" /></label>
+                  </div>
+                  <div className="email-select-bar">
+                    <label><input type="checkbox" checked={allVisibleSelected} onChange={toggleAllVisible} disabled={!visibleRecipients.length} /><span>{allVisibleSelected ? "Deselect" : "Select"} all {visibleRecipients.length} shown</span></label>
+                    <div><strong>{selectedIds.size} selected</strong>{selectedIds.size ? <button type="button" onClick={() => setSelectedIds(new Set())}>Clear selection</button> : null}</div>
+                  </div>
+                  <div className="email-recipient-header" aria-hidden="true"><span></span><span>Subscriber</span><span>Waitlist status</span><span>Joined</span></div>
+                  <div className="email-recipient-list">
+                    {visibleRecipients.map((recipient) => <label className="email-recipient" key={recipient.id}><input type="checkbox" checked={selectedIds.has(recipient.id)} onChange={() => toggleRecipient(recipient.id)} /><span className="email-recipient__identity"><strong>{recipientName(recipient)}</strong><small>{recipient.email}</small></span><span className={`email-recipient__segment ${recipient.qualificationStatus === "completed" ? "is-qualified" : ""}`}>{recipient.qualificationStatus === "completed" ? "Survey complete" : "Email only"}</span><time dateTime={recipient.joinedAt}>{formatDate(recipient.joinedAt)}</time></label>)}
+                    {!visibleRecipients.length ? <div className="email-empty"><strong>No matching subscribers</strong><span>Try a different search or audience filter.</span></div> : null}
+                  </div>
+                </section>
+
+                <footer className="email-stage__actions email-stage__actions--split">
+                  <button className="email-text-button" type="button" onClick={() => setWorkflowStep("compose")}>Back to message</button>
+                  <div><strong>{selectedIds.size ? `${selectedIds.size} ready to review` : "Select at least one recipient"}</strong><button className="button button--dark" type="button" onClick={() => setWorkflowStep("review")}>Review campaign</button></div>
+                </footer>
+              </section>
+            ) : null}
+
+            {workflowStep === "review" ? (
+              <section className="email-stage" aria-labelledby="email-review-heading">
+                <header className="email-stage__header">
+                  <div>
+                    <p className="eyebrow">Step 3 of 3</p>
+                    <h2 id="email-review-heading">Review and send</h2>
+                    <p>Confirm the message, audience, and delivery safeguards before sending anything.</p>
+                  </div>
+                  <span className={`email-stage__status ${messageReady && selectedIds.size && !liveBlockingReasons.length ? "is-ready" : ""}`}>{messageReady && selectedIds.size && !liveBlockingReasons.length ? "Ready for final review" : "Needs attention"}</span>
+                </header>
+
+                <div className="email-review-grid">
+                  <section className="email-card email-review-summary-card" aria-label="Campaign summary">
+                    <div className="email-card__heading"><div><span>Campaign summary</span><strong>What will be sent</strong></div><button type="button" onClick={() => setWorkflowStep("compose")}>Edit message</button></div>
+                    <dl className="email-review-facts">
+                      <div><dt>Subject</dt><dd>{content.subject || "No subject yet"}</dd></div>
+                      <div><dt>Preview text</dt><dd>{content.previewText || "None"}</dd></div>
+                      <div><dt>Audience</dt><dd>{selectedIds.size} people</dd></div>
+                      <div><dt>Audience mix</dt><dd>{selectedQualifiedCount} survey complete · {selectedIds.size - selectedQualifiedCount} email only</dd></div>
+                      <div><dt>Links</dt><dd>{emailLinks.length ? `${emailLinks.length} to check` : "No links"}</dd></div>
+                    </dl>
+                    <div className="email-review-recipients">
+                      <div><strong>Recipient sample</strong><button type="button" onClick={() => setWorkflowStep("audience")}>Edit audience</button></div>
+                      {selectedRecipients.length ? <ul>{selectedRecipients.slice(0, 5).map((recipient) => <li key={recipient.id}><span>{recipientName(recipient)}</span><small>{recipient.email}</small></li>)}</ul> : <p>No recipients selected yet.</p>}
+                      {selectedRecipients.length > 5 ? <p>Plus {selectedRecipients.length - 5} more.</p> : null}
+                    </div>
+                  </section>
+
+                  <section className="email-card email-send-card" aria-label="Delivery checks">
+                    <div className="email-card__heading"><div><span>Delivery checks</span><strong>{liveBlockingReasons.length ? "Sending is blocked" : "Safeguards are ready"}</strong></div></div>
+                    <ul className="email-safeguards">
+                      <li className={readiness.postalAddressConfigured ? "is-ready" : "is-blocked"}><span></span><div><strong>Postal address</strong><small>{readiness.postalAddressConfigured ? readiness.postalAddress : "Required before live sending"}</small></div></li>
+                      <li className={webhookConfigured ? "is-ready" : "is-blocked"}><span></span><div><strong>Bounce protection</strong><small>{webhookConfigured ? "Active" : "Not configured"}</small></div>{!webhookConfigured ? <button type="button" onClick={enableWebhook} disabled={webhookStatus === "working"}>Enable</button> : null}</li>
+                      <li className={testStatus === "success" ? "is-ready" : "is-neutral"}><span></span><div><strong>Test email</strong><small>{testStatus === "success" ? "Sent during this session" : `Only sends to ${ownerEmail}`}</small></div></li>
+                    </ul>
+                    {webhookMessage ? <p className={`admin-email-inline-message is-${webhookStatus}`} role={webhookStatus === "error" ? "alert" : "status"}>{webhookMessage}</p> : null}
+                    {capacityExceeded ? <p className="admin-email-capacity-warning" role="alert">The mailing list is above the 5,000-recipient safety limit. Live sending remains blocked until the audience system is paginated beyond that limit.</p> : null}
+                    <div className="email-send-actions">
+                      <button className="button email-send-actions__test" type="button" onClick={sendTest} disabled={testStatus === "working"}>{testStatus === "working" ? "Sending test…" : "Send test to me"}</button>
+                      <button className="button button--dark" type="button" onClick={openReview} disabled={sendStatus === "working" || selectedIds.size === 0 || liveBlockingReasons.length > 0}>{sendStatus === "working" ? "Preparing review…" : `Open final review${selectedIds.size ? ` · ${selectedIds.size}` : ""}`}</button>
+                    </div>
+                    <p className="email-send-note">A live send still requires the existing single-use approval and typed confirmation.</p>
+                    {testMessage ? <p className={`admin-email-send-message admin-email-send-message--${testStatus}`} role={testStatus === "error" ? "alert" : "status"}>{testMessage}</p> : null}
+                    <p className={`admin-email-send-message${sendStatus !== "idle" ? ` admin-email-send-message--${sendStatus}` : ""}`} role={sendStatus === "error" ? "alert" : "status"} aria-live="polite">{sendMessage}</p>
+                  </section>
+                </div>
+
+                <footer className="email-stage__actions email-stage__actions--split">
+                  <button className="email-text-button" type="button" onClick={() => setWorkflowStep("audience")}>Back to audience</button>
+                  <span>Nothing sends until you complete the final confirmation.</span>
+                </footer>
+              </section>
+            ) : null}
+          </div>
         </div>
-        <ul>
-          <li className={readiness.postalAddressConfigured ? "is-ready" : "is-blocked"}>
-            <strong>Postal address</strong><span>{readiness.postalAddressConfigured ? readiness.postalAddress : "Required before live sending"}</span>
-          </li>
-          <li className={webhookConfigured ? "is-ready" : "is-blocked"}>
-            <strong>Bounce protection</strong><span>{webhookConfigured ? "Active" : "Not configured"}</span>
-            {!webhookConfigured ? <button type="button" onClick={enableWebhook} disabled={webhookStatus === "working"}>Enable protection</button> : null}
-          </li>
-        </ul>
       </section>
-      {webhookMessage ? <p className={`admin-email-inline-message is-${webhookStatus}`} role={webhookStatus === "error" ? "alert" : "status"}>{webhookMessage}</p> : null}
-      {capacityExceeded ? <p className="admin-email-capacity-warning" role="alert">The mailing list is above the 5,000-recipient safety limit. Live sending remains blocked until the audience system is paginated beyond that limit.</p> : null}
 
-      <div className="admin-email-workspace">
-        <section className="admin-email-compose" aria-labelledby="compose-heading">
-          <div className="admin-email-section-heading">
-            <span className="admin-email-step-number" aria-hidden="true">1</span>
-            <div><p className="eyebrow">Compose</p><h2 id="compose-heading">Write the update</h2><p>Start with what subscribers see in their inbox, then write the message itself.</p></div>
-            <div className="admin-email-draft-state">
-              <span className={`is-${draftStatus}`}>{draftMessage || "Autosaves after you begin"}</span>
-              {draftHasContent ? <button type="button" onClick={clearDraft}>Delete draft</button> : null}
-            </div>
-          </div>
-          <div className="admin-email-fields">
-            <label><span>Subject line <i>Required</i></span><input type="text" value={content.subject} onChange={(event) => updateContent("subject", event.target.value)} maxLength={EMAIL_SUBJECT_MAX_LENGTH} placeholder="A meaningful update from Frame" /><small>{content.subject.length}/{EMAIL_SUBJECT_MAX_LENGTH}</small></label>
-            <label><span>Preview text <i>Optional</i></span><input type="text" value={content.previewText} onChange={(event) => updateContent("previewText", event.target.value)} maxLength={EMAIL_PREVIEW_MAX_LENGTH} placeholder="A short line shown beside the subject" /><small>{content.previewText.length}/{EMAIL_PREVIEW_MAX_LENGTH}</small></label>
-            <label><span>Email content <i>Required</i></span><textarea value={content.body} onChange={(event) => updateContent("body", event.target.value)} maxLength={EMAIL_BODY_MAX_LENGTH} placeholder={`Hi {{first_name}},\n\nHere’s what’s new at Frame…`} /><small className="admin-email-field-meta"><span>Tip: use <code>{"{{first_name}}"}</code> to personalise the message</span><span>{content.body.length}/{EMAIL_BODY_MAX_LENGTH}</span></small></label>
-            <div className="admin-email-optional-heading"><span>Optional call to action</span><small>Add both fields to show a button in the email.</small></div>
-            <div className="admin-email-cta-fields">
-              <label><span>Button label</span><input type="text" value={content.ctaLabel} onChange={(event) => updateContent("ctaLabel", event.target.value)} maxLength={EMAIL_CTA_LABEL_MAX_LENGTH} placeholder="Read the update" /></label>
-              <label><span>Button destination URL</span><input type="url" value={content.ctaUrl} onChange={(event) => updateContent("ctaUrl", event.target.value)} placeholder="https://framewearable.com/…" /></label>
-            </div>
-          </div>
-        </section>
-
-        <section className="admin-email-preview" aria-labelledby="preview-heading">
-          <div className="admin-email-section-heading"><span className="admin-email-step-number" aria-hidden="true">2</span><div><p className="eyebrow">Preview</p><h2 id="preview-heading">Check before sending</h2><p>This is the exact email layout your selected recipient will see.</p></div></div>
-          <div className="admin-email-preview-controls">
-            <label htmlFor="preview-search">Find preview recipient</label>
-            <input id="preview-search" type="search" value={previewSearch} onChange={(event) => setPreviewSearch(event.target.value)} placeholder="Search name or email" />
-            <label htmlFor="preview-recipient">Preview as</label>
-            <select id="preview-recipient" value={previewRecipient?.id ?? ""} onChange={(event) => setPreviewRecipientId(Number(event.target.value))} disabled={!recipients.length}>
-              {previewOptions.map((recipient) => <option key={recipient.id} value={recipient.id}>{recipientName(recipient)} — {recipient.email}</option>)}
-            </select>
-          </div>
-          <div className="admin-email-inbox-preview">
-            <div className="admin-email-preview-chrome"><span></span><span></span><span></span><strong>Email preview</strong></div>
-            <dl><div><dt>From</dt><dd>{readiness.from}</dd></div><div><dt>Reply to</dt><dd>{readiness.replyTo}</dd></div><div><dt>To</dt><dd>{previewRecipient?.email ?? "selected@recipient.com"}</dd></div><div><dt>Subject</dt><dd>{preview.subject}</dd></div></dl>
-            <iframe title="Email body preview" srcDoc={preview.html} sandbox="" tabIndex={-1} />
-          </div>
-          <div className="admin-email-link-check">
-            <strong>Links in this draft</strong>
-            {emailLinks.length ? <ul>{emailLinks.map((url) => <li key={url}><a href={url} target="_blank" rel="noreferrer">{url}</a></li>)}</ul> : <span>No body or button links yet.</span>}
-          </div>
-        </section>
-      </div>
-
-      <section className="admin-email-audience" aria-labelledby="audience-heading">
-        <div className="admin-email-section-heading"><span className="admin-email-step-number" aria-hidden="true">3</span><div><p className="eyebrow">Audience</p><h2 id="audience-heading">Choose the recipients</h2><p>Filter the mailing list, then select only the people who should receive this update.</p></div><strong className="admin-email-selected-count">{selectedIds.size} selected</strong></div>
-        <div className="admin-email-audience-tools">
-          <div className="admin-email-filter-tabs" role="group" aria-label="Filter mailing list">
-            {([ ["all", `All ${recipients.length}`], ["qualified", `Survey complete ${qualifiedCount}`], ["incomplete", `Survey incomplete ${recipients.length - qualifiedCount}`] ] as const).map(([value, label]) => <button key={value} type="button" className={audienceFilter === value ? "is-active" : undefined} onClick={() => setAudienceFilter(value)}>{label}</button>)}
-          </div>
-          <label className="admin-email-search"><span className="sr-only">Search mailing list</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by name or email" /></label>
+      <details className="email-history" id="email-campaign-history">
+        <summary>
+          <span><small>Campaign history</small><strong>Recent email activity</strong></span>
+          <span>{campaigns.length} {campaigns.length === 1 ? "campaign" : "campaigns"} <i aria-hidden="true">+</i></span>
+        </summary>
+        <div className="email-history__body">
+          {campaigns.length ? <div className="admin-table-shell"><table className="admin-table"><thead><tr><th>Subject</th><th>Status</th><th>Recipients</th><th>Sent by</th><th>Created</th><th>Details</th></tr></thead><tbody>{campaigns.map((campaign) => <tr key={campaign.id}><td className="admin-email-history__subject"><strong>{campaign.subject}</strong></td><td><span className={`admin-email-history__status admin-email-history__status--${campaign.status}`}>{campaignStatusLabel(campaign.status)}</span>{campaign.failedCount ? <small>{campaign.failedCount} failed</small> : null}</td><td>{campaign.sentCount} / {campaign.recipientCount}</td><td>{campaign.createdBy}</td><td><time dateTime={campaign.createdAt}>{formatDateTime(campaign.createdAt)} UTC</time></td><td><button className="admin-email-detail-button" type="button" onClick={() => openCampaignDetail(campaign.id)}>View details</button></td></tr>)}</tbody></table></div> : <div className="admin-email-history__empty">No mailing-list emails have been sent yet.</div>}
         </div>
-        <div className="admin-email-select-bar">
-          <label><input type="checkbox" checked={allVisibleSelected} onChange={toggleAllVisible} disabled={!visibleRecipients.length} /><span>{allVisibleSelected ? "Deselect" : "Select"} all {visibleRecipients.length} shown</span></label>
-          {selectedIds.size ? <button type="button" onClick={() => setSelectedIds(new Set())}>Clear selection</button> : null}
-        </div>
-        <div className="admin-email-recipient-header" aria-hidden="true"><span></span><span>Subscriber</span><span>Waitlist status</span><span>Joined</span></div>
-        <div className="admin-email-recipient-list">
-          {visibleRecipients.map((recipient) => <label className="admin-email-recipient" key={recipient.id}><input type="checkbox" checked={selectedIds.has(recipient.id)} onChange={() => toggleRecipient(recipient.id)} /><span className="admin-email-recipient__identity"><strong>{recipientName(recipient)}</strong><small>{recipient.email}</small></span><span className={`admin-email-recipient__segment admin-email-recipient__segment--${recipient.qualificationStatus === "completed" ? "qualified" : "incomplete"}`}>{recipient.qualificationStatus === "completed" ? "Survey complete" : "Email only"}</span><time dateTime={recipient.joinedAt}>{formatDate(recipient.joinedAt)}</time></label>)}
-          {!visibleRecipients.length ? <div className="admin-email-no-results"><strong>No matching subscribers</strong><span>Try a different search or audience filter.</span></div> : null}
-        </div>
-      </section>
-
-      <section className="admin-email-send-panel" aria-label="Test and review email">
-        <span className="admin-email-step-number admin-email-step-number--inverse" aria-hidden="true">4</span>
-        <div><p className="eyebrow">Final check</p><h2>{selectedIds.size ? `${selectedIds.size} ${selectedIds.size === 1 ? "recipient" : "recipients"} selected` : "Test first, then review"}</h2><p>Tests only go to the signed-in administrator. Live sending is impossible until the exact audience is locked and the required phrase is typed.</p></div>
-        <div className="admin-email-send-actions"><button className="button button--light" type="button" onClick={sendTest} disabled={testStatus === "working"}>{testStatus === "working" ? "Sending test…" : "Send test to me"}</button><button className="button button--light admin-email-review-button" type="button" onClick={openReview} disabled={sendStatus === "working" || selectedIds.size === 0 || liveBlockingReasons.length > 0}>{sendStatus === "working" ? "Preparing review…" : `Review campaign${selectedIds.size ? ` for ${selectedIds.size}` : ""}`}</button></div>
-      </section>
-      {testMessage ? <p className={`admin-email-send-message admin-email-send-message--${testStatus}`} role={testStatus === "error" ? "alert" : "status"}>{testMessage}</p> : null}
-      <p className={`admin-email-send-message${sendStatus !== "idle" ? ` admin-email-send-message--${sendStatus}` : ""}`} role={sendStatus === "error" ? "alert" : "status"} aria-live="polite">{sendMessage}</p>
-
-      <section className="admin-email-history" aria-labelledby="history-heading">
-        <div className="admin-email-section-heading"><div><p className="eyebrow">Campaign history</p><h2 id="history-heading">Recent email activity</h2><p>A record of the latest campaigns and their final delivery status.</p></div></div>
-        {campaigns.length ? <div className="admin-table-shell"><table className="admin-table"><thead><tr><th>Subject</th><th>Status</th><th>Recipients</th><th>Sent by</th><th>Created</th><th>Details</th></tr></thead><tbody>{campaigns.map((campaign) => <tr key={campaign.id}><td className="admin-email-history__subject"><strong>{campaign.subject}</strong></td><td><span className={`admin-email-history__status admin-email-history__status--${campaign.status}`}>{campaignStatusLabel(campaign.status)}</span>{campaign.failedCount ? <small>{campaign.failedCount} failed</small> : null}</td><td>{campaign.sentCount} / {campaign.recipientCount}</td><td>{campaign.createdBy}</td><td><time dateTime={campaign.createdAt}>{formatDateTime(campaign.createdAt)} UTC</time></td><td><button className="admin-email-detail-button" type="button" onClick={() => openCampaignDetail(campaign.id)}>View details</button></td></tr>)}</tbody></table></div> : <div className="admin-email-history__empty">No mailing-list emails have been sent yet.</div>}
-      </section>
+      </details>
 
       {review ? <div className="admin-email-modal-backdrop" role="presentation"><section className="admin-email-modal" role="dialog" aria-modal="true" aria-labelledby="campaign-review-title"><button className="admin-email-modal__close" type="button" onClick={() => { setReview(null); setConfirmationInput(""); }}>Close</button><p className="eyebrow">Final campaign review</p><h2 id="campaign-review-title">This will send a real email</h2><p className="admin-email-modal__warning">Review every detail. Once confirmed, email delivery cannot be recalled.</p><dl className="admin-email-review-summary"><div><dt>Subject</dt><dd>{preview.subject}</dd></div><div><dt>From</dt><dd>{readiness.from}</dd></div><div><dt>Audience</dt><dd>{selectedIds.size} people · {selectedQualifiedCount} survey complete · {selectedIds.size - selectedQualifiedCount} incomplete</dd></div><div><dt>Test status</dt><dd>{testStatus === "success" ? "Test email sent during this session" : "No successful test recorded during this session"}</dd></div></dl><div className="admin-email-review-sample"><strong>Recipient sample</strong><ul>{selectedRecipients.slice(0, 6).map((recipient) => <li key={recipient.id}>{recipientName(recipient)} <span>{recipient.email}</span></li>)}</ul>{selectedRecipients.length > 6 ? <p>Plus {selectedRecipients.length - 6} more selected recipients.</p> : null}</div><label className="admin-email-confirmation-field"><span>Type <strong>{review.confirmationText}</strong> exactly</span><input autoFocus type="text" value={confirmationInput} onChange={(event) => setConfirmationInput(event.target.value)} autoComplete="off" spellCheck={false} /></label><p>This single-use approval expires at {formatDateTime(review.expiresAt)} UTC.</p><button className="button button--dark" type="button" disabled={confirmationInput !== review.confirmationText || sendStatus === "working"} onClick={sendCampaign}>{sendStatus === "working" ? "Sending…" : `Send real campaign to ${selectedIds.size}`}</button></section></div> : null}
 
