@@ -1,12 +1,12 @@
 /* eslint-disable @next/next/no-html-link-for-pages */
 import { notFound } from "next/navigation";
-import { BrandWordmark } from "@/app/components/brand-wordmark";
+import { AdminDashboardShell } from "@/app/components/admin-dashboard-shell";
 import { PreorderSalesControls } from "@/app/components/preorder-sales-controls";
 import {
   PreorderWebhookRecovery,
   type FailedWebhook,
 } from "@/app/components/preorder-webhook-recovery";
-import { chatGPTSignOutPath, requireChatGPTUser } from "@/app/chatgpt-auth";
+import { requireChatGPTUser } from "@/app/chatgpt-auth";
 import { evaluatePreorderLaunchReadiness } from "@/lib/preorder-launch-readiness.server";
 import {
   getPreorderSalesSnapshot,
@@ -139,21 +139,27 @@ export default async function PreorderAdminPage({
     }));
 
   return (
-    <main className="admin-page">
-      <div className="admin-shell admin-preorders">
-        <header className="admin-header">
+    <AdminDashboardShell
+      activeSection="preorders"
+      actions={
+        <a className="button button--dark" href={`/api/admin/preorders.csv?environment=${environment}`}>
+          Export orders
+        </a>
+      }
+      className="admin-preorders"
+      description="Monitor payments, capacity, customer communication, and fulfilment from one operational view."
+      eyebrow={`Owner workspace · ${environmentLabel}`}
+      title="Pre-orders"
+      userEmail={user.email}
+    >
+      <section className="admin-control-panel admin-control-panel--compact" aria-label="Payment environment">
+        <div className="admin-control-panel__heading">
           <div>
-            <a className="wordmark" href="/" aria-label="Frame home"><BrandWordmark /></a>
-            <p className="eyebrow">Owner view · {environmentLabel}</p>
-            <h1>Frame Pre-orders</h1>
-            <p>Availability, payments, email delivery and fulfilment in one place.</p>
+            <p className="eyebrow">Payment environment</p>
+            <h2>{environmentLabel} operations</h2>
           </div>
-          <div className="admin-actions">
-            <a href={`/api/admin/preorders.csv?environment=${environment}`}>Download CSV</a>
-            <a href="/admin/waitlist">Waitlist</a>
-            <a className="text-link" href={chatGPTSignOutPath("/")}>Sign out</a>
-          </div>
-        </header>
+          <p>Sandbox and live commerce records stay completely separate.</p>
+        </div>
 
         <nav className="admin-tabs" aria-label="Pre-order payment environments">
           <a
@@ -174,12 +180,13 @@ export default async function PreorderAdminPage({
         <p className="admin-tabs__note">
           Sandbox and live commerce records are kept separate. Changes here affect only the selected environment.
         </p>
+      </section>
 
         <section className="admin-metrics" aria-label={`${environmentLabel} pre-order metrics`}>
-          <article><span>Paid orders</span><strong>{paidRows.length}</strong></article>
-          <article><span>Gross payments</span><strong>{moneySummary(grossByCurrency)}</strong></article>
-          <article><span>Refunded</span><strong>{moneySummary(refundedByCurrency)}</strong></article>
-          <article><span>Needs attention</span><strong>{orderAttentionCount + (failedEmails.count ?? 0) + failedWebhookRows.length}</strong></article>
+          <article><span>Paid orders</span><strong>{paidRows.length}</strong><small>Completed payments</small></article>
+          <article><span>Gross payments</span><strong>{moneySummary(grossByCurrency)}</strong><small>Before refunds</small></article>
+          <article><span>Refunded</span><strong>{moneySummary(refundedByCurrency)}</strong><small>Returned to customers</small></article>
+          <article className="admin-metric--attention"><span>Needs attention</span><strong>{orderAttentionCount + (failedEmails.count ?? 0) + failedWebhookRows.length}</strong><small>Orders, emails, or webhooks</small></article>
         </section>
 
         <PreorderSalesControls
@@ -204,6 +211,14 @@ export default async function PreorderAdminPage({
           environment={environment}
           events={failedWebhookRows}
         />
+
+        <div className="admin-section-heading">
+          <div>
+            <p className="eyebrow">Order directory</p>
+            <h2>{environmentLabel} orders</h2>
+          </div>
+          <span>{rows.length} shown</span>
+        </div>
 
         {rows.length ? (
           <div className="admin-table-shell">
@@ -235,7 +250,6 @@ export default async function PreorderAdminPage({
             {environment === "test" && publicSalesPageEnabled ? <a className="button button--dark" href="/preorder/review?source=admin_empty">Open pre-order review</a> : null}
           </div>
         )}
-      </div>
-    </main>
+    </AdminDashboardShell>
   );
 }

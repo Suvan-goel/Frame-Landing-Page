@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-html-link-for-pages */
 import { notFound } from "next/navigation";
-import { BrandWordmark } from "@/app/components/brand-wordmark";
-import { chatGPTSignOutPath, requireChatGPTUser } from "@/app/chatgpt-auth";
+import { AdminDashboardShell } from "@/app/components/admin-dashboard-shell";
+import { requireChatGPTUser } from "@/app/chatgpt-auth";
 import { getSupabaseAdmin, isWaitlistAdmin } from "@/lib/supabase-admin.server";
 
 export const dynamic = "force-dynamic";
@@ -73,28 +73,30 @@ export default async function ContributorAdminPage() {
   );
 
   return (
-    <main className="admin-page">
-      <div className="admin-shell admin-contributors">
-        <header className="admin-header">
-          <div>
-            <a className="wordmark" href="/" aria-label="Frame home"><BrandWordmark /></a>
-            <p className="eyebrow">Owner view</p><h1>Founding Contributors</h1>
-            <p>Payments, access, profile completion, and member-content readiness.</p>
-          </div>
-          <div className="admin-actions"><a href="/admin/preorders">Pre-orders</a><a href="/admin/waitlist">Waitlist</a><a className="text-link" href={chatGPTSignOutPath("/")}>Sign out</a></div>
-        </header>
-
+    <AdminDashboardShell
+      activeSection="contributors"
+      className="admin-contributors"
+      description="Review historic contributor payments, access, profile completion, and member-content readiness."
+      eyebrow="Private archive"
+      title="Founding Contributors"
+      userEmail={user.email}
+    >
         <section className="admin-metrics" aria-label="Contributor programme metrics">
-          <article><span>Active members</span><strong>{activeMembers.length}</strong></article>
-          <article><span>Gross payments</span><strong>{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(grossCents / 100)}</strong></article>
-          <article><span>Profiles complete</span><strong>{rows.filter((member) => member.onboarding_completed_at).length}</strong></article>
-          <article><span>Open questions</span><strong>{questions.count ?? 0}</strong></article>
+          <article><span>Active members</span><strong>{activeMembers.length}</strong><small>Current access</small></article>
+          <article><span>Gross payments</span><strong>{new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(grossCents / 100)}</strong><small>Recorded payments</small></article>
+          <article><span>Profiles complete</span><strong>{rows.filter((member) => member.onboarding_completed_at).length}</strong><small>Onboarding finished</small></article>
+          <article><span>Open questions</span><strong>{questions.count ?? 0}</strong><small>Awaiting a response</small></article>
         </section>
         <section className="admin-content-status">
           <p className="eyebrow">Published member content</p>
           <div><span>Updates <strong>{updates.count ?? 0}</strong></span><span>Votes <strong>{votes.count ?? 0}</strong></span><span>Events <strong>{events.count ?? 0}</strong></span><span>Research <strong>{research.count ?? 0}</strong></span></div>
           <p>Content records can be prepared in Supabase while this flow remains private. Only records marked published appear in the hub.</p>
         </section>
+
+        <div className="admin-section-heading">
+          <div><p className="eyebrow">Member directory</p><h2>Contributor records</h2></div>
+          <span>{rows.length} shown</span>
+        </div>
 
         {rows.length ? (
           <div className="admin-table-shell"><table className="admin-table"><thead><tr><th>Contributor</th><th>Status</th><th>Payment</th><th>Access ends</th><th>Profile</th><th>Discount</th></tr></thead><tbody>
@@ -111,7 +113,6 @@ export default async function ContributorAdminPage() {
             </tr>)}
           </tbody></table></div>
         ) : <div className="admin-empty"><h2>No contributors yet.</h2><p>Completed test purchases will appear here after Stripe and Supabase are configured.</p></div>}
-      </div>
-    </main>
+    </AdminDashboardShell>
   );
 }

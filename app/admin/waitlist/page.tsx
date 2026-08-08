@@ -1,14 +1,11 @@
 /* eslint-disable @next/next/no-html-link-for-pages */
 import { notFound } from "next/navigation";
-import {
-  chatGPTSignOutPath,
-  requireChatGPTUser,
-} from "@/app/chatgpt-auth";
+import { requireChatGPTUser } from "@/app/chatgpt-auth";
+import { AdminDashboardShell } from "@/app/components/admin-dashboard-shell";
 import {
   getSupabaseAdmin,
   isWaitlistAdmin,
 } from "@/lib/supabase-admin.server";
-import { BrandWordmark } from "@/app/components/brand-wordmark";
 import { DeleteWaitlistSignupButton } from "@/app/components/delete-waitlist-signup-button";
 import { QualifiedLeadInsights } from "./qualified-lead-insights";
 import {
@@ -101,35 +98,41 @@ export default async function WaitlistAdminPage({
   );
   const qualifiedCount = qualifiedSignups.length;
   const unqualifiedCount = categorizedSignups.length - qualifiedCount;
+  const highIntentCount = qualifiedSignups.filter(
+    (entry) => entry.highIntent,
+  ).length;
   const activeSignups =
     activeTab === "insights"
       ? []
       : categorizedSignups.filter((entry) => entry.tab === activeTab);
 
   return (
-    <main className="admin-page">
-      <div className="admin-shell">
-        <header className="admin-header">
+    <AdminDashboardShell
+      activeSection="waitlist"
+      actions={
+        <a className="button button--dark" href="/api/admin/waitlist.xlsx">
+          Export spreadsheet
+        </a>
+      }
+      description="Review lead quality, understand demand, and keep the research pipeline organised."
+      title="Waitlist"
+      userEmail={user.email}
+    >
+      <section className="admin-metrics" aria-label="Waitlist overview">
+        <article><span>Total signups</span><strong>{signups.length}</strong><small>All visible leads</small></article>
+        <article><span>Qualified</span><strong>{qualifiedCount}</strong><small>Survey completed</small></article>
+        <article><span>High intent</span><strong>{highIntentCount}</strong><small>Priority conversations</small></article>
+        <article><span>Unqualified</span><strong>{unqualifiedCount}</strong><small>Email-only or incomplete</small></article>
+      </section>
+
+      <section className="admin-control-panel" aria-label="Waitlist controls">
+        <div className="admin-control-panel__heading">
           <div>
-            <a className="wordmark" href="/" aria-label="Frame home">
-              <BrandWordmark />
-            </a>
-            <p className="eyebrow">Owner view</p>
-            <h1>Waitlist</h1>
-            <p>
-              {signups.length} {signups.length === 1 ? "signup" : "signups"}
-            </p>
+            <p className="eyebrow">View controls</p>
+            <h2>Organise your lead pipeline</h2>
           </div>
-          <div className="admin-actions">
-            <a className="button button--dark" href="/api/admin/waitlist.xlsx">
-              Export spreadsheet
-            </a>
-            <a href="/admin/preorders">Pre-orders</a>
-            <a className="text-link" href={chatGPTSignOutPath("/")}>
-              Sign out
-            </a>
-          </div>
-        </header>
+          <p>Switch lead groups or localise timestamps without losing your place.</p>
+        </div>
 
         <form className="admin-timezone" action="/admin/waitlist" method="get">
           <input type="hidden" name="tab" value={activeTab} />
@@ -183,9 +186,20 @@ export default async function WaitlistAdminPage({
               ? "Unqualified leads joined with their email but have not completed and submitted the full survey."
               : "Qualified leads completed and submitted the full optional survey."}
         </p>
+      </section>
 
         {activeTab === "insights" ? (
           <QualifiedLeadInsights leads={qualifiedSignups} />
+        ) : null}
+
+        {activeTab !== "insights" ? (
+          <div className="admin-section-heading">
+            <div>
+              <p className="eyebrow">Lead directory</p>
+              <h2>{activeTab === "qualified" ? "Qualified leads" : "Unqualified leads"}</h2>
+            </div>
+            <span>{activeSignups.length} shown</span>
+          </div>
         ) : null}
 
         {activeTab !== "insights" && activeSignups.length ? (
@@ -322,7 +336,6 @@ export default async function WaitlistAdminPage({
           </div>
         ) : null}
 
-      </div>
-    </main>
+    </AdminDashboardShell>
   );
 }

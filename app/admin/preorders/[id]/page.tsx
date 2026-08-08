@@ -1,8 +1,8 @@
 /* eslint-disable @next/next/no-html-link-for-pages */
 import { notFound } from "next/navigation";
-import { BrandWordmark } from "@/app/components/brand-wordmark";
+import { AdminDashboardShell } from "@/app/components/admin-dashboard-shell";
 import { PreorderOrderOperations } from "@/app/components/preorder-order-operations";
-import { chatGPTSignOutPath, requireChatGPTUser } from "@/app/chatgpt-auth";
+import { requireChatGPTUser } from "@/app/chatgpt-auth";
 import { formatPreorderMoney, formatPreorderNumber } from "@/lib/preorder";
 import { isPreorderId } from "@/lib/preorder-admin-api.server";
 import { createPreorderManagePath } from "@/lib/preorder-order-access.server";
@@ -130,22 +130,20 @@ async function AuthenticatedOrderDetail({ id }: { id: string }) {
     : null;
 
   return (
-    <main className="admin-page">
-      <div className="admin-shell preorder-order-detail">
-        <header className="admin-header">
-          <div>
-            <a className="wordmark" href="/" aria-label="Frame home"><BrandWordmark /></a>
-            <p className="eyebrow">{order.environment === "test" ? "Sandbox" : "Live"} order</p>
-            <h1>{formatPreorderNumber(order.order_number)}</h1>
-            <p>{order.full_name} · placed {dateTime(order.placed_at)}</p>
-          </div>
-          <div className="admin-actions">
-            <a href={`/admin/preorders?environment=${order.environment}`}>All pre-orders</a>
-            {managePath ? <a href={managePath} target="_blank" rel="noreferrer">Customer view</a> : null}
-            <a className="text-link" href={chatGPTSignOutPath("/")}>Sign out</a>
-          </div>
-        </header>
-
+    <AdminDashboardShell
+      activeSection="preorders"
+      actions={
+        <>
+          <a className="button button--light" href={`/admin/preorders?environment=${order.environment}`}>All pre-orders</a>
+          {managePath ? <a className="button button--dark" href={managePath} target="_blank" rel="noreferrer">Customer view</a> : null}
+        </>
+      }
+      className="preorder-order-detail"
+      description={<>{order.full_name} · placed {dateTime(order.placed_at)}</>}
+      eyebrow={`${order.environment === "test" ? "Sandbox" : "Live"} order`}
+      title={formatPreorderNumber(order.order_number)}
+      userEmail={user.email}
+    >
         <section className="preorder-order-statuses" aria-label="Order statuses">
           <div><span>Order</span><strong>{order.order_status.replaceAll("_", " ")}</strong></div>
           <div><span>Payment</span><strong>{order.payment_status.replaceAll("_", " ")}</strong></div>
@@ -249,7 +247,6 @@ async function AuthenticatedOrderDetail({ id }: { id: string }) {
             </section>
           </aside>
         </div>
-      </div>
-    </main>
+    </AdminDashboardShell>
   );
 }
