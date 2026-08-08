@@ -1001,7 +1001,7 @@ test("separates, visualizes, exports, and permanently deletes admin leads", asyn
   assert.match(adminSettings, /from\("admin_settings"\)/);
   assert.match(adminSettings, /setPersistedAdminTimeZone/);
   assert.match(adminPage, /retrySupabaseReadOnJwtIssuedAtFuture/);
-  assert.match(adminPage, /return <WaitlistUnavailable \/>/);
+  assert.match(adminPage, /return <WaitlistUnavailable userEmail=\{user\.email\} \/>/);
   assert.match(adminSettings, /isSupabaseJwtIssuedAtFutureError/);
   assert.match(supabaseRetry, /code === "PGRST303"/);
   assert.match(supabaseRetry, /jwt issued at future/i);

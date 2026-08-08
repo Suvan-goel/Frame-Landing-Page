@@ -179,7 +179,7 @@ test("keeps the funnel usable only on loopback during development", async () => 
   assert.match(terms, /has not received FDA marketing authorization/);
   assert.match(terms, /Legal pack version draft-2026-08-08-v6/);
   assert.match(terms, /\$499\s*(?:<!-- -->)? release price/);
-  assert.match(terms, /save\s*(?:<!-- -->)?\$200/);
+  assert.match(terms, /saving\s*(?:<!-- -->)?\$200/);
   assert.match(terms, /Frame One-Year Limited Warranty/);
 
   assert.equal(refundsResponse.status, 200);

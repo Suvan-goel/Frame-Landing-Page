@@ -9,6 +9,7 @@ import {
   SITE_URL,
 } from "@/lib/site";
 import "./globals.css";
+import "./admin-workspace.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",

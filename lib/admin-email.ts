@@ -3,6 +3,7 @@ export const EMAIL_PREVIEW_MAX_LENGTH = 200;
 export const EMAIL_BODY_MAX_LENGTH = 20_000;
 export const EMAIL_CTA_LABEL_MAX_LENGTH = 80;
 export const EMAIL_MAX_RECIPIENTS = 5_000;
+export const EMAIL_CONFIRMATION_MINUTES = 10;
 
 export type MailingListRecipient = {
   id: number;
@@ -12,6 +13,54 @@ export type MailingListRecipient = {
   qualificationStatus: string;
   joinedAt: string;
 };
+
+export type EmailCampaignDraft = {
+  content: EmailCampaignContent;
+  recipientIds: number[];
+  previewRecipientId: number | null;
+  updatedAt: string;
+};
+
+export type EmailCampaignRecipientSummary = {
+  id: string;
+  email: string;
+  name: string;
+  status: string;
+  errorMessage: string | null;
+  sentAt: string | null;
+  lastEvent: string | null;
+  lastEventAt: string | null;
+};
+
+export type EmailCampaignDetail = EmailCampaignSummary & {
+  previewText: string;
+  body: string;
+  ctaLabel: string;
+  ctaUrl: string;
+  recipients: EmailCampaignRecipientSummary[];
+};
+
+export type EmailDeliveryReadiness = {
+  from: string;
+  replyTo: string;
+  postalAddress: string;
+  postalAddressConfigured: boolean;
+  webhookConfigured: boolean;
+  webhookVerified: boolean;
+};
+
+export const RESEND_WEBHOOK_ENDPOINT =
+  "https://framewearable.com/api/resend/webhook";
+
+export const RESEND_WEBHOOK_EVENTS = [
+  "email.sent",
+  "email.delivered",
+  "email.delivery_delayed",
+  "email.failed",
+  "email.bounced",
+  "email.complained",
+  "email.suppressed",
+] as const;
 
 export type EmailCampaignSummary = {
   id: string;
@@ -94,6 +143,10 @@ export function personalizeEmailCopy(value: string, firstName: string | null) {
   return value.replaceAll("{{first_name}}", firstName?.trim() || "there");
 }
 
+export function extractHttpUrls(value: string) {
+  return [...new Set(value.match(/https?:\/\/[^\s<>]+/g) ?? [])];
+}
+
 function escapeHtml(value: string) {
   return value
     .replaceAll("&", "&amp;")
@@ -124,7 +177,7 @@ function bodyToHtml(value: string) {
   return paragraphs
     .map(
       (paragraph, index) =>
-        `<p style="margin:0 0 ${index === paragraphs.length - 1 ? "0" : "22px"};color:#41423e;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.72">${paragraph
+        `<p style="margin:0 0 ${index === paragraphs.length - 1 ? "0" : "24px"};color:#3f403c;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.75">${paragraph
           .split("\n")
           .map(textLineToHtml)
           .join("<br>")}</p>`,
@@ -137,6 +190,8 @@ export function renderFrameCampaignEmail(input: {
   firstName: string | null;
   unsubscribeUrl: string;
   siteUrl: string;
+  postalAddress: string;
+  testMode?: boolean;
 }) {
   const subject = personalizeEmailCopy(input.content.subject, input.firstName);
   const previewText = personalizeEmailCopy(
@@ -151,9 +206,29 @@ export function renderFrameCampaignEmail(input: {
   const inboxPreview = previewText || "A new update from Frame.";
   const safeUnsubscribeUrl = escapeHtml(input.unsubscribeUrl);
   const safeSiteUrl = escapeHtml(input.siteUrl);
+  const safePostalAddress = escapeHtml(input.postalAddress);
   const year = new Date().getFullYear();
   const cta = ctaLabel
     ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:34px 0 0"><tr><td bgcolor="#963f49" style="background:#963f49;border-radius:2px"><a class="email-cta-link" href="${escapeHtml(input.content.ctaUrl)}" style="display:inline-block;padding:14px 22px;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;letter-spacing:.01em;line-height:1.4;text-decoration:none">${escapeHtml(ctaLabel)}&nbsp;&nbsp;&rarr;</a></td></tr></table>`
+    : "";
+  const footerLinks = input.testMode
+    ? `<a href="${safeSiteUrl}" style="color:#5f605b;text-decoration:underline">framewearable.com</a>
+                  &nbsp;&nbsp;·&nbsp;&nbsp;
+                  <a href="${safeSiteUrl}/contact" style="color:#5f605b;text-decoration:underline">Contact</a>
+                  &nbsp;&nbsp;·&nbsp;&nbsp;
+                  <a href="${safeSiteUrl}/privacy" style="color:#5f605b;text-decoration:underline">Privacy</a>`
+    : `<a href="${safeSiteUrl}" style="color:#5f605b;text-decoration:underline">framewearable.com</a>
+                  &nbsp;&nbsp;·&nbsp;&nbsp;
+                  <a href="${safeSiteUrl}/contact" style="color:#5f605b;text-decoration:underline">Contact</a>
+                  &nbsp;&nbsp;·&nbsp;&nbsp;
+                  <a href="${safeSiteUrl}/privacy" style="color:#5f605b;text-decoration:underline">Privacy</a>
+                  &nbsp;&nbsp;·&nbsp;&nbsp;
+                  <a href="${safeUnsubscribeUrl}" style="color:#5f605b;text-decoration:underline">Unsubscribe</a>`;
+  const footerReason = input.testMode
+    ? "This is a test email sent only to the Frame administrator."
+    : "You’re receiving this because you signed up for Frame updates.";
+  const postalAddress = safePostalAddress
+    ? `<p style="margin:5px 0 0">${safePostalAddress}</p>`
     : "";
 
   const html = `<!doctype html>
@@ -221,16 +296,9 @@ export function renderFrameCampaignEmail(input: {
             <tr>
               <td class="email-footer" bgcolor="#f7f4ee" style="padding:25px 44px 27px;border-top:1px solid #ebe7df;background:#f7f4ee;color:#77766f;font-family:Arial,Helvetica,sans-serif;font-size:10px;line-height:1.65;text-align:left">
                 <p style="margin:0 0 9px;color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:17px;line-height:1">Frame<span style="color:#963f49">.</span></p>
-                <p style="margin:0 0 8px">
-                  <a href="${safeSiteUrl}" style="color:#5f605b;text-decoration:underline">framewearable.com</a>
-                  &nbsp;&nbsp;·&nbsp;&nbsp;
-                  <a href="${safeSiteUrl}/contact" style="color:#5f605b;text-decoration:underline">Contact</a>
-                  &nbsp;&nbsp;·&nbsp;&nbsp;
-                  <a href="${safeSiteUrl}/privacy" style="color:#5f605b;text-decoration:underline">Privacy</a>
-                  &nbsp;&nbsp;·&nbsp;&nbsp;
-                  <a href="${safeUnsubscribeUrl}" style="color:#5f605b;text-decoration:underline">Unsubscribe</a>
-                </p>
-                <p style="margin:0">You’re receiving this because you signed up for Frame updates. &copy; ${year} Frame Health Technologies.</p>
+                <p style="margin:0 0 8px">${footerLinks}</p>
+                <p style="margin:0">${footerReason} &copy; ${year} Frame Health Technologies.</p>
+                ${postalAddress}
               </td>
             </tr>
           </table>
@@ -244,10 +312,13 @@ export function renderFrameCampaignEmail(input: {
     body,
     ...(ctaLabel ? ["", `${ctaLabel}: ${input.content.ctaUrl}`] : []),
     "",
-    "You’re receiving this email because you signed up for updates from Frame.",
-    `Unsubscribe: ${input.unsubscribeUrl}`,
+    input.testMode
+      ? "This is a test email sent only to the Frame administrator."
+      : "You’re receiving this email because you signed up for Frame updates.",
+    ...(input.testMode ? [] : [`Unsubscribe: ${input.unsubscribeUrl}`]),
     `Privacy: ${input.siteUrl}/privacy`,
     `Contact: ${input.siteUrl}/contact`,
+    ...(input.postalAddress ? [`Postal address: ${input.postalAddress}`] : []),
   ].join("\n");
 
   return { subject, html, text };

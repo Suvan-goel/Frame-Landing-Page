@@ -1,12 +1,12 @@
 /* eslint-disable @next/next/no-html-link-for-pages */
 import { notFound } from "next/navigation";
-import { BrandWordmark } from "@/app/components/brand-wordmark";
+import { AdminDashboardShell } from "@/app/components/admin-dashboard-shell";
 import { PreorderSalesControls } from "@/app/components/preorder-sales-controls";
 import {
   PreorderWebhookRecovery,
   type FailedWebhook,
 } from "@/app/components/preorder-webhook-recovery";
-import { chatGPTSignOutPath, requireChatGPTUser } from "@/app/chatgpt-auth";
+import { requireChatGPTUser } from "@/app/chatgpt-auth";
 import { evaluatePreorderLaunchReadiness } from "@/lib/preorder-launch-readiness.server";
 import {
   getPreorderSalesSnapshot,
@@ -139,22 +139,19 @@ export default async function PreorderAdminPage({
     }));
 
   return (
-    <main className="admin-page">
-      <div className="admin-shell admin-preorders">
-        <header className="admin-header">
-          <div>
-            <a className="wordmark" href="/" aria-label="Frame home"><BrandWordmark /></a>
-            <p className="eyebrow">Owner view · {environmentLabel}</p>
-            <h1>Frame Pre-orders</h1>
-            <p>Availability, payments, email delivery and fulfilment in one place.</p>
-          </div>
-          <div className="admin-actions">
-            <a href={`/api/admin/preorders.csv?environment=${environment}`}>Download CSV</a>
-            <a href="/admin/email">Email</a>
-            <a href="/admin/waitlist">Subscribers</a>
-            <a className="text-link" href={chatGPTSignOutPath("/")}>Sign out</a>
-          </div>
-        </header>
+    <AdminDashboardShell
+      activeSection="preorders"
+      actions={
+        <a className="button button--dark" href={`/api/admin/preorders.csv?environment=${environment}`}>
+          Export orders
+        </a>
+      }
+      className="admin-preorders"
+      description="Availability, payments, email delivery and fulfilment in one place."
+      eyebrow={`Owner workspace · ${environmentLabel}`}
+      title="Pre-orders"
+      userEmail={user.email}
+    >
 
         <nav className="admin-tabs" aria-label="Pre-order payment environments">
           <a
@@ -236,7 +233,6 @@ export default async function PreorderAdminPage({
             {environment === "test" && publicSalesPageEnabled ? <a className="button button--dark" href="/preorder/review?source=admin_empty">Open pre-order review</a> : null}
           </div>
         )}
-      </div>
-    </main>
+    </AdminDashboardShell>
   );
 }

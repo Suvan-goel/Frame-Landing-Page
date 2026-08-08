@@ -867,7 +867,7 @@ export function WaitlistSignupFlow({
             <span>05</span>
           </div>
           <div className="interest-flow__content">
-            <p className="eyebrow">You’re subscribed — the following questions are optional.</p>
+            <p className="eyebrow">You’re subscribed. The following questions are optional.</p>
             <h2 id={`${idPrefix}-survey-title`} ref={headingRef} tabIndex={-1}>{title}</h2>
 
             {flow.surveyStep === 4 ? (
@@ -968,7 +968,7 @@ export function WaitlistSignupFlow({
         <div className="interest-flow__success" aria-live={isActivePlacement ? "polite" : "off"}>
           <p className="eyebrow">Updates confirmed</p>
           <h2 ref={headingRef} tabIndex={-1}>You’re subscribed.</h2>
-          <p>{flow.stage === "finished" ? "Thank you for helping shape Frame." : "No problem—you can answer the optional questions another time."}</p>
+          <p>{flow.stage === "finished" ? "Thank you for helping shape Frame." : "No problem. You can answer the optional questions another time."}</p>
           <div className="interest-flow__success-actions">
             <Link className="button button--dark" href={finishHref}><span aria-hidden="true">←</span> Back to home</Link>
           </div>

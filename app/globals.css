@@ -11119,7 +11119,7 @@ p.preorder-manage-feedback.form-error {
 
 /* Homepage responsive edge cases. Keep these ranges isolated so the
    established desktop, tablet, and mobile layouts remain unchanged. */
-@media (min-width: 981px) and (max-width: 1023px) {
+@media (min-width: 981px) and (max-width: 1279px) {
   .hero--email-first {
     min-height: 0;
     padding: 96px 0 38px;
@@ -11161,7 +11161,9 @@ p.preorder-manage-feedback.form-error {
     object-position: center bottom;
     transform: none;
   }
+}
 
+@media (min-width: 981px) and (max-width: 1023px) {
   .software-grid {
     grid-template-columns: 1fr;
     gap: 60px;
