@@ -125,7 +125,6 @@ export default async function WaitlistAdminPage({
               Export spreadsheet
             </a>
             <a href="/admin/preorders">Pre-orders</a>
-            <a href="/admin/contributors">Contributors</a>
             <a className="text-link" href={chatGPTSignOutPath("/")}>
               Sign out
             </a>
