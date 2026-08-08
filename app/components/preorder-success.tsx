@@ -9,7 +9,10 @@ import {
   preorderShippingAddressLines,
   type PreorderShippingAddress,
 } from "@/lib/preorder-confirmation";
-import { PREORDER_DELIVERY_DRAFT_KEY } from "@/lib/preorder-checkout-draft";
+import {
+  PREORDER_CHECKOUT_REQUEST_KEY,
+  PREORDER_DELIVERY_DRAFT_KEY,
+} from "@/lib/preorder-checkout-draft";
 
 type StatusResult = {
   status?: string;
@@ -85,6 +88,7 @@ export function PreorderSuccess() {
     if (result.status !== "confirmed") return;
     try {
       window.sessionStorage.removeItem(PREORDER_DELIVERY_DRAFT_KEY);
+      window.sessionStorage.removeItem(PREORDER_CHECKOUT_REQUEST_KEY);
     } catch {
       // Storage may be unavailable; confirmation must still load.
     }

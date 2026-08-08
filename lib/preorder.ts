@@ -28,6 +28,15 @@ export const PREORDER_ESTIMATED_SHIPPING = "Q1 2027";
 // Existing database columns retain their original name for migration compatibility.
 export const PREORDER_ESTIMATED_DELIVERY = PREORDER_ESTIMATED_SHIPPING;
 export const PREORDER_MAX_INVENTORY_UNITS = 1_000;
+export const PREORDER_CHECKOUT_SESSION_TTL_SECONDS = 60 * 60;
+export const PREORDER_STRIPE_PRODUCT_TAX_CODE = "txcd_99999999";
+
+export function preorderStripeProductDescription(input: {
+  estimatedShipping: string;
+  sandbox: boolean;
+}) {
+  return `One Frame wearable device pre-order. ${input.sandbox ? "Sandbox only. " : ""}Estimated shipping: ${input.estimatedShipping}; timing may change.`;
+}
 
 export function formatPreorderNumber(value: number | string) {
   return `FR-${String(value).padStart(6, "0")}`;

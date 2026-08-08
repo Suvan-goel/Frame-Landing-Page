@@ -1,5 +1,6 @@
 export const PREORDER_DELIVERY_DRAFT_KEY = "frame-preorder-delivery-v1";
-export const PREORDER_DELIVERY_DRAFT_MAX_AGE_MS = 2 * 60 * 60 * 1_000;
+export const PREORDER_CHECKOUT_REQUEST_KEY = "frame-preorder-request-v1";
+export const PREORDER_DELIVERY_DRAFT_MAX_AGE_MS = 55 * 60 * 1_000;
 
 export type PreorderDeliveryDraft = {
   email: string;
@@ -50,6 +51,37 @@ export function parsePreorderDeliveryDraft(
     return Object.fromEntries(
       DELIVERY_KEYS.map((key) => [key, parsed.delivery?.[key]]),
     ) as PreorderDeliveryDraft;
+  } catch {
+    return null;
+  }
+}
+
+export function serializePreorderCheckoutRequestKey(
+  requestKey: string,
+  savedAt = Date.now(),
+) {
+  return JSON.stringify({ savedAt, requestKey });
+}
+
+export function parsePreorderCheckoutRequestKey(
+  value: string | null,
+  now = Date.now(),
+) {
+  if (!value) return null;
+  try {
+    const parsed = JSON.parse(value) as { savedAt?: unknown; requestKey?: unknown };
+    if (
+      typeof parsed.savedAt !== "number" ||
+      parsed.savedAt > now ||
+      now - parsed.savedAt > PREORDER_DELIVERY_DRAFT_MAX_AGE_MS ||
+      typeof parsed.requestKey !== "string" ||
+      !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+        parsed.requestKey,
+      )
+    ) {
+      return null;
+    }
+    return parsed.requestKey;
   } catch {
     return null;
   }

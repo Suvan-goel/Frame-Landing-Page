@@ -3,8 +3,10 @@ import { readFile } from "node:fs/promises";
 import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 import {
+  preorderStripeProductDescription,
   PREORDER_PRODUCT_STATUS_VERSION,
   PREORDER_SELLER_DETAILS_COMPLETE,
+  PREORDER_STRIPE_PRODUCT_TAX_CODE,
   PREORDER_TERMS_VERSION,
   PREORDER_WARRANTY_DETAILS_COMPLETE,
 } from "../lib/preorder.ts";
@@ -418,12 +420,46 @@ if (secretKey && priceId) {
     } else {
       fail("Stripe price", "The configured price does not match the reviewed pre-order offer.");
     }
-    if (product?.tax_code) {
-      pass("Stripe product tax code", "An explicit product tax code is configured.");
+    if (product?.tax_code === PREORDER_STRIPE_PRODUCT_TAX_CODE) {
+      pass("Stripe product tax code", "General - Tangible Goods is configured explicitly.");
     } else if (target === "launch") {
       fail("Stripe product tax code", "Assign the adviser-approved tax code to the live Stripe Product.");
     } else {
       warn("Stripe product tax code", "Assign the approved product tax code before launch; test Checkout can use the account preset.");
+    }
+    const expectedDescription = preorderStripeProductDescription({
+      estimatedShipping,
+      sandbox: targetEnvironment === "test",
+    });
+    if (product?.description === expectedDescription) {
+      pass("Stripe product copy", `The Stripe product uses the reviewed ${estimatedShipping} shipping estimate.`);
+    } else {
+      fail("Stripe product copy", "The Stripe product description does not match the reviewed shipping copy.");
+    }
+
+    const [taxSettings, taxRegistrations] = await Promise.all([
+      stripe.tax.settings.retrieve(),
+      stripe.tax.registrations.list({ status: "active", limit: 100 }),
+    ]);
+    if (
+      taxSettings.status === "active" &&
+      taxSettings.head_office?.address?.country === "US" &&
+      taxSettings.defaults?.tax_behavior === "exclusive" &&
+      taxSettings.defaults?.tax_code === PREORDER_STRIPE_PRODUCT_TAX_CODE
+    ) {
+      pass("Stripe Tax settings", "US tax settings are active with exclusive physical-goods tax treatment.");
+    } else {
+      fail("Stripe Tax settings", "Review the US head office, exclusive tax behavior, and tangible-goods default in Stripe Tax.");
+    }
+    const activeUsRegistrations = taxRegistrations.data.filter(
+      (registration) => registration.country === "US",
+    );
+    if (activeUsRegistrations.length) {
+      pass("Stripe Tax registrations", `${activeUsRegistrations.length} active US registration${activeUsRegistrations.length === 1 ? "" : "s"} configured for ${targetEnvironment} mode.`);
+    } else if (target === "launch") {
+      fail("Stripe Tax registrations", "Add every legally required live US tax registration before launch.");
+    } else {
+      warn("Stripe Tax registrations", "Add a sandbox US registration before testing tax calculations.");
     }
   } catch (error) {
     fail("Stripe price", error instanceof Error ? error.message : "The Stripe price could not be loaded.");

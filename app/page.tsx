@@ -135,20 +135,30 @@ export default async function Home() {
             </p>
             <h1>See how your cardiovascular system responds to daily life.</h1>
             <p className="hero-intro">
-              Frame is developing a non-invasive upper-arm wearable that reveals
-              how blood pressure changes throughout daily life.
+              Frame is a non-invasive wearable designed for continuous blood
+              pressure tracking.
             </p>
             {preorderOffer ? (
               <div className="home-preorder-hero">
-                <div className="hero-actions">
+                <div
+                  className="home-preorder-hero__panel"
+                  role="group"
+                  aria-label="Frame pre-order offer"
+                >
+                  <div className="home-preorder-hero__summary">
+                    <span className="home-preorder-hero__label">Pre-order</span>
+                    <div className="home-preorder-hero__price-row">
+                      <strong>{preorderPriceLabel}</strong>
+                      <span className="home-preorder-hero__release-price">
+                        <del>{preorderReleasePriceLabel}</del> release
+                      </span>
+                    </div>
+                  </div>
                   <a
                     className="button home-preorder-hero__preorder-button"
                     href="/preorder/review?source=homepage_hero"
                   >
-                    Pre-order now - {preorderPriceLabel}
-                  </a>
-                  <a className="text-link" href="#preorder">
-                    See details <span aria-hidden="true">↓</span>
+                    Pre-order now - Save {preorderSavingsLabel}
                   </a>
                 </div>
                 <WaitlistSignupFlow
@@ -386,19 +396,17 @@ export default async function Home() {
                 </div>
               </div>
 
-              <figure className="home-preorder-visual home-preorder-visual--product-photo">
-                <span className="home-preorder-visual__label">Product concept</span>
+              <figure className="home-preorder-visual home-preorder-visual--device-cutout">
                 <img
-                  src="/frame-preorder-product-opposite-sensor-v6.webp"
-                  alt="Studio view of the Frame wearable concept with its inner sensor positioned opposite the outer clasp"
+                  src="/generated/frame-device-front-reference-clasp-transparent-v4.png"
+                  alt="Front-facing Frame wearable concept with a centered inner sensor and opposing rose-metal clasp"
                   width={1254}
                   height={1254}
                   loading="lazy"
                   decoding="async"
                 />
                 <figcaption>
-                  <span>Frame device</span>
-                  <span>Non-invasive upper-arm wearable</span>
+                  <span>Product concept</span>
                 </figcaption>
               </figure>
             </div>

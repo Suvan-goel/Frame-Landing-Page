@@ -2,10 +2,13 @@ import { getPreorderConfiguration } from "@/lib/preorder-config.server";
 import { isPreorderLiveApproved } from "@/lib/preorder-access";
 import {
   formatPreorderMoney,
+  preorderStripeProductDescription,
+  PREORDER_CHECKOUT_SESSION_TTL_SECONDS,
   PREORDER_MAX_QUANTITY,
   PREORDER_PRODUCT_STATUS_VERSION,
   PREORDER_RELEASE_PRICE_CENTS,
   PREORDER_SHIPPING_RATE_CENTS,
+  PREORDER_STRIPE_PRODUCT_TAX_CODE,
   PREORDER_TERMS_VERSION,
 } from "@/lib/preorder";
 import {
@@ -221,18 +224,34 @@ export async function POST(request: Request) {
       config.currency,
     );
     const shippingPriceLabel = formatPreorderMoney(config.shippingRateCents, config.currency);
+    const totalBeforeTaxLabel = formatPreorderMoney(
+      config.priceCents + config.shippingRateCents,
+      config.currency,
+    );
+    const legalBaseUrl = mode === "test" ? requestOrigin : SITE_URL;
     const stripe = await getStripe(environment);
     const priceId = await getStripePreorderPriceId(environment);
-    const price = await stripe.prices.retrieve(priceId);
+    const price = await stripe.prices.retrieve(priceId, { expand: ["product"] });
+    const product =
+      typeof price.product === "string" || !price.product || price.product.deleted
+        ? null
+        : price.product;
+    const expectedProductDescription = preorderStripeProductDescription({
+      estimatedShipping: config.estimatedShipping,
+      sandbox: mode === "test",
+    });
     if (
       !price.active ||
       price.livemode !== (environment === "live") ||
       price.type !== "one_time" ||
       price.unit_amount !== config.priceCents ||
       price.currency !== config.currency ||
-      price.tax_behavior !== "exclusive"
+      price.tax_behavior !== "exclusive" ||
+      !product?.active ||
+      product.description !== expectedProductDescription ||
+      product.tax_code !== PREORDER_STRIPE_PRODUCT_TAX_CODE
     ) {
-      throw new Error("The Stripe pre-order price does not match the reviewed offer.");
+      throw new Error("The Stripe pre-order product and price do not match the reviewed offer.");
     }
 
     const now = new Date();
@@ -257,6 +276,34 @@ export async function POST(request: Request) {
       marketingConsentAt: marketingOptIn ? now.toISOString() : null,
     });
 
+    const supabase = await getSupabaseAdmin();
+    const reservedIntent = await supabase
+      .from("preorder_checkout_intents")
+      .select("stripe_checkout_session_id, updated_at")
+      .eq("id", reservedIntentId)
+      .maybeSingle();
+    if (reservedIntent.error) throw reservedIntent.error;
+    if (!reservedIntent.data) {
+      throw new Error("The pre-order checkout reservation could not be loaded.");
+    }
+
+    const existingSessionId = reservedIntent.data.stripe_checkout_session_id;
+    if (typeof existingSessionId === "string" && existingSessionId) {
+      stripeSessionCreated = true;
+      const existingSession = await stripe.checkout.sessions.retrieve(existingSessionId);
+      if (existingSession.status === "open" && existingSession.url) {
+        return jsonResponse({ url: existingSession.url });
+      }
+      throw new Error("The existing Stripe Checkout session is no longer available.");
+    }
+
+    const reservationUpdatedAt = Date.parse(reservedIntent.data.updated_at);
+    const sessionExpiresAt =
+      Math.floor(
+        (Number.isFinite(reservationUpdatedAt) ? reservationUpdatedAt : Date.now()) /
+          1_000,
+      ) + PREORDER_CHECKOUT_SESSION_TTL_SECONDS;
+
     const stripeCustomer = await stripe.customers.create(
       {
         email: customer.email,
@@ -279,6 +326,14 @@ export async function POST(request: Request) {
         mode: "payment",
         adaptive_pricing: { enabled: false },
         payment_method_types: ["card"],
+        branding_settings: {
+          background_color: "#FAF8F2",
+          border_style: "rectangular",
+          button_color: "#20211E",
+          display_name: mode === "test" ? "Frame sandbox" : "Frame",
+          font_family: "inter",
+          icon: { type: "url", url: `${SITE_URL}/favicon.png` },
+        },
         line_items: [{ price: priceId, quantity }],
         client_reference_id: reservedIntentId,
         customer: stripeCustomer.id,
@@ -303,11 +358,11 @@ export async function POST(request: Request) {
           submit: {
             message:
               mode === "test"
-                ? `Sandbox payment only. The ${productPriceLabel} pre-order price saves ${preorderSavingsLabel} from the ${releasePriceLabel} release price and excludes ${shippingPriceLabel} standard US shipping and applicable sales tax. Frame is still in development and is estimated to ship in ${config.estimatedShipping}.`
-                : `The ${productPriceLabel} pre-order price saves ${preorderSavingsLabel} from the ${releasePriceLabel} release price and excludes ${shippingPriceLabel} standard US shipping and applicable sales tax. Frame is still in development and is estimated to ship in ${config.estimatedShipping}.`,
+                ? `Sandbox payment only. Your ${totalBeforeTaxLabel} total before tax includes the ${productPriceLabel} pre-order price and ${shippingPriceLabel} standard US shipping. The pre-order price is ${preorderSavingsLabel} below the planned ${releasePriceLabel} release price. Frame is still in development; shipping is estimated for ${config.estimatedShipping}.`
+                : `Your ${totalBeforeTaxLabel} total before tax includes the ${productPriceLabel} pre-order price and ${shippingPriceLabel} standard US shipping. The pre-order price is ${preorderSavingsLabel} below the planned ${releasePriceLabel} release price. Frame is still in development; shipping is estimated for ${config.estimatedShipping}.`,
           },
           terms_of_service_acceptance: {
-            message: `I agree to the [Frame Pre-order Terms](${SITE_URL}/preorder/terms) and [Cancellation and Refund Policy](${SITE_URL}/preorder/refunds).`,
+            message: `I agree to the [Frame Pre-order Terms](${legalBaseUrl}/preorder/terms) and [Cancellation and Refund Policy](${legalBaseUrl}/preorder/refunds).`,
           },
         },
         submit_type: "pay",
@@ -332,6 +387,7 @@ export async function POST(request: Request) {
             product_status_version: PREORDER_PRODUCT_STATUS_VERSION,
           },
         },
+        expires_at: sessionExpiresAt,
         success_url: `${requestOrigin}/preorder/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${requestOrigin}/preorder/review?cancelled=1`,
       },
@@ -340,7 +396,6 @@ export async function POST(request: Request) {
     stripeSessionCreated = true;
 
     if (!session.url) throw new Error("Stripe did not return a secure Checkout URL.");
-    const supabase = await getSupabaseAdmin();
     const updated = await supabase
       .from("preorder_checkout_intents")
       .update({

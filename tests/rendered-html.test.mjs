@@ -145,7 +145,7 @@ test("server-renders the Frame landing page", async () => {
   );
   assert.match(
     html,
-    /Frame is developing a non-invasive upper-arm wearable that reveals how blood pressure changes throughout daily life\./,
+    /Frame is a non-invasive wearable designed for continuous blood pressure tracking\./,
   );
   assert.match(
     html,
@@ -172,13 +172,16 @@ test("server-renders the Frame landing page", async () => {
   assert.doesNotMatch(html, /facebook\.com\/tr\?id=/);
   assert.equal(html.match(/name="email"/g)?.length, 2);
   assert.match(html, /Pre-order now/);
+  assert.match(html, /Pre-order now - Save\s*(?:<!-- -->)?\$200/);
   assert.match(html, /Pre-order now -\s*(?:<!-- -->)?\$299/);
   assert.doesNotMatch(html, /Pre-order now — \$299/);
   assert.match(html, /href="\/preorder\/review\?source=homepage_hero"/);
   assert.doesNotMatch(html, /Pre-orders are now open\./);
-  assert.match(html, /See details/);
+  assert.doesNotMatch(html, /See details/);
   assert.doesNotMatch(html, /home-preorder-hero__offer/);
   assert.doesNotMatch(html, /home-preorder-hero__saving-note/);
+  assert.match(html, /home-preorder-hero__panel/);
+  assert.doesNotMatch(html, /home-preorder-hero__pricing/);
   assert.match(html, /id="homepage-hero-preorder-waitlist-email"/);
   assert.doesNotMatch(html, /Not ready to pre-order\?/);
   assert.match(html, /Save\s*(?:<!-- -->)?\$200/);

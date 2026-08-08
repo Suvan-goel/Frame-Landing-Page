@@ -4,26 +4,33 @@ import Image from "next/image";
 import Link from "next/link";
 import { FormEvent, useEffect, useRef, useState } from "react";
 import {
+  parsePreorderCheckoutRequestKey,
   parsePreorderDeliveryDraft,
+  PREORDER_CHECKOUT_REQUEST_KEY,
   PREORDER_DELIVERY_DRAFT_KEY,
+  serializePreorderCheckoutRequestKey,
   serializePreorderDeliveryDraft,
   type PreorderDeliveryDraft,
 } from "@/lib/preorder-checkout-draft";
 import { PREORDER_US_STATE_OPTIONS } from "@/lib/preorder-shipping";
 
-function readDeliveryDraft() {
+function readCheckoutDraft(key: string) {
   try {
-    return window.sessionStorage.getItem(PREORDER_DELIVERY_DRAFT_KEY);
+    return window.sessionStorage.getItem(key);
   } catch {
     return null;
   }
 }
 
-function saveDeliveryDraft(delivery: PreorderDeliveryDraft) {
+function saveCheckoutDraft(delivery: PreorderDeliveryDraft, requestKey: string) {
   try {
     window.sessionStorage.setItem(
       PREORDER_DELIVERY_DRAFT_KEY,
       serializePreorderDeliveryDraft(delivery),
+    );
+    window.sessionStorage.setItem(
+      PREORDER_CHECKOUT_REQUEST_KEY,
+      serializePreorderCheckoutRequestKey(requestKey),
     );
   } catch {
     // Storage may be unavailable; checkout must still continue.
@@ -74,13 +81,25 @@ export function PreorderCheckoutReview({
       setCancelled(checkoutWasCancelled);
       if (checkoutWasCancelled) {
         const restored = parsePreorderDeliveryDraft(
-          readDeliveryDraft(),
+          readCheckoutDraft(PREORDER_DELIVERY_DRAFT_KEY),
         );
         if (restored) setDelivery(restored);
+        requestKey.current = parsePreorderCheckoutRequestKey(
+          readCheckoutDraft(PREORDER_CHECKOUT_REQUEST_KEY),
+        );
       }
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);
+
+  function updateDelivery(
+    field: keyof PreorderDeliveryDraft,
+    value: string,
+  ) {
+    requestKey.current = null;
+    setDelivery((current) => ({ ...current, [field]: value }));
+    setError("");
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -104,7 +123,8 @@ export function PreorderCheckoutReview({
     setSubmitting(true);
     setError("");
     const query = new URLSearchParams(window.location.search);
-    requestKey.current ??= window.crypto.randomUUID();
+    const checkoutRequestKey =
+      (requestKey.current ??= window.crypto.randomUUID());
     try {
       const response = await fetch("/api/preorders/checkout", {
         method: "POST",
@@ -129,14 +149,14 @@ export function PreorderCheckoutReview({
           utmSource: query.get("utm_source"),
           utmMedium: query.get("utm_medium"),
           utmCampaign: query.get("utm_campaign"),
-          requestKey: requestKey.current,
+          requestKey: checkoutRequestKey,
         }),
       });
       const result = (await response.json()) as { url?: string; error?: string };
       if (!response.ok || !result.url) {
         throw new Error(result.error ?? "Secure payment is temporarily unavailable.");
       }
-      saveDeliveryDraft(delivery);
+      saveCheckoutDraft(delivery, checkoutRequestKey);
       window.location.assign(result.url);
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "Secure payment is temporarily unavailable.");
@@ -219,10 +239,7 @@ export function PreorderCheckoutReview({
                     autoComplete="email"
                     maxLength={254}
                     value={delivery.email}
-                    onChange={(event) => {
-                      setDelivery((current) => ({ ...current, email: event.target.value }));
-                      setError("");
-                    }}
+                    onChange={(event) => updateDelivery("email", event.target.value)}
                   />
                 </label>
                 <label htmlFor="preorder-delivery-name">
@@ -235,10 +252,7 @@ export function PreorderCheckoutReview({
                     minLength={2}
                     maxLength={120}
                     value={delivery.fullName}
-                    onChange={(event) => {
-                      setDelivery((current) => ({ ...current, fullName: event.target.value }));
-                      setError("");
-                    }}
+                    onChange={(event) => updateDelivery("fullName", event.target.value)}
                   />
                 </label>
                 <label className="preorder-delivery-details__wide" htmlFor="preorder-delivery-line1">
@@ -251,10 +265,7 @@ export function PreorderCheckoutReview({
                     minLength={3}
                     maxLength={200}
                     value={delivery.line1}
-                    onChange={(event) => {
-                      setDelivery((current) => ({ ...current, line1: event.target.value }));
-                      setError("");
-                    }}
+                    onChange={(event) => updateDelivery("line1", event.target.value)}
                   />
                 </label>
                 <label className="preorder-delivery-details__wide" htmlFor="preorder-delivery-line2">
@@ -265,10 +276,7 @@ export function PreorderCheckoutReview({
                     autoComplete="shipping address-line2"
                     maxLength={200}
                     value={delivery.line2}
-                    onChange={(event) => {
-                      setDelivery((current) => ({ ...current, line2: event.target.value }));
-                      setError("");
-                    }}
+                    onChange={(event) => updateDelivery("line2", event.target.value)}
                   />
                 </label>
                 <label className="preorder-delivery-details__compact preorder-delivery-details__city" htmlFor="preorder-delivery-city">
@@ -281,10 +289,7 @@ export function PreorderCheckoutReview({
                     minLength={2}
                     maxLength={100}
                     value={delivery.city}
-                    onChange={(event) => {
-                      setDelivery((current) => ({ ...current, city: event.target.value }));
-                      setError("");
-                    }}
+                    onChange={(event) => updateDelivery("city", event.target.value)}
                   />
                 </label>
                 <label className="preorder-delivery-details__compact preorder-delivery-details__state" htmlFor="preorder-delivery-state">
@@ -295,10 +300,7 @@ export function PreorderCheckoutReview({
                     required
                     autoComplete="shipping address-level1"
                     value={delivery.state}
-                    onChange={(event) => {
-                      setDelivery((current) => ({ ...current, state: event.target.value }));
-                      setError("");
-                    }}
+                    onChange={(event) => updateDelivery("state", event.target.value)}
                   >
                     <option value="">Select a state</option>
                     {PREORDER_US_STATE_OPTIONS.map(([code, label]) => (
@@ -317,10 +319,7 @@ export function PreorderCheckoutReview({
                     pattern="[0-9]{5}(-[0-9]{4})?"
                     maxLength={10}
                     value={delivery.postalCode}
-                    onChange={(event) => {
-                      setDelivery((current) => ({ ...current, postalCode: event.target.value }));
-                      setError("");
-                    }}
+                    onChange={(event) => updateDelivery("postalCode", event.target.value)}
                   />
                 </label>
               </div>

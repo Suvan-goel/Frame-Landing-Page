@@ -2,6 +2,7 @@ import Stripe from "stripe";
 import { isPreorderLiveApproved } from "./preorder-access";
 import { getPreorderConfiguration } from "./preorder-config.server";
 import {
+  preorderStripeProductDescription,
   PREORDER_DEFAULT_ALLOWED_COUNTRIES,
   PREORDER_DEFAULT_CURRENCY,
   PREORDER_DEFAULT_PRICE_CENTS,
@@ -10,6 +11,7 @@ import {
   PREORDER_PRODUCT_STATUS_VERSION,
   PREORDER_SELLER_DETAILS_COMPLETE,
   PREORDER_SHIPPING_RATE_CENTS,
+  PREORDER_STRIPE_PRODUCT_TAX_CODE,
   PREORDER_WARRANTY_DETAILS_COMPLETE,
 } from "./preorder";
 import { getPreorderSalesSnapshot } from "./preorder-operations.server";
@@ -187,8 +189,32 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
       ) {
         blockers.push("The live Stripe product and price do not match the reviewed offer.");
       }
-      if (product && !product.tax_code) {
-        blockers.push("The live Stripe product does not have an approved tax code.");
+      if (product?.tax_code !== PREORDER_STRIPE_PRODUCT_TAX_CODE) {
+        blockers.push("The live Stripe product is not classified as General - Tangible Goods.");
+      }
+      if (
+        product?.description !==
+        preorderStripeProductDescription({
+          estimatedShipping: configuration.estimatedShipping,
+          sandbox: false,
+        })
+      ) {
+        blockers.push("The live Stripe product description does not match the reviewed Q1 2027 copy.");
+      }
+      const [taxSettings, taxRegistrations] = await Promise.all([
+        stripe.tax.settings.retrieve(),
+        stripe.tax.registrations.list({ status: "active", limit: 100 }),
+      ]);
+      if (
+        taxSettings.status !== "active" ||
+        taxSettings.head_office?.address?.country !== "US" ||
+        taxSettings.defaults?.tax_behavior !== "exclusive" ||
+        taxSettings.defaults?.tax_code !== PREORDER_STRIPE_PRODUCT_TAX_CODE
+      ) {
+        blockers.push("Live Stripe Tax settings are not active for the reviewed US physical-goods offer.");
+      }
+      if (!taxRegistrations.data.some((registration) => registration.country === "US")) {
+        blockers.push("No active US Stripe Tax registration is configured for live sales.");
       }
     } catch {
       blockers.push("The live Stripe product and price could not be verified.");

@@ -105,13 +105,21 @@ test("keeps the reviewed subtotal, shipping, tax and inventory controls explicit
   assert.match(checkout, /automatic_tax: \{ enabled: true \}/);
   assert.match(checkout, /adaptive_pricing: \{ enabled: false \}/);
   assert.match(checkout, /price\.tax_behavior !== "exclusive"/);
+  assert.match(checkout, /PREORDER_CHECKOUT_SESSION_TTL_SECONDS/);
+  assert.match(checkout, /expires_at:/);
+  assert.match(checkout, /select\("stripe_checkout_session_id, updated_at"\)/);
+  assert.match(checkout, /stripe\.checkout\.sessions\.retrieve\(existingSessionId\)/);
+  assert.match(checkout, /existingSession\.status === "open" && existingSession\.url/);
+  assert.match(checkout, /const sessionExpiresAt/);
+  assert.match(checkout, /branding_settings:/);
+  assert.match(checkout, /legalBaseUrl = mode === "test" \? requestOrigin : SITE_URL/);
   assert.match(
     checkout,
-    /\[Frame Pre-order Terms\]\(\$\{SITE_URL\}\/preorder\/terms\)/,
+    /\[Frame Pre-order Terms\]\(\$\{legalBaseUrl\}\/preorder\/terms\)/,
   );
   assert.match(
     checkout,
-    /\[Cancellation and Refund Policy\]\(\$\{SITE_URL\}\/preorder\/refunds\)/,
+    /\[Cancellation and Refund Policy\]\(\$\{legalBaseUrl\}\/preorder\/refunds\)/,
   );
   assert.match(migration, /inventory_limit = 1000/);
   assert.match(migration, /unit_limit <= inventory_limit/);
@@ -143,8 +151,10 @@ test("keeps checkout review recovery, consent feedback, and proxy origins safe",
   ]);
 
   assert.match(draft, /frame-preorder-delivery-v1/);
+  assert.match(draft, /frame-preorder-request-v1/);
   assert.match(review, /sessionStorage\.setItem/);
   assert.match(review, /sessionStorage\.getItem/);
+  assert.match(review, /requestKey\.current = null/);
   assert.match(success, /sessionStorage\.removeItem/);
   assert.match(review, /productStatusCheckbox\.current\?\.focus/);
   assert.match(review, /termsCheckbox\.current\?\.focus/);
@@ -179,6 +189,22 @@ test("keeps checkout review recovery, consent feedback, and proxy origins safe",
     null,
   );
   assert.equal(draftHelpers.parsePreorderDeliveryDraft("not-json", savedAt), null);
+  const requestKey = "00000000-0000-4000-8000-000000000001";
+  const serializedRequestKey = draftHelpers.serializePreorderCheckoutRequestKey(
+    requestKey,
+    savedAt,
+  );
+  assert.equal(
+    draftHelpers.parsePreorderCheckoutRequestKey(serializedRequestKey, savedAt + 1_000),
+    requestKey,
+  );
+  assert.equal(
+    draftHelpers.parsePreorderCheckoutRequestKey(
+      serializedRequestKey,
+      savedAt + draftHelpers.PREORDER_DELIVERY_DRAFT_MAX_AGE_MS + 1,
+    ),
+    null,
+  );
 });
 
 test("keeps launch-candidate policies aligned with cancellation operations", async () => {
