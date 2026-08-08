@@ -14,6 +14,7 @@ export type FrameRuntimeEnv = {
   RESEND_API_KEY?: string;
   MAILING_FROM_EMAIL?: string;
   MAILING_REPLY_TO_EMAIL?: string;
+  MAILING_POSTAL_ADDRESS?: string;
   CONTRIBUTOR_FROM_EMAIL?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;

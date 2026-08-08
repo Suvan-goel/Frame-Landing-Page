@@ -1,21 +1,25 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   EMAIL_BODY_MAX_LENGTH,
   EMAIL_CTA_LABEL_MAX_LENGTH,
   EMAIL_PREVIEW_MAX_LENGTH,
   EMAIL_SUBJECT_MAX_LENGTH,
+  extractHttpUrls,
   renderFrameCampaignEmail,
   validateEmailCampaignContent,
   type EmailCampaignContent,
+  type EmailCampaignDetail,
+  type EmailCampaignDraft,
   type EmailCampaignSummary,
+  type EmailDeliveryReadiness,
   type MailingListRecipient,
 } from "@/lib/admin-email";
 
 type AudienceFilter = "all" | "qualified" | "incomplete";
-type SendStatus = "idle" | "sending" | "success" | "error";
+type RequestStatus = "idle" | "working" | "success" | "error";
 
 const EMPTY_CONTENT: EmailCampaignContent = {
   subject: "",
@@ -37,25 +41,79 @@ function campaignStatusLabel(status: string) {
   return "Preparing";
 }
 
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("en-GB", {
+    dateStyle: "medium",
+    timeZone: "UTC",
+  }).format(new Date(value));
+}
+
+function formatDateTime(value: string) {
+  return new Intl.DateTimeFormat("en-GB", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "UTC",
+  }).format(new Date(value));
+}
+
+async function responseJson(response: Response) {
+  return (await response.json()) as Record<string, unknown>;
+}
+
 export function AdminEmailComposer({
   recipients,
-  suppressedCount,
+  unsubscribedCount,
+  deliverySuppressedCount,
   campaigns,
+  initialDraft,
+  readiness,
+  capacityExceeded,
+  ownerEmail,
 }: {
   recipients: MailingListRecipient[];
-  suppressedCount: number;
+  unsubscribedCount: number;
+  deliverySuppressedCount: number;
   campaigns: EmailCampaignSummary[];
+  initialDraft: EmailCampaignDraft | null;
+  readiness: EmailDeliveryReadiness;
+  capacityExceeded: boolean;
+  ownerEmail: string;
 }) {
   const router = useRouter();
-  const [content, setContent] = useState(EMPTY_CONTENT);
-  const [selectedIds, setSelectedIds] = useState<Set<number>>(() => new Set());
+  const [content, setContent] = useState(initialDraft?.content ?? EMPTY_CONTENT);
+  const [selectedIds, setSelectedIds] = useState<Set<number>>(
+    () => new Set(initialDraft?.recipientIds ?? []),
+  );
   const [audienceFilter, setAudienceFilter] = useState<AudienceFilter>("all");
   const [search, setSearch] = useState("");
+  const [previewSearch, setPreviewSearch] = useState("");
   const [previewRecipientId, setPreviewRecipientId] = useState(
-    recipients[0]?.id ?? 0,
+    initialDraft?.previewRecipientId ?? recipients[0]?.id ?? 0,
   );
-  const [sendStatus, setSendStatus] = useState<SendStatus>("idle");
+  const [draftStatus, setDraftStatus] = useState<"idle" | "saving" | "saved" | "error">(
+    initialDraft ? "saved" : "idle",
+  );
+  const [draftMessage, setDraftMessage] = useState(
+    initialDraft ? `Restored draft saved ${formatDateTime(initialDraft.updatedAt)} UTC` : "",
+  );
+  const [testStatus, setTestStatus] = useState<RequestStatus>("idle");
+  const [testMessage, setTestMessage] = useState("");
+  const [sendStatus, setSendStatus] = useState<RequestStatus>("idle");
   const [sendMessage, setSendMessage] = useState("");
+  const [review, setReview] = useState<{
+    confirmationId: string;
+    confirmationText: string;
+    expiresAt: string;
+  } | null>(null);
+  const [confirmationInput, setConfirmationInput] = useState("");
+  const [webhookConfigured, setWebhookConfigured] = useState(readiness.webhookConfigured);
+  const [webhookStatus, setWebhookStatus] = useState<RequestStatus>("idle");
+  const [webhookMessage, setWebhookMessage] = useState("");
+  const [campaignDetail, setCampaignDetail] = useState<EmailCampaignDetail | null>(null);
+  const [detailStatus, setDetailStatus] = useState<RequestStatus>("idle");
+  const [detailMessage, setDetailMessage] = useState("");
+  const [retryInput, setRetryInput] = useState("");
+  const [retryStatus, setRetryStatus] = useState<RequestStatus>("idle");
 
   const qualifiedCount = useMemo(
     () => recipients.filter((recipient) => recipient.qualificationStatus === "completed").length,
@@ -64,32 +122,28 @@ export function AdminEmailComposer({
   const visibleRecipients = useMemo(() => {
     const query = search.trim().toLowerCase();
     return recipients.filter((recipient) => {
-      if (
-        audienceFilter === "qualified" &&
-        recipient.qualificationStatus !== "completed"
-      ) {
-        return false;
-      }
-      if (
-        audienceFilter === "incomplete" &&
-        recipient.qualificationStatus === "completed"
-      ) {
-        return false;
-      }
+      if (audienceFilter === "qualified" && recipient.qualificationStatus !== "completed") return false;
+      if (audienceFilter === "incomplete" && recipient.qualificationStatus === "completed") return false;
       if (!query) return true;
-      return `${recipientName(recipient)} ${recipient.email}`
-        .toLowerCase()
-        .includes(query);
+      return `${recipientName(recipient)} ${recipient.email}`.toLowerCase().includes(query);
     });
   }, [audienceFilter, recipients, search]);
-
+  const previewOptions = useMemo(() => {
+    const query = previewSearch.trim().toLowerCase();
+    if (!query) return recipients;
+    const filtered = recipients.filter((recipient) =>
+      `${recipientName(recipient)} ${recipient.email}`.toLowerCase().includes(query),
+    );
+    const current = recipients.find((recipient) => recipient.id === previewRecipientId);
+    return current && !filtered.some((recipient) => recipient.id === current.id)
+      ? [current, ...filtered]
+      : filtered;
+  }, [previewRecipientId, previewSearch, recipients]);
   const allVisibleSelected =
     visibleRecipients.length > 0 &&
     visibleRecipients.every((recipient) => selectedIds.has(recipient.id));
   const previewRecipient =
-    recipients.find((recipient) => recipient.id === previewRecipientId) ??
-    recipients[0] ??
-    null;
+    recipients.find((recipient) => recipient.id === previewRecipientId) ?? recipients[0] ?? null;
   const previewContent: EmailCampaignContent = {
     subject: content.subject || "Your subject line will appear here",
     previewText: content.previewText,
@@ -102,14 +156,75 @@ export function AdminEmailComposer({
     firstName: previewRecipient?.firstName ?? null,
     unsubscribeUrl: "https://framewearable.com/unsubscribe?token=preview",
     siteUrl: "https://framewearable.com",
+    postalAddress: readiness.postalAddress || "Postal address required before live sending",
   });
+  const draftHasContent =
+    Object.values(content).some((value) => value.trim()) || selectedIds.size > 0;
+  const selectedRecipients = recipients.filter((recipient) => selectedIds.has(recipient.id));
+  const selectedQualifiedCount = selectedRecipients.filter(
+    (recipient) => recipient.qualificationStatus === "completed",
+  ).length;
+  const liveBlockingReasons = [
+    !readiness.postalAddressConfigured ? "Add Frame’s valid postal address" : "",
+    !webhookConfigured ? "Enable bounce and complaint protection" : "",
+    capacityExceeded ? "The list exceeds the current 5,000-recipient safety limit" : "",
+  ].filter(Boolean);
+  const emailLinks = useMemo(() => {
+    const values = [
+      ...extractHttpUrls(content.body),
+      ...(content.ctaUrl ? [content.ctaUrl] : []),
+    ];
+    return [...new Set(values)];
+  }, [content.body, content.ctaUrl]);
+
+  useEffect(() => {
+    const timeout = window.setTimeout(async () => {
+      if (!draftHasContent) {
+        await fetch("/api/admin/email/draft", { method: "DELETE" }).catch(() => undefined);
+        setDraftStatus("idle");
+        setDraftMessage("");
+        return;
+      }
+      setDraftStatus("saving");
+      setDraftMessage("Saving draft…");
+      try {
+        const response = await fetch("/api/admin/email/draft", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            content,
+            recipientIds: [...selectedIds],
+            previewRecipientId,
+          }),
+        });
+        if (!response.ok) throw new Error();
+        setDraftStatus("saved");
+        setDraftMessage("Draft saved");
+      } catch {
+        setDraftStatus("error");
+        setDraftMessage("Draft could not be saved. Keep this page open.");
+      }
+    }, 700);
+    return () => window.clearTimeout(timeout);
+  }, [content, draftHasContent, previewRecipientId, selectedIds]);
+
+  useEffect(() => {
+    function warnBeforeLeaving(event: BeforeUnloadEvent) {
+      if (draftStatus !== "saving" && draftStatus !== "error") return;
+      event.preventDefault();
+    }
+    window.addEventListener("beforeunload", warnBeforeLeaving);
+    return () => window.removeEventListener("beforeunload", warnBeforeLeaving);
+  }, [draftStatus]);
 
   function updateContent(field: keyof EmailCampaignContent, value: string) {
     setContent((current) => ({ ...current, [field]: value }));
-    if (sendStatus !== "sending") {
-      setSendStatus("idle");
-      setSendMessage("");
-    }
+    setTestStatus("idle");
+    setTestMessage("");
+    setSendStatus("idle");
+    setSendMessage("");
+    setReview(null);
+    setConfirmationInput("");
   }
 
   function toggleRecipient(id: number) {
@@ -119,8 +234,8 @@ export function AdminEmailComposer({
       else next.add(id);
       return next;
     });
-    setSendStatus("idle");
-    setSendMessage("");
+    setReview(null);
+    setConfirmationInput("");
   }
 
   function toggleAllVisible() {
@@ -132,31 +247,87 @@ export function AdminEmailComposer({
       }
       return next;
     });
-    setSendStatus("idle");
-    setSendMessage("");
+    setReview(null);
+    setConfirmationInput("");
   }
 
-  async function sendCampaign() {
+  function validatedContent() {
     const validation = validateEmailCampaignContent(content);
     if (!validation.ok) {
       setSendStatus("error");
       setSendMessage(validation.error);
+      return null;
+    }
+    return validation.content;
+  }
+
+  async function sendTest() {
+    const validation = validateEmailCampaignContent(content);
+    if (!validation.ok) {
+      setTestStatus("error");
+      setTestMessage(validation.error);
       return;
     }
-    if (selectedIds.size === 0) {
+    setTestStatus("working");
+    setTestMessage(`Sending a test only to ${ownerEmail}…`);
+    try {
+      const response = await fetch("/api/admin/email/test", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(validation.content),
+      });
+      const result = await responseJson(response);
+      if (!response.ok) throw new Error(String(result.error ?? "The test email could not be sent."));
+      setTestStatus("success");
+      setTestMessage(`Test sent only to ${ownerEmail}. Check the inbox before reviewing the live campaign.`);
+    } catch (error) {
+      setTestStatus("error");
+      setTestMessage(error instanceof Error ? error.message : "The test email could not be sent.");
+    }
+  }
+
+  async function openReview() {
+    const validation = validatedContent();
+    if (!validation) return;
+    if (!selectedIds.size) {
       setSendStatus("error");
-      setSendMessage("Choose at least one recipient before sending.");
+      setSendMessage("Choose at least one recipient before reviewing the campaign.");
       return;
     }
+    if (liveBlockingReasons.length) {
+      setSendStatus("error");
+      setSendMessage(liveBlockingReasons.join(" · "));
+      return;
+    }
+    setSendStatus("working");
+    setSendMessage("Locking this exact message and audience for review…");
+    try {
+      const response = await fetch("/api/admin/email/review", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...validation, recipientIds: [...selectedIds] }),
+      });
+      const result = await responseJson(response);
+      if (!response.ok) throw new Error(String(result.error ?? "The campaign could not be reviewed."));
+      setReview({
+        confirmationId: String(result.confirmationId),
+        confirmationText: String(result.confirmationText),
+        expiresAt: String(result.expiresAt),
+      });
+      setConfirmationInput("");
+      setSendStatus("idle");
+      setSendMessage("");
+    } catch (error) {
+      setSendStatus("error");
+      setSendMessage(error instanceof Error ? error.message : "The campaign could not be reviewed.");
+    }
+  }
 
-    const confirmed = window.confirm(
-      `Send “${validation.content.subject}” to ${selectedIds.size} ${
-        selectedIds.size === 1 ? "person" : "people"
-      }?\n\nEach person will receive an individual email. This cannot be undone.`,
-    );
-    if (!confirmed) return;
-
-    setSendStatus("sending");
+  async function sendCampaign() {
+    if (!review || confirmationInput !== review.confirmationText) return;
+    const validation = validateEmailCampaignContent(content);
+    if (!validation.ok) return;
+    setSendStatus("working");
     setSendMessage(`Sending to ${selectedIds.size} recipients… Keep this page open.`);
     try {
       const response = await fetch("/api/admin/email", {
@@ -165,310 +336,209 @@ export function AdminEmailComposer({
         body: JSON.stringify({
           ...validation.content,
           recipientIds: [...selectedIds],
+          confirmationId: review.confirmationId,
+          confirmationText: confirmationInput,
         }),
       });
-      const result = (await response.json()) as {
-        error?: string;
-        sentCount?: number;
-        failedCount?: number;
-      };
-      if (!response.ok) {
-        throw new Error(result.error ?? "The email could not be sent.");
-      }
-
-      const sentCount = result.sentCount ?? 0;
-      const failedCount = result.failedCount ?? 0;
+      const result = await responseJson(response);
+      if (!response.ok) throw new Error(String(result.error ?? "The email could not be sent."));
+      const sentCount = Number(result.sentCount ?? 0);
+      const failedCount = Number(result.failedCount ?? 0);
       setSendStatus("success");
       setSendMessage(
         failedCount
-          ? `${sentCount} sent; ${failedCount} failed. The delivery record below has the final status.`
+          ? `${sentCount} sent; ${failedCount} failed. Open the delivery record to review or retry.`
           : `${sentCount} ${sentCount === 1 ? "email" : "emails"} sent successfully.`,
       );
+      setReview(null);
+      setConfirmationInput("");
       setSelectedIds(new Set());
+      setContent(EMPTY_CONTENT);
+      setDraftStatus("idle");
+      setDraftMessage("");
       router.refresh();
     } catch (error) {
       setSendStatus("error");
-      setSendMessage(
-        error instanceof Error ? error.message : "The email could not be sent.",
+      setSendMessage(error instanceof Error ? error.message : "The email could not be sent.");
+      setReview(null);
+      setConfirmationInput("");
+    }
+  }
+
+  async function clearDraft() {
+    await fetch("/api/admin/email/draft", { method: "DELETE" }).catch(() => undefined);
+    setContent(EMPTY_CONTENT);
+    setSelectedIds(new Set());
+    setDraftStatus("idle");
+    setDraftMessage("");
+    setReview(null);
+  }
+
+  async function enableWebhook() {
+    setWebhookStatus("working");
+    setWebhookMessage("Registering the verified delivery-event endpoint with Resend…");
+    try {
+      const response = await fetch("/api/admin/email/webhook-protection", { method: "POST" });
+      const result = await responseJson(response);
+      if (!response.ok) throw new Error(String(result.error ?? "Bounce protection could not be enabled."));
+      setWebhookConfigured(true);
+      setWebhookStatus("success");
+      setWebhookMessage("Bounce and complaint protection is active.");
+    } catch (error) {
+      setWebhookStatus("error");
+      setWebhookMessage(error instanceof Error ? error.message : "Bounce protection could not be enabled.");
+    }
+  }
+
+  async function openCampaignDetail(campaignId: string) {
+    setDetailStatus("working");
+    setDetailMessage("Loading recipient delivery details…");
+    setCampaignDetail(null);
+    try {
+      const response = await fetch(`/api/admin/email/campaigns/${encodeURIComponent(campaignId)}`);
+      const result = await responseJson(response);
+      if (!response.ok) throw new Error(String(result.error ?? "Campaign details could not be loaded."));
+      setCampaignDetail(result.campaign as unknown as EmailCampaignDetail);
+      setDetailStatus("success");
+      setDetailMessage("");
+      setRetryInput("");
+      setRetryStatus("idle");
+    } catch (error) {
+      setDetailStatus("error");
+      setDetailMessage(error instanceof Error ? error.message : "Campaign details could not be loaded.");
+    }
+  }
+
+  async function retryFailures() {
+    if (!campaignDetail) return;
+    const failedCount = campaignDetail.recipients.filter((recipient) => recipient.status === "failed").length;
+    if (retryInput !== `RETRY ${failedCount}`) return;
+    setRetryStatus("working");
+    try {
+      const response = await fetch(
+        `/api/admin/email/campaigns/${encodeURIComponent(campaignDetail.id)}/retry`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ confirmationText: retryInput }),
+        },
       );
+      const result = await responseJson(response);
+      if (!response.ok) throw new Error(String(result.error ?? "The retry could not be started."));
+      setRetryStatus("success");
+      setDetailMessage(`${Number(result.sentCount ?? 0)} failed deliveries retried successfully.`);
+      await openCampaignDetail(campaignDetail.id);
+      router.refresh();
+    } catch (error) {
+      setRetryStatus("error");
+      setDetailMessage(error instanceof Error ? error.message : "The retry could not be started.");
     }
   }
 
   return (
     <>
       <section className="admin-email-metrics" aria-label="Mailing list overview">
-        <article>
-          <span>Subscribed</span>
-          <strong>{recipients.length}</strong>
-          <small>Available to select</small>
-        </article>
-        <article>
-          <span>Survey complete</span>
-          <strong>{qualifiedCount}</strong>
-          <small>Qualified waitlist leads</small>
-        </article>
-        <article>
-          <span>Unsubscribed</span>
-          <strong>{suppressedCount}</strong>
-          <small>Always excluded from sends</small>
-        </article>
+        <article><span>Subscribed</span><strong>{recipients.length}</strong><small>Eligible to select now</small></article>
+        <article><span>Survey complete</span><strong>{qualifiedCount}</strong><small>Qualified waitlist leads</small></article>
+        <article><span>Unsubscribed</span><strong>{unsubscribedCount}</strong><small>Always excluded</small></article>
+        <article><span>Delivery blocked</span><strong>{deliverySuppressedCount}</strong><small>Bounces and complaints</small></article>
       </section>
+
+      <section className="admin-email-readiness" aria-label="Live sending readiness">
+        <div>
+          <p className="eyebrow">Live sending safeguards</p>
+          <h2>{liveBlockingReasons.length ? "Live campaigns are safely blocked" : "Ready for reviewed campaigns"}</h2>
+          <p>
+            Test emails can only go to <strong>{ownerEmail}</strong>. A live campaign requires an exact audience review, a single-use server approval, and typed confirmation.
+          </p>
+        </div>
+        <ul>
+          <li className={readiness.postalAddressConfigured ? "is-ready" : "is-blocked"}>
+            <strong>Postal address</strong><span>{readiness.postalAddressConfigured ? readiness.postalAddress : "Required before live sending"}</span>
+          </li>
+          <li className={webhookConfigured ? "is-ready" : "is-blocked"}>
+            <strong>Bounce protection</strong><span>{webhookConfigured ? "Active" : "Not configured"}</span>
+            {!webhookConfigured ? <button type="button" onClick={enableWebhook} disabled={webhookStatus === "working"}>Enable protection</button> : null}
+          </li>
+        </ul>
+      </section>
+      {webhookMessage ? <p className={`admin-email-inline-message is-${webhookStatus}`} role={webhookStatus === "error" ? "alert" : "status"}>{webhookMessage}</p> : null}
+      {capacityExceeded ? <p className="admin-email-capacity-warning" role="alert">The mailing list is above the 5,000-recipient safety limit. Live sending remains blocked until the audience system is paginated beyond that limit.</p> : null}
 
       <div className="admin-email-workspace">
         <section className="admin-email-compose" aria-labelledby="compose-heading">
           <div className="admin-email-section-heading">
-            <div>
-              <p className="eyebrow">01 · Compose</p>
-              <h2 id="compose-heading">Write your email</h2>
+            <div><p className="eyebrow">01 · Compose</p><h2 id="compose-heading">Write your email</h2></div>
+            <div className="admin-email-draft-state">
+              <span className={`is-${draftStatus}`}>{draftMessage || "Autosaves after you begin"}</span>
+              {draftHasContent ? <button type="button" onClick={clearDraft}>Delete draft</button> : null}
             </div>
-            <span>Draft stays on this page until sent</span>
           </div>
-
           <div className="admin-email-fields">
-            <label>
-              <span>Subject line</span>
-              <input
-                type="text"
-                value={content.subject}
-                onChange={(event) => updateContent("subject", event.target.value)}
-                maxLength={EMAIL_SUBJECT_MAX_LENGTH}
-                placeholder="A meaningful update from Frame"
-              />
-              <small>{content.subject.length}/{EMAIL_SUBJECT_MAX_LENGTH}</small>
-            </label>
-            <label>
-              <span>Inbox preview text <i>Optional</i></span>
-              <input
-                type="text"
-                value={content.previewText}
-                onChange={(event) => updateContent("previewText", event.target.value)}
-                maxLength={EMAIL_PREVIEW_MAX_LENGTH}
-                placeholder="A short line shown beside the subject"
-              />
-              <small>{content.previewText.length}/{EMAIL_PREVIEW_MAX_LENGTH}</small>
-            </label>
-            <label>
-              <span>Email content</span>
-              <textarea
-                value={content.body}
-                onChange={(event) => updateContent("body", event.target.value)}
-                maxLength={EMAIL_BODY_MAX_LENGTH}
-                placeholder={`Hi {{first_name}},\n\nHere’s what’s new at Frame…`}
-              />
-              <small>
-                Use {"{{first_name}}"} to personalise the message · {content.body.length}/{EMAIL_BODY_MAX_LENGTH}
-              </small>
-            </label>
+            <label><span>Subject line</span><input type="text" value={content.subject} onChange={(event) => updateContent("subject", event.target.value)} maxLength={EMAIL_SUBJECT_MAX_LENGTH} placeholder="A meaningful update from Frame" /><small>{content.subject.length}/{EMAIL_SUBJECT_MAX_LENGTH}</small></label>
+            <label><span>Inbox preview text <i>Optional</i></span><input type="text" value={content.previewText} onChange={(event) => updateContent("previewText", event.target.value)} maxLength={EMAIL_PREVIEW_MAX_LENGTH} placeholder="A short line shown beside the subject" /><small>{content.previewText.length}/{EMAIL_PREVIEW_MAX_LENGTH}</small></label>
+            <label><span>Email content</span><textarea value={content.body} onChange={(event) => updateContent("body", event.target.value)} maxLength={EMAIL_BODY_MAX_LENGTH} placeholder={`Hi {{first_name}},\n\nHere’s what’s new at Frame…`} /><small>Use {"{{first_name}}"} to personalise · {content.body.length}/{EMAIL_BODY_MAX_LENGTH}</small></label>
             <div className="admin-email-cta-fields">
-              <label>
-                <span>Button label <i>Optional</i></span>
-                <input
-                  type="text"
-                  value={content.ctaLabel}
-                  onChange={(event) => updateContent("ctaLabel", event.target.value)}
-                  maxLength={EMAIL_CTA_LABEL_MAX_LENGTH}
-                  placeholder="Read the update"
-                />
-              </label>
-              <label>
-                <span>Button destination</span>
-                <input
-                  type="url"
-                  value={content.ctaUrl}
-                  onChange={(event) => updateContent("ctaUrl", event.target.value)}
-                  placeholder="https://framewearable.com/…"
-                />
-              </label>
+              <label><span>Button label <i>Optional</i></span><input type="text" value={content.ctaLabel} onChange={(event) => updateContent("ctaLabel", event.target.value)} maxLength={EMAIL_CTA_LABEL_MAX_LENGTH} placeholder="Read the update" /></label>
+              <label><span>Button destination</span><input type="url" value={content.ctaUrl} onChange={(event) => updateContent("ctaUrl", event.target.value)} placeholder="https://framewearable.com/…" /></label>
             </div>
           </div>
         </section>
 
         <section className="admin-email-preview" aria-labelledby="preview-heading">
-          <div className="admin-email-section-heading">
-            <div>
-              <p className="eyebrow">02 · Preview</p>
-              <h2 id="preview-heading">See the final email</h2>
-            </div>
-          </div>
+          <div className="admin-email-section-heading"><div><p className="eyebrow">02 · Preview</p><h2 id="preview-heading">See the final email</h2></div></div>
           <div className="admin-email-preview-controls">
+            <label htmlFor="preview-search">Find preview recipient</label>
+            <input id="preview-search" type="search" value={previewSearch} onChange={(event) => setPreviewSearch(event.target.value)} placeholder="Search name or email" />
             <label htmlFor="preview-recipient">Preview as</label>
-            <select
-              id="preview-recipient"
-              value={previewRecipient?.id ?? ""}
-              onChange={(event) => setPreviewRecipientId(Number(event.target.value))}
-              disabled={!recipients.length}
-            >
-              {recipients.map((recipient) => (
-                <option key={recipient.id} value={recipient.id}>
-                  {recipient.firstName || recipient.email}
-                </option>
-              ))}
+            <select id="preview-recipient" value={previewRecipient?.id ?? ""} onChange={(event) => setPreviewRecipientId(Number(event.target.value))} disabled={!recipients.length}>
+              {previewOptions.map((recipient) => <option key={recipient.id} value={recipient.id}>{recipientName(recipient)} — {recipient.email}</option>)}
             </select>
           </div>
           <div className="admin-email-inbox-preview">
-            <dl>
-              <div><dt>From</dt><dd>Frame Updates &lt;updates@framewearable.com&gt;</dd></div>
-              <div><dt>To</dt><dd>{previewRecipient?.email ?? "selected@recipient.com"}</dd></div>
-              <div><dt>Subject</dt><dd>{preview.subject}</dd></div>
-            </dl>
-            <iframe title="Email body preview" srcDoc={preview.html} tabIndex={-1} />
+            <dl><div><dt>From</dt><dd>{readiness.from}</dd></div><div><dt>Reply to</dt><dd>{readiness.replyTo}</dd></div><div><dt>To</dt><dd>{previewRecipient?.email ?? "selected@recipient.com"}</dd></div><div><dt>Subject</dt><dd>{preview.subject}</dd></div></dl>
+            <iframe title="Email body preview" srcDoc={preview.html} sandbox="" tabIndex={-1} />
+          </div>
+          <div className="admin-email-link-check">
+            <strong>Links in this draft</strong>
+            {emailLinks.length ? <ul>{emailLinks.map((url) => <li key={url}><a href={url} target="_blank" rel="noreferrer">{url}</a></li>)}</ul> : <span>No body or button links yet.</span>}
           </div>
         </section>
       </div>
 
       <section className="admin-email-audience" aria-labelledby="audience-heading">
-        <div className="admin-email-section-heading">
-          <div>
-            <p className="eyebrow">03 · Audience</p>
-            <h2 id="audience-heading">Choose exactly who receives it</h2>
-          </div>
-          <strong>{selectedIds.size} selected</strong>
-        </div>
-
+        <div className="admin-email-section-heading"><div><p className="eyebrow">03 · Audience</p><h2 id="audience-heading">Choose exactly who receives it</h2></div><strong>{selectedIds.size} selected</strong></div>
         <div className="admin-email-audience-tools">
           <div className="admin-email-filter-tabs" role="group" aria-label="Filter mailing list">
-            {(
-              [
-                ["all", `All ${recipients.length}`],
-                ["qualified", `Survey complete ${qualifiedCount}`],
-                ["incomplete", `Survey incomplete ${recipients.length - qualifiedCount}`],
-              ] as const
-            ).map(([value, label]) => (
-              <button
-                key={value}
-                type="button"
-                className={audienceFilter === value ? "is-active" : undefined}
-                onClick={() => setAudienceFilter(value)}
-              >
-                {label}
-              </button>
-            ))}
+            {([ ["all", `All ${recipients.length}`], ["qualified", `Survey complete ${qualifiedCount}`], ["incomplete", `Survey incomplete ${recipients.length - qualifiedCount}`] ] as const).map(([value, label]) => <button key={value} type="button" className={audienceFilter === value ? "is-active" : undefined} onClick={() => setAudienceFilter(value)}>{label}</button>)}
           </div>
-          <label className="admin-email-search">
-            <span className="sr-only">Search mailing list</span>
-            <input
-              type="search"
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              placeholder="Search by name or email"
-            />
-          </label>
+          <label className="admin-email-search"><span className="sr-only">Search mailing list</span><input type="search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search by name or email" /></label>
         </div>
-
         <div className="admin-email-select-bar">
-          <label>
-            <input
-              type="checkbox"
-              checked={allVisibleSelected}
-              onChange={toggleAllVisible}
-              disabled={!visibleRecipients.length}
-            />
-            <span>
-              {allVisibleSelected ? "Deselect" : "Select"} all {visibleRecipients.length} shown
-            </span>
-          </label>
-          {selectedIds.size ? (
-            <button type="button" onClick={() => setSelectedIds(new Set())}>
-              Clear selection
-            </button>
-          ) : null}
+          <label><input type="checkbox" checked={allVisibleSelected} onChange={toggleAllVisible} disabled={!visibleRecipients.length} /><span>{allVisibleSelected ? "Deselect" : "Select"} all {visibleRecipients.length} shown</span></label>
+          {selectedIds.size ? <button type="button" onClick={() => setSelectedIds(new Set())}>Clear selection</button> : null}
         </div>
-
         <div className="admin-email-recipient-list">
-          {visibleRecipients.map((recipient) => (
-            <label className="admin-email-recipient" key={recipient.id}>
-              <input
-                type="checkbox"
-                checked={selectedIds.has(recipient.id)}
-                onChange={() => toggleRecipient(recipient.id)}
-              />
-              <span className="admin-email-recipient__identity">
-                <strong>{recipientName(recipient)}</strong>
-                <small>{recipient.email}</small>
-              </span>
-              <span className={`admin-email-recipient__segment admin-email-recipient__segment--${recipient.qualificationStatus === "completed" ? "qualified" : "incomplete"}`}>
-                {recipient.qualificationStatus === "completed" ? "Survey complete" : "Email only"}
-              </span>
-              <time dateTime={recipient.joinedAt}>
-                {new Intl.DateTimeFormat("en-GB", { dateStyle: "medium" }).format(
-                  new Date(recipient.joinedAt),
-                )}
-              </time>
-            </label>
-          ))}
-          {!visibleRecipients.length ? (
-            <div className="admin-email-no-results">
-              <strong>No matching subscribers</strong>
-              <span>Try a different search or audience filter.</span>
-            </div>
-          ) : null}
+          {visibleRecipients.map((recipient) => <label className="admin-email-recipient" key={recipient.id}><input type="checkbox" checked={selectedIds.has(recipient.id)} onChange={() => toggleRecipient(recipient.id)} /><span className="admin-email-recipient__identity"><strong>{recipientName(recipient)}</strong><small>{recipient.email}</small></span><span className={`admin-email-recipient__segment admin-email-recipient__segment--${recipient.qualificationStatus === "completed" ? "qualified" : "incomplete"}`}>{recipient.qualificationStatus === "completed" ? "Survey complete" : "Email only"}</span><time dateTime={recipient.joinedAt}>{formatDate(recipient.joinedAt)}</time></label>)}
+          {!visibleRecipients.length ? <div className="admin-email-no-results"><strong>No matching subscribers</strong><span>Try a different search or audience filter.</span></div> : null}
         </div>
       </section>
 
-      <section className="admin-email-send-panel" aria-label="Send email">
-        <div>
-          <p className="eyebrow">Ready to send?</p>
-          <h2>
-            {selectedIds.size
-              ? `${selectedIds.size} ${selectedIds.size === 1 ? "recipient" : "recipients"} selected`
-              : "Choose your recipients"}
-          </h2>
-          <p>
-            Every person receives a separate email with an unsubscribe link. You’ll confirm once more before anything is sent.
-          </p>
-        </div>
-        <button
-          className="button button--light"
-          type="button"
-          onClick={sendCampaign}
-          disabled={sendStatus === "sending" || selectedIds.size === 0}
-        >
-          {sendStatus === "sending" ? "Sending…" : `Review and send${selectedIds.size ? ` to ${selectedIds.size}` : ""}`}
-        </button>
+      <section className="admin-email-send-panel" aria-label="Test and review email">
+        <div><p className="eyebrow">Safe delivery</p><h2>{selectedIds.size ? `${selectedIds.size} ${selectedIds.size === 1 ? "recipient" : "recipients"} selected` : "Test first, then review"}</h2><p>Tests only go to the signed-in administrator. Live sending is impossible until the exact audience is locked and the required phrase is typed.</p></div>
+        <div className="admin-email-send-actions"><button className="button button--light" type="button" onClick={sendTest} disabled={testStatus === "working"}>{testStatus === "working" ? "Sending test…" : "Send test to me"}</button><button className="button button--light admin-email-review-button" type="button" onClick={openReview} disabled={sendStatus === "working" || selectedIds.size === 0 || liveBlockingReasons.length > 0}>{sendStatus === "working" ? "Preparing review…" : `Review campaign${selectedIds.size ? ` for ${selectedIds.size}` : ""}`}</button></div>
       </section>
-      <p
-        className={`admin-email-send-message${sendStatus !== "idle" ? ` admin-email-send-message--${sendStatus}` : ""}`}
-        role={sendStatus === "error" ? "alert" : "status"}
-        aria-live="polite"
-      >
-        {sendMessage}
-      </p>
+      {testMessage ? <p className={`admin-email-send-message admin-email-send-message--${testStatus}`} role={testStatus === "error" ? "alert" : "status"}>{testMessage}</p> : null}
+      <p className={`admin-email-send-message${sendStatus !== "idle" ? ` admin-email-send-message--${sendStatus}` : ""}`} role={sendStatus === "error" ? "alert" : "status"} aria-live="polite">{sendMessage}</p>
 
       <section className="admin-email-history" aria-labelledby="history-heading">
-        <div className="admin-email-section-heading">
-          <div>
-            <p className="eyebrow">Delivery record</p>
-            <h2 id="history-heading">Recent sends</h2>
-          </div>
-        </div>
-        {campaigns.length ? (
-          <div className="admin-table-shell">
-            <table className="admin-table">
-              <thead>
-                <tr><th>Subject</th><th>Status</th><th>Recipients</th><th>Sent by</th><th>Created</th></tr>
-              </thead>
-              <tbody>
-                {campaigns.map((campaign) => (
-                  <tr key={campaign.id}>
-                    <td className="admin-email-history__subject"><strong>{campaign.subject}</strong></td>
-                    <td>
-                      <span className={`admin-email-history__status admin-email-history__status--${campaign.status}`}>
-                        {campaignStatusLabel(campaign.status)}
-                      </span>
-                      {campaign.failedCount ? <small>{campaign.failedCount} failed</small> : null}
-                    </td>
-                    <td>{campaign.sentCount} / {campaign.recipientCount}</td>
-                    <td>{campaign.createdBy}</td>
-                    <td><time dateTime={campaign.createdAt}>{new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short" }).format(new Date(campaign.createdAt))}</time></td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="admin-email-history__empty">No mailing-list emails have been sent yet.</div>
-        )}
+        <div className="admin-email-section-heading"><div><p className="eyebrow">Delivery record</p><h2 id="history-heading">Recent sends</h2></div></div>
+        {campaigns.length ? <div className="admin-table-shell"><table className="admin-table"><thead><tr><th>Subject</th><th>Status</th><th>Recipients</th><th>Sent by</th><th>Created</th><th>Details</th></tr></thead><tbody>{campaigns.map((campaign) => <tr key={campaign.id}><td className="admin-email-history__subject"><strong>{campaign.subject}</strong></td><td><span className={`admin-email-history__status admin-email-history__status--${campaign.status}`}>{campaignStatusLabel(campaign.status)}</span>{campaign.failedCount ? <small>{campaign.failedCount} failed</small> : null}</td><td>{campaign.sentCount} / {campaign.recipientCount}</td><td>{campaign.createdBy}</td><td><time dateTime={campaign.createdAt}>{formatDateTime(campaign.createdAt)} UTC</time></td><td><button className="admin-email-detail-button" type="button" onClick={() => openCampaignDetail(campaign.id)}>View details</button></td></tr>)}</tbody></table></div> : <div className="admin-email-history__empty">No mailing-list emails have been sent yet.</div>}
       </section>
+
+      {review ? <div className="admin-email-modal-backdrop" role="presentation"><section className="admin-email-modal" role="dialog" aria-modal="true" aria-labelledby="campaign-review-title"><button className="admin-email-modal__close" type="button" onClick={() => { setReview(null); setConfirmationInput(""); }}>Close</button><p className="eyebrow">Final campaign review</p><h2 id="campaign-review-title">This will send a real email</h2><p className="admin-email-modal__warning">Review every detail. Once confirmed, email delivery cannot be recalled.</p><dl className="admin-email-review-summary"><div><dt>Subject</dt><dd>{preview.subject}</dd></div><div><dt>From</dt><dd>{readiness.from}</dd></div><div><dt>Audience</dt><dd>{selectedIds.size} people · {selectedQualifiedCount} survey complete · {selectedIds.size - selectedQualifiedCount} incomplete</dd></div><div><dt>Test status</dt><dd>{testStatus === "success" ? "Test email sent during this session" : "No successful test recorded during this session"}</dd></div></dl><div className="admin-email-review-sample"><strong>Recipient sample</strong><ul>{selectedRecipients.slice(0, 6).map((recipient) => <li key={recipient.id}>{recipientName(recipient)} <span>{recipient.email}</span></li>)}</ul>{selectedRecipients.length > 6 ? <p>Plus {selectedRecipients.length - 6} more selected recipients.</p> : null}</div><label className="admin-email-confirmation-field"><span>Type <strong>{review.confirmationText}</strong> exactly</span><input autoFocus type="text" value={confirmationInput} onChange={(event) => setConfirmationInput(event.target.value)} autoComplete="off" spellCheck={false} /></label><p>This single-use approval expires at {formatDateTime(review.expiresAt)} UTC.</p><button className="button button--dark" type="button" disabled={confirmationInput !== review.confirmationText || sendStatus === "working"} onClick={sendCampaign}>{sendStatus === "working" ? "Sending…" : `Send real campaign to ${selectedIds.size}`}</button></section></div> : null}
+
+      {(detailStatus === "working" || detailStatus === "error" || campaignDetail) ? <div className="admin-email-modal-backdrop" role="presentation"><section className="admin-email-modal admin-email-modal--wide" role="dialog" aria-modal="true" aria-labelledby="campaign-detail-title"><button className="admin-email-modal__close" type="button" onClick={() => { setCampaignDetail(null); setDetailStatus("idle"); setDetailMessage(""); }}>Close</button><p className="eyebrow">Campaign delivery record</p><h2 id="campaign-detail-title">{campaignDetail?.subject ?? "Loading campaign…"}</h2>{detailMessage ? <p className={`admin-email-inline-message is-${detailStatus === "error" || retryStatus === "error" ? "error" : "success"}`} role={detailStatus === "error" || retryStatus === "error" ? "alert" : "status"}>{detailMessage}</p> : null}{campaignDetail ? <><div className="admin-email-detail-summary"><span>{campaignDetail.sentCount} sent</span><span>{campaignDetail.failedCount} failed</span><span>{campaignDetail.recipientCount} total</span></div><div className="admin-email-detail-list">{campaignDetail.recipients.map((recipient) => <article key={recipient.id}><div><strong>{recipient.name}</strong><span>{recipient.email}</span></div><span className={`admin-email-delivery-status is-${recipient.status}`}>{recipient.status}</span>{recipient.errorMessage ? <p>{recipient.errorMessage}</p> : null}</article>)}</div>{campaignDetail.recipients.some((recipient) => recipient.status === "failed") ? <div className="admin-email-retry-panel"><p>Only failed recipients will be retried. Already-sent recipients are excluded.</p><label><span>Type <strong>RETRY {campaignDetail.recipients.filter((recipient) => recipient.status === "failed").length}</strong></span><input value={retryInput} onChange={(event) => setRetryInput(event.target.value)} /></label><button className="button button--dark" type="button" onClick={retryFailures} disabled={retryStatus === "working" || retryInput !== `RETRY ${campaignDetail.recipients.filter((recipient) => recipient.status === "failed").length}`}>{retryStatus === "working" ? "Retrying…" : "Retry failed recipients"}</button></div> : null}</> : null}</section></div> : null}
     </>
   );
 }

@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-html-link-for-pages */
 import { notFound } from "next/navigation";
 import { AdminDashboardShell } from "@/app/components/admin-dashboard-shell";
 import { AdminEmailComposer } from "@/app/components/admin-email-composer";
@@ -12,8 +11,15 @@ export default async function EmailAdminPage() {
   const user = await requireChatGPTUser("/admin/email");
   if (!(await isWaitlistAdmin(user.email))) notFound();
 
-  const { recipients, suppressedCount, campaigns } =
-    await getMailingListAdminData();
+  const {
+    recipients,
+    unsubscribedCount,
+    deliverySuppressedCount,
+    campaigns,
+    draft,
+    capacityExceeded,
+    readiness,
+  } = await getMailingListAdminData(user.email);
 
   return (
     <AdminDashboardShell
@@ -25,8 +31,13 @@ export default async function EmailAdminPage() {
     >
       <AdminEmailComposer
         recipients={recipients}
-        suppressedCount={suppressedCount}
+        unsubscribedCount={unsubscribedCount}
+        deliverySuppressedCount={deliverySuppressedCount}
         campaigns={campaigns}
+        initialDraft={draft}
+        capacityExceeded={capacityExceeded}
+        readiness={readiness}
+        ownerEmail={user.email}
       />
     </AdminDashboardShell>
   );

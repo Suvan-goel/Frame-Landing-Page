@@ -3,6 +3,7 @@ export const EMAIL_PREVIEW_MAX_LENGTH = 200;
 export const EMAIL_BODY_MAX_LENGTH = 20_000;
 export const EMAIL_CTA_LABEL_MAX_LENGTH = 80;
 export const EMAIL_MAX_RECIPIENTS = 5_000;
+export const EMAIL_CONFIRMATION_MINUTES = 10;
 
 export type MailingListRecipient = {
   id: number;
@@ -11,6 +12,40 @@ export type MailingListRecipient = {
   lastName: string | null;
   qualificationStatus: string;
   joinedAt: string;
+};
+
+export type EmailCampaignDraft = {
+  content: EmailCampaignContent;
+  recipientIds: number[];
+  previewRecipientId: number | null;
+  updatedAt: string;
+};
+
+export type EmailCampaignRecipientSummary = {
+  id: string;
+  email: string;
+  name: string;
+  status: string;
+  errorMessage: string | null;
+  sentAt: string | null;
+  lastEvent: string | null;
+  lastEventAt: string | null;
+};
+
+export type EmailCampaignDetail = EmailCampaignSummary & {
+  previewText: string;
+  body: string;
+  ctaLabel: string;
+  ctaUrl: string;
+  recipients: EmailCampaignRecipientSummary[];
+};
+
+export type EmailDeliveryReadiness = {
+  from: string;
+  replyTo: string;
+  postalAddress: string;
+  postalAddressConfigured: boolean;
+  webhookConfigured: boolean;
 };
 
 export type EmailCampaignSummary = {
@@ -94,6 +129,10 @@ export function personalizeEmailCopy(value: string, firstName: string | null) {
   return value.replaceAll("{{first_name}}", firstName?.trim() || "there");
 }
 
+export function extractHttpUrls(value: string) {
+  return [...new Set(value.match(/https?:\/\/[^\s<>]+/g) ?? [])];
+}
+
 function escapeHtml(value: string) {
   return value
     .replaceAll("&", "&amp;")
@@ -137,6 +176,8 @@ export function renderFrameCampaignEmail(input: {
   firstName: string | null;
   unsubscribeUrl: string;
   siteUrl: string;
+  postalAddress: string;
+  testMode?: boolean;
 }) {
   const subject = personalizeEmailCopy(input.content.subject, input.firstName);
   const previewText = personalizeEmailCopy(
@@ -150,6 +191,7 @@ export function renderFrameCampaignEmail(input: {
   );
   const safeUnsubscribeUrl = escapeHtml(input.unsubscribeUrl);
   const safeSiteUrl = escapeHtml(input.siteUrl);
+  const safePostalAddress = escapeHtml(input.postalAddress);
   const cta = ctaLabel
     ? `<table role="presentation" cellspacing="0" cellpadding="0" style="margin:32px 0 38px"><tr><td style="background:#20211e"><a href="${escapeHtml(input.content.ctaUrl)}" style="display:inline-block;padding:15px 24px;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:600;text-decoration:none">${escapeHtml(ctaLabel)}</a></td></tr></table>`
     : "";
@@ -180,12 +222,17 @@ export function renderFrameCampaignEmail(input: {
             </tr>
             <tr>
               <td style="padding:28px 48px 36px;border-top:1px solid #ded8cd;color:#777870;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.65">
-                You’re receiving this email because you joined Frame early access.<br>
+                ${
+                  input.testMode
+                    ? "This is a test email sent only to the Frame administrator.<br>"
+                    : `You’re receiving this email because you joined Frame early access.<br>
                 <a href="${safeUnsubscribeUrl}" style="color:#55564f;text-decoration:underline">Unsubscribe</a>
-                &nbsp;·&nbsp;
+                &nbsp;·&nbsp;`
+                }
                 <a href="${safeSiteUrl}/privacy" style="color:#55564f;text-decoration:underline">Privacy</a>
                 &nbsp;·&nbsp;
-                <a href="${safeSiteUrl}/contact" style="color:#55564f;text-decoration:underline">Contact Frame</a>
+                <a href="${safeSiteUrl}/contact" style="color:#55564f;text-decoration:underline">Contact Frame</a><br>
+                ${safePostalAddress}
               </td>
             </tr>
           </table>
@@ -199,9 +246,12 @@ export function renderFrameCampaignEmail(input: {
     body,
     ...(ctaLabel ? ["", `${ctaLabel}: ${input.content.ctaUrl}`] : []),
     "",
-    "You’re receiving this email because you joined Frame early access.",
-    `Unsubscribe: ${input.unsubscribeUrl}`,
+    input.testMode
+      ? "This is a test email sent only to the Frame administrator."
+      : "You’re receiving this email because you joined Frame early access.",
+    ...(input.testMode ? [] : [`Unsubscribe: ${input.unsubscribeUrl}`]),
     `Privacy: ${input.siteUrl}/privacy`,
+    `Postal address: ${input.postalAddress}`,
   ].join("\n");
 
   return { subject, html, text };

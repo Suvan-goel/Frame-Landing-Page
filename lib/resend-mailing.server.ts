@@ -1,0 +1,115 @@
+import { getRuntimeValue } from "./runtime-env.server";
+
+export const RESEND_BATCH_SIZE = 100;
+
+export type ResendEmailPayload = {
+  from: string;
+  to: string[];
+  reply_to: string;
+  subject: string;
+  html: string;
+  text: string;
+  headers?: Record<string, string>;
+  tags?: Array<{ name: string; value: string }>;
+};
+
+export async function getMailingRuntimeConfiguration() {
+  const apiKey = (await getRuntimeValue("RESEND_API_KEY"))?.trim() ?? "";
+  const from =
+    (await getRuntimeValue("MAILING_FROM_EMAIL"))?.trim() ||
+    "Frame Updates <updates@framewearable.com>";
+  const replyTo =
+    (await getRuntimeValue("MAILING_REPLY_TO_EMAIL"))?.trim() ||
+    "support@framewearable.com";
+  const postalAddress =
+    (await getRuntimeValue("MAILING_POSTAL_ADDRESS"))?.trim() ?? "";
+
+  return { apiKey, from, replyTo, postalAddress };
+}
+
+export async function sendResendBatch(
+  payload: ResendEmailPayload[],
+  idempotencyKey: string,
+) {
+  const { apiKey } = await getMailingRuntimeConfiguration();
+  if (!apiKey) throw new Error("Email delivery is not configured yet.");
+
+  let response: Response;
+  try {
+    response = await fetch("https://api.resend.com/emails/batch", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+        "Idempotency-Key": idempotencyKey,
+      },
+      body: JSON.stringify(payload),
+    });
+  } catch (error) {
+    throw new Error(
+      error instanceof Error ? error.message : "Email provider request failed.",
+    );
+  }
+
+  if (!response.ok) {
+    throw new Error((await response.text()).slice(0, 500) || "Email provider request failed.");
+  }
+
+  return (await response.json().catch(() => ({}))) as {
+    data?: Array<{ id?: string }>;
+  };
+}
+
+export async function sendResendEmail(
+  payload: ResendEmailPayload,
+  idempotencyKey: string,
+) {
+  const { apiKey } = await getMailingRuntimeConfiguration();
+  if (!apiKey) throw new Error("Email delivery is not configured yet.");
+
+  const response = await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+      "Idempotency-Key": idempotencyKey,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) {
+    throw new Error((await response.text()).slice(0, 500) || "Test email could not be sent.");
+  }
+  return (await response.json().catch(() => ({}))) as { id?: string };
+}
+
+export async function createResendWebhook() {
+  const { apiKey } = await getMailingRuntimeConfiguration();
+  if (!apiKey) throw new Error("Email delivery is not configured yet.");
+
+  const response = await fetch("https://api.resend.com/webhooks", {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${apiKey}`,
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      endpoint: "https://framewearable.com/api/resend/webhook",
+      events: [
+        "email.sent",
+        "email.delivered",
+        "email.delivery_delayed",
+        "email.failed",
+        "email.bounced",
+        "email.complained",
+        "email.suppressed",
+      ],
+    }),
+  });
+  if (!response.ok) {
+    throw new Error((await response.text()).slice(0, 500) || "Bounce protection could not be enabled.");
+  }
+  return (await response.json()) as {
+    id: string;
+    signing_secret: string;
+  };
+}
