@@ -77,6 +77,22 @@ test("renders administrator tests without a subscriber unsubscribe action", () =
   assert.doesNotMatch(rendered.html, />Unsubscribe</);
 });
 
+test("ships the page-specific campaign and automated-email layouts", async () => {
+  const [layout, styles] = await Promise.all([
+    readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin-email-pages.css", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(layout, /import "\.\/admin-email-pages\.css"/);
+  assert.match(styles, /\.email-studio\s*\{/);
+  assert.match(styles, /\.email-compose-grid\s*,/);
+  assert.match(styles, /\.email-card\s*\{/);
+  assert.match(styles, /\.automated-email-library\s*\{/);
+  assert.match(styles, /\.automated-email-catalog\s*\{/);
+  assert.match(styles, /\.automated-email-detail\s*\{/);
+  assert.match(styles, /@media \(max-width: 760px\)/);
+});
+
 test("requires a server review and typed confirmation before any subscriber send", async () => {
   const [api, review, auth, sender, composer, styles, provider, webhookSetup, unsubscribe, migration, hardening] = await Promise.all([
     readFile(new URL("../app/api/admin/email/route.ts", import.meta.url), "utf8"),
