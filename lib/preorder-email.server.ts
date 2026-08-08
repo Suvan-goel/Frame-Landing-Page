@@ -3,6 +3,99 @@ import { getRuntimeValue } from "./runtime-env.server";
 import { formatPreorderMoney, formatPreorderNumber } from "./preorder";
 import type { PreorderEnvironment } from "./preorder-operations.server";
 
+export type RenderedAutomatedEmail = {
+  subject: string;
+  text: string;
+  html: string;
+};
+
+export type PreorderConfirmationEmailInput = {
+  origin: string;
+  preorderId: string;
+  orderNumber: number;
+  environment: PreorderEnvironment;
+  email: string;
+  fullName: string;
+  amountSubtotal: number;
+  amountShipping: number;
+  amountTax: number;
+  amountTotal: number;
+  currency: string;
+  quantity: number;
+  placedAt: string;
+  estimatedShipping: string;
+  shippingAddress: Record<string, unknown>;
+  managePath?: string | null;
+  deliveryKey?: string;
+};
+
+export type PreorderShippingEmailInput = {
+  origin: string;
+  preorderId: string;
+  orderNumber: number;
+  environment: PreorderEnvironment;
+  email: string;
+  fullName: string;
+  carrier: string | null;
+  trackingNumber: string | null;
+  trackingUrl: string | null;
+  managePath?: string | null;
+};
+
+export type PreorderOwnerActionEmailInput = {
+  origin: string;
+  preorderId: string;
+  orderNumber: number;
+  environment: PreorderEnvironment;
+  fullName: string;
+  customerEmail: string;
+  requestType: "cancellation" | "address_change";
+  reason: string | null;
+  requestedAddress?: Record<string, unknown> | null;
+  deliveryKey: string;
+};
+
+export type PreorderAddressChangeResolutionEmailInput = {
+  origin: string;
+  preorderId: string;
+  orderNumber: number;
+  environment: PreorderEnvironment;
+  email: string;
+  fullName: string;
+  approved: boolean;
+  resolutionNote: string | null;
+  shippingAddress: Record<string, unknown>;
+  managePath: string;
+  resolutionVersion: string;
+};
+
+export type PreorderDeliveryUpdateEmailInput = {
+  origin: string;
+  preorderId: string;
+  orderNumber: number;
+  environment: PreorderEnvironment;
+  email: string;
+  fullName: string;
+  previousEstimate: string;
+  currentEstimate: string;
+  message: string;
+  managePath: string;
+  deliveryUpdateVersion: number;
+};
+
+export type PreorderRefundUpdateEmailInput = {
+  origin: string;
+  preorderId: string;
+  orderNumber: number;
+  environment: PreorderEnvironment;
+  email: string;
+  fullName: string;
+  amountRefunded: number;
+  currency: string;
+  status: "processing" | "completed";
+  managePath: string;
+};
+
 function escapeHtml(value: string) {
   return value
     .replaceAll("&", "&amp;")
@@ -172,27 +265,9 @@ async function preorderOperationsRecipient() {
     .find(Boolean) ?? null;
 }
 
-export async function sendPreorderConfirmationEmail(input: {
-  origin: string;
-  preorderId: string;
-  orderNumber: number;
-  environment: PreorderEnvironment;
-  email: string;
-  fullName: string;
-  amountSubtotal: number;
-  amountShipping: number;
-  amountTax: number;
-  amountTotal: number;
-  currency: string;
-  quantity: number;
-  placedAt: string;
-  estimatedShipping: string;
-  shippingAddress: Record<string, unknown>;
-  managePath?: string | null;
-  deliveryKey?: string;
-}) {
-  const deliveryKey =
-    input.deliveryKey ?? `preorder-confirmation-${input.preorderId}`;
+export function renderPreorderConfirmationEmail(
+  input: PreorderConfirmationEmailInput,
+): RenderedAutomatedEmail {
   const orderNumber = formatPreorderNumber(input.orderNumber);
   const subtotal = formatPreorderMoney(input.amountSubtotal, input.currency);
   const shippingAmount = formatPreorderMoney(input.amountShipping, input.currency);
@@ -212,11 +287,7 @@ export async function sendPreorderConfirmationEmail(input: {
     ? ["", "Sandbox order: no live charge was made."]
     : [];
 
-  return sendPreorderEmail({
-    preorderId: input.preorderId,
-    emailType: "order_confirmation",
-    recipient: input.email,
-    deliveryKey,
+  return {
     subject,
     text: [
       `Hello ${input.fullName},`,
@@ -265,36 +336,36 @@ export async function sendPreorderConfirmationEmail(input: {
         <p style="color:#686a63">Questions? Contact support@framewearable.com.</p>
       </div>
     `,
+  };
+}
+
+export async function sendPreorderConfirmationEmail(
+  input: PreorderConfirmationEmailInput,
+) {
+  const deliveryKey =
+    input.deliveryKey ?? `preorder-confirmation-${input.preorderId}`;
+  return sendPreorderEmail({
+    preorderId: input.preorderId,
+    emailType: "order_confirmation",
+    recipient: input.email,
+    deliveryKey,
+    ...renderPreorderConfirmationEmail(input),
   });
 }
 
-export async function sendPreorderShippingEmail(input: {
-  origin: string;
-  preorderId: string;
-  orderNumber: number;
-  environment: PreorderEnvironment;
-  email: string;
-  fullName: string;
-  carrier: string | null;
-  trackingNumber: string | null;
-  trackingUrl: string | null;
-  managePath?: string | null;
-}) {
+export function renderPreorderShippingEmail(
+  input: PreorderShippingEmailInput,
+): RenderedAutomatedEmail {
   const orderNumber = formatPreorderNumber(input.orderNumber);
   const sandbox = input.environment === "test";
   const manageUrl = input.managePath ? `${input.origin}${input.managePath}` : null;
-  const deliveryKey = `preorder-shipping-${input.preorderId}-${input.trackingNumber ?? "no-tracking"}`;
   const trackingText = [
     input.carrier ? `Carrier: ${input.carrier}` : null,
     input.trackingNumber ? `Tracking number: ${input.trackingNumber}` : null,
     input.trackingUrl ? `Track your shipment: ${input.trackingUrl}` : null,
   ].filter((value): value is string => Boolean(value));
 
-  return sendPreorderEmail({
-    preorderId: input.preorderId,
-    emailType: "shipping_update",
-    recipient: input.email,
-    deliveryKey,
+  return {
     subject: `${sandbox ? "[Sandbox] " : ""}Your Frame pre-order has shipped — ${orderNumber}`,
     text: [
       `Hello ${input.fullName},`,
@@ -320,25 +391,23 @@ export async function sendPreorderShippingEmail(input: {
         <p style="color:#686a63">Questions? Contact support@framewearable.com.</p>
       </div>
     `,
+  };
+}
+
+export async function sendPreorderShippingEmail(input: PreorderShippingEmailInput) {
+  const deliveryKey = `preorder-shipping-${input.preorderId}-${input.trackingNumber ?? "no-tracking"}`;
+  return sendPreorderEmail({
+    preorderId: input.preorderId,
+    emailType: "shipping_update",
+    recipient: input.email,
+    deliveryKey,
+    ...renderPreorderShippingEmail(input),
   });
 }
 
-export async function sendPreorderOwnerActionEmail(input: {
-  origin: string;
-  preorderId: string;
-  orderNumber: number;
-  environment: PreorderEnvironment;
-  fullName: string;
-  customerEmail: string;
-  requestType: "cancellation" | "address_change";
-  reason: string | null;
-  requestedAddress?: Record<string, unknown> | null;
-  deliveryKey: string;
-}) {
-  const recipient = await preorderOperationsRecipient();
-  if (!recipient) {
-    throw new Error("Pre-order operations email is not configured yet.");
-  }
+export function renderPreorderOwnerActionEmail(
+  input: PreorderOwnerActionEmailInput,
+): RenderedAutomatedEmail {
   const orderNumber = formatPreorderNumber(input.orderNumber);
   const sandbox = input.environment === "test";
   const requestLabel =
@@ -350,11 +419,7 @@ export async function sendPreorderOwnerActionEmail(input: {
     ? addressLines(input.requestedAddress)
     : [];
 
-  return sendPreorderEmail({
-    preorderId: input.preorderId,
-    emailType: "owner_action_required",
-    recipient,
-    deliveryKey: input.deliveryKey,
+  return {
     subject: `${sandbox ? "[Sandbox] " : ""}Action required: ${requestLabel} — ${orderNumber}`,
     text: [
       `Customer action required for ${orderNumber}.`,
@@ -380,31 +445,33 @@ export async function sendPreorderOwnerActionEmail(input: {
         <p style="margin:30px 0"><a href="${escapeHtml(ownerUrl)}" style="display:inline-block;background:#20211e;color:#faf8f2;padding:13px 20px;text-decoration:none">Review order</a></p>
       </div>
     `,
+  };
+}
+
+export async function sendPreorderOwnerActionEmail(
+  input: PreorderOwnerActionEmailInput,
+) {
+  const recipient = await preorderOperationsRecipient();
+  if (!recipient) {
+    throw new Error("Pre-order operations email is not configured yet.");
+  }
+  return sendPreorderEmail({
+    preorderId: input.preorderId,
+    emailType: "owner_action_required",
+    recipient,
+    deliveryKey: input.deliveryKey,
+    ...renderPreorderOwnerActionEmail(input),
   });
 }
 
-export async function sendPreorderAddressChangeResolutionEmail(input: {
-  origin: string;
-  preorderId: string;
-  orderNumber: number;
-  environment: PreorderEnvironment;
-  email: string;
-  fullName: string;
-  approved: boolean;
-  resolutionNote: string | null;
-  shippingAddress: Record<string, unknown>;
-  managePath: string;
-  resolutionVersion: string;
-}) {
+export function renderPreorderAddressChangeResolutionEmail(
+  input: PreorderAddressChangeResolutionEmailInput,
+): RenderedAutomatedEmail {
   const orderNumber = formatPreorderNumber(input.orderNumber);
   const sandbox = input.environment === "test";
   const manageUrl = `${input.origin}${input.managePath}`;
   const shipping = addressLines(input.shippingAddress);
-  return sendPreorderEmail({
-    preorderId: input.preorderId,
-    emailType: "address_change_resolved",
-    recipient: input.email,
-    deliveryKey: `preorder-address-change-${input.approved ? "approved" : "declined"}-${input.preorderId}-${input.resolutionVersion}`,
+  return {
     subject: `${sandbox ? "[Sandbox] " : ""}Shipping-address update — ${orderNumber}`,
     text: [
       `Hello ${input.fullName},`,
@@ -430,30 +497,28 @@ export async function sendPreorderAddressChangeResolutionEmail(input: {
         <p style="color:#686a63">Questions? Contact support@framewearable.com.</p>
       </div>
     `,
+  };
+}
+
+export async function sendPreorderAddressChangeResolutionEmail(
+  input: PreorderAddressChangeResolutionEmailInput,
+) {
+  return sendPreorderEmail({
+    preorderId: input.preorderId,
+    emailType: "address_change_resolved",
+    recipient: input.email,
+    deliveryKey: `preorder-address-change-${input.approved ? "approved" : "declined"}-${input.preorderId}-${input.resolutionVersion}`,
+    ...renderPreorderAddressChangeResolutionEmail(input),
   });
 }
 
-export async function sendPreorderDeliveryUpdateEmail(input: {
-  origin: string;
-  preorderId: string;
-  orderNumber: number;
-  environment: PreorderEnvironment;
-  email: string;
-  fullName: string;
-  previousEstimate: string;
-  currentEstimate: string;
-  message: string;
-  managePath: string;
-  deliveryUpdateVersion: number;
-}) {
+export function renderPreorderDeliveryUpdateEmail(
+  input: PreorderDeliveryUpdateEmailInput,
+): RenderedAutomatedEmail {
   const orderNumber = formatPreorderNumber(input.orderNumber);
   const sandbox = input.environment === "test";
   const manageUrl = `${input.origin}${input.managePath}`;
-  return sendPreorderEmail({
-    preorderId: input.preorderId,
-    emailType: "delivery_update",
-    recipient: input.email,
-    deliveryKey: `preorder-delivery-update-${input.preorderId}-${input.deliveryUpdateVersion}`,
+  return {
     subject: `${sandbox ? "[Sandbox] " : ""}Shipping estimate update for your Frame pre-order — ${orderNumber}`,
     text: [
       `Hello ${input.fullName},`,
@@ -482,31 +547,30 @@ export async function sendPreorderDeliveryUpdateEmail(input: {
         <p style="color:#686a63">You can accept the updated estimate or cancel for a full refund of the unshipped order from your order page.</p>
       </div>
     `,
+  };
+}
+
+export async function sendPreorderDeliveryUpdateEmail(
+  input: PreorderDeliveryUpdateEmailInput,
+) {
+  return sendPreorderEmail({
+    preorderId: input.preorderId,
+    emailType: "delivery_update",
+    recipient: input.email,
+    deliveryKey: `preorder-delivery-update-${input.preorderId}-${input.deliveryUpdateVersion}`,
+    ...renderPreorderDeliveryUpdateEmail(input),
   });
 }
 
-export async function sendPreorderRefundUpdateEmail(input: {
-  origin: string;
-  preorderId: string;
-  orderNumber: number;
-  environment: PreorderEnvironment;
-  email: string;
-  fullName: string;
-  amountRefunded: number;
-  currency: string;
-  status: "processing" | "completed";
-  managePath: string;
-}) {
+export function renderPreorderRefundUpdateEmail(
+  input: PreorderRefundUpdateEmailInput,
+): RenderedAutomatedEmail {
   const orderNumber = formatPreorderNumber(input.orderNumber);
   const amount = formatPreorderMoney(input.amountRefunded, input.currency);
   const sandbox = input.environment === "test";
   const manageUrl = `${input.origin}${input.managePath}`;
   const completed = input.status === "completed";
-  return sendPreorderEmail({
-    preorderId: input.preorderId,
-    emailType: "refund_update",
-    recipient: input.email,
-    deliveryKey: `preorder-refund-${input.status}-${input.preorderId}-${input.amountRefunded}`,
+  return {
     subject: `${sandbox ? "[Sandbox] " : ""}${completed ? "Refund completed" : "Refund started"} — ${orderNumber}`,
     text: [
       `Hello ${input.fullName},`,
@@ -530,5 +594,17 @@ export async function sendPreorderRefundUpdateEmail(input: {
         <p style="color:#686a63">Questions? Contact support@framewearable.com.</p>
       </div>
     `,
+  };
+}
+
+export async function sendPreorderRefundUpdateEmail(
+  input: PreorderRefundUpdateEmailInput,
+) {
+  return sendPreorderEmail({
+    preorderId: input.preorderId,
+    emailType: "refund_update",
+    recipient: input.email,
+    deliveryKey: `preorder-refund-${input.status}-${input.preorderId}-${input.amountRefunded}`,
+    ...renderPreorderRefundUpdateEmail(input),
   });
 }

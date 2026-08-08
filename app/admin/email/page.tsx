@@ -26,7 +26,7 @@ export default async function EmailAdminPage() {
       activeSection="email"
       className="admin-email-shell admin-email-page"
       description="Write the update, choose the audience, then complete a final safety review."
-      title="Email campaigns"
+      title="Campaigns"
       userEmail={user.email}
     >
       <AdminEmailComposer

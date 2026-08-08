@@ -3,7 +3,12 @@ import type { ReactNode } from "react";
 import { chatGPTSignOutPath } from "@/app/chatgpt-auth";
 import { BrandWordmark } from "@/app/components/brand-wordmark";
 
-export type AdminSection = "waitlist" | "email" | "preorders" | "contributors";
+export type AdminSection =
+  | "waitlist"
+  | "email"
+  | "automated_emails"
+  | "preorders"
+  | "contributors";
 
 const ADMIN_NAVIGATION = [
   {
@@ -17,13 +22,20 @@ const ADMIN_NAVIGATION = [
     id: "email",
     href: "/admin/email",
     index: "02",
-    label: "Email",
-    description: "Campaigns and audience",
+    label: "Campaigns",
+    description: "Create and send updates",
+  },
+  {
+    id: "automated_emails",
+    href: "/admin/automated-emails",
+    index: "03",
+    label: "Automated emails",
+    description: "Templates and triggers",
   },
   {
     id: "preorders",
     href: "/admin/preorders",
-    index: "03",
+    index: "04",
     label: "Pre-orders",
     description: "Orders and operations",
   },
