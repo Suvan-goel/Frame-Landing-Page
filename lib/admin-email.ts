@@ -46,7 +46,21 @@ export type EmailDeliveryReadiness = {
   postalAddress: string;
   postalAddressConfigured: boolean;
   webhookConfigured: boolean;
+  webhookVerified: boolean;
 };
+
+export const RESEND_WEBHOOK_ENDPOINT =
+  "https://framewearable.com/api/resend/webhook";
+
+export const RESEND_WEBHOOK_EVENTS = [
+  "email.sent",
+  "email.delivered",
+  "email.delivery_delayed",
+  "email.failed",
+  "email.bounced",
+  "email.complained",
+  "email.suppressed",
+] as const;
 
 export type EmailCampaignSummary = {
   id: string;

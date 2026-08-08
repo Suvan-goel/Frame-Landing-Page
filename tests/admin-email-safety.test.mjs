@@ -70,13 +70,17 @@ test("renders administrator tests without a subscriber unsubscribe action", () =
 });
 
 test("requires a server review and typed confirmation before any subscriber send", async () => {
-  const [api, review, auth, sender, composer, provider, unsubscribe, migration, hardening] = await Promise.all([
+  const [api, review, auth, sender, composer, provider, webhookSetup, unsubscribe, migration, hardening] = await Promise.all([
     readFile(new URL("../app/api/admin/email/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/email/review/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/admin-email-api.server.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/admin-email.server.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/components/admin-email-composer.tsx", import.meta.url), "utf8"),
     readFile(new URL("../lib/resend-mailing.server.ts", import.meta.url), "utf8"),
+    readFile(
+      new URL("../app/api/admin/email/webhook-protection/route.ts", import.meta.url),
+      "utf8",
+    ),
     readFile(new URL("../app/api/unsubscribe/route.ts", import.meta.url), "utf8"),
     readFile(
       new URL(
@@ -113,6 +117,15 @@ test("requires a server review and typed confirmation before any subscriber send
   assert.match(sender, /to: \[input\.recipient\.email\]/);
   assert.match(provider, /RESEND_BATCH_SIZE = 100/);
   assert.match(provider, /"Idempotency-Key": idempotencyKey/);
+  assert.doesNotMatch(provider, /api\.resend\.com\/webhooks/);
+  assert.match(webhookSetup, /RESEND_SIGNING_SECRET_PATTERN/);
+  assert.match(webhookSetup, /configureResendWebhookProtection/);
+  assert.doesNotMatch(webhookSetup, /error instanceof Error \? error\.message/);
+  assert.match(composer, /Save signing secret/);
+  assert.match(composer, /Send test event/);
+  assert.match(composer, /Check connection/);
+  assert.match(sender, /webhookVerified: Boolean/);
+  assert.match(sender, /verifiedAt/);
   assert.match(sender, /"List-Unsubscribe-Post": "List-Unsubscribe=One-Click"/);
   assert.match(unsubscribe, /email_unsubscribed_at: new Date\(\)\.toISOString\(\)/);
   assert.match(migration, /enable row level security/);

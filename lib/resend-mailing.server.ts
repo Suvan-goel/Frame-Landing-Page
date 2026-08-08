@@ -81,35 +81,3 @@ export async function sendResendEmail(
   }
   return (await response.json().catch(() => ({}))) as { id?: string };
 }
-
-export async function createResendWebhook() {
-  const { apiKey } = await getMailingRuntimeConfiguration();
-  if (!apiKey) throw new Error("Email delivery is not configured yet.");
-
-  const response = await fetch("https://api.resend.com/webhooks", {
-    method: "POST",
-    headers: {
-      Authorization: `Bearer ${apiKey}`,
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      endpoint: "https://framewearable.com/api/resend/webhook",
-      events: [
-        "email.sent",
-        "email.delivered",
-        "email.delivery_delayed",
-        "email.failed",
-        "email.bounced",
-        "email.complained",
-        "email.suppressed",
-      ],
-    }),
-  });
-  if (!response.ok) {
-    throw new Error((await response.text()).slice(0, 500) || "Bounce protection could not be enabled.");
-  }
-  return (await response.json()) as {
-    id: string;
-    signing_secret: string;
-  };
-}

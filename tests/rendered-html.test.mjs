@@ -811,20 +811,20 @@ test("surfaces waitlist storage failures without reporting success", async () =>
   );
 });
 
-test("restores the stored admin time zone unless the URL selects another", () => {
-  assert.equal(resolveAdminTimeZone(undefined, "Europe%2FRome"), "Europe/Rome");
-  assert.equal(
-    resolveAdminTimeZone("America/New_York", "Europe%2FRome"),
-    "America/New_York",
-  );
-  assert.equal(resolveAdminTimeZone("invalid", "invalid"), "UTC");
+test("accepts a persisted admin time zone and rejects invalid values", () => {
+  assert.equal(resolveAdminTimeZone("Europe/Rome"), "Europe/Rome");
+  assert.equal(resolveAdminTimeZone("America/New_York"), "America/New_York");
+  assert.equal(resolveAdminTimeZone("invalid"), "UTC");
 });
 
 test("separates, visualizes, exports, and permanently deletes admin leads", async () => {
-  const [adminPage, timeZoneForm, timeZoneHelpers, insights, leadHelpers, csvRoute, workbookRoute, deleteRoute, timeZoneClock, css] = await Promise.all([
+  const [adminPage, timeZoneForm, timeZoneHelpers, adminSettings, timeZoneRoute, timeZoneMigration, insights, leadHelpers, csvRoute, workbookRoute, deleteRoute, timeZoneClock, css] = await Promise.all([
     readFile(new URL("../app/admin/waitlist/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/admin-time-zone-form.tsx", import.meta.url), "utf8"),
     readFile(new URL("../lib/admin-time-zone.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/admin-settings.server.ts", import.meta.url), "utf8"),
+    readFile(new URL("../app/api/admin/time-zone/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../supabase/migrations/20260808140000_persist_admin_time_zone.sql", import.meta.url), "utf8"),
     readFile(new URL("../app/admin/waitlist/qualified-lead-insights.tsx", import.meta.url), "utf8"),
     readFile(new URL("../lib/waitlist-leads.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/waitlist.csv/route.ts", import.meta.url), "utf8"),
@@ -844,18 +844,25 @@ test("separates, visualizes, exports, and permanently deletes admin leads", asyn
   assert.match(adminPage, /<th>Delete<\/th>/);
   assert.match(adminPage, /leadLabel=\{signup\.email\}/);
   assert.match(adminPage, /Lead insights/);
-  assert.match(adminPage, /waitlistTabHref\("insights", selectedTimeZone\)/);
+  assert.match(adminPage, /waitlistTabHref\("insights"\)/);
   assert.match(adminPage, /What Frame should help with/);
   assert.match(adminPage, /Export spreadsheet/);
   assert.match(adminPage, /AdminTimeZoneForm/);
   assert.match(timeZoneForm, /Lead time zone/);
   assert.match(timeZoneHelpers, /Europe\/Rome/);
   assert.match(timeZoneHelpers, /America\/New_York/);
-  assert.match(adminPage, /cookieStore\.get\(ADMIN_TIME_ZONE_COOKIE\)/);
-  assert.match(adminPage, /resolveAdminTimeZone/);
-  assert.match(timeZoneForm, /document\.cookie/);
-  assert.match(timeZoneForm, /Path=\/admin/);
-  assert.match(adminPage, /timezone=\$\{encodeURIComponent\(timeZone\)\}/);
+  assert.match(adminPage, /getPersistedAdminTimeZone/);
+  assert.match(timeZoneForm, /action="\/api\/admin\/time-zone"/);
+  assert.match(timeZoneForm, /method="post"/);
+  assert.match(adminSettings, /from\("admin_settings"\)/);
+  assert.match(adminSettings, /setPersistedAdminTimeZone/);
+  assert.match(timeZoneRoute, /isWaitlistAdmin\(user\.email\)/);
+  assert.match(timeZoneRoute, /setPersistedAdminTimeZone\(timeZone, user\.email\)/);
+  assert.match(timeZoneRoute, /status: 303/);
+  assert.match(timeZoneMigration, /create table if not exists public\.admin_settings/);
+  assert.match(timeZoneMigration, /time_zone text not null default 'UTC'/);
+  assert.doesNotMatch(timeZoneForm, /document\.cookie/);
+  assert.doesNotMatch(adminPage, /searchParams.*timezone|encodeURIComponent\(timeZone\)/s);
   assert.match(adminPage, /selectedTimeZone=\{selectedTimeZone\}/);
   assert.match(timeZoneForm, /<TimeZoneClock/);
   assert.match(timeZoneClock, /Current time/);

@@ -7,6 +7,8 @@ import {
   EMAIL_CTA_LABEL_MAX_LENGTH,
   EMAIL_PREVIEW_MAX_LENGTH,
   EMAIL_SUBJECT_MAX_LENGTH,
+  RESEND_WEBHOOK_ENDPOINT,
+  RESEND_WEBHOOK_EVENTS,
   extractHttpUrls,
   renderFrameCampaignEmail,
   validateEmailCampaignContent,
@@ -108,6 +110,11 @@ export function AdminEmailComposer({
   } | null>(null);
   const [confirmationInput, setConfirmationInput] = useState("");
   const [webhookConfigured, setWebhookConfigured] = useState(readiness.webhookConfigured);
+  const [webhookVerified, setWebhookVerified] = useState(readiness.webhookVerified);
+  const [webhookSetupOpen, setWebhookSetupOpen] = useState(
+    readiness.webhookConfigured && !readiness.webhookVerified,
+  );
+  const [webhookSecret, setWebhookSecret] = useState("");
   const [webhookStatus, setWebhookStatus] = useState<RequestStatus>("idle");
   const [webhookMessage, setWebhookMessage] = useState("");
   const [campaignDetail, setCampaignDetail] = useState<EmailCampaignDetail | null>(null);
@@ -168,7 +175,7 @@ export function AdminEmailComposer({
   ).length;
   const liveBlockingReasons = [
     !readiness.postalAddressConfigured ? "Add Frame’s valid postal address" : "",
-    !webhookConfigured ? "Enable bounce and complaint protection" : "",
+    !webhookVerified ? "Verify bounce and complaint protection" : "",
     capacityExceeded ? "The list exceeds the current 5,000-recipient safety limit" : "",
   ].filter(Boolean);
   const messageReady = validateEmailCampaignContent(content).ok;
@@ -378,19 +385,70 @@ export function AdminEmailComposer({
     setReview(null);
   }
 
-  async function enableWebhook() {
+  async function saveWebhookSecret() {
+    if (!webhookSecret.trim().startsWith("whsec_")) {
+      setWebhookStatus("error");
+      setWebhookMessage("Paste the Resend signing secret beginning with whsec_.");
+      return;
+    }
     setWebhookStatus("working");
-    setWebhookMessage("Registering the verified delivery-event endpoint with Resend…");
+    setWebhookMessage("Saving the signing secret securely… No email will be sent.");
     try {
-      const response = await fetch("/api/admin/email/webhook-protection", { method: "POST" });
+      const response = await fetch("/api/admin/email/webhook-protection", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ signingSecret: webhookSecret.trim() }),
+      });
       const result = await responseJson(response);
-      if (!response.ok) throw new Error(String(result.error ?? "Bounce protection could not be enabled."));
+      if (!response.ok) throw new Error(String(result.error ?? "The signing secret could not be saved."));
       setWebhookConfigured(true);
-      setWebhookStatus("success");
-      setWebhookMessage("Bounce and complaint protection is active.");
+      setWebhookVerified(false);
+      setWebhookSecret("");
+      setWebhookStatus("idle");
+      setWebhookMessage("Secret saved. In Resend, send a test event to the webhook, then check the connection here.");
     } catch (error) {
       setWebhookStatus("error");
-      setWebhookMessage(error instanceof Error ? error.message : "Bounce protection could not be enabled.");
+      setWebhookMessage(error instanceof Error ? error.message : "The signing secret could not be saved.");
+    }
+  }
+
+  async function checkWebhookConnection() {
+    setWebhookStatus("working");
+    setWebhookMessage("Checking for a verified Resend event…");
+    try {
+      const response = await fetch("/api/admin/email/webhook-protection");
+      const result = await responseJson(response);
+      if (!response.ok) throw new Error(String(result.error ?? "The connection could not be checked."));
+      const configured = result.configured === true;
+      const verified = result.verified === true;
+      setWebhookConfigured(configured);
+      setWebhookVerified(verified);
+      if (verified) {
+        setWebhookStatus("success");
+        setWebhookSetupOpen(false);
+        setWebhookMessage("Bounce and complaint protection is verified and active.");
+      } else {
+        setWebhookStatus("idle");
+        setWebhookMessage(
+          configured
+            ? "No verified event yet. Send a test event from the Resend webhook page, then check again."
+            : "No signing secret is configured yet.",
+        );
+      }
+    } catch (error) {
+      setWebhookStatus("error");
+      setWebhookMessage(error instanceof Error ? error.message : "The connection could not be checked.");
+    }
+  }
+
+  async function copyWebhookEndpoint() {
+    try {
+      await navigator.clipboard.writeText(RESEND_WEBHOOK_ENDPOINT);
+      setWebhookStatus("idle");
+      setWebhookMessage("Webhook endpoint copied.");
+    } catch {
+      setWebhookStatus("error");
+      setWebhookMessage("The endpoint could not be copied. Select it and copy it manually.");
     }
   }
 
@@ -660,9 +718,29 @@ export function AdminEmailComposer({
                     <div className="email-card__heading"><div><span>Delivery checks</span><strong>{liveBlockingReasons.length ? "Sending is blocked" : "Safeguards are ready"}</strong></div></div>
                     <ul className="email-safeguards">
                       <li className={readiness.postalAddressConfigured ? "is-ready" : "is-blocked"}><span></span><div><strong>Postal address</strong><small>{readiness.postalAddressConfigured ? readiness.postalAddress : "Required before live sending"}</small></div></li>
-                      <li className={webhookConfigured ? "is-ready" : "is-blocked"}><span></span><div><strong>Bounce protection</strong><small>{webhookConfigured ? "Active" : "Not configured"}</small></div>{!webhookConfigured ? <button type="button" onClick={enableWebhook} disabled={webhookStatus === "working"}>Enable</button> : null}</li>
+                      <li className={webhookVerified ? "is-ready" : "is-blocked"}><span></span><div><strong>Bounce protection</strong><small>{webhookVerified ? "Verified and active" : webhookConfigured ? "Awaiting a verified test event" : "Not configured"}</small></div>{!webhookVerified ? <button type="button" onClick={() => setWebhookSetupOpen((open) => !open)} disabled={webhookStatus === "working"}>{webhookSetupOpen ? "Hide setup" : webhookConfigured ? "Finish setup" : "Set up"}</button> : null}</li>
                       <li className={testStatus === "success" ? "is-ready" : "is-neutral"}><span></span><div><strong>Test email</strong><small>{testStatus === "success" ? "Sent during this session" : `Only sends to ${ownerEmail}`}</small></div></li>
                     </ul>
+                    {webhookSetupOpen && !webhookVerified ? (
+                      <section className="admin-email-webhook-setup" aria-labelledby="webhook-setup-title">
+                        <div className="admin-email-webhook-setup__heading">
+                          <div><p className="eyebrow">Resend webhook</p><h3 id="webhook-setup-title">Connect delivery protection</h3></div>
+                          <p>Setup never sends an email.</p>
+                        </div>
+                        <ol>
+                          <li><a href="https://resend.com/webhooks" target="_blank" rel="noreferrer">Open Webhooks in Resend</a> and create a webhook.</li>
+                          <li><span>Use this endpoint:</span><div className="admin-email-webhook-endpoint"><code>{RESEND_WEBHOOK_ENDPOINT}</code><button type="button" onClick={copyWebhookEndpoint}>Copy endpoint</button></div></li>
+                          <li><span>Select these events:</span><div className="admin-email-webhook-events">{RESEND_WEBHOOK_EVENTS.map((eventName) => <code key={eventName}>{eventName}</code>)}</div></li>
+                          <li>Copy the signing secret beginning with <code>whsec_</code>.</li>
+                        </ol>
+                        <label className="admin-email-webhook-secret"><span>Signing secret</span><input type="password" value={webhookSecret} onChange={(event) => setWebhookSecret(event.target.value)} placeholder="whsec_…" autoComplete="off" spellCheck={false} /><small>Stored securely and never displayed again.</small></label>
+                        <div className="admin-email-webhook-actions">
+                          <button className="button button--dark" type="button" onClick={saveWebhookSecret} disabled={webhookStatus === "working" || !webhookSecret.trim()}>{webhookStatus === "working" ? "Working…" : webhookConfigured ? "Replace signing secret" : "Save signing secret"}</button>
+                          {webhookConfigured ? <button className="button button--light" type="button" onClick={checkWebhookConnection} disabled={webhookStatus === "working"}>Check connection</button> : null}
+                        </div>
+                        {webhookConfigured ? <p className="admin-email-webhook-test-note">Use <strong>Send test event</strong> in Resend, then check the connection here.</p> : null}
+                      </section>
+                    ) : null}
                     {webhookMessage ? <p className={`admin-email-inline-message is-${webhookStatus}`} role={webhookStatus === "error" ? "alert" : "status"}>{webhookMessage}</p> : null}
                     {capacityExceeded ? <p className="admin-email-capacity-warning" role="alert">The mailing list is above the 5,000-recipient safety limit. Live sending remains blocked until the audience system is paginated beyond that limit.</p> : null}
                     <div className="email-send-actions">
