@@ -32,6 +32,10 @@ function createWaitlistRepositoryFixture() {
       records.push(record);
       return record;
     },
+    async resubscribe(id) {
+      const record = records.find((candidate) => candidate.id === id);
+      if (record) record.unsubscribedAt = null;
+    },
     async findByToken(signupToken) {
       return records.find((record) => record.signupToken === signupToken) ?? null;
     },

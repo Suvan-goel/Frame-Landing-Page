@@ -45,6 +45,9 @@ export function getWaitlistPreviewRepository(): WaitlistRepository {
       previewRecords.set(input.email, record);
       return record;
     },
+    async resubscribe() {
+      // Preview records do not persist an unsubscribe preference.
+    },
     async findByToken(signupToken) {
       return recordByToken(signupToken);
     },

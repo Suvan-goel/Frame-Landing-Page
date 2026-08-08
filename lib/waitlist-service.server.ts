@@ -34,6 +34,7 @@ export type QualificationUpdate = {
 export type WaitlistRepository = {
   findByEmail(email: string): Promise<WaitlistRecordState | null>;
   insert(input: NewWaitlistRecord): Promise<WaitlistRecordState>;
+  resubscribe(id: number): Promise<void>;
   findByToken(signupToken: string): Promise<WaitlistRecordState | null>;
   markSkipped(id: number, skippedAt: string): Promise<void>;
   completeIfIncomplete(
@@ -57,6 +58,7 @@ export async function captureWaitlistEmail(
 ) {
   const existing = await repository.findByEmail(input.email);
   if (existing) {
+    await repository.resubscribe(existing.id);
     return {
       status: "already_registered" as const,
       signupToken: existing.signupToken,
@@ -75,6 +77,7 @@ export async function captureWaitlistEmail(
     if (!isUniqueViolation(error)) throw error;
     const raced = await repository.findByEmail(input.email);
     if (!raced) throw error;
+    await repository.resubscribe(raced.id);
     return {
       status: "already_registered" as const,
       signupToken: raced.signupToken,
