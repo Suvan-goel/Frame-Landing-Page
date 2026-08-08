@@ -44,6 +44,12 @@ function campaignStatusLabel(status: string) {
   return "Preparing";
 }
 
+function senderDisplayName(from: string) {
+  const addressStart = from.lastIndexOf("<");
+  if (addressStart <= 0) return from;
+  return from.slice(0, addressStart).trim().replace(/^"|"$/g, "") || from;
+}
+
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("en-GB", {
     dateStyle: "medium",
@@ -636,7 +642,7 @@ export function AdminEmailComposer({
                     </div>
                     <div className="email-preview-window">
                       <div className="email-preview-window__bar"><span></span><span></span><span></span><strong>Email preview</strong></div>
-                      <dl><div><dt>From</dt><dd>{readiness.from}</dd></div><div><dt>To</dt><dd>{previewRecipient?.email ?? "selected@recipient.com"}</dd></div><div><dt>Subject</dt><dd>{preview.subject}</dd></div></dl>
+                      <dl><div><dt>From</dt><dd>{senderDisplayName(readiness.from)}</dd></div><div><dt>To</dt><dd>{previewRecipient?.email ?? "selected@recipient.com"}</dd></div><div><dt>Subject</dt><dd>{preview.subject}</dd></div></dl>
                       <iframe title="Email body preview" srcDoc={preview.html} sandbox="" tabIndex={-1} />
                     </div>
                     <div className="email-link-check"><strong>Links</strong>{emailLinks.length ? <ul>{emailLinks.map((url) => <li key={url}><a href={url} target="_blank" rel="noreferrer">{url}</a></li>)}</ul> : <span>No links in this draft.</span>}</div>
