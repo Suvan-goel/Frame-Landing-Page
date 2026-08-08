@@ -2606,9 +2606,7 @@ h2 {
 .contact-page {
   width: 100%;
   min-height: 100dvh;
-  background:
-    radial-gradient(circle at 84% 16%, rgba(141, 62, 70, 0.06), transparent 30%),
-    var(--cream);
+  background: var(--cream);
 }
 
 .contact-page__layout {
@@ -2640,9 +2638,7 @@ h2 {
   min-width: 0;
   flex-direction: column;
   padding: clamp(58px, 5vw, 76px) clamp(38px, 4.5vw, 64px) 48px;
-  background:
-    radial-gradient(circle at 15% 0%, rgba(141, 62, 70, 0.3), transparent 38%),
-    #242520;
+  background: #242520;
   color: var(--paper);
   overflow: hidden;
 }
