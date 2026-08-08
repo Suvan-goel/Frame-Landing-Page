@@ -52,7 +52,7 @@ const TERMS_SECTIONS = [
 ] as const;
 
 export const metadata: Metadata = {
-  title: `${TERMS_TITLE} — launch candidate`,
+  title: `${TERMS_TITLE}: Launch candidate`,
   description: TERMS_DESCRIPTION,
   alternates: { canonical: "/preorder/terms" },
   openGraph: {
@@ -96,7 +96,7 @@ export default async function PreorderTermsPage() {
           <dl>
             <div>
               <dt>Pre-order offer</dt>
-              <dd>{PRODUCT_PRICE} — save {PREORDER_SAVING} ({PREORDER_DISCOUNT_PERCENT}%) from the {RELEASE_PRICE} release price</dd>
+              <dd>{PRODUCT_PRICE}, saving {PREORDER_SAVING} ({PREORDER_DISCOUNT_PERCENT}%) from the {RELEASE_PRICE} release price</dd>
             </div>
             <div>
               <dt>Estimated shipping</dt>

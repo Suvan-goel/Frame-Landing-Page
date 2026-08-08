@@ -36,7 +36,7 @@ const REFUND_SECTIONS = [
 ] as const;
 
 export const metadata: Metadata = {
-  title: `${REFUNDS_TITLE} — launch candidate`,
+  title: `${REFUNDS_TITLE}: Launch candidate`,
   description: REFUNDS_DESCRIPTION,
   alternates: { canonical: "/preorder/refunds" },
   openGraph: {
