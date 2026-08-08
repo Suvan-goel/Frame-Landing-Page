@@ -767,6 +767,18 @@ test("captures email before the survey and treats a duplicate as success", async
   assert.equal(records[0].qualificationStatus, "not_started");
 });
 
+test("writes legacy full-survey submissions into the canonical qualification fields", async () => {
+  const legacySubmission = await readFile(
+    new URL("../lib/legacy-waitlist-submission.server.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(legacySubmission, /qualification_status: "completed"/);
+  assert.match(legacySubmission, /primary_interest: mainReason/);
+  assert.match(legacySubmission, /current_monitoring_method: monitoringMethod/);
+  assert.match(legacySubmission, /survey_completed_at: completedAt/);
+});
+
 test("keeps an email-only lead unqualified when the survey is skipped", async () => {
   const { repository, records } = createWaitlistRepositoryFixture();
   const captured = await captureWaitlistEmail(

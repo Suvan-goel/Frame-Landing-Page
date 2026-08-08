@@ -145,6 +145,22 @@ export async function submitLegacyWaitlist(payload: Record<string, unknown>) {
     monitoringMethod,
     interviewWillingness,
   });
+  const completedAt = new Date().toISOString();
+  const qualificationValues = {
+    first_name: firstName,
+    last_name: lastName,
+    gender,
+    age,
+    motivation: qualificationRecord,
+    qualification_status: "completed",
+    primary_interest: mainReason,
+    current_monitoring_method: monitoringMethod,
+    frustration_or_missing_need: recentSituation,
+    open_to_research_call:
+      interviewWillingness === "possibly" ? "maybe" : interviewWillingness,
+    survey_completed_at: completedAt,
+    qualification_skipped_at: null,
+  };
   try {
     const supabase = await getSupabaseAdmin();
     const { data: existingSignup, error: lookupError } = await supabase
@@ -159,13 +175,7 @@ export async function submitLegacyWaitlist(payload: Record<string, unknown>) {
     if (existingSignup) {
       const { error: updateError } = await supabase
         .from("waitlist_signups")
-        .update({
-          first_name: firstName,
-          last_name: lastName,
-          gender,
-          age,
-          motivation: qualificationRecord,
-        })
+        .update(qualificationValues)
         .eq("id", existingSignup.id);
 
       if (updateError) throw updateError;
@@ -173,12 +183,8 @@ export async function submitLegacyWaitlist(payload: Record<string, unknown>) {
     }
 
     const { error } = await supabase.from("waitlist_signups").insert({
-      first_name: firstName,
-      last_name: lastName,
+      ...qualificationValues,
       email: normalizedEmail,
-      gender,
-      age,
-      motivation: qualificationRecord,
       placement: cleanAttribution(payload.placement) ?? "landing_page",
       utm_source: cleanAttribution(payload.utmSource),
       utm_medium: cleanAttribution(payload.utmMedium),
@@ -188,13 +194,7 @@ export async function submitLegacyWaitlist(payload: Record<string, unknown>) {
     if (error?.code === "23505") {
       const { error: updateError } = await supabase
         .from("waitlist_signups")
-        .update({
-          first_name: firstName,
-          last_name: lastName,
-          gender,
-          age,
-          motivation: qualificationRecord,
-        })
+        .update(qualificationValues)
         .eq("email", normalizedEmail);
 
       if (updateError) throw updateError;

@@ -73,6 +73,8 @@ test("keeps bulk sends owner-only, individually addressed, suppressible, and ide
   assert.match(composer, /window\.confirm/);
   assert.match(composer, /renderFrameCampaignEmail/);
   assert.match(sender, /!row\.email_unsubscribed_at/);
+  assert.match(sender, /categorizeVisibleSignups\(subscribedRows\)/);
+  assert.match(sender, /qualificationStatus,/);
   assert.match(sender, /to: \[recipient\.email\]/);
   assert.match(sender, /RESEND_BATCH_SIZE = 100/);
   assert.match(sender, /"Idempotency-Key": `\$\{campaignId\}-\$\{batchIndex\}`/);
