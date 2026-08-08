@@ -18,18 +18,53 @@ export default function ContactPage() {
 
       <div className="contact-page__layout">
         <section className="contact-page__intro" aria-labelledby="contact-title">
-          <p className="eyebrow">Contact Frame</p>
-          <h1 id="contact-title">Start a conversation.</h1>
-          <p>
-            For pre-order support, research, engineering, partnerships, press, privacy, or general
-            questions, send us a note. It will go directly to the Frame team.
-          </p>
-          <ul aria-label="Reasons to contact Frame">
-            <li>Pre-order support</li>
-            <li>Research and engineering</li>
-            <li>Partnerships and press</li>
-            <li>General questions</li>
-          </ul>
+          <div className="contact-page__intro-copy">
+            <p className="eyebrow">Contact Frame</p>
+            <h1 id="contact-title">Start a conversation.</h1>
+            <p>
+              Whether you need support or want to explore what Frame is building,
+              your note will go directly to our team.
+            </p>
+          </div>
+
+          <div className="contact-page__directory">
+            <p>Contact directory</p>
+            <ol aria-label="Reasons to contact Frame">
+              <li>
+                <span>01</span>
+                <div>
+                  <strong>Pre-order support</strong>
+                  <small>Orders, delivery, and account help</small>
+                </div>
+              </li>
+              <li>
+                <span>02</span>
+                <div>
+                  <strong>Research &amp; engineering</strong>
+                  <small>Scientific and technical conversations</small>
+                </div>
+              </li>
+              <li>
+                <span>03</span>
+                <div>
+                  <strong>Partnerships &amp; press</strong>
+                  <small>Collaborations and media enquiries</small>
+                </div>
+              </li>
+              <li>
+                <span>04</span>
+                <div>
+                  <strong>Privacy &amp; general</strong>
+                  <small>Data requests and everything else</small>
+                </div>
+              </li>
+            </ol>
+          </div>
+
+          <div className="contact-page__direct">
+            <span>Direct email</span>
+            <strong>support@framewearable.com</strong>
+          </div>
         </section>
 
         <ContactForm />

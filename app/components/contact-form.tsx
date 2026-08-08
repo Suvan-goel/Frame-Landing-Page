@@ -126,6 +126,7 @@ export function ContactForm() {
   if (status === "sent") {
     return (
       <div className="contact-form__success" role="status" aria-live="polite">
+        <span className="contact-form__success-mark" aria-hidden="true">✓</span>
         <p className="eyebrow">Message sent</p>
         <h2>Thank you for reaching out.</h2>
         <p>
@@ -158,8 +159,15 @@ export function ContactForm() {
       </div>
 
       <div className="contact-form__heading">
-        <p className="eyebrow">Send a message</p>
-        <h2>How can we help?</h2>
+        <div>
+          <p className="eyebrow">Send a message</p>
+          <h2>How can we help?</h2>
+          <p>Share a few details and we’ll make sure your message reaches the right person.</p>
+        </div>
+        <p className="contact-form__status">
+          <span aria-hidden="true" />
+          Replies by email
+        </p>
       </div>
 
       <div className="contact-form__fields">
@@ -170,6 +178,7 @@ export function ContactForm() {
             name="name"
             type="text"
             autoComplete="name"
+            placeholder="Your full name"
             value={name}
             onChange={(event) => {
               setName(event.target.value);
@@ -194,6 +203,7 @@ export function ContactForm() {
             type="email"
             autoComplete="email"
             inputMode="email"
+            placeholder="you@example.com"
             value={email}
             onChange={(event) => {
               setEmail(event.target.value);
@@ -248,25 +258,24 @@ export function ContactForm() {
             }}
             maxLength={MAX_MESSAGE_LENGTH}
             aria-invalid={Boolean(errors.message)}
-            aria-describedby="contact-message-hint"
-            placeholder="Tell us what you’d like to discuss."
+            aria-describedby={
+              errors.message
+                ? "contact-message-hint contact-message-error"
+                : "contact-message-hint"
+            }
+            placeholder="Tell us what you’d like to discuss, and include any context that will help us respond."
           />
           <div className="field-hint" id="contact-message-hint">
             <span>Up to {MAX_MESSAGE_LENGTH} characters</span>
             <span>{message.trim().length}/{MAX_MESSAGE_LENGTH}</span>
           </div>
           {errors.message ? (
-            <p className="form-error" role="alert">
+            <p className="form-error" id="contact-message-error" role="alert">
               {errors.message}
             </p>
           ) : null}
         </div>
       </div>
-
-      <p className="contact-form__note">
-        Messages are sent to support@framewearable.com. Please don’t include
-        private medical information.
-      </p>
 
       {submissionError ? (
         <p className="form-error contact-form__submission-error" role="alert">
@@ -274,13 +283,20 @@ export function ContactForm() {
         </p>
       ) : null}
 
-      <button
-        className="button button--dark contact-form__submit"
-        type="submit"
-        disabled={status === "submitting"}
-      >
-        {status === "submitting" ? "Sending…" : "Send message"}
-      </button>
+      <div className="contact-form__footer">
+        <p className="contact-form__note">
+          Please don’t include private medical information. Your message is sent
+          to support@framewearable.com.
+        </p>
+        <button
+          className="button button--dark contact-form__submit"
+          type="submit"
+          disabled={status === "submitting"}
+        >
+          <span>{status === "submitting" ? "Sending…" : "Send message"}</span>
+          <span aria-hidden="true">↗</span>
+        </button>
+      </div>
     </form>
   );
 }
