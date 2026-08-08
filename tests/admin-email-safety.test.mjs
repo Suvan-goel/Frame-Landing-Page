@@ -51,8 +51,13 @@ test("renders the exact personalised preview safely with unsubscribe controls", 
   assert.match(rendered.html, /Hi Ada/);
   assert.match(rendered.html, /&lt;script&gt;alert\(&#039;no&#039;\)&lt;\/script&gt;/);
   assert.doesNotMatch(rendered.html, /<script>alert/);
+  assert.match(rendered.html, /<h1[^>]*>An update for Ada<\/h1>/);
+  assert.match(rendered.html, />Frame notes</);
+  assert.match(rendered.html, />A note from Frame</);
+  assert.match(rendered.html, /@media only screen and \(max-width: 620px\)/);
   assert.match(rendered.html, />Unsubscribe</);
   assert.match(rendered.text, /Unsubscribe: https:\/\/framewearable\.com/);
+  assert.match(rendered.text, /Contact: https:\/\/framewearable\.com\/contact/);
   assert.match(rendered.html, /123 Example Street/);
 });
 
