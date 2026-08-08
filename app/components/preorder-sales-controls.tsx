@@ -86,43 +86,47 @@ export function PreorderSalesControls({
       </dl>
 
       <form onSubmit={save}>
-        <label>
-          <span>Checkout status</span>
-          <select
-            value={salesStatus}
-            onChange={(event) => {
-              setSalesStatus(event.target.value as PreorderSalesStatus);
-              setMessage("");
-              setError("");
-            }}
-          >
-            <option value="open" disabled={liveOpenBlocked}>Open</option>
-            <option value="paused">Paused</option>
-            <option value="sold_out">Sold out</option>
-          </select>
-        </label>
-        <label>
-          <span>Released-unit ceiling</span>
-          <input
-            type="number"
-            inputMode="numeric"
-            min="0"
-            max={snapshot.inventoryLimit}
-            step="1"
-            value={unitLimit}
-            onChange={(event) => {
-              setUnitLimit(event.target.value);
-              setMessage("");
-              setError("");
-            }}
-          />
-          <small>
-            Release units in batches up to the fixed {snapshot.inventoryLimit.toLocaleString()}-unit lifetime inventory ceiling. Set this to 0 to release none.
-          </small>
-        </label>
-        <button className="button button--dark" type="submit" disabled={saving}>
-          {saving ? "Saving…" : "Save controls"}
-        </button>
+        <div className="preorder-sales-controls__fields">
+          <label>
+            <span>Checkout status</span>
+            <select
+              value={salesStatus}
+              onChange={(event) => {
+                setSalesStatus(event.target.value as PreorderSalesStatus);
+                setMessage("");
+                setError("");
+              }}
+            >
+              <option value="open" disabled={liveOpenBlocked}>Open</option>
+              <option value="paused">Paused</option>
+              <option value="sold_out">Sold out</option>
+            </select>
+          </label>
+          <label>
+            <span>Released-unit ceiling</span>
+            <input
+              type="number"
+              inputMode="numeric"
+              min="0"
+              max={snapshot.inventoryLimit}
+              step="1"
+              value={unitLimit}
+              onChange={(event) => {
+                setUnitLimit(event.target.value);
+                setMessage("");
+                setError("");
+              }}
+            />
+            <small>
+              Release units in batches up to the fixed {snapshot.inventoryLimit.toLocaleString()}-unit lifetime inventory ceiling. Set this to 0 to release none.
+            </small>
+          </label>
+        </div>
+        <div className="preorder-sales-controls__actions">
+          <button className="button button--dark" type="submit" disabled={saving}>
+            {saving ? "Saving…" : "Save controls"}
+          </button>
+        </div>
       </form>
 
       {liveOpenBlocked ? (
