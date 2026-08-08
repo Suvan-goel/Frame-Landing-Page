@@ -1,18 +1,10 @@
-"use client";
-
-import { useEffect, type FormEvent } from "react";
 import { TimeZoneClock } from "@/app/components/time-zone-clock";
 import {
-  ADMIN_TIME_ZONE_COOKIE,
   ADMIN_TIME_ZONES,
   type AdminTimeZone,
 } from "@/lib/admin-time-zone";
 
 type WaitlistView = "qualified" | "unqualified" | "insights";
-
-function storeTimeZone(timeZone: string) {
-  document.cookie = `${ADMIN_TIME_ZONE_COOKIE}=${encodeURIComponent(timeZone)}; Path=/admin; Max-Age=31536000; SameSite=Lax`;
-}
 
 export function AdminTimeZoneForm({
   activeTab,
@@ -23,17 +15,6 @@ export function AdminTimeZoneForm({
   initialDateTime: string;
   selectedTimeZone: AdminTimeZone;
 }) {
-  useEffect(() => {
-    storeTimeZone(selectedTimeZone);
-  }, [selectedTimeZone]);
-
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
-    const timeZoneField = event.currentTarget.elements.namedItem("timezone");
-    if (timeZoneField instanceof HTMLSelectElement) {
-      storeTimeZone(timeZoneField.value);
-    }
-  }
-
   const selectedTimeZoneLabel =
     ADMIN_TIME_ZONES.find((option) => option.value === selectedTimeZone)?.label ??
     "UTC";
@@ -41,9 +22,8 @@ export function AdminTimeZoneForm({
   return (
     <form
       className="admin-timezone"
-      action="/admin/waitlist"
-      method="get"
-      onSubmit={handleSubmit}
+      action="/api/admin/time-zone"
+      method="post"
     >
       <input type="hidden" name="tab" value={activeTab} />
       <div className="admin-timezone__field">

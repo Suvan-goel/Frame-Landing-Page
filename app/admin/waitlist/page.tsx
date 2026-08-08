@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation";
-import { cookies } from "next/headers";
 import { requireChatGPTUser } from "@/app/chatgpt-auth";
 import { AdminDashboardShell } from "@/app/components/admin-dashboard-shell";
 import { AdminTimeZoneForm } from "@/app/components/admin-time-zone-form";
@@ -9,10 +8,7 @@ import {
 } from "@/lib/supabase-admin.server";
 import { DeleteWaitlistSignupButton } from "@/app/components/delete-waitlist-signup-button";
 import { QualifiedLeadInsights } from "./qualified-lead-insights";
-import {
-  ADMIN_TIME_ZONE_COOKIE,
-  resolveAdminTimeZone,
-} from "@/lib/admin-time-zone";
+import { getPersistedAdminTimeZone } from "@/lib/admin-settings.server";
 import {
   categorizeVisibleSignups,
   genderLabels,
@@ -29,8 +25,8 @@ export const dynamic = "force-dynamic";
 
 type WaitlistView = LeadTab | "insights";
 
-function waitlistTabHref(tab: WaitlistView, timeZone: string) {
-  return `/admin/waitlist?tab=${tab}&timezone=${encodeURIComponent(timeZone)}`;
+function waitlistTabHref(tab: WaitlistView) {
+  return `/admin/waitlist?tab=${tab}`;
 }
 
 export default async function WaitlistAdminPage({
@@ -38,7 +34,6 @@ export default async function WaitlistAdminPage({
 }: {
   searchParams?: Promise<{
     tab?: string | string[];
-    timezone?: string | string[];
   }>;
 }) {
   const user = await requireChatGPTUser("/admin/waitlist");
@@ -47,13 +42,16 @@ export default async function WaitlistAdminPage({
   }
 
   const supabase = await getSupabaseAdmin();
-  const { data, error } = await supabase
-    .from("waitlist_signups")
-    .select(WAITLIST_SIGNUP_SELECT)
-    .order("created_at", { ascending: false })
-    .order("id", { ascending: false })
-    .limit(500)
-    .returns<WaitlistSignup[]>();
+  const [{ data, error }, selectedTimeZone] = await Promise.all([
+    supabase
+      .from("waitlist_signups")
+      .select(WAITLIST_SIGNUP_SELECT)
+      .order("created_at", { ascending: false })
+      .order("id", { ascending: false })
+      .limit(500)
+      .returns<WaitlistSignup[]>(),
+    getPersistedAdminTimeZone(),
+  ]);
 
   if (error) {
     console.error("Waitlist dashboard query failed", error);
@@ -65,12 +63,6 @@ export default async function WaitlistAdminPage({
     requestedTab === "unqualified" || requestedTab === "insights"
       ? requestedTab
       : "qualified";
-  const requestedTimeZone = resolvedSearchParams?.timezone;
-  const cookieStore = await cookies();
-  const selectedTimeZone = resolveAdminTimeZone(
-    typeof requestedTimeZone === "string" ? requestedTimeZone : undefined,
-    cookieStore.get(ADMIN_TIME_ZONE_COOKIE)?.value,
-  );
   const dateFormatter = new Intl.DateTimeFormat("en", {
     dateStyle: "medium",
     timeStyle: "short",
@@ -128,21 +120,21 @@ export default async function WaitlistAdminPage({
         <nav className="admin-tabs" aria-label="Waitlist dashboard views">
           <a
             className={activeTab === "qualified" ? "is-active" : undefined}
-            href={waitlistTabHref("qualified", selectedTimeZone)}
+            href={waitlistTabHref("qualified")}
             aria-current={activeTab === "qualified" ? "page" : undefined}
           >
             Qualified leads <span>{qualifiedCount}</span>
           </a>
           <a
             className={activeTab === "unqualified" ? "is-active" : undefined}
-            href={waitlistTabHref("unqualified", selectedTimeZone)}
+            href={waitlistTabHref("unqualified")}
             aria-current={activeTab === "unqualified" ? "page" : undefined}
           >
             Unqualified leads <span>{unqualifiedCount}</span>
           </a>
           <a
             className={activeTab === "insights" ? "is-active" : undefined}
-            href={waitlistTabHref("insights", selectedTimeZone)}
+            href={waitlistTabHref("insights")}
             aria-current={activeTab === "insights" ? "page" : undefined}
           >
             Lead insights <span>{qualifiedCount}</span>
