@@ -6,6 +6,7 @@ import {
   isLoopbackHost,
 } from "../lib/contributor-local-only";
 import {
+  isCustomerPreorderManagementPath,
   isPreorderAdminPath,
   isPublicPreorderPath,
   isPreorderRequestAllowed,
@@ -183,6 +184,8 @@ const worker = {
         : false);
     const isPreorderAdminRequest = isPreorderAdminPath(url.pathname);
     const isPublicPreorderRequest = isPublicPreorderPath(url.pathname);
+    const isCustomerPreorderManagementRequest =
+      isCustomerPreorderManagementPath(url.pathname);
     const isSharedStripeWebhook = url.pathname === "/api/stripe/webhook";
     const preorderRequestAllowed =
       isPreorderRequestAllowed({
@@ -193,7 +196,9 @@ const worker = {
 
     if (
       (isContributorRequest && !isLocalRequest) ||
-      (isPublicPreorderRequest && !preorderRequestAllowed) ||
+      (isPublicPreorderRequest &&
+        !isCustomerPreorderManagementRequest &&
+        !preorderRequestAllowed) ||
       (isSharedStripeWebhook && request.method !== "POST")
     ) {
       return new Response("Not found", {

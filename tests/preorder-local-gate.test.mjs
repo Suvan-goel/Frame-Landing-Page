@@ -32,14 +32,12 @@ test("keeps every remote public pre-order surface unavailable while legal versio
     "/preorder",
     "/preorder/review",
     "/preorder/success",
-    "/preorder/manage",
     "/preorder/terms",
     "/preorder/refunds",
     "/preorder/product-status",
     "/preorders",
     "/api/preorders/checkout",
     "/api/preorders/status",
-    "/api/preorders/manage",
     "/preorder%2Freview",
     "/api%2Fpreorders%2Fstatus",
   ];
@@ -56,6 +54,21 @@ test("keeps every remote public pre-order surface unavailable while legal versio
     assert.equal(responses[index].status, 404, paths[index]);
     assert.equal(responses[index].headers.get("x-robots-tag"), "noindex, nofollow");
   }
+});
+
+test("keeps signed customer order management reachable when sales are paused", async () => {
+  const environment = {
+    PREORDER_MODE: "off",
+  };
+  const pageResponse = await render(
+    "/preorder/manage?token=invalid",
+    undefined,
+    "https://framewearable.com",
+    environment,
+  );
+
+  assert.equal(pageResponse.status, 200);
+  assert.match(await pageResponse.text(), /preorder-manage-page/);
 });
 
 test("publishes pre-order administration behind owner authentication only", async () => {
@@ -127,7 +140,7 @@ test("keeps the public homepage free of pre-order discovery and blocks webhook b
   const home = await homeResponse.text();
   assert.doesNotMatch(home, /href=["']\/preorder/i);
   assert.equal(webhookResponse.status, 404);
-  assert.match(worker, /isPublicPreorderRequest && !preorderRequestAllowed/);
+  assert.match(worker, /!isCustomerPreorderManagementRequest/);
   assert.match(worker, /x-frame-preorder-admin-request/);
   assert.match(worker, /isSharedStripeWebhook && request\.method !== "POST"/);
   assert.match(robots, /"\/preorder"/);

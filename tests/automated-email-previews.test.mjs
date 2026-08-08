@@ -64,3 +64,18 @@ test("catalogues every current customer lifecycle email state", async () => {
     assert.match(catalog, new RegExp(`"${id}"`));
   }
 });
+
+test("keeps customer email links on the public Frame domain", async () => {
+  const preorderSource = await readFile(
+    new URL("../lib/preorder-email.server.ts", import.meta.url),
+    "utf8",
+  );
+
+  assert.match(preorderSource, /import \{ SITE_URL \} from "\.\/site"/);
+  assert.match(preorderSource, /`\$\{SITE_URL\}\/preorder\/terms`/);
+  assert.match(preorderSource, /`\$\{SITE_URL\}\$\{input\.managePath\}`/);
+  assert.doesNotMatch(
+    preorderSource,
+    /`\$\{input\.origin\}\$\{input\.managePath\}`/,
+  );
+});

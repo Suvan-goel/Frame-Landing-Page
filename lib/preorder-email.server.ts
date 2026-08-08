@@ -1,6 +1,7 @@
 import { getSupabaseAdmin } from "./supabase-admin.server";
 import { getRuntimeValue } from "./runtime-env.server";
 import { formatPreorderMoney, formatPreorderNumber } from "./preorder";
+import { SITE_URL } from "./site";
 import type { PreorderEnvironment } from "./preorder-operations.server";
 
 export type RenderedAutomatedEmail = {
@@ -277,10 +278,10 @@ export function renderPreorderConfirmationEmail(
     new Date(input.placedAt),
   );
   const shipping = addressLines(input.shippingAddress);
-  const termsUrl = `${input.origin}/preorder/terms`;
-  const refundsUrl = `${input.origin}/preorder/refunds`;
-  const productStatusUrl = `${input.origin}/preorder/product-status`;
-  const manageUrl = input.managePath ? `${input.origin}${input.managePath}` : null;
+  const termsUrl = `${SITE_URL}/preorder/terms`;
+  const refundsUrl = `${SITE_URL}/preorder/refunds`;
+  const productStatusUrl = `${SITE_URL}/preorder/product-status`;
+  const manageUrl = input.managePath ? `${SITE_URL}${input.managePath}` : null;
   const sandbox = input.environment === "test";
   const subject = `${sandbox ? "[Sandbox] " : ""}Frame pre-order confirmation — ${orderNumber}`;
   const sandboxText = sandbox
@@ -358,7 +359,7 @@ export function renderPreorderShippingEmail(
 ): RenderedAutomatedEmail {
   const orderNumber = formatPreorderNumber(input.orderNumber);
   const sandbox = input.environment === "test";
-  const manageUrl = input.managePath ? `${input.origin}${input.managePath}` : null;
+  const manageUrl = input.managePath ? `${SITE_URL}${input.managePath}` : null;
   const trackingText = [
     input.carrier ? `Carrier: ${input.carrier}` : null,
     input.trackingNumber ? `Tracking number: ${input.trackingNumber}` : null,
@@ -469,7 +470,7 @@ export function renderPreorderAddressChangeResolutionEmail(
 ): RenderedAutomatedEmail {
   const orderNumber = formatPreorderNumber(input.orderNumber);
   const sandbox = input.environment === "test";
-  const manageUrl = `${input.origin}${input.managePath}`;
+  const manageUrl = `${SITE_URL}${input.managePath}`;
   const shipping = addressLines(input.shippingAddress);
   return {
     subject: `${sandbox ? "[Sandbox] " : ""}Shipping-address update — ${orderNumber}`,
@@ -517,7 +518,7 @@ export function renderPreorderDeliveryUpdateEmail(
 ): RenderedAutomatedEmail {
   const orderNumber = formatPreorderNumber(input.orderNumber);
   const sandbox = input.environment === "test";
-  const manageUrl = `${input.origin}${input.managePath}`;
+  const manageUrl = `${SITE_URL}${input.managePath}`;
   return {
     subject: `${sandbox ? "[Sandbox] " : ""}Shipping estimate update for your Frame pre-order — ${orderNumber}`,
     text: [
@@ -568,7 +569,7 @@ export function renderPreorderRefundUpdateEmail(
   const orderNumber = formatPreorderNumber(input.orderNumber);
   const amount = formatPreorderMoney(input.amountRefunded, input.currency);
   const sandbox = input.environment === "test";
-  const manageUrl = `${input.origin}${input.managePath}`;
+  const manageUrl = `${SITE_URL}${input.managePath}`;
   const completed = input.status === "completed";
   return {
     subject: `${sandbox ? "[Sandbox] " : ""}${completed ? "Refund completed" : "Refund started"} — ${orderNumber}`,

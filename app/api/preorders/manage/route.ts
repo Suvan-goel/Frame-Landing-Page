@@ -6,7 +6,6 @@ import {
   respondToPreorderDeliveryUpdate,
 } from "@/lib/preorder-customer-management.server";
 import { getPreorderConfiguration } from "@/lib/preorder-config.server";
-import { isPreorderSalesRequestEnabled } from "@/lib/runtime-env.server";
 import { consumePreorderRateLimit } from "@/lib/preorder-rate-limit.server";
 
 export const dynamic = "force-dynamic";
@@ -25,9 +24,6 @@ function response(body: Record<string, unknown>, status = 200) {
 }
 
 export async function GET(request: Request) {
-  if (!(await isPreorderSalesRequestEnabled(request))) {
-    return response({ error: "Not found." }, 404);
-  }
   const token = new URL(request.url).searchParams.get("token") ?? "";
   try {
     const rateLimit = await consumePreorderRateLimit({
@@ -66,9 +62,6 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  if (!(await isPreorderSalesRequestEnabled(request))) {
-    return response({ error: "Not found." }, 404);
-  }
   const origin = request.headers.get("origin");
   if (origin && origin !== new URL(request.url).origin) {
     return response({ error: "Request origin is not allowed." }, 403);

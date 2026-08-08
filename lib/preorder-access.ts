@@ -17,6 +17,11 @@ const PREORDER_ADMIN_ROUTE_ROOTS = [
   "/api/admin/preorders.csv",
 ] as const;
 
+const PREORDER_CUSTOMER_MANAGEMENT_ROUTE_ROOTS = [
+  "/preorder/manage",
+  "/api/preorders/manage",
+] as const;
+
 export type PreorderMode = "off" | "test" | "live";
 
 export function normalizePreorderMode(value: string | undefined): PreorderMode {
@@ -70,6 +75,10 @@ function matchesRouteRoot(pathname: string, roots: readonly string[]) {
 
 export function isPublicPreorderPath(pathname: string) {
   return matchesRouteRoot(pathname, PREORDER_PUBLIC_ROUTE_ROOTS);
+}
+
+export function isCustomerPreorderManagementPath(pathname: string) {
+  return matchesRouteRoot(pathname, PREORDER_CUSTOMER_MANAGEMENT_ROUTE_ROOTS);
 }
 
 export function isPreorderAdminPath(pathname: string) {
