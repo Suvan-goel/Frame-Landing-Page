@@ -1,4 +1,4 @@
-# Frame ImageGen campaign set — V3
+# Frame ImageGen campaign set: V3
 
 Generated with the built-in ImageGen workflow on 2026-08-01. These images use
 the current Frame concept render and on-arm image as strict design references.
@@ -17,12 +17,12 @@ capabilities may change.
 
 ## Deliverables
 
-- `frame-product-campaign-hero-feed-v3.png` — premium product campaign source
-- `frame-morning-routine-feed-v2.png` — corrected at-home lifestyle source
-- `frame-morning-walk-feed-v2.png` — corrected everyday-context source
-- `frame-sensor-campaign-macro-landscape-v3.png` — premium sensing macro source
-- `exports/frame-morning-*-1080x1350-v2.png` — corrected 4:5 Meta feed exports
-- `exports/frame-product-campaign-hero-feed-1080x1350-v3.png` — premium 4:5 export
+- `frame-product-campaign-hero-feed-v3.png`: premium product campaign source
+- `frame-morning-routine-feed-v2.png`: corrected at-home lifestyle source
+- `frame-morning-walk-feed-v2.png`: corrected everyday-context source
+- `frame-sensor-campaign-macro-landscape-v3.png`: premium sensing macro source
+- `exports/frame-morning-*-1080x1350-v2.png`: corrected 4:5 Meta feed exports
+- `exports/frame-product-campaign-hero-feed-1080x1350-v3.png`: premium 4:5 export
 
 The V2 lifestyle images supersede the V1 lifestyle images. V2 places Frame on
 the distal upper arm, approximately 2–4 cm above the elbow crease and below the

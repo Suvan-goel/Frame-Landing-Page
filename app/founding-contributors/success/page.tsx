@@ -3,7 +3,7 @@ import { ContributorSuccess } from "../../components/contributor-success";
 import { ContributorHeader } from "../../components/contributor-chrome";
 
 export const metadata: Metadata = {
-  title: "Founding Contributor membership — Frame",
+  title: "Founding Contributor membership | Frame",
   description: "Frame Founding Contributor membership confirmation.",
   robots: { index: false, follow: false },
 };

@@ -5,7 +5,7 @@ import { ContributorHeader } from "../../components/contributor-chrome";
 import { isFoundingContributorSalesPageEnabled } from "@/lib/contributor-sales-page.server";
 
 export const metadata: Metadata = {
-  title: "Review your Founding Contributor Membership — Frame",
+  title: "Review your Founding Contributor Membership | Frame",
   description: "Review the Frame Founding Contributor Membership before secure payment.",
   robots: { index: false, follow: false },
 };

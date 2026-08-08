@@ -5,7 +5,7 @@ import { isFoundingContributorSalesPageEnabled } from "@/lib/contributor-sales-p
 import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
 
 export const metadata: Metadata = {
-  title: "Privacy — Frame",
+  title: "Privacy | Frame",
   description: "How Frame handles information submitted through its website.",
   alternates: {
     canonical: "/privacy",
@@ -143,18 +143,26 @@ export default async function PrivacyPage() {
         <section>
           <h2>Advertising measurement</h2>
           <p>
-            We use the Meta Pixel to understand whether a visit, updates signup,
-            or optional survey completion came from a Meta ad and to measure and
-            improve our campaigns. The Pixel may use browser identifiers and similar
-            technologies, which Meta processes under its own privacy policy. We
-            do not send your name, email address, age, gender, or written
-            responses to Meta through the Pixel.
+            If you allow optional advertising measurement, we use the Meta Pixel
+            to understand whether a visit, updates signup, or optional survey
+            completion came from a Meta ad and to measure and improve our
+            campaigns. The Pixel stays off unless you choose “Allow optional” in
+            the privacy choices banner. It may then use browser identifiers and
+            similar technologies, which Meta processes under its own privacy
+            policy. We do not send your name, email address, age, gender, or
+            written responses to Meta through the Pixel.
             {showContributorAreas
               ? " The Pixel is not initialized on checkout review, payment-success, member sign-in, contributor-profile, private contributor-hub, or administration routes."
               : null}
             {showPreorderAreas
               ? " The Pixel is not initialized on pre-order review, payment confirmation, customer order-management, or pre-order administration routes."
               : null}
+          </p>
+          <p>
+            We store your choice in your browser. You can change or withdraw it
+            at any time using the “Privacy choices” control displayed on pages
+            where optional advertising measurement is available. Declining does
+            not affect the website’s essential functions.
           </p>
         </section>
 

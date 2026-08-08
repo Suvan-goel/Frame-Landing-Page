@@ -3,7 +3,7 @@ import Link from "next/link";
 import { SiteHeader } from "../../components/site-header";
 
 export const metadata: Metadata = {
-  title: "Founding Contributor Refund Policy — Frame",
+  title: "Founding Contributor Refund Policy | Frame",
   description: "Draft refund policy for the Frame Founding Contributor Membership.",
   robots: { index: false, follow: false },
 };
@@ -13,7 +13,7 @@ export default function ContributorRefundsPage() {
     <main className="legal-page">
       <SiteHeader backHref="/founding-contributors/review" backLabel="Membership review" />
       <article className="legal-shell">
-        <div className="legal-draft-banner" role="note">Draft for testing — legal review required</div>
+        <div className="legal-draft-banner" role="note">Draft for testing. Legal review required.</div>
         <p className="eyebrow">Founding Contributor Membership</p>
         <h1>Refund Policy</h1>
         <p className="legal-updated">Draft effective date: to be confirmed before launch</p>

@@ -110,7 +110,7 @@ export function renderPreorderShippingEmail(
   ].filter((value): value is string => Boolean(value));
 
   return {
-    subject: `${sandbox ? "[Sandbox] " : ""}Your Frame pre-order has shipped — ${orderNumber}`,
+    subject: `${sandbox ? "[Sandbox] " : ""}Your Frame pre-order has shipped | ${orderNumber}`,
     text: [
       `Hello ${input.fullName},`,
       "",
@@ -153,7 +153,7 @@ export function renderPreorderOwnerActionEmail(
     : [];
 
   return {
-    subject: `${sandbox ? "[Sandbox] " : ""}Action required: ${requestLabel} — ${orderNumber}`,
+    subject: `${sandbox ? "[Sandbox] " : ""}Action required: ${requestLabel} | ${orderNumber}`,
     text: [
       `Customer action required for ${orderNumber}.`,
       `Request: ${requestLabel}`,
@@ -189,7 +189,7 @@ export function renderPreorderAddressChangeResolutionEmail(
   const manageUrl = `${SITE_URL}${input.managePath}`;
   const shipping = addressLines(input.shippingAddress);
   return {
-    subject: `${sandbox ? "[Sandbox] " : ""}Shipping-address update — ${orderNumber}`,
+    subject: `${sandbox ? "[Sandbox] " : ""}Shipping-address update | ${orderNumber}`,
     text: [
       `Hello ${input.fullName},`,
       "",
@@ -224,7 +224,7 @@ export function renderPreorderDeliveryUpdateEmail(
   const sandbox = input.environment === "test";
   const manageUrl = `${SITE_URL}${input.managePath}`;
   return {
-    subject: `${sandbox ? "[Sandbox] " : ""}Shipping estimate update for your Frame pre-order — ${orderNumber}`,
+    subject: `${sandbox ? "[Sandbox] " : ""}Shipping estimate update for your Frame pre-order | ${orderNumber}`,
     text: [
       `Hello ${input.fullName},`,
       "",
@@ -264,7 +264,7 @@ export function renderPreorderRefundUpdateEmail(
   const manageUrl = `${SITE_URL}${input.managePath}`;
   const completed = input.status === "completed";
   return {
-    subject: `${sandbox ? "[Sandbox] " : ""}${completed ? "Refund completed" : "Refund started"} — ${orderNumber}`,
+    subject: `${sandbox ? "[Sandbox] " : ""}${completed ? "Refund completed" : "Refund started"} | ${orderNumber}`,
     text: [
       `Hello ${input.fullName},`,
       "",
@@ -289,4 +289,3 @@ export function renderPreorderRefundUpdateEmail(
     `,
   };
 }
-

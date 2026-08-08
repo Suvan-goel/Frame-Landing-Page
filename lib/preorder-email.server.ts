@@ -215,7 +215,7 @@ export function renderPreorderConfirmationEmail(
   const productStatusUrl = `${input.origin}/preorder/product-status`;
   const manageUrl = input.managePath ? `${input.origin}${input.managePath}` : null;
   const sandbox = input.environment === "test";
-  const subject = `${sandbox ? "[Sandbox] " : ""}Frame pre-order confirmation — ${orderNumber}`;
+  const subject = `${sandbox ? "[Sandbox] " : ""}Frame pre-order confirmation | ${orderNumber}`;
   const sandboxText = sandbox
     ? ["", "Sandbox order: no live charge was made."]
     : [];
@@ -446,7 +446,7 @@ export async function sendPreorderShippingEmail(input: {
     emailType: "shipping_update",
     recipient: input.email,
     deliveryKey,
-    subject: `${sandbox ? "[Sandbox] " : ""}Your Frame pre-order has shipped — ${orderNumber}`,
+    subject: `${sandbox ? "[Sandbox] " : ""}Your Frame pre-order has shipped | ${orderNumber}`,
     text: [
       `Hello ${input.fullName},`,
       "",
@@ -506,7 +506,7 @@ export async function sendPreorderOwnerActionEmail(input: {
     emailType: "owner_action_required",
     recipient,
     deliveryKey: input.deliveryKey,
-    subject: `${sandbox ? "[Sandbox] " : ""}Action required: ${requestLabel} — ${orderNumber}`,
+    subject: `${sandbox ? "[Sandbox] " : ""}Action required: ${requestLabel} | ${orderNumber}`,
     text: [
       `Customer action required for ${orderNumber}.`,
       `Request: ${requestLabel}`,
@@ -556,7 +556,7 @@ export async function sendPreorderAddressChangeResolutionEmail(input: {
     emailType: "address_change_resolved",
     recipient: input.email,
     deliveryKey: `preorder-address-change-${input.approved ? "approved" : "declined"}-${input.preorderId}-${input.resolutionVersion}`,
-    subject: `${sandbox ? "[Sandbox] " : ""}Shipping-address update — ${orderNumber}`,
+    subject: `${sandbox ? "[Sandbox] " : ""}Shipping-address update | ${orderNumber}`,
     text: [
       `Hello ${input.fullName},`,
       "",
@@ -627,7 +627,7 @@ export async function sendPreorderDeliveryUpdateEmail(input: {
     emailType: "delivery_update",
     recipient: input.email,
     deliveryKey: `preorder-delivery-update-${input.preorderId}-${input.deliveryUpdateVersion}`,
-    subject: `${sandbox ? "[Sandbox] " : ""}${materialChange ? "Action required: proposed Frame product change" : "Shipping estimate update for your Frame pre-order"} — ${orderNumber}`,
+    subject: `${sandbox ? "[Sandbox] " : ""}${materialChange ? "Action required: proposed Frame product change" : "Shipping estimate update for your Frame pre-order"} | ${orderNumber}`,
     text: [
       `Hello ${input.fullName},`,
       "",
@@ -687,7 +687,7 @@ export async function sendPreorderRefundUpdateEmail(input: {
     emailType: "refund_update",
     recipient: input.email,
     deliveryKey: `preorder-refund-${input.status}-${input.preorderId}-${input.amountRefunded}`,
-    subject: `${sandbox ? "[Sandbox] " : ""}${completed ? "Refund completed" : "Refund started"} — ${orderNumber}`,
+    subject: `${sandbox ? "[Sandbox] " : ""}${completed ? "Refund completed" : "Refund started"} | ${orderNumber}`,
     text: [
       `Hello ${input.fullName},`,
       "",
@@ -731,7 +731,7 @@ export async function sendPreorderEmailChangeVerificationEmail(input: {
     emailType: "email_change_verification",
     recipient: input.newEmail,
     deliveryKey: input.deliveryKey,
-    subject: `${sandbox ? "[Sandbox] " : ""}Verify your Frame order email — ${orderNumber}`,
+    subject: `${sandbox ? "[Sandbox] " : ""}Verify your Frame order email | ${orderNumber}`,
     text: [
       `Hello ${input.fullName},`,
       "",
@@ -782,7 +782,7 @@ export async function sendPreorderEmailChangeNotice(input: {
     emailType: "email_change_notice",
     recipient: input.recipient,
     deliveryKey: input.deliveryKey,
-    subject: `${sandbox ? "[Sandbox] " : ""}${heading} — ${orderNumber}`,
+    subject: `${sandbox ? "[Sandbox] " : ""}${heading} | ${orderNumber}`,
     text: [
       `Hello ${input.fullName},`,
       "",

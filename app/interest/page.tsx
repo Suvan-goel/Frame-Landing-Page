@@ -3,7 +3,7 @@ import { InterestFlow } from "../components/interest-flow";
 import { isFoundingContributorSalesPageEnabled } from "@/lib/contributor-sales-page.server";
 
 export const metadata: Metadata = {
-  title: "Get updates — Frame",
+  title: "Get updates | Frame",
   description:
     "Get Frame development updates and tell us what you want to understand about your blood pressure.",
   alternates: {

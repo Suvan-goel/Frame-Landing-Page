@@ -329,7 +329,7 @@ export async function sendAutomatedEmailPreviewTest(input: {
       from: selected.from,
       to: [input.recipient],
       subject: `[TEST PREVIEW] ${selected.subject}`,
-      text: `ADMINISTRATOR PREVIEW — no customer event was created.\n\n${selected.text}`,
+      text: `ADMINISTRATOR PREVIEW: no customer event was created.\n\n${selected.text}`,
       html: `${banner}${selected.html}`,
     }),
   });

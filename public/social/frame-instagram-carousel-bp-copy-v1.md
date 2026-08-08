@@ -15,12 +15,13 @@ Why does blood pressure matter?
 
 Blood pressure is the force of blood pushing against artery walls as the heart pumps. A reading contains two numbers:
 
-• Systolic pressure—when the heart contracts  
-• Diastolic pressure—when the heart relaxes
+• Systolic pressure: when the heart contracts
+
+• Diastolic pressure: when the heart relaxes
 
 Persistently high blood pressure often has no warning signs. Over time, it can affect the heart, brain, kidneys and eyes, and it increases the risk of heart disease and stroke.
 
-Blood pressure also changes throughout the day. Timing, activity, stress and measurement technique can all affect an individual reading. That is why one reading is a snapshot—and why repeated, properly taken measurements and clinical context matter.
+Blood pressure also changes throughout the day. Timing, activity, stress and measurement technique can all affect an individual reading. That is why one reading is a snapshot. Repeated, properly taken measurements and clinical context matter.
 
 Speak with a qualified health professional about what your readings mean for you.
 
@@ -28,7 +29,7 @@ Frame is exploring how wearable ultrasound could help make blood-pressure patter
 
 This post is for education only and is not medical advice.
 
-Sources: CDC, About High Blood Pressure (2026); American Heart Association, Blood Pressure—Life’s Essential 8 (2025).
+Sources: CDC, About High Blood Pressure (2026); American Heart Association, Blood Pressure: Life’s Essential 8 (2025).
 
 #BloodPressure #CardiovascularHealth #HealthEducation #HealthTechnology #WearableTechnology #FrameWearable
 
@@ -57,4 +58,4 @@ Publish this carousel 2–3 days after the three introductory launch posts. Keep
 ## Supporting sources
 
 - [CDC: About High Blood Pressure](https://www.cdc.gov/high-blood-pressure/about/)
-- [American Heart Association: Blood Pressure—Life’s Essential 8](https://newsroom.heart.org/facts/blood-pressure-life-s-essential-8-health-factor)
+- [American Heart Association: Blood Pressure: Life’s Essential 8](https://newsroom.heart.org/facts/blood-pressure-life-s-essential-8-health-factor)

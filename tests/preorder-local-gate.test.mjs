@@ -105,7 +105,6 @@ test("keeps the funnel usable only on loopback during development", async () => 
   assert.match(home, /You save/);
   assert.match(home, /40(?:<!-- -->)?% off/);
   assert.match(home, /Pre-order now -\s*(?:<!-- -->)?\$299/);
-  assert.doesNotMatch(home, /Pre-order now — \$299/);
   assert.match(home, /href="\/preorder\/review\?source=homepage_header"/);
   assert.match(home, /href="\/preorder\/review\?source=homepage_hero"/);
   assert.match(home, /href="\/preorder\/review\?source=homepage"/);

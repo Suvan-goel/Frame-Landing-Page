@@ -126,7 +126,7 @@ export async function POST(request: Request) {
         terms_version: CONTRIBUTOR_TERMS_VERSION,
       },
       payment_intent_data: {
-        description: "Frame Founding Contributor Membership — no device included",
+        description: "Frame Founding Contributor Membership (no device included)",
         metadata: {
           checkout_intent_id: inserted.data.id,
           membership: "frame_founding_contributor",

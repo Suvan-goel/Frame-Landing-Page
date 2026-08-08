@@ -372,7 +372,7 @@ export async function POST(request: Request) {
         payment_intent_data: {
           description:
             mode === "test"
-              ? "Frame device pre-order — sandbox"
+              ? "Frame device pre-order (sandbox)"
               : "Frame device pre-order",
           metadata: {
             flow: "frame_preorder",

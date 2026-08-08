@@ -303,12 +303,12 @@ export function QualifiedLeadInsights({ leads }: { leads: QualifiedLead[] }) {
       <div className="admin-insight-metrics" aria-label="Lead insight highlights">
         <InsightMetric
           label="Average age"
-          value={averageAge ? String(averageAge) : "—"}
+          value={averageAge ? String(averageAge) : "N/A"}
           detail={largestAgeGroup ? `Largest group: ${largestAgeGroup.label}` : "No age data"}
         />
         <InsightMetric
           label="Top reason"
-          value={topReason ? `${percentage(topReason.count, leads.length)}%` : "—"}
+          value={topReason ? `${percentage(topReason.count, leads.length)}%` : "N/A"}
           detail={topReason?.label ?? "No response data"}
         />
         <InsightMetric

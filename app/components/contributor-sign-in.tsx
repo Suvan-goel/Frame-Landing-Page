@@ -53,7 +53,7 @@ export function ContributorSignIn() {
         <h1 id="sign-in-title">Sign in to the contributor hub</h1>
         <p>
           Use the email address from your Founding Contributor purchase. We will email you a
-          one-time secure link—there is no password to remember.
+          one-time secure link. There is no password to remember.
         </p>
         <form onSubmit={submit} className="contributor-auth-form">
           <label htmlFor="contributor-email">Membership email</label>

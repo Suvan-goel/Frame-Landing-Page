@@ -57,7 +57,7 @@ export const metadata: Metadata = {
         url: "/og-launch-v2.png",
         width: 1732,
         height: 908,
-        alt: "Frame — See how your blood pressure responds to daily life.",
+        alt: "Frame: See how your blood pressure responds to daily life.",
       },
     ],
   },

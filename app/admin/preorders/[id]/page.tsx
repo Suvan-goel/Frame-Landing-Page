@@ -68,7 +68,7 @@ type OrderEvent = { id: string; event_type: string; source: string; detail: Reco
 type EmailDelivery = { id: string; email_type: string; recipient: string; status: string; error_message: string | null; sent_at: string | null; created_at: string };
 
 function dateTime(value: string | null) {
-  if (!value) return "—";
+  if (!value) return "N/A";
   return new Intl.DateTimeFormat("en-GB", {
     dateStyle: "medium",
     timeStyle: "short",

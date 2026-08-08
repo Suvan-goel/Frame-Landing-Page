@@ -82,14 +82,14 @@ export default async function FoundingContributorsPage() {
           <p className="founding-price-line">$99 once <span>·</span> 12 months of community access <span>·</span> No automatic renewal</p>
           <div className="founding-actions">
             <a className="button button--dark" href="/founding-contributors/review">
-              Become a Founding Contributor — $99
+              Become a Founding Contributor for $99
             </a>
             <a className="text-link" href="#membership-includes">
               See exactly what membership includes <span aria-hidden="true">↓</span>
             </a>
           </div>
           <p className="founding-hero__note" role="note">
-            Membership only—does not include or reserve a Frame device. Frame is still in development.
+            Membership only. This does not include or reserve a Frame device. Frame is still in development.
           </p>
         </div>
         <figure className="founding-hero__visual">
@@ -103,7 +103,7 @@ export default async function FoundingContributorsPage() {
               unoptimized
             />
           </div>
-          <figcaption>Concept visualization — not a finished product</figcaption>
+          <figcaption>Concept visualization. Not a finished product.</figcaption>
         </figure>
       </section>
 

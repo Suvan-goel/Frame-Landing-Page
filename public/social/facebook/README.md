@@ -1,4 +1,4 @@
-# Frame Facebook ad campaign — v1
+# Frame Facebook ad campaign: v1
 
 This campaign pairs professional lifestyle and product photography with deterministic brand typography so the product remains consistent and every line of ad copy stays crisp.
 
@@ -10,7 +10,7 @@ The device is shown on the lower upper arm, approximately 2–4 cm above the elb
 | --- | --- | --- | --- |
 | Product | `frame-facebook-product-feed-v8.png` | `frame-facebook-product-square-v8.png` | `frame-facebook-product-story-v8.png` |
 | Upright product | `frame-facebook-product-upright-feed-v3.png` | `frame-facebook-product-upright-square-v3.png` | `frame-facebook-product-upright-story-v3.png` |
-| Favourite product variant | `frame-facebook-product-favorite-feed-v1.png` | — | — |
+| Favourite product variant | `frame-facebook-product-favorite-feed-v1.png` | N/A | N/A |
 | Routine | `frame-facebook-routine-feed-v1.png` | `frame-facebook-routine-square-v1.png` | `frame-facebook-routine-story-v1.png` |
 | Movement | `frame-facebook-movement-feed-v1.png` | `frame-facebook-movement-square-v1.png` | `frame-facebook-movement-story-v1.png` |
 
@@ -22,7 +22,7 @@ Dimensions:
 
 ## Ads Manager copy
 
-### 1. Product-first — “See how your blood pressure responds to daily life.”
+### 1. Product-first: “See how your blood pressure responds to daily life.”
 
 Primary text:
 
@@ -33,22 +33,22 @@ Primary text:
 - CTA button: `Sign Up`
 - Best use: cold prospecting and product introduction
 
-### 2. Morning routine — “Your baseline is personal.”
+### 2. Morning routine: “Your baseline is personal.”
 
 Primary text:
 
-> Your baseline is personal. Frame is designed to explore patterns against your own context—not a generic average. We’re inviting a small group of early users to help shape what comes next. Research-stage concept; not intended to diagnose or treat.
+> Your baseline is personal. Frame is designed to explore patterns against your own context, not a generic average. We’re inviting a small group of early users to help shape what comes next. Research-stage concept; not intended to diagnose or treat.
 
 - Headline: `Your baseline is personal.`
 - Description: `Help shape Frame.`
 - CTA button: `Sign Up`
 - Best use: problem-aware audiences and landing-page retargeting
 
-### 3. Everyday movement — “Patterns over moments.”
+### 3. Everyday movement: “Patterns over moments.”
 
 Primary text:
 
-> One reading captures a moment. Frame is exploring wearable ultrasound to understand patterns around everyday life—without putting another screen on your arm. Apply for early access. Research-stage concept; not intended to diagnose or treat.
+> One reading captures a moment. Frame is exploring wearable ultrasound to understand patterns around everyday life without putting another screen on your arm. Apply for early access. Research-stage concept; not intended to diagnose or treat.
 
 - Headline: `Patterns over moments.`
 - Description: `Apply for early access.`

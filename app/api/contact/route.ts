@@ -133,7 +133,7 @@ export async function POST(request: Request) {
         from: fromEmail,
         to: [CONTACT_EMAIL],
         reply_to: email,
-        subject: `Frame contact: ${topicLabel} — ${name}`,
+        subject: `Frame contact: ${topicLabel} | ${name}`,
         text: `Name: ${name}\nEmail: ${email}\nTopic: ${topicLabel}\n\n${message}`,
         html: `<h2>New Frame website message</h2><p><strong>Name:</strong> ${safeName}<br><strong>Email:</strong> ${safeEmail}<br><strong>Topic:</strong> ${safeTopic}</p><p>${safeMessage}</p>`,
       }),
