@@ -140,27 +140,40 @@ export default async function Home() {
             </p>
             {preorderOffer ? (
               <div className="home-preorder-hero">
-                <div
-                  className="home-preorder-hero__panel"
-                  role="group"
-                  aria-label="Frame pre-order offer"
-                >
-                  <div className="home-preorder-hero__summary">
-                    <span className="home-preorder-hero__label">Pre-order</span>
-                    <div className="home-preorder-hero__price-row">
-                      <strong>{preorderPriceLabel}</strong>
-                      <span className="home-preorder-hero__release-price">
-                        <del>{preorderReleasePriceLabel}</del> release
-                      </span>
-                    </div>
-                  </div>
+                <div className="home-preorder-hero__actions">
                   <a
                     className="button home-preorder-hero__preorder-button"
                     href="/preorder/review?source=homepage_hero"
                   >
-                    Pre-order now - Save {preorderSavingsLabel}
+                    Pre-order now
+                  </a>
+                  <a className="home-preorder-hero__details-button" href="#preorder">
+                    See details <span aria-hidden="true">↓</span>
                   </a>
                 </div>
+                <dl
+                  className="home-preorder-hero__prices"
+                  aria-label="Frame pre-order pricing"
+                >
+                  <div>
+                    <dt>Pre-order price</dt>
+                    <dd>{preorderPriceLabel}</dd>
+                  </div>
+                  <div>
+                    <dt>Release price</dt>
+                    <dd><del>{preorderReleasePriceLabel}</del></dd>
+                  </div>
+                  <div className="home-preorder-hero__saving">
+                    <div>
+                      <dt>You save</dt>
+                      <dd>{preorderSavingsLabel}</dd>
+                    </div>
+                    <span>{PREORDER_DISCOUNT_PERCENT}% off</span>
+                  </div>
+                </dl>
+                <p className="home-preorder-hero__shipping">
+                  Estimated shipping {preorderOffer.estimatedShipping} · US delivery only
+                </p>
                 <WaitlistSignupFlow
                   placement="homepage_hero_preorder_waitlist"
                   compact

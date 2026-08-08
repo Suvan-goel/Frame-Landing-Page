@@ -102,18 +102,19 @@ test("keeps the funnel usable only on loopback during development", async () => 
   assert.equal(homeResponse.status, 200);
   const home = await homeResponse.text();
   assert.match(home, /Pre-order now/);
-  assert.match(home, /Pre-order now - Save\s*(?:<!-- -->)?\$200/);
+  assert.match(home, /You save/);
+  assert.match(home, /40(?:<!-- -->)?% off/);
   assert.match(home, /Pre-order now -\s*(?:<!-- -->)?\$299/);
   assert.doesNotMatch(home, /Pre-order now — \$299/);
   assert.match(home, /href="\/preorder\/review\?source=homepage_header"/);
   assert.match(home, /href="\/preorder\/review\?source=homepage_hero"/);
   assert.match(home, /href="\/preorder\/review\?source=homepage"/);
   assert.doesNotMatch(home, /Pre-orders are now open\./);
-  assert.doesNotMatch(home, /See details/);
+  assert.match(home, /See details/);
   assert.doesNotMatch(home, /home-preorder-hero__offer/);
   assert.doesNotMatch(home, /home-preorder-hero__saving-note/);
-  assert.match(home, /home-preorder-hero__panel/);
-  assert.doesNotMatch(home, /home-preorder-hero__pricing/);
+  assert.match(home, /home-preorder-hero__actions/);
+  assert.match(home, /home-preorder-hero__prices/);
   assert.match(home, /id="homepage-hero-preorder-waitlist-email"/);
   assert.match(
     home,
