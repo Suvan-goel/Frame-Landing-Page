@@ -177,7 +177,7 @@ function bodyToHtml(value: string) {
   return paragraphs
     .map(
       (paragraph, index) =>
-        `<p style="margin:0 0 ${index === paragraphs.length - 1 ? "0" : "22px"};color:#41423e;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.72">${paragraph
+        `<p style="margin:0 0 ${index === paragraphs.length - 1 ? "0" : "24px"};color:#3f403c;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.75">${paragraph
           .split("\n")
           .map(textLineToHtml)
           .join("<br>")}</p>`,
@@ -208,22 +208,25 @@ export function renderFrameCampaignEmail(input: {
   const safeSiteUrl = escapeHtml(input.siteUrl);
   const safePostalAddress = escapeHtml(input.postalAddress);
   const year = new Date().getFullYear();
+  const heroSummary = previewText
+    ? `<p class="email-summary" style="max-width:440px;margin:18px 0 0;color:#cccac3;font-family:Arial,Helvetica,sans-serif;font-size:15px;line-height:1.6">${escapeHtml(previewText)}</p>`
+    : "";
   const cta = ctaLabel
-    ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:32px 0 0"><tr><td style="padding:0 0 4px;border-bottom:1px solid #7b2937"><a href="${escapeHtml(input.content.ctaUrl)}" style="display:inline-block;color:#7b2937;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;letter-spacing:.01em;line-height:1.5;text-decoration:none">${escapeHtml(ctaLabel)}&nbsp;&nbsp;&rarr;</a></td></tr></table>`
+    ? `<table class="email-cta-table" role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:34px 0 0"><tr><td bgcolor="#8d3e46" style="background:#8d3e46;border-radius:3px"><a class="email-cta-button" href="${escapeHtml(input.content.ctaUrl)}" style="display:inline-block;padding:14px 21px;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;letter-spacing:.02em;line-height:1.2;text-decoration:none">${escapeHtml(ctaLabel)}&nbsp;&nbsp;<span aria-hidden="true">&rarr;</span></a></td></tr></table>`
     : "";
   const footerLinks = input.testMode
-    ? `<a href="${safeSiteUrl}" style="color:#62635e;text-decoration:underline">framewearable.com</a>
+    ? `<a href="${safeSiteUrl}" style="color:#5f605b;text-decoration:underline;text-underline-offset:2px">framewearable.com</a>
                   &nbsp;&nbsp;·&nbsp;&nbsp;
-                  <a href="${safeSiteUrl}/contact" style="color:#62635e;text-decoration:underline">Contact</a>
+                  <a href="${safeSiteUrl}/contact" style="color:#5f605b;text-decoration:underline;text-underline-offset:2px">Contact</a>
                   &nbsp;&nbsp;·&nbsp;&nbsp;
-                  <a href="${safeSiteUrl}/privacy" style="color:#62635e;text-decoration:underline">Privacy</a>`
-    : `<a href="${safeSiteUrl}" style="color:#62635e;text-decoration:underline">framewearable.com</a>
+                  <a href="${safeSiteUrl}/privacy" style="color:#5f605b;text-decoration:underline;text-underline-offset:2px">Privacy</a>`
+    : `<a href="${safeSiteUrl}" style="color:#5f605b;text-decoration:underline;text-underline-offset:2px">framewearable.com</a>
                   &nbsp;&nbsp;·&nbsp;&nbsp;
-                  <a href="${safeSiteUrl}/contact" style="color:#62635e;text-decoration:underline">Contact</a>
+                  <a href="${safeSiteUrl}/contact" style="color:#5f605b;text-decoration:underline;text-underline-offset:2px">Contact</a>
                   &nbsp;&nbsp;·&nbsp;&nbsp;
-                  <a href="${safeSiteUrl}/privacy" style="color:#62635e;text-decoration:underline">Privacy</a>
+                  <a href="${safeSiteUrl}/privacy" style="color:#5f605b;text-decoration:underline;text-underline-offset:2px">Privacy</a>
                   &nbsp;&nbsp;·&nbsp;&nbsp;
-                  <a href="${safeUnsubscribeUrl}" style="color:#62635e;text-decoration:underline">Unsubscribe</a>`;
+                  <a href="${safeUnsubscribeUrl}" style="color:#5f605b;text-decoration:underline;text-underline-offset:2px">Unsubscribe</a>`;
   const footerReason = input.testMode
     ? "This is a test email sent only to the Frame administrator."
     : "You’re receiving this because you signed up for Frame updates.";
@@ -245,45 +248,61 @@ export function renderFrameCampaignEmail(input: {
       table { border-collapse: collapse !important; }
       a[x-apple-data-detectors] { color: inherit !important; text-decoration: none !important; }
       @media only screen and (max-width: 620px) {
-        .email-outer { padding: 16px 0 22px !important; }
-        .email-card { width: 100% !important; border-left: 0 !important; border-right: 0 !important; }
-        .email-header { padding: 25px 24px 23px !important; }
-        .email-content { padding: 38px 24px 44px !important; }
-        .email-footer { padding: 24px 24px 0 !important; }
-        .email-heading { font-size: 29px !important; line-height: 1.15 !important; }
+        .email-outer { padding: 12px 0 20px !important; }
+        .email-card { width: 100% !important; border-left: 0 !important; border-right: 0 !important; border-radius: 0 !important; }
+        .email-header { padding: 24px !important; }
+        .email-site-link { display: none !important; }
+        .email-hero { padding: 38px 24px 41px !important; }
+        .email-content { padding: 37px 24px 42px !important; }
+        .email-footer { padding: 27px 24px 31px !important; }
+        .email-heading { font-size: 31px !important; line-height: 1.16 !important; }
+        .email-summary { font-size: 14px !important; }
+        .email-cta-table { width: 100% !important; }
+        .email-cta-button { display: block !important; text-align: center !important; }
       }
     </style>
   </head>
-  <body style="margin:0;padding:0;background:#f3f2ef;color:#20211e">
+  <body style="margin:0;padding:0;background:#ebe8e1;color:#20211e">
     <div style="display:none;max-height:0;overflow:hidden;opacity:0;color:transparent;line-height:1px">${escapeHtml(inboxPreview)}&#847;&nbsp;&zwnj;&nbsp;&#847;&nbsp;&zwnj;&nbsp;&#847;&nbsp;&zwnj;&nbsp;&#847;</div>
-    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#f3f2ef" style="width:100%;background:#f3f2ef">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#ebe8e1" style="width:100%;background:#ebe8e1">
       <tr>
-        <td class="email-outer" align="center" style="padding:38px 16px 28px">
-          <table class="email-card" role="presentation" width="580" cellspacing="0" cellpadding="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:580px;background:#ffffff;border:1px solid #e2e0da">
+        <td class="email-outer" align="center" style="padding:42px 16px 32px">
+          <table class="email-card" role="presentation" width="600" cellspacing="0" cellpadding="0" border="0" bgcolor="#ffffff" style="width:100%;max-width:600px;background:#ffffff;border:1px solid #d9d6ce;border-radius:12px;box-shadow:0 18px 48px rgba(32,33,30,.08);overflow:hidden">
             <tr>
-              <td class="email-header" style="padding:29px 42px 27px;border-bottom:1px solid #eceae5">
+              <td height="6" bgcolor="#8d3e46" style="height:6px;background:#8d3e46;font-size:0;line-height:0">&nbsp;</td>
+            </tr>
+            <tr>
+              <td class="email-header" bgcolor="#ffffff" style="padding:30px 44px 29px;background:#ffffff">
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
                   <tr>
                     <td align="left" valign="middle">
-                      <a href="${safeSiteUrl}" style="color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:24px;font-weight:700;letter-spacing:-.7px;line-height:1;text-decoration:none">Frame</a>
+                      <a href="${safeSiteUrl}" style="color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:27px;font-weight:700;letter-spacing:-.8px;line-height:1;text-decoration:none">Frame</a>
+                    </td>
+                    <td class="email-site-link" align="right" valign="middle">
+                      <a href="${safeSiteUrl}" style="color:#73746e;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:600;letter-spacing:.08em;line-height:1;text-decoration:none;text-transform:uppercase">framewearable.com</a>
                     </td>
                   </tr>
                 </table>
               </td>
             </tr>
             <tr>
-              <td class="email-content" style="padding:49px 42px 55px">
-                <h1 class="email-heading" style="margin:0 0 29px;color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:32px;font-weight:400;letter-spacing:-.55px;line-height:1.17">${escapeHtml(subject)}</h1>
+              <td class="email-hero" bgcolor="#20211e" style="padding:47px 44px 50px;background:#20211e">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:0 0 24px"><tr><td width="44" height="3" bgcolor="#a54a56" style="width:44px;height:3px;background:#a54a56;font-size:0;line-height:0">&nbsp;</td></tr></table>
+                <h1 class="email-heading" style="max-width:470px;margin:0;color:#f7f4ed;font-family:Georgia,'Times New Roman',serif;font-size:38px;font-weight:400;letter-spacing:-.8px;line-height:1.16">${escapeHtml(subject)}</h1>
+                ${heroSummary}
+              </td>
+            </tr>
+            <tr>
+              <td class="email-content" bgcolor="#ffffff" style="padding:45px 44px 50px;background:#ffffff">
                 ${bodyToHtml(body)}
                 ${cta}
               </td>
             </tr>
-          </table>
-          <table role="presentation" width="580" cellspacing="0" cellpadding="0" border="0" style="width:100%;max-width:580px">
             <tr>
-              <td class="email-footer" style="padding:23px 10px 0;color:#85867f;font-family:Arial,Helvetica,sans-serif;font-size:10px;line-height:1.65;text-align:left">
-                <p style="margin:0 0 8px">${footerLinks}</p>
-                <p style="margin:0">${footerReason} &copy; ${year} Frame Health Technologies.</p>
+              <td class="email-footer" bgcolor="#f6f3ed" style="padding:29px 44px 34px;border-top:1px solid #e2ded5;background:#f6f3ed;color:#777872;font-family:Arial,Helvetica,sans-serif;font-size:10px;line-height:1.7;text-align:left">
+                <p style="margin:0 0 12px;color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:17px;font-weight:700;letter-spacing:-.3px;line-height:1">Frame</p>
+                <p style="margin:0 0 13px">${footerLinks}</p>
+                <p style="margin:0;color:#85867f">${footerReason}<br>&copy; ${year} Frame Health Technologies.</p>
                 ${postalAddress}
               </td>
             </tr>

@@ -54,6 +54,10 @@ test("renders the exact personalised preview safely with unsubscribe controls", 
   assert.match(rendered.html, /<h1[^>]*>An update for Ada<\/h1>/);
   assert.doesNotMatch(rendered.html, /Frame notes/i);
   assert.doesNotMatch(rendered.html, /A note from Frame/i);
+  assert.match(rendered.html, /class="email-hero"/);
+  assert.match(rendered.html, /bgcolor="#20211e"/);
+  assert.match(rendered.html, /class="email-summary"[^>]*>What’s new at Frame</);
+  assert.match(rendered.html, /class="email-cta-button"/);
   assert.match(rendered.html, /@media only screen and \(max-width: 620px\)/);
   assert.match(rendered.html, />Unsubscribe</);
   assert.match(rendered.text, /Unsubscribe: https:\/\/framewearable\.com/);
