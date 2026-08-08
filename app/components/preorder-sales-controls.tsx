@@ -1,8 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { FormEvent, useEffect, useState } from "react";
-import { formatPreorderAdminStatus } from "@/lib/preorder-admin-dashboard";
+import { FormEvent, useState } from "react";
 import type {
   PreorderSalesSnapshot,
   PreorderSalesStatus,
@@ -11,9 +10,11 @@ import type {
 export function PreorderSalesControls({
   snapshot,
   liveGateReady,
+  launchBlockers,
 }: {
   snapshot: PreorderSalesSnapshot;
   liveGateReady: boolean;
+  launchBlockers: string[];
 }) {
   const router = useRouter();
   const [salesStatus, setSalesStatus] = useState(snapshot.salesStatus);
@@ -22,16 +23,6 @@ export function PreorderSalesControls({
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
   const liveOpenBlocked = snapshot.environment === "live" && !liveGateReady;
-  const parsedUnitLimit = Number(unitLimit);
-  const hasChanges =
-    salesStatus !== snapshot.salesStatus || parsedUnitLimit !== snapshot.unitLimit;
-
-  useEffect(() => {
-    setSalesStatus(snapshot.salesStatus);
-    setUnitLimit(String(snapshot.unitLimit));
-    setMessage("");
-    setError("");
-  }, [snapshot.environment, snapshot.salesStatus, snapshot.unitLimit]);
 
   async function save(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -46,7 +37,7 @@ export function PreorderSalesControls({
         body: JSON.stringify({
           environment: snapshot.environment,
           salesStatus,
-          unitLimit: parsedUnitLimit,
+          unitLimit: Number(unitLimit),
         }),
       });
       const result = (await response.json()) as { error?: string; blockers?: string[] };
@@ -80,25 +71,21 @@ export function PreorderSalesControls({
           </h2>
         </div>
         <span className={`admin-status admin-status--${snapshot.salesStatus}`}>
-          {formatPreorderAdminStatus(snapshot.salesStatus)}
+          {snapshot.salesStatus.replaceAll("_", " ")}
         </span>
       </div>
 
-      <p className="preorder-sales-controls__intro">
-        These settings affect {snapshot.environment === "test" ? "sandbox" : "live"} checkout only. They do not change the fixed lifetime inventory ceiling.
-      </p>
-
       <dl className="preorder-sales-controls__numbers">
         <div><dt>Paid units</dt><dd>{snapshot.paidUnits}</dd></div>
-        <div><dt>Reserved units</dt><dd>{snapshot.reservedUnits}</dd></div>
+        <div><dt>Reserved checkouts</dt><dd>{snapshot.reservedUnits}</dd></div>
         <div>
-          <dt>Available now</dt>
+          <dt>Released availability</dt>
           <dd>{snapshot.remainingUnits}</dd>
         </div>
-        <div><dt>Lifetime remaining</dt><dd>{snapshot.inventoryRemainingUnits}</dd></div>
+        <div><dt>Lifetime availability</dt><dd>{snapshot.inventoryRemainingUnits}</dd></div>
       </dl>
 
-      <form onSubmit={save} aria-busy={saving}>
+      <form onSubmit={save}>
         <label>
           <span>Checkout status</span>
           <select
@@ -113,10 +100,9 @@ export function PreorderSalesControls({
             <option value="paused">Paused</option>
             <option value="sold_out">Sold out</option>
           </select>
-          <small>Pause checkout temporarily, or mark the release as sold out.</small>
         </label>
         <label>
-          <span>Units released for sale</span>
+          <span>Released-unit ceiling</span>
           <input
             type="number"
             inputMode="numeric"
@@ -131,22 +117,26 @@ export function PreorderSalesControls({
             }}
           />
           <small>
-            Up to {snapshot.inventoryLimit.toLocaleString()} units across the lifetime of this pre-order programme. Paid units and active reservations cannot be removed.
+            Release units in batches up to the fixed {snapshot.inventoryLimit.toLocaleString()}-unit lifetime inventory ceiling. Set this to 0 to release none.
           </small>
         </label>
-        <button className="button button--dark" type="submit" disabled={saving || !hasChanges}>
-          {saving ? "Saving…" : hasChanges ? "Save controls" : "No changes to save"}
+        <button className="button button--dark" type="submit" disabled={saving}>
+          {saving ? "Saving…" : "Save controls"}
         </button>
       </form>
 
       {liveOpenBlocked ? (
-        <p className="preorder-sales-controls__note">
-          Opening live checkout is disabled until every launch safeguard passes. The readiness panel explains what remains.
-        </p>
+        <div className="preorder-sales-controls__blockers">
+          <p className="preorder-sales-controls__note">
+            Live checkout stays locked until every launch safeguard passes.
+          </p>
+          {launchBlockers.length ? (
+            <ul>
+              {launchBlockers.map((blocker) => <li key={blocker}>{blocker}</li>)}
+            </ul>
+          ) : null}
+        </div>
       ) : null}
-      <p className="preorder-sales-controls__updated">
-        Last updated {new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(new Date(snapshot.updatedAt))} UTC{snapshot.updatedBy ? ` by ${snapshot.updatedBy}` : ""}.
-      </p>
       {message ? <p className="form-success" role="status">{message}</p> : null}
       {error ? <p className="form-error" role="alert">{error}</p> : null}
     </section>

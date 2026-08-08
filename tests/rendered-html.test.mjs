@@ -77,7 +77,14 @@ function waitlistEmailInput(email) {
   };
 }
 
-async function render(path = "/", init, origin = "http://localhost") {
+const CONTRIBUTOR_TEST_ENV = { CONTRIBUTOR_FEATURE_ENABLED: "true" };
+
+async function render(
+  path = "/",
+  init,
+  origin = "http://localhost",
+  environment = {},
+) {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("test", `${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
@@ -90,6 +97,7 @@ async function render(path = "/", init, origin = "http://localhost") {
       ASSETS: {
         fetch: async () => new Response("Not found", { status: 404 }),
       },
+      ...environment,
     },
     {
       waitUntil() {},
@@ -113,7 +121,10 @@ test("permanently redirects www requests to the canonical host", async () => {
 });
 
 test("server-renders the Frame landing page", async () => {
-  const response = await render();
+  const response = await render("/", undefined, "http://localhost", {
+    PREORDER_MODE: "test",
+    PREORDER_SHIPPING_RATE_CENTS: "1900",
+  });
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
 
@@ -130,6 +141,10 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /hero--email-first/);
   assert.match(
     html,
+    /MEASURE YOUR BLOOD PRESSURE CONTINUOUSLY/,
+  );
+  assert.match(
+    html,
     /Frame is developing a non-invasive upper-arm wearable that reveals how blood pressure changes throughout daily life\./,
   );
   assert.match(
@@ -140,7 +155,10 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /Evidence before claims\./);
   assert.match(html, /Signal integrity/);
   assert.match(html, /Research and engineering inquiries/);
-  assert.match(html, /Frame is under development and is not currently available for sale\./);
+  assert.match(
+    html,
+    /Frame is under development\. Pre-order shipping is estimated for Q1 2027 and is not guaranteed\./,
+  );
   assert.match(
     html,
     /Frame is being developed for general wellness use and is not intended to diagnose,\s*(?:<!-- -->)?screen for, monitor, treat, or manage any disease or medical condition,\s*(?:<!-- -->)?guide treatment decisions, or replace an FDA-authorized medical device\./,
@@ -153,8 +171,19 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /Frame Health Technologies/);
   assert.doesNotMatch(html, /facebook\.com\/tr\?id=/);
   assert.equal(html.match(/name="email"/g)?.length, 2);
-  assert.match(html, /Join the waitlist/);
-  assert.match(html, /href="#homepage-hero-waitlist"/);
+  assert.match(html, /Pre-order now/);
+  assert.match(html, /Pre-order now -\s*(?:<!-- -->)?\$299/);
+  assert.doesNotMatch(html, /Pre-order now — \$299/);
+  assert.match(html, /href="\/preorder\/review\?source=homepage_hero"/);
+  assert.doesNotMatch(html, /Pre-orders are now open\./);
+  assert.match(html, /See details/);
+  assert.doesNotMatch(html, /home-preorder-hero__offer/);
+  assert.doesNotMatch(html, /home-preorder-hero__saving-note/);
+  assert.match(html, /id="homepage-hero-preorder-waitlist-email"/);
+  assert.doesNotMatch(html, /Not ready to pre-order\?/);
+  assert.match(html, /Save\s*(?:<!-- -->)?\$200/);
+  assert.match(html, /\$499/);
+  assert.match(html, /Q1 2027/);
   assert.doesNotMatch(html, /What is the main reason you want Frame\?/);
   assert.doesNotMatch(html, /<dialog/i);
   assert.match(html, /<section class="final-cta" id="early-access">/);
@@ -171,8 +200,9 @@ test("server-renders the dedicated interest page", async () => {
   assert.equal(response.status, 200);
   const html = await response.text();
 
-  assert.match(html, /Join Frame early access/);
-  assert.match(html, /Get development updates and the opportunity to help shape Frame/);
+  assert.match(html, /Get updates/);
+  assert.match(html, /Receive Frame development news and help shape what comes next/);
+  assert.match(html, /Sign up/);
   assert.match(html, /name="email"/);
   assert.match(html, /aria-label="Back to home"/);
   assert.doesNotMatch(html, /<dialog/i);
@@ -189,6 +219,8 @@ test("server-renders the contact page", async () => {
   assert.match(html, /name="name"/);
   assert.match(html, /name="email"/);
   assert.match(html, /name="topic"/);
+  assert.match(html, /value="preorder"/);
+  assert.match(html, /Pre-order support/);
   assert.match(html, /name="message"/);
   assert.match(html, /support@framewearable\.com/);
   assert.match(html, /aria-label="Frame home"/);
@@ -197,10 +229,10 @@ test("server-renders the contact page", async () => {
 test("server-renders the Founding Contributor funnel locally", async () => {
   const [membershipResponse, reviewResponse, successResponse, signInResponse] =
     await Promise.all([
-      render("/founding-contributors"),
-      render("/founding-contributors/review"),
-      render("/founding-contributors/success"),
-      render("/contributors/sign-in"),
+      render("/founding-contributors", undefined, "http://localhost", CONTRIBUTOR_TEST_ENV),
+      render("/founding-contributors/review", undefined, "http://localhost", CONTRIBUTOR_TEST_ENV),
+      render("/founding-contributors/success", undefined, "http://localhost", CONTRIBUTOR_TEST_ENV),
+      render("/contributors/sign-in", undefined, "http://localhost", CONTRIBUTOR_TEST_ENV),
     ]);
 
   assert.equal(membershipResponse.status, 200);
@@ -250,6 +282,50 @@ test("server-renders the Founding Contributor funnel locally", async () => {
   assert.match(await signInResponse.text(), /Sign in to the contributor hub/);
 });
 
+test("gates every contributor surface and link by default", async () => {
+  const restrictedPaths = [
+    "/founding-contributors",
+    "/founding-contributors/review",
+    "/founding-contributors/success",
+    "/contributors",
+    "/contributors/sign-in",
+    "/contributors/onboarding",
+    "/contributors/auth/confirm",
+    "/contributors/product-status",
+    "/contributors/refunds",
+    "/contributors/terms",
+    "/admin/contributors",
+    "/api/founding-contributors/checkout",
+    "/api/founding-contributors/status",
+    "/api/contributors/me",
+    "/api/contributors/onboarding",
+    "/api/contributors/questions",
+    "/api/contributors/votes",
+    "/og-founding-contributors.png",
+    "/contributors%2Fterms",
+    "/_vinext/image?url=%2Fog-founding-contributors.png&w=1200&q=75",
+  ];
+  const [homeResponse, interestResponse, privacyResponse, ...restrictedResponses] =
+    await Promise.all([
+      render("/"),
+      render("/interest"),
+      render("/privacy"),
+      ...restrictedPaths.map((path) => render(path)),
+    ]);
+
+  for (const [index, response] of restrictedResponses.entries()) {
+    assert.equal(response.status, 404, restrictedPaths[index]);
+    assert.equal(response.headers.get("x-robots-tag"), "noindex, nofollow");
+  }
+
+  for (const response of [homeResponse, interestResponse, privacyResponse]) {
+    assert.equal(response.status, 200);
+    const html = await response.text();
+    assert.doesNotMatch(html, /Founding Contributor|contributor hub|membership/i);
+    assert.doesNotMatch(html, /href="\/founding-contributors/);
+  }
+});
+
 test("keeps every Founding Contributor surface local-only", async () => {
   const publicOrigin = "https://framewearable.com";
   const restrictedPaths = [
@@ -276,7 +352,9 @@ test("keeps every Founding Contributor surface local-only", async () => {
     "/_vinext/image?url=%2Fog-founding-contributors.png&w=1200&q=75",
   ];
   const responses = await Promise.all(
-    restrictedPaths.map((path) => render(path, undefined, publicOrigin)),
+    restrictedPaths.map((path) =>
+      render(path, undefined, publicOrigin, CONTRIBUTOR_TEST_ENV),
+    ),
   );
 
   for (const [index, response] of responses.entries()) {
@@ -286,9 +364,9 @@ test("keeps every Founding Contributor surface local-only", async () => {
   }
 
   const [homeResponse, privacyResponse, sitemapResponse] = await Promise.all([
-    render("/", undefined, publicOrigin),
-    render("/privacy", undefined, publicOrigin),
-    render("/sitemap.xml", undefined, publicOrigin),
+    render("/", undefined, publicOrigin, CONTRIBUTOR_TEST_ENV),
+    render("/privacy", undefined, publicOrigin, CONTRIBUTOR_TEST_ENV),
+    render("/sitemap.xml", undefined, publicOrigin, CONTRIBUTOR_TEST_ENV),
   ]);
   const publicHome = await homeResponse.text();
   const publicPrivacy = await privacyResponse.text();
@@ -303,11 +381,11 @@ test("keeps every Founding Contributor surface local-only", async () => {
 
 test("renders draft contributor policies and keeps member routes private", async () => {
   const [terms, refunds, productStatus, hub, onboarding] = await Promise.all([
-    render("/contributors/terms"),
-    render("/contributors/refunds"),
-    render("/contributors/product-status"),
-    render("/contributors"),
-    render("/contributors/onboarding"),
+    render("/contributors/terms", undefined, "http://localhost", CONTRIBUTOR_TEST_ENV),
+    render("/contributors/refunds", undefined, "http://localhost", CONTRIBUTOR_TEST_ENV),
+    render("/contributors/product-status", undefined, "http://localhost", CONTRIBUTOR_TEST_ENV),
+    render("/contributors", undefined, "http://localhost", CONTRIBUTOR_TEST_ENV),
+    render("/contributors/onboarding", undefined, "http://localhost", CONTRIBUTOR_TEST_ENV),
   ]);
 
   assert.match(await terms.text(), /Draft for testing — not approved for live sales/);
@@ -468,6 +546,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(waitlistOptions, /See my blood pressure patterns over time/);
   assert.match(waitlistOptions, /Understand my blood pressure while sleeping/);
   assert.match(waitlistFlow, /Your answers have been saved\./);
+  assert.match(waitlistFlow, /You’re subscribed\./);
   assert.match(
     waitlistFlow,
     /We read every response\. Your input will help shape Frame’s development\./,
@@ -601,7 +680,7 @@ test("requires explicit membership acknowledgment before checkout", async () => 
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ acknowledged: false }),
-  });
+  }, "http://localhost", CONTRIBUTOR_TEST_ENV);
 
   assert.equal(response.status, 400);
   assert.match(await response.text(), /not ordering or reserving a Frame device/i);
@@ -871,7 +950,7 @@ test("does not retry unrelated Supabase failures", async () => {
 });
 
 test("separates, visualizes, exports, and permanently deletes admin leads", async () => {
-  const [adminPage, timeZoneForm, timeZoneHelpers, adminSettings, supabaseRetry, timeZoneRoute, timeZoneMigration, insights, leadHelpers, csvRoute, workbookRoute, deleteRoute, timeZoneClock, css] = await Promise.all([
+  const [adminPage, timeZoneForm, timeZoneHelpers, adminSettings, supabaseRetry, timeZoneRoute, timeZoneMigration, insights, leadHelpers, csvRoute, workbookRoute, deleteRoute, css] = await Promise.all([
     readFile(new URL("../app/admin/waitlist/page.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/admin-time-zone-form.tsx", import.meta.url), "utf8"),
     readFile(new URL("../lib/admin-time-zone.ts", import.meta.url), "utf8"),
@@ -884,7 +963,6 @@ test("separates, visualizes, exports, and permanently deletes admin leads", asyn
     readFile(new URL("../app/api/admin/waitlist.csv/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/waitlist.xlsx/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/waitlist/[id]/route.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/components/time-zone-clock.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
   ]);
 
@@ -911,7 +989,7 @@ test("separates, visualizes, exports, and permanently deletes admin leads", asyn
   assert.match(adminSettings, /from\("admin_settings"\)/);
   assert.match(adminSettings, /setPersistedAdminTimeZone/);
   assert.match(adminPage, /retrySupabaseReadOnJwtIssuedAtFuture/);
-  assert.match(adminPage, /WaitlistUnavailable userEmail=\{user\.email\}/);
+  assert.match(adminPage, /return <WaitlistUnavailable \/>/);
   assert.match(adminSettings, /isSupabaseJwtIssuedAtFutureError/);
   assert.match(supabaseRetry, /code === "PGRST303"/);
   assert.match(supabaseRetry, /jwt issued at future/i);
@@ -922,12 +1000,7 @@ test("separates, visualizes, exports, and permanently deletes admin leads", asyn
   assert.match(timeZoneMigration, /time_zone text not null default 'UTC'/);
   assert.doesNotMatch(timeZoneForm, /document\.cookie/);
   assert.doesNotMatch(adminPage, /searchParams.*timezone|encodeURIComponent\(timeZone\)/s);
-  assert.match(adminPage, /selectedTimeZone=\{selectedTimeZone\}/);
-  assert.match(timeZoneForm, /<TimeZoneClock/);
-  assert.match(timeZoneClock, /Current time/);
-  assert.match(timeZoneClock, /second: "2-digit"/);
-  assert.match(timeZoneClock, /setInterval\(\(\) => setNow\(new Date\(\)\), 1_000\)/);
-  assert.match(css, /\.admin-timezone-clock/);
+  assert.match(adminPage, /timeZone: selectedTimeZone/);
   assert.doesNotMatch(adminPage, /Manage hidden test entries/);
   assert.match(adminPage, /DeleteWaitlistSignupButton/);
   assert.match(insights, /admin-age-chart/);
@@ -951,7 +1024,7 @@ test("separates, visualizes, exports, and permanently deletes admin leads", asyn
   assert.match(workbookRoute, /"Qualified leads"/);
   assert.match(workbookRoute, /"Unqualified leads"/);
   assert.match(workbookRoute, /categorizeVisibleSignups\(data \?\? \[\]\)/);
-  assert.match(workbookRoute, /frame-waitlist\.xlsx/);
+  assert.match(workbookRoute, /frame-subscribers\.xlsx/);
   assert.match(csvRoute, /\.select\(WAITLIST_SIGNUP_SELECT\)/);
   assert.match(deleteRoute, /\.from\("waitlist_signups"\)[\s\S]*\.delete\(\)/);
   assert.match(css, /\.admin-tabs\s*\{/);

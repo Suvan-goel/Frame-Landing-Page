@@ -44,6 +44,9 @@ STRIPE_TEST_WEBHOOK_SECRET=whsec_...
 STRIPE_TEST_WEBHOOK_ENDPOINT_ID=we_...
 RESEND_API_KEY=re_...
 PREORDER_FROM_EMAIL=Frame Pre-orders <preorders@framewearable.com>
+PREORDER_ORDER_ACCESS_SECRET=<unique secret of at least 32 characters>
+PREORDER_RATE_LIMIT_SECRET=<second unique secret of at least 32 characters>
+PREORDER_MAINTENANCE_SECRET=<third unique secret of at least 32 characters>
 ```
 
 The shipping value is a provisional flat $19 USD standard shipping and handling
@@ -81,8 +84,11 @@ sales are paused.
 Public requests remain blocked unless all of the following are true:
 
 - `PREORDER_MODE=live`;
-- the source terms version no longer begins with `draft`;
+- the incorporated seller details are complete;
+- the source legal and Product Status versions no longer begin with `draft`;
 - `PREORDER_LEGAL_APPROVED_VERSION` exactly matches that source version; and
+- `PREORDER_PRODUCT_STATUS_APPROVED_VERSION` exactly matches the Product Status version;
+- the one-year limited hardware warranty and the scheduled delivery-deadline processor are active; and
 - a live Stripe secret and approved live Price are configured.
 
 The draft pages, prices, countries, tax setting, shipping treatment, product

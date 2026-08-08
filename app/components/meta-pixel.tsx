@@ -122,7 +122,7 @@ function trackMetaConversion(
 
   if (eventName === "Lead") {
     window.fbq("trackSingle", META_PIXEL_ID, "Lead", {
-      content_name: "Frame early access signup",
+      content_name: "Frame updates signup",
     });
   } else {
     window.fbq("trackSingleCustom", META_PIXEL_ID, "QualifiedLead", {

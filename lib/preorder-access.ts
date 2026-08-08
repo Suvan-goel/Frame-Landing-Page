@@ -1,7 +1,9 @@
 import {
   isDraftPreorderVersion,
+  PREORDER_PRODUCT_STATUS_VERSION,
   PREORDER_SELLER_DETAILS_COMPLETE,
   PREORDER_TERMS_VERSION,
+  PREORDER_WARRANTY_DETAILS_COMPLETE,
 } from "./preorder";
 import { isLoopbackHost } from "./contributor-local-only";
 
@@ -17,11 +19,6 @@ const PREORDER_ADMIN_ROUTE_ROOTS = [
   "/api/admin/preorders.csv",
 ] as const;
 
-const PREORDER_CUSTOMER_MANAGEMENT_ROUTE_ROOTS = [
-  "/preorder/manage",
-  "/api/preorders/manage",
-] as const;
-
 export type PreorderMode = "off" | "test" | "live";
 
 export function normalizePreorderMode(value: string | undefined): PreorderMode {
@@ -31,12 +28,16 @@ export function normalizePreorderMode(value: string | undefined): PreorderMode {
 export function isPreorderLiveApproved(input: {
   mode?: string;
   approvedTermsVersion?: string;
+  approvedProductStatusVersion?: string;
 }) {
   return (
     normalizePreorderMode(input.mode) === "live" &&
     PREORDER_SELLER_DETAILS_COMPLETE &&
+    PREORDER_WARRANTY_DETAILS_COMPLETE &&
     !isDraftPreorderVersion(PREORDER_TERMS_VERSION) &&
-    input.approvedTermsVersion === PREORDER_TERMS_VERSION
+    input.approvedTermsVersion === PREORDER_TERMS_VERSION &&
+    !isDraftPreorderVersion(PREORDER_PRODUCT_STATUS_VERSION) &&
+    input.approvedProductStatusVersion === PREORDER_PRODUCT_STATUS_VERSION
   );
 }
 
@@ -44,6 +45,7 @@ export function isPreorderRequestAllowed(input: {
   host: string | null;
   mode?: string;
   approvedTermsVersion?: string;
+  approvedProductStatusVersion?: string;
 }) {
   if (isLoopbackHost(input.host)) return true;
   return isPreorderLiveApproved(input);
@@ -75,10 +77,6 @@ function matchesRouteRoot(pathname: string, roots: readonly string[]) {
 
 export function isPublicPreorderPath(pathname: string) {
   return matchesRouteRoot(pathname, PREORDER_PUBLIC_ROUTE_ROOTS);
-}
-
-export function isCustomerPreorderManagementPath(pathname: string) {
-  return matchesRouteRoot(pathname, PREORDER_CUSTOMER_MANAGEMENT_ROUTE_ROOTS);
 }
 
 export function isPreorderAdminPath(pathname: string) {

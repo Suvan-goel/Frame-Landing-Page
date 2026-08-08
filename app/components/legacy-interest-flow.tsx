@@ -351,7 +351,7 @@ export function InterestFlow({
             </div>
 
             <div className="interest-flow__content">
-              <p className="eyebrow">Frame early access</p>
+              <p className="eyebrow">Frame updates</p>
               <h2 id="interest-flow-title" ref={headingRef} tabIndex={-1}>
                 {titles[step]}
               </h2>

@@ -1,18 +1,20 @@
 # Frame Founding Contributors — private test setup
 
-The Founding Contributor membership is locked to local development. Its pages,
-homepage and waitlist sections, member and policy areas, admin area, APIs,
-webhook, and social image return not found on every non-loopback host.
+The Founding Contributor membership is disabled by default and locked to local
+development when explicitly enabled. Its pages, homepage and waitlist sections,
+member and policy areas, admin area, APIs, and social image return not found
+while the feature is disabled and on every non-loopback host.
 
 ## 1. Local-only access
 
-Open the membership only through `localhost`, `127.0.0.1`, or `[::1]`.
-There is deliberately no public feature flag: changing hosted environment
-variables cannot publish it.
+Keep `CONTRIBUTOR_FEATURE_ENABLED=false` for normal local development. Set it
+to `true` only while deliberately testing the contributor experience through
+`localhost`, `127.0.0.1`, or `[::1]`. The local-only boundary remains in place,
+so this flag cannot publish contributor routes on a shared or production host.
 
 `CONTRIBUTOR_PREVIEW_MODE=true` enables sample membership data and simulated
-checkout responses on those local hosts. Keep it false in every shared or
-production environment. It does not override the local-only boundary.
+checkout responses only when the feature flag is also enabled on those local
+hosts. Keep both flags false in every shared or production environment.
 
 ## 2. Prepare Supabase
 
@@ -106,6 +108,7 @@ Do not enable live payments or the public feature flag until all of these are co
 - Decide the live tax approach and change `automatic_tax` deliberately if required.
 - Confirm consumer cancellation/refund handling for every country in scope.
 - Test local Supabase redirects, email delivery, Stripe webhooks, refunds, and disputes.
+- Set `CONTRIBUTOR_FEATURE_ENABLED=false`.
 - Set `CONTRIBUTOR_PREVIEW_MODE=false`.
 - Run the full smoke test once more locally.
 - Do not remove the local-only route guard or publish any contributor entry

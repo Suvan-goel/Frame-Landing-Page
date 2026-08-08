@@ -1,4 +1,3 @@
-import { TimeZoneClock } from "@/app/components/time-zone-clock";
 import {
   ADMIN_TIME_ZONES,
   type AdminTimeZone,
@@ -8,11 +7,9 @@ type WaitlistView = "qualified" | "unqualified" | "insights";
 
 export function AdminTimeZoneForm({
   activeTab,
-  initialDateTime,
   selectedTimeZone,
 }: {
   activeTab: WaitlistView;
-  initialDateTime: string;
   selectedTimeZone: AdminTimeZone;
 }) {
   const selectedTimeZoneLabel =
@@ -43,11 +40,7 @@ export function AdminTimeZoneForm({
       <button className="admin-timezone__submit" type="submit">
         Apply
       </button>
-      <TimeZoneClock
-        initialDateTime={initialDateTime}
-        timeZone={selectedTimeZone}
-        timeZoneLabel={selectedTimeZoneLabel}
-      />
+      <p>Showing lead times in {selectedTimeZoneLabel}.</p>
     </form>
   );
 }

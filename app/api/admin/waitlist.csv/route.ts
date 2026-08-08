@@ -41,7 +41,7 @@ export async function GET() {
   if (error) {
     console.error("Waitlist CSV query failed", error);
     return Response.json(
-      { error: "The waitlist export is temporarily unavailable." },
+      { error: "The subscriber export is temporarily unavailable." },
       { status: 503 },
     );
   }
@@ -56,7 +56,7 @@ export async function GET() {
   return new Response(csv, {
     headers: {
       "Cache-Control": "private, no-store",
-      "Content-Disposition": 'attachment; filename="frame-waitlist.csv"',
+      "Content-Disposition": 'attachment; filename="frame-subscribers.csv"',
       "Content-Type": "text/csv; charset=utf-8",
       "X-Content-Type-Options": "nosniff",
     },

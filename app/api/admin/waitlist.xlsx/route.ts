@@ -40,7 +40,7 @@ export async function GET() {
   if (error) {
     console.error("Waitlist workbook query failed", error);
     return Response.json(
-      { error: "The waitlist export is temporarily unavailable." },
+      { error: "The subscriber export is temporarily unavailable." },
       { status: 503 },
     );
   }
@@ -64,7 +64,7 @@ export async function GET() {
     headers: {
       "Cache-Control": "private, no-store",
       "Content-Disposition":
-        'attachment; filename="frame-waitlist.xlsx"',
+        'attachment; filename="frame-subscribers.xlsx"',
       "Content-Type":
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
       "X-Content-Type-Options": "nosniff",

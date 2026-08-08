@@ -3,14 +3,32 @@ import {
   getCustomerManagedPreorder,
   requestPreorderAddressChange,
   requestPreorderCancellation,
+  requestPreorderContactEmailChange,
   respondToPreorderDeliveryUpdate,
 } from "@/lib/preorder-customer-management.server";
-import { getPreorderConfiguration } from "@/lib/preorder-config.server";
+import { processExpiredPreorderDeliveryUpdate } from "@/lib/preorder-delivery-expiration.server";
+import {
+  preorderManagePreviewMutation,
+  preorderManagePreviewOrder,
+} from "@/lib/preorder-manage-preview";
+import { isAllowedPreorderUsState } from "@/lib/preorder-shipping";
+import {
+  isLocalPreorderPreview,
+  isPreorderSalesRequestEnabled,
+} from "@/lib/runtime-env.server";
 import { consumePreorderRateLimit } from "@/lib/preorder-rate-limit.server";
 
 export const dynamic = "force-dynamic";
 
 const MAX_BODY_BYTES = 8_192;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const US_ZIP_PATTERN = /^\d{5}(?:-\d{4})?$/;
+const VALID_ACTIONS = new Set([
+  "request_email_change",
+  "request_address_change",
+  "respond_delivery_update",
+  "request_cancellation",
+]);
 
 function response(body: Record<string, unknown>, status = 200) {
   return Response.json(body, {
@@ -24,7 +42,17 @@ function response(body: Record<string, unknown>, status = 200) {
 }
 
 export async function GET(request: Request) {
-  const token = new URL(request.url).searchParams.get("token") ?? "";
+  if (!(await isPreorderSalesRequestEnabled(request))) {
+    return response({ error: "Not found." }, 404);
+  }
+  const url = new URL(request.url);
+  if (url.searchParams.get("preview") === "1" && (await isLocalPreorderPreview(request))) {
+    return response({
+      status: "ready",
+      order: preorderManagePreviewOrder(url.searchParams.get("state")),
+    });
+  }
+  const token = url.searchParams.get("token") ?? "";
   try {
     const rateLimit = await consumePreorderRateLimit({
       request,
@@ -62,6 +90,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  if (!(await isPreorderSalesRequestEnabled(request))) {
+    return response({ error: "Not found." }, 404);
+  }
   const origin = request.headers.get("origin");
   if (origin && origin !== new URL(request.url).origin) {
     return response({ error: "Request origin is not allowed." }, 403);
@@ -76,15 +107,21 @@ export async function POST(request: Request) {
     token?: unknown;
     reason?: unknown;
     shippingAddress?: unknown;
+    email?: unknown;
     deliveryUpdateVersion?: unknown;
     response?: unknown;
+    preview?: unknown;
+    previewState?: unknown;
   };
   try {
     payload = (await request.json()) as typeof payload;
   } catch {
     return response({ error: "The order request is invalid." }, 400);
   }
-  const action = typeof payload.action === "string" ? payload.action : "request_cancellation";
+  const action = typeof payload.action === "string" ? payload.action : "";
+  if (!VALID_ACTIONS.has(action)) {
+    return response({ error: "Choose a valid order action." }, 400);
+  }
   const token = typeof payload.token === "string" ? payload.token : "";
   const reason =
     typeof payload.reason === "string"
@@ -92,6 +129,17 @@ export async function POST(request: Request) {
       : null;
 
   try {
+    if (payload.preview === true && (await isLocalPreorderPreview(request))) {
+      const previewResult = preorderManagePreviewMutation({
+        action,
+        state: payload.previewState,
+        email: payload.email,
+        shippingAddress: payload.shippingAddress,
+        response: payload.response,
+      });
+      if (!previewResult) return response({ error: "Choose a valid order action." }, 400);
+      return response(previewResult);
+    }
     const rateLimit = await consumePreorderRateLimit({
       request,
       scope: "preorder_manage_mutation",
@@ -115,6 +163,33 @@ export async function POST(request: Request) {
         },
       );
     }
+    if (action === "request_email_change") {
+      const email =
+        typeof payload.email === "string" ? payload.email.trim().toLowerCase() : "";
+      if (
+        !email ||
+        email.length > 254 ||
+        !EMAIL_PATTERN.test(email) ||
+        email.includes("..")
+      ) {
+        return response({ error: "Enter a valid email address." }, 400);
+      }
+      const result = await requestPreorderContactEmailChange({
+        origin: new URL(request.url).origin,
+        token,
+        email,
+      });
+      if (result.status === "invalid") {
+        return response({ error: "This order-management link is invalid or expired." }, 404);
+      }
+      return response({
+        status:
+          result.status === "unchanged"
+            ? "email_unchanged"
+            : "email_verification_sent",
+        order: customerPreorderResponse(result.order),
+      });
+    }
     if (action === "request_address_change") {
       const address =
         payload.shippingAddress && typeof payload.shippingAddress === "object"
@@ -128,20 +203,19 @@ export async function POST(request: Request) {
         line1: cleanAddressField("line1", 200),
         line2: cleanAddressField("line2", 200),
         city: cleanAddressField("city", 100),
-        state: cleanAddressField("state", 100),
+        state: cleanAddressField("state", 2).toUpperCase(),
         postal_code: cleanAddressField("postal_code", 20),
         country: cleanAddressField("country", 2).toUpperCase(),
       };
-      const config = await getPreorderConfiguration();
       if (
         shippingAddress.line1.length < 3 ||
         shippingAddress.city.length < 2 ||
-        shippingAddress.state.length < 2 ||
-        shippingAddress.postal_code.length < 3 ||
-        !config.allowedCountries.includes(shippingAddress.country)
+        !isAllowedPreorderUsState(shippingAddress.state) ||
+        !US_ZIP_PATTERN.test(shippingAddress.postal_code) ||
+        shippingAddress.country !== "US"
       ) {
         return response(
-          { error: "Enter a complete shipping address in an available country." },
+          { error: "Enter a complete US shipping address with a valid state and ZIP code." },
           400,
         );
       }
@@ -193,6 +267,26 @@ export async function POST(request: Request) {
           {
             error: "This delivery update has already been answered or is no longer current.",
             order: customerPreorderResponse(result.order),
+          },
+          409,
+        );
+      }
+      if (result.status === "deadline_expired") {
+        try {
+          await processExpiredPreorderDeliveryUpdate({
+            origin: new URL(request.url).origin,
+            orderId: result.order.id,
+            deliveryUpdateVersion,
+          });
+        } catch (error) {
+          console.error("Expired pre-order response could not be refunded immediately", error);
+        }
+        const latestOrder = await getCustomerManagedPreorder(token);
+        return response(
+          {
+            error:
+              "The response deadline has passed. The unshipped order is being cancelled and refunded automatically.",
+            order: customerPreorderResponse(latestOrder ?? result.order),
           },
           409,
         );

@@ -1,7 +1,15 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import {
+  preorderConfirmationRecovery,
+  preorderItemDescription,
+  preorderShippingAddressLines,
+  type PreorderShippingAddress,
+} from "@/lib/preorder-confirmation";
+import { PREORDER_DELIVERY_DRAFT_KEY } from "@/lib/preorder-checkout-draft";
 
 type StatusResult = {
   status?: string;
@@ -10,6 +18,7 @@ type StatusResult = {
     orderNumber: string;
     fullName: string;
     email: string;
+    shippingAddress: PreorderShippingAddress | null;
     quantity: number;
     amountSubtotalCents: number;
     amountShippingCents: number;
@@ -53,12 +62,18 @@ export function PreorderSuccess() {
         });
         const next = (await response.json()) as StatusResult;
         if (cancelled) return;
-        setResult(next);
         if ((next.status === "processing" || response.status === 202) && attempt < 8) {
+          setResult({ ...next, status: "processing" });
           timer = window.setTimeout(() => check(attempt + 1), 1600);
+          return;
         }
+        if (next.status === "processing" || response.status === 202) {
+          setResult({ status: "unavailable" });
+          return;
+        }
+        setResult(next);
       } catch {
-        if (!cancelled) setResult({ error: "Your confirmation is temporarily unavailable." });
+        if (!cancelled) setResult({ status: "unavailable" });
       }
     }
 
@@ -66,11 +81,20 @@ export function PreorderSuccess() {
     return () => { cancelled = true; if (timer) window.clearTimeout(timer); };
   }, []);
 
+  useEffect(() => {
+    if (result.status !== "confirmed") return;
+    try {
+      window.sessionStorage.removeItem(PREORDER_DELIVERY_DRAFT_KEY);
+    } catch {
+      // Storage may be unavailable; confirmation must still load.
+    }
+  }, [result.status]);
+
   if (result.status === "loading" || result.status === "processing") {
     return (
       <section className="preorder-confirmation preorder-confirmation--state" role="status" aria-live="polite">
-        <div className="preorder-confirmation__mark" aria-hidden="true">✓</div>
-        <p className="eyebrow">Payment received</p>
+        <div className="preorder-confirmation__mark" aria-hidden="true">…</div>
+        <p className="eyebrow">Confirming payment</p>
         <h1>We’re confirming your pre-order.</h1>
         <p>This usually takes only a few moments. Please keep this page open while we finish preparing your confirmation.</p>
         <div className="preorder-confirmation__loader" aria-hidden="true" />
@@ -79,52 +103,86 @@ export function PreorderSuccess() {
   }
 
   if (result.error || result.status !== "confirmed" || !result.order) {
+    const recovery = preorderConfirmationRecovery(result);
     return (
       <section className="preorder-confirmation preorder-confirmation--state">
-        <p className="eyebrow">Payment confirmation</p>
-        <h1>We’re still confirming your order.</h1>
-        <p>{result.error ?? "We haven’t been able to load your confirmation yet. Refresh this page, or contact us if you continue to see this message."}</p>
+        <div className="preorder-confirmation__state-copy" role="alert">
+          <p className="eyebrow">{recovery.eyebrow}</p>
+          <h1>{recovery.heading}</h1>
+          <p>{recovery.message}</p>
+        </div>
         <div className="preorder-confirmation__actions">
-          <button className="button button--dark" type="button" onClick={() => window.location.reload()}>
-            Check again
-          </button>
-          <Link className="text-link" href="/contact?topic=general">Contact us</Link>
+          {recovery.primaryAction.kind === "retry" ? (
+            <button className="button button--dark" type="button" onClick={() => window.location.reload()}>
+              {recovery.primaryAction.label}
+            </button>
+          ) : (
+            <Link className="button button--dark" href={recovery.primaryAction.href}>
+              {recovery.primaryAction.label}
+            </Link>
+          )}
+          <Link className="text-link" href="/contact?topic=preorder">Contact pre-order support</Link>
         </div>
       </section>
     );
   }
 
   const order = result.order;
-  const firstName = order.fullName.trim().split(/\s+/)[0];
+  const shippingAddress = order.shippingAddress
+    ? preorderShippingAddressLines(order.shippingAddress)
+    : [];
 
   return (
-    <section className="preorder-confirmation" role="status" aria-live="polite">
+    <section className="preorder-confirmation">
+      <p className="sr-only" role="status" aria-live="polite">
+        Your Frame pre-order is confirmed. Payment received.
+      </p>
       <header className="preorder-confirmation__hero">
-        <div className="preorder-confirmation__mark" aria-hidden="true">✓</div>
-        <p className="eyebrow">Pre-order confirmed · {order.orderNumber}</p>
-        <h1>Your Frame pre-order is confirmed.</h1>
+        <div className="preorder-confirmation__status">
+          <span className="preorder-confirmation__mark" aria-hidden="true">✓</span>
+          <p className="eyebrow">Payment received · {order.orderNumber}</p>
+        </div>
+        <h1>Your pre-order is confirmed.</h1>
         <p>
-          Thank you, {firstName}. We’ve received your order for one Frame and your payment is complete.
+          Thank you. We’ve received your order for {preorderItemDescription(order.quantity)} and your payment is complete.
         </p>
         <p className="preorder-confirmation__email">
           Important order and delivery updates will be sent to <a href={`mailto:${order.email}`}>{order.email}</a>.
         </p>
       </header>
 
-      <div className="preorder-confirmation__summary-grid">
-        <section className="preorder-confirmation__order-card" aria-labelledby="order-summary-heading">
-          <div className="preorder-confirmation__card-heading">
-            <div>
-              <p className="eyebrow">Order summary</p>
-              <h2 id="order-summary-heading">Frame</h2>
-            </div>
-            <span>Payment received</span>
+      <section className="preorder-confirmation__receipt" aria-labelledby="order-summary-heading">
+        <div className="preorder-confirmation__product">
+          <div className="preorder-confirmation__product-media">
+            <Image
+              src="/frame-product-concept-realistic-v3-transparent.webp"
+              alt="Frame upper-arm wearable product concept"
+              width={720}
+              height={720}
+              unoptimized
+            />
           </div>
-          <dl>
+          <div className="preorder-confirmation__product-copy">
+            <p className="eyebrow">Your order</p>
+            <h2 id="order-summary-heading">Frame</h2>
+            <p>Quantity {order.quantity}</p>
+          </div>
+          <span className="preorder-confirmation__paid">Paid</span>
+        </div>
+
+        <div className="preorder-confirmation__receipt-body">
+          <dl className="preorder-confirmation__order-meta">
             <div>
-              <dt>Quantity</dt>
-              <dd>{order.quantity}</dd>
+              <dt>Order number</dt>
+              <dd>{order.orderNumber}</dd>
             </div>
+            <div>
+              <dt>Order date</dt>
+              <dd><time dateTime={order.placedAt}>{formatDate(order.placedAt)}</time></dd>
+            </div>
+          </dl>
+
+          <dl className="preorder-confirmation__pricing">
             <div>
               <dt>Product subtotal</dt>
               <dd>{formatMoney(order.amountSubtotalCents, order.currency)}</dd>
@@ -137,57 +195,57 @@ export function PreorderSuccess() {
               <dt>Sales tax</dt>
               <dd>{formatMoney(order.amountTaxCents, order.currency)}</dd>
             </div>
-            <div>
+            <div className="preorder-confirmation__total">
               <dt>Total paid</dt>
               <dd>{formatMoney(order.amountPaidCents, order.currency)}</dd>
             </div>
-            <div>
-              <dt>Order date</dt>
-              <dd><time dateTime={order.placedAt}>{formatDate(order.placedAt)}</time></dd>
-            </div>
           </dl>
-        </section>
-
-        <section className="preorder-confirmation__delivery" aria-labelledby="shipping-heading">
-          <p className="eyebrow">Estimated shipping</p>
-          <h2 id="shipping-heading">{order.estimatedShipping}</h2>
-          <p>
-            This is our current estimate for when your order will leave our facility, not a guaranteed date. We’ll keep you informed if the timing changes.
-          </p>
-        </section>
-      </div>
-
-      <section className="preorder-confirmation__next" aria-labelledby="next-heading">
-        <div className="preorder-confirmation__next-heading">
-          <p className="eyebrow">What happens next</p>
-          <h2 id="next-heading">From pre-order to delivery.</h2>
         </div>
-        <ol>
-          <li>
-            <span>01</span>
-            <div><h3>Your order is confirmed</h3><p>Your payment and place in the pre-order queue have been recorded.</p></div>
-          </li>
-          <li>
-            <span>02</span>
-            <div><h3>We’ll keep you updated</h3><p>We’ll email you about meaningful product progress and any change to the estimated timing.</p></div>
-          </li>
-          <li>
-            <span>03</span>
-            <div><h3>Shipping confirmation</h3><p>When your Frame is ready to ship, we’ll confirm your address and send tracking information.</p></div>
-          </li>
-        </ol>
+
+        <div className="preorder-confirmation__shipping">
+          <div>
+            <p className="eyebrow">Estimated shipping</p>
+            <h3>{order.estimatedShipping}</h3>
+          </div>
+          <div className="preorder-confirmation__shipping-details">
+            {shippingAddress.length ? (
+              <div>
+                <p className="eyebrow">Shipping to</p>
+                <address>
+                  {shippingAddress.map((line) => <span key={line}>{line}</span>)}
+                </address>
+              </div>
+            ) : null}
+            <p>
+              This is our current estimate for when your order will leave our facility, not a guaranteed date.
+              We’ll email you if the timing changes. You can request an address change from your secure management page.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section className="preorder-confirmation__follow-up" aria-labelledby="next-heading">
+        <div>
+          <p className="eyebrow">What happens next</p>
+          <h2 id="next-heading">Keep an eye on your inbox.</h2>
+        </div>
+        <p>
+          Your confirmation and secure management link are on their way. We’ll email important
+          product, timing, and tracking updates before dispatch.
+        </p>
       </section>
 
       <div className="preorder-confirmation__actions">
         {order.managePath ? (
           <a className="button button--dark" href={order.managePath}>Manage your pre-order</a>
-        ) : (
-          <Link className="button button--dark" href="/">Return to Frame</Link>
-        )}
-        <Link className="text-link" href="/contact?topic=general">Need help? Contact us</Link>
+        ) : null}
+        <Link className={order.managePath ? "text-link" : "button button--dark"} href="/">
+          Return to Frame
+        </Link>
       </div>
 
       <nav className="preorder-confirmation__policies" aria-label="Order policies">
+        <Link href="/contact?topic=preorder">Support</Link>
         <Link href="/preorder/product-status">Product status</Link>
         <Link href="/preorder/terms">Pre-order terms</Link>
         <Link href="/preorder/refunds">Cancellation and refunds</Link>

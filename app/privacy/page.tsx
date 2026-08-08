@@ -33,7 +33,7 @@ export default async function PrivacyPage() {
         <p className="legal-intro">
           This notice explains how Frame Health Technologies handles information
           submitted through the Frame website, including its research and
-          early-access waitlist and contact form.
+          email-updates signup and contact form.
           {showContributorAreas
             ? " It also covers the locally tested Founding Contributor membership experience."
             : null}
@@ -96,7 +96,7 @@ export default async function PrivacyPage() {
         <section>
           <h2>Information we collect</h2>
           <p>
-            If you join the waitlist, we first collect your email address. If
+            If you sign up for updates, we first collect your email address. If
             you complete the optional survey, we also collect your first and
             last name, age, gender, your main reason for wanting Frame, what you
             want Frame to help you understand or do, how you currently monitor
@@ -117,9 +117,9 @@ export default async function PrivacyPage() {
             We use this information to send research updates, share product
             progress, understand the needs people hope Frame can address, review
             suitability for early product access or future testing, understand
-            which launch efforts are useful, and protect the waitlist from
+            which launch efforts are useful, and protect the updates list from
             abuse and respond to messages sent through the contact form.
-            Joining the waitlist does not enroll you in a study or make you
+            Signing up for updates does not enroll you in a study or make you
             a research participant.
             {showPreorderAreas
               ? " Pre-order information is also used to take payment, calculate tax, reserve inventory, confirm and support orders, communicate delays, process cancellations and refunds, prevent fraud and abuse, meet accounting and legal duties, and arrange fulfilment."
@@ -143,7 +143,7 @@ export default async function PrivacyPage() {
         <section>
           <h2>Advertising measurement</h2>
           <p>
-            We use the Meta Pixel to understand whether a visit, waitlist signup,
+            We use the Meta Pixel to understand whether a visit, updates signup,
             or optional survey completion came from a Meta ad and to measure and
             improve our campaigns. The Pixel may use browser identifiers and similar
             technologies, which Meta processes under its own privacy policy. We

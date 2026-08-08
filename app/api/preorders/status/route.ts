@@ -4,6 +4,7 @@ import {
   PREORDER_DEFAULT_CURRENCY,
   PREORDER_DEFAULT_PRICE_CENTS,
   PREORDER_ESTIMATED_SHIPPING,
+  PREORDER_SHIPPING_RATE_CENTS,
 } from "@/lib/preorder";
 import {
   isLocalPreorderPreview,
@@ -13,6 +14,7 @@ import { getStripe } from "@/lib/stripe.server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin.server";
 import { createPreorderManagePath } from "@/lib/preorder-order-access.server";
 import { consumePreorderRateLimit } from "@/lib/preorder-rate-limit.server";
+import { publicPreorderShippingAddress } from "@/lib/preorder-confirmation";
 
 export const dynamic = "force-dynamic";
 
@@ -21,6 +23,7 @@ type StoredOrder = {
   order_number: number;
   full_name: string;
   email: string;
+  shipping_address: Record<string, unknown>;
   payment_status: string;
   fulfillment_status: string;
   amount_subtotal: number;
@@ -64,6 +67,7 @@ async function orderResponse(order: StoredOrder) {
       orderNumber: formatPreorderNumber(order.order_number),
       fullName: order.full_name,
       email: order.email,
+      shippingAddress: publicPreorderShippingAddress(order.shipping_address),
       quantity: item.data?.quantity ?? 1,
       amountSubtotalCents: order.amount_subtotal,
       amountShippingCents: order.amount_shipping,
@@ -91,22 +95,30 @@ export async function GET(request: Request) {
         orderNumber: "FR-TEST-0001",
         fullName: "Test customer",
         email: "test@example.com",
+        shippingAddress: {
+          line1: "1450 Market Street",
+          city: "San Francisco",
+          state: "CA",
+          postalCode: "94102",
+          country: "US",
+        },
         quantity: 1,
         amountSubtotalCents: PREORDER_DEFAULT_PRICE_CENTS,
-        amountShippingCents: 0,
+        amountShippingCents: PREORDER_SHIPPING_RATE_CENTS,
         amountTaxCents: 0,
-        amountPaidCents: PREORDER_DEFAULT_PRICE_CENTS,
+        amountPaidCents: PREORDER_DEFAULT_PRICE_CENTS + PREORDER_SHIPPING_RATE_CENTS,
         currency: PREORDER_DEFAULT_CURRENCY,
         placedAt: new Date().toISOString(),
         estimatedShipping: PREORDER_ESTIMATED_SHIPPING,
         fulfillmentStatus: "on_hold",
+        managePath: "/preorder/manage?preview=1",
       },
     });
   }
 
   const sessionId = url.searchParams.get("session_id") ?? "";
   if (!/^cs_(?:test|live)_[A-Za-z0-9_]+$/.test(sessionId)) {
-    return response({ error: "A valid payment confirmation reference is required." }, 400);
+    return response({ status: "invalid", error: "Payment confirmation reference is invalid." }, 400);
   }
 
   try {
@@ -118,7 +130,10 @@ export async function GET(request: Request) {
     });
     if (!rateLimit.allowed) {
       return new Response(
-        JSON.stringify({ error: "Too many confirmation checks. Please wait and try again." }),
+        JSON.stringify({
+          status: "rate_limited",
+          error: "Too many confirmation checks. Please wait and try again.",
+        }),
         {
           status: 429,
           headers: {
@@ -133,7 +148,7 @@ export async function GET(request: Request) {
     const supabase = await getSupabaseAdmin();
     const stored = await supabase
       .from("preorders")
-      .select("id,order_number,full_name,email,payment_status,fulfillment_status,amount_subtotal,amount_shipping,amount_tax,amount_total,currency,estimated_delivery,placed_at,manage_token_version")
+      .select("id,order_number,full_name,email,shipping_address,payment_status,fulfillment_status,amount_subtotal,amount_shipping,amount_tax,amount_total,currency,estimated_delivery,placed_at,manage_token_version")
       .eq("stripe_checkout_session_id", sessionId)
       .maybeSingle<StoredOrder>();
     if (stored.error) throw stored.error;
@@ -143,7 +158,7 @@ export async function GET(request: Request) {
     const stripe = await getStripe(environment);
     const session = await stripe.checkout.sessions.retrieve(sessionId);
     if (session.metadata?.flow !== "frame_preorder") {
-      return response({ error: "Payment reference is not a Frame pre-order." }, 400);
+      return response({ status: "invalid", error: "Payment reference is not a Frame pre-order." }, 400);
     }
     if (session.payment_status === "paid") {
       const fulfilled = await fulfillPreorderCheckout(session, new URL(request.url).origin);
@@ -154,6 +169,9 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     console.error("Pre-order payment status failed", error);
-    return response({ error: "Payment confirmation is temporarily unavailable." }, 503);
+    return response({
+      status: "unavailable",
+      error: "Payment confirmation is temporarily unavailable.",
+    }, 503);
   }
 }

@@ -4,6 +4,7 @@ import {
   formatPreorderMoney,
   PREORDER_MAX_QUANTITY,
   PREORDER_PRODUCT_STATUS_VERSION,
+  PREORDER_RELEASE_PRICE_CENTS,
   PREORDER_SHIPPING_RATE_CENTS,
   PREORDER_TERMS_VERSION,
 } from "@/lib/preorder";
@@ -24,6 +25,7 @@ import { getStripe, getStripePreorderPriceId } from "@/lib/stripe.server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin.server";
 import { isAllowedPreorderUsState } from "@/lib/preorder-shipping";
 import { SITE_URL } from "@/lib/site";
+import { verifiedRequestOrigin } from "@/lib/request-origin.server";
 
 export const dynamic = "force-dynamic";
 
@@ -70,8 +72,8 @@ function reviewedCustomer(value: unknown) {
   if (
     !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
     fullName.length < 2 ||
-    !line1 ||
-    !city ||
+    line1.length < 3 ||
+    city.length < 2 ||
     country !== "US" ||
     !isAllowedPreorderUsState(state) ||
     !/^\d{5}(?:-\d{4})?$/.test(postalCode)
@@ -103,9 +105,8 @@ export async function POST(request: Request) {
     return jsonResponse({ error: "Request is too large." }, 413);
   }
 
-  const origin = request.headers.get("origin");
-  const requestOrigin = new URL(request.url).origin;
-  if (origin && origin !== requestOrigin) {
+  const requestOrigin = verifiedRequestOrigin(request);
+  if (!requestOrigin) {
     return jsonResponse({ error: "Request origin is not allowed." }, 403);
   }
 
@@ -199,15 +200,26 @@ export async function POST(request: Request) {
     if (!environment) {
       throw new Error("Pre-order Checkout is disabled.");
     }
-    const approvedTermsVersion = await getRuntimeValue("PREORDER_LEGAL_APPROVED_VERSION");
-    if (mode === "live" && !isPreorderLiveApproved({ mode, approvedTermsVersion })) {
-      throw new Error("Live pre-order Checkout is blocked until approved terms are active.");
+    const [approvedTermsVersion, approvedProductStatusVersion] = await Promise.all([
+      getRuntimeValue("PREORDER_LEGAL_APPROVED_VERSION"),
+      getRuntimeValue("PREORDER_PRODUCT_STATUS_APPROVED_VERSION"),
+    ]);
+    if (
+      mode === "live" &&
+      !isPreorderLiveApproved({ mode, approvedTermsVersion, approvedProductStatusVersion })
+    ) {
+      throw new Error("Live pre-order Checkout is blocked until approved legal disclosures are active.");
     }
     const config = await getPreorderConfiguration();
     if (config.shippingRateCents !== PREORDER_SHIPPING_RATE_CENTS) {
       throw new Error("Pre-order shipping does not match the reviewed offer.");
     }
     const productPriceLabel = formatPreorderMoney(config.priceCents, config.currency);
+    const releasePriceLabel = formatPreorderMoney(PREORDER_RELEASE_PRICE_CENTS, config.currency);
+    const preorderSavingsLabel = formatPreorderMoney(
+      PREORDER_RELEASE_PRICE_CENTS - config.priceCents,
+      config.currency,
+    );
     const shippingPriceLabel = formatPreorderMoney(config.shippingRateCents, config.currency);
     const stripe = await getStripe(environment);
     const priceId = await getStripePreorderPriceId(environment);
@@ -291,8 +303,8 @@ export async function POST(request: Request) {
           submit: {
             message:
               mode === "test"
-                ? `Sandbox payment only. The ${productPriceLabel} product subtotal excludes ${shippingPriceLabel} standard US shipping and applicable sales tax. Frame is still in development and is estimated to ship in ${config.estimatedShipping}.`
-                : `The ${productPriceLabel} product subtotal excludes ${shippingPriceLabel} standard US shipping and applicable sales tax. Frame is still in development and is estimated to ship in ${config.estimatedShipping}.`,
+                ? `Sandbox payment only. The ${productPriceLabel} pre-order price saves ${preorderSavingsLabel} from the ${releasePriceLabel} release price and excludes ${shippingPriceLabel} standard US shipping and applicable sales tax. Frame is still in development and is estimated to ship in ${config.estimatedShipping}.`
+                : `The ${productPriceLabel} pre-order price saves ${preorderSavingsLabel} from the ${releasePriceLabel} release price and excludes ${shippingPriceLabel} standard US shipping and applicable sales tax. Frame is still in development and is estimated to ship in ${config.estimatedShipping}.`,
           },
           terms_of_service_acceptance: {
             message: `I agree to the [Frame Pre-order Terms](${SITE_URL}/preorder/terms) and [Cancellation and Refund Policy](${SITE_URL}/preorder/refunds).`,

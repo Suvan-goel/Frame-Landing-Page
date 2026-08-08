@@ -1,6 +1,16 @@
-import { sendPreorderOwnerActionEmail } from "./preorder-email.server";
+import {
+  sendPreorderEmailChangeNotice,
+  sendPreorderEmailChangeVerificationEmail,
+  sendPreorderOwnerActionEmail,
+} from "./preorder-email.server";
 import { formatPreorderMoney, formatPreorderNumber } from "./preorder";
-import { verifyPreorderManageToken } from "./preorder-order-access.server";
+import { preorderDeliveryResponseExpired } from "./preorder-delivery-policy";
+import {
+  createPreorderEmailChangeToken,
+  createPreorderManagePath,
+  verifyPreorderEmailChangeToken,
+  verifyPreorderManageToken,
+} from "./preorder-order-access.server";
 import type { PreorderEnvironment } from "./preorder-operations.server";
 import { getSupabaseAdmin } from "./supabase-admin.server";
 
@@ -19,6 +29,7 @@ export type CustomerManagedPreorder = {
   cancellation_requested_at: string | null;
   cancellation_resolution_note: string | null;
   amount_total: number;
+  amount_refunded: number;
   currency: string;
   estimated_delivery: string;
   current_estimated_delivery: string;
@@ -29,9 +40,13 @@ export type CustomerManagedPreorder = {
   address_change_resolution_note: string | null;
   delivery_update_version: number;
   delivery_update_status: string;
+  delivery_update_notice_type: string;
+  delivery_update_response_mode: string;
+  delivery_update_response_deadline: string | null;
   delivery_update_message: string | null;
   delivery_update_sent_at: string | null;
   delivery_update_acknowledged_at: string | null;
+  delivery_update_expired_at: string | null;
   carrier: string | null;
   tracking_number: string | null;
   tracking_url: string | null;
@@ -41,7 +56,17 @@ export type CustomerManagedPreorder = {
 };
 
 const managedOrderColumns =
-  "id,order_number,environment,manage_token_version,full_name,email,shipping_address,order_status,payment_status,fulfillment_status,cancellation_status,cancellation_requested_at,cancellation_resolution_note,amount_total,currency,estimated_delivery,current_estimated_delivery,address_change_status,address_change_requested_at,requested_shipping_address,address_change_reason,address_change_resolution_note,delivery_update_version,delivery_update_status,delivery_update_message,delivery_update_sent_at,delivery_update_acknowledged_at,carrier,tracking_number,tracking_url,shipped_at,delivered_at,placed_at";
+  "id,order_number,environment,manage_token_version,full_name,email,shipping_address,order_status,payment_status,fulfillment_status,cancellation_status,cancellation_requested_at,cancellation_resolution_note,amount_total,amount_refunded,currency,estimated_delivery,current_estimated_delivery,address_change_status,address_change_requested_at,requested_shipping_address,address_change_reason,address_change_resolution_note,delivery_update_version,delivery_update_status,delivery_update_notice_type,delivery_update_response_mode,delivery_update_response_deadline,delivery_update_message,delivery_update_sent_at,delivery_update_acknowledged_at,delivery_update_expired_at,carrier,tracking_number,tracking_url,shipped_at,delivered_at,placed_at";
+
+function customerRefundStatus(order: CustomerManagedPreorder) {
+  if (order.payment_status === "refund_pending") return "processing";
+  if (order.payment_status === "refund_failed") return "failed";
+  if (order.payment_status === "refunded") return "completed";
+  if (order.payment_status === "partially_refunded" || order.amount_refunded > 0) {
+    return "partial";
+  }
+  return "none";
+}
 
 function activeUnshippedOrder(order: CustomerManagedPreorder) {
   return (
@@ -52,7 +77,11 @@ function activeUnshippedOrder(order: CustomerManagedPreorder) {
 }
 
 export function canRequestPreorderCancellation(order: CustomerManagedPreorder) {
-  return activeUnshippedOrder(order) && order.cancellation_status === "none";
+  return (
+    activeUnshippedOrder(order) &&
+    ["on_hold", "ready"].includes(order.fulfillment_status) &&
+    order.cancellation_status === "none"
+  );
 }
 
 export function canRequestPreorderAddressChange(order: CustomerManagedPreorder) {
@@ -92,6 +121,12 @@ export function customerPreorderResponse(order: CustomerManagedPreorder) {
     cancellationResolutionNote: order.cancellation_resolution_note,
     canRequestCancellation: canRequestPreorderCancellation(order),
     amountPaid: formatPreorderMoney(order.amount_total, order.currency),
+    amountRefunded: formatPreorderMoney(order.amount_refunded, order.currency),
+    amountRemaining: formatPreorderMoney(
+      Math.max(order.amount_total - order.amount_refunded, 0),
+      order.currency,
+    ),
+    refundStatus: customerRefundStatus(order),
     originalEstimatedShipping: order.estimated_delivery,
     estimatedShipping: order.current_estimated_delivery,
     addressChangeStatus: order.address_change_status,
@@ -102,10 +137,17 @@ export function customerPreorderResponse(order: CustomerManagedPreorder) {
     canRequestAddressChange: canRequestPreorderAddressChange(order),
     deliveryUpdateVersion: order.delivery_update_version,
     deliveryUpdateStatus: order.delivery_update_status,
+    deliveryUpdateNoticeType: order.delivery_update_notice_type,
+    deliveryUpdateResponseMode: order.delivery_update_response_mode,
+    deliveryUpdateResponseDeadline: order.delivery_update_response_deadline,
     deliveryUpdateMessage: order.delivery_update_message,
     deliveryUpdateSentAt: order.delivery_update_sent_at,
     deliveryUpdateAcknowledgedAt: order.delivery_update_acknowledged_at,
+    deliveryUpdateExpiredAt: order.delivery_update_expired_at,
     requiresDeliveryResponse: order.delivery_update_status === "pending",
+    requiresAffirmativeDeliveryConsent:
+      order.delivery_update_status === "pending" &&
+      order.delivery_update_response_mode !== "silence_is_consent",
     carrier: order.carrier,
     trackingNumber: order.tracking_number,
     trackingUrl: order.tracking_url,
@@ -200,7 +242,7 @@ export async function requestPreorderCancellation(input: {
     .eq("order_status", "placed")
     .eq("cancellation_status", "none")
     .in("payment_status", ["paid", "partially_refunded"])
-    .in("fulfillment_status", ["on_hold", "ready", "processing"])
+    .in("fulfillment_status", ["on_hold", "ready"])
     .select(managedOrderColumns)
     .maybeSingle<CustomerManagedPreorder>();
   if (updated.error) throw updated.error;
@@ -221,6 +263,130 @@ export async function requestPreorderCancellation(input: {
     deliveryKey: `${eventKey}-owner-email`,
   });
   return { status: "requested" as const, order: updated.data, ownerNotification };
+}
+
+export async function requestPreorderContactEmailChange(input: {
+  origin: string;
+  token: string;
+  email: string;
+}) {
+  const order = await getCustomerManagedPreorder(input.token);
+  if (!order) return { status: "invalid" as const };
+  if (order.email === input.email) {
+    return { status: "unchanged" as const, order };
+  }
+
+  const verificationToken = await createPreorderEmailChangeToken({
+    orderId: order.id,
+    tokenVersion: order.manage_token_version,
+    currentEmail: order.email,
+    newEmail: input.email,
+  });
+  const deliveryKey = `preorder-email-change-verification-${order.id}-${order.manage_token_version}-${crypto.randomUUID()}`;
+  await sendPreorderEmailChangeVerificationEmail({
+    origin: input.origin,
+    preorderId: order.id,
+    orderNumber: order.order_number,
+    environment: order.environment,
+    fullName: order.full_name,
+    newEmail: input.email,
+    verificationToken,
+    deliveryKey,
+  });
+  await recordCustomerEvent({
+    orderId: order.id,
+    eventKey: `${deliveryKey}-requested`,
+    eventType: "contact_email_change_requested",
+    detail: { new_email: input.email },
+  });
+
+  return { status: "verification_sent" as const, order };
+}
+
+export async function confirmPreorderContactEmailChange(token: string) {
+  const payload = await verifyPreorderEmailChangeToken(token);
+  if (!payload) return { status: "invalid" as const };
+
+  const supabase = await getSupabaseAdmin();
+  const now = new Date().toISOString();
+  const nextTokenVersion = payload.tokenVersion + 1;
+  const updated = await supabase
+    .from("preorders")
+    .update({
+      email: payload.newEmail,
+      normalized_email: payload.newEmail,
+      manage_token_version: nextTokenVersion,
+      updated_at: now,
+    })
+    .eq("id", payload.orderId)
+    .eq("manage_token_version", payload.tokenVersion)
+    .eq("email", payload.currentEmail)
+    .select(managedOrderColumns)
+    .maybeSingle<CustomerManagedPreorder>();
+  if (updated.error) throw updated.error;
+  if (!updated.data) return { status: "invalid" as const };
+
+  await recordCustomerEvent({
+    orderId: payload.orderId,
+    eventKey: `preorder-contact-email-updated-${payload.orderId}-${nextTokenVersion}`,
+    eventType: "contact_email_updated",
+    detail: {
+      previous_email: payload.currentEmail,
+      new_email: payload.newEmail,
+    },
+  });
+
+  const managePath = await createPreorderManagePath({
+    orderId: updated.data.id,
+    tokenVersion: updated.data.manage_token_version,
+  });
+  const noticeInput = {
+    origin: "",
+    preorderId: updated.data.id,
+    orderNumber: updated.data.order_number,
+    environment: updated.data.environment,
+    fullName: updated.data.full_name,
+    previousEmail: payload.currentEmail,
+    newEmail: payload.newEmail,
+    managePath,
+  };
+
+  return {
+    status: "updated" as const,
+    order: updated.data,
+    managePath,
+    noticeInput,
+  };
+}
+
+export async function sendConfirmedPreorderEmailChangeNotices(input: {
+  origin: string;
+  result: Extract<
+    Awaited<ReturnType<typeof confirmPreorderContactEmailChange>>,
+    { status: "updated" }
+  >;
+}) {
+  const common = { ...input.result.noticeInput, origin: input.origin };
+  const outcomes = await Promise.allSettled([
+    sendPreorderEmailChangeNotice({
+      ...common,
+      recipient: common.previousEmail,
+      audience: "previous",
+      managePath: null,
+      deliveryKey: `preorder-email-change-previous-${common.preorderId}-${input.result.order.manage_token_version}`,
+    }),
+    sendPreorderEmailChangeNotice({
+      ...common,
+      recipient: common.newEmail,
+      audience: "new",
+      deliveryKey: `preorder-email-change-new-${common.preorderId}-${input.result.order.manage_token_version}`,
+    }),
+  ]);
+  for (const outcome of outcomes) {
+    if (outcome.status === "rejected") {
+      console.error("Pre-order email-change notice failed", outcome.reason);
+    }
+  }
 }
 
 export async function requestPreorderAddressChange(input: {
@@ -294,6 +460,14 @@ export async function respondToPreorderDeliveryUpdate(input: {
   ) {
     return { status: "unavailable" as const, order };
   }
+  if (
+    preorderDeliveryResponseExpired({
+      responseMode: order.delivery_update_response_mode,
+      responseDeadline: order.delivery_update_response_deadline,
+    })
+  ) {
+    return { status: "deadline_expired" as const, order };
+  }
 
   const now = new Date().toISOString();
   const cancellationRequested = input.response === "request_cancellation";
@@ -310,7 +484,10 @@ export async function respondToPreorderDeliveryUpdate(input: {
     update.cancellation_status = "requested";
     update.cancellation_requested_at = now;
     update.cancellation_reason =
-      input.reason ?? "Cancellation requested after a delivery estimate update.";
+      input.reason ??
+      (order.delivery_update_notice_type === "material_product_change"
+        ? "Cancellation requested after a material product change notice."
+        : "Cancellation requested after a shipping estimate update.");
     update.cancellation_resolved_at = null;
     update.cancellation_resolution_note = null;
   }
@@ -329,8 +506,8 @@ export async function respondToPreorderDeliveryUpdate(input: {
   if (!updated.data) return { status: "unavailable" as const, order };
 
   const eventType = cancellationRequested
-    ? "delivery_update_cancellation_requested"
-    : "delivery_update_accepted";
+    ? "order_change_cancellation_requested"
+    : "order_change_accepted";
   const eventKey = `preorder-${eventType}-${order.id}-${input.deliveryUpdateVersion}`;
   await recordCustomerEvent({
     orderId: order.id,
@@ -343,7 +520,11 @@ export async function respondToPreorderDeliveryUpdate(input: {
         origin: input.origin,
         order: updated.data,
         requestType: "cancellation",
-        reason: input.reason ?? "Requested after a delivery estimate update.",
+        reason:
+          input.reason ??
+          (order.delivery_update_notice_type === "material_product_change"
+            ? "Requested after a material product change notice."
+            : "Requested after a shipping estimate update."),
         deliveryKey: `${eventKey}-owner-email`,
       })
     : "not_needed";

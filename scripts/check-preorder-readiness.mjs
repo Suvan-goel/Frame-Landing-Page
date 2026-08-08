@@ -3,8 +3,10 @@ import { readFile } from "node:fs/promises";
 import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 import {
+  PREORDER_PRODUCT_STATUS_VERSION,
   PREORDER_SELLER_DETAILS_COMPLETE,
   PREORDER_TERMS_VERSION,
+  PREORDER_WARRANTY_DETAILS_COMPLETE,
 } from "../lib/preorder.ts";
 
 const target = process.argv.includes("--launch")
@@ -135,6 +137,7 @@ if (target === "launch") {
 for (const [name, label] of [
   ["PREORDER_ORDER_ACCESS_SECRET", "Order-management signing"],
   ["PREORDER_RATE_LIMIT_SECRET", "Endpoint-protection signing"],
+  ["PREORDER_MAINTENANCE_SECRET", "Delivery-deadline processing"],
 ]) {
   if (configured(name, 32)) {
     pass(label, "A dedicated secret is configured.");
@@ -152,6 +155,16 @@ if (
   fail("Signing-secret isolation", "Order-link and endpoint-protection secrets must be different.");
 } else {
   pass("Signing-secret isolation", "Dedicated signing secrets are isolated.");
+}
+if (
+  configured("PREORDER_MAINTENANCE_SECRET", 32) &&
+  ["PREORDER_ORDER_ACCESS_SECRET", "PREORDER_RATE_LIMIT_SECRET"].some(
+    (name) => process.env[name] === process.env.PREORDER_MAINTENANCE_SECRET,
+  )
+) {
+  fail("Maintenance-secret isolation", "Delivery-deadline processing must use its own unique secret.");
+} else {
+  pass("Maintenance-secret isolation", "Delivery-deadline processing uses independent signing material.");
 }
 
 if (configured("PREORDER_STAGING_ACCESS_SECRET", 32)) {
@@ -207,18 +220,37 @@ if (shippingRateCents === 1_900) {
 
 const termsVersion = PREORDER_TERMS_VERSION;
 const approvedTermsVersion = process.env.PREORDER_LEGAL_APPROVED_VERSION ?? "";
+const productStatusVersion = PREORDER_PRODUCT_STATUS_VERSION;
+const approvedProductStatusVersion =
+  process.env.PREORDER_PRODUCT_STATUS_APPROVED_VERSION ?? "";
 if (target === "launch") {
   if (
     PREORDER_SELLER_DETAILS_COMPLETE &&
+    PREORDER_WARRANTY_DETAILS_COMPLETE &&
     !termsVersion.startsWith("draft") &&
-    approvedTermsVersion === termsVersion
+    approvedTermsVersion === termsVersion &&
+    !productStatusVersion.startsWith("draft") &&
+    approvedProductStatusVersion === productStatusVersion
   ) {
-    pass("Legal launch gate", "The active approved terms version matches the checkout version.");
+    pass(
+      "Legal launch gate",
+      "The approved legal pack and Product Status Disclosure versions match checkout.",
+    );
   } else {
-    fail("Legal launch gate", "Incorporated seller details and approved, non-draft terms are not active.");
+    fail(
+      "Legal launch gate",
+      "Seller details, warranty terms, and approved non-draft legal disclosure versions are not all active.",
+    );
   }
 } else {
-  if (!PREORDER_SELLER_DETAILS_COMPLETE && termsVersion.startsWith("draft") && !approvedTermsVersion) {
+  if (
+    !PREORDER_SELLER_DETAILS_COMPLETE &&
+    PREORDER_WARRANTY_DETAILS_COMPLETE &&
+    termsVersion.startsWith("draft") &&
+    !approvedTermsVersion &&
+    productStatusVersion.startsWith("draft") &&
+    !approvedProductStatusVersion
+  ) {
     pass("Legal launch gate", "The live gate remains deliberately closed during testing.");
   } else {
     warn("Legal launch gate", "Review the configured legal version before continuing.");

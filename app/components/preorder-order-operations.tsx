@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { FormEvent, useRef, useState } from "react";
-import { formatPreorderAdminStatus } from "@/lib/preorder-admin-dashboard";
+import type { PreorderDeliveryNoticeType } from "@/lib/preorder-delivery-policy";
 
 const fulfillmentOptions = [
   ["on_hold", "On hold"],
@@ -25,47 +25,59 @@ function addressLines(address: Record<string, unknown> | null) {
   ].filter((value): value is string => typeof value === "string" && Boolean(value));
 }
 
+function formatUtcDateTime(value: string) {
+  return new Intl.DateTimeFormat("en-GB", {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "UTC",
+    timeZoneName: "short",
+  }).format(new Date(value));
+}
+
 export function PreorderOrderOperations({
   orderId,
   environment,
   amountRemainingLabel,
-  orderStatus,
-  paymentStatus,
   fulfillmentStatus: initialFulfillmentStatus,
   cancellationStatus,
   addressChangeStatus,
   requestedShippingAddress,
   addressChangeReason,
   currentEstimatedDelivery,
+  deliveryUpdateVersion,
   deliveryUpdateStatus,
+  deliveryUpdateNoticeType,
+  deliveryUpdateResponseMode,
+  deliveryUpdateResponseDeadline,
   deliveryUpdateMessage: initialDeliveryUpdateMessage,
   carrier: initialCarrier,
   trackingNumber: initialTrackingNumber,
   trackingUrl: initialTrackingUrl,
   ownerNote: initialOwnerNote,
-  canUpdateFulfillment,
-  canSendDeliveryUpdate,
   canRefund,
 }: {
   orderId: string;
   environment: "test" | "live";
   amountRemainingLabel: string;
-  orderStatus: string;
-  paymentStatus: string;
   fulfillmentStatus: string;
   cancellationStatus: string;
   addressChangeStatus: string;
   requestedShippingAddress: Record<string, unknown> | null;
   addressChangeReason: string | null;
   currentEstimatedDelivery: string;
+  deliveryUpdateVersion: number;
   deliveryUpdateStatus: string;
+  deliveryUpdateNoticeType: string;
+  deliveryUpdateResponseMode: string;
+  deliveryUpdateResponseDeadline: string | null;
   deliveryUpdateMessage: string | null;
   carrier: string | null;
   trackingNumber: string | null;
   trackingUrl: string | null;
   ownerNote: string | null;
-  canUpdateFulfillment: boolean;
-  canSendDeliveryUpdate: boolean;
   canRefund: boolean;
 }) {
   const router = useRouter();
@@ -81,6 +93,13 @@ export function PreorderOrderOperations({
   const [ownerNote, setOwnerNote] = useState(initialOwnerNote ?? "");
   const [addressResolutionNote, setAddressResolutionNote] = useState("");
   const [deliveryEstimate, setDeliveryEstimate] = useState(currentEstimatedDelivery);
+  const [deliveryNoticeType, setDeliveryNoticeType] =
+    useState<PreorderDeliveryNoticeType>(
+      deliveryUpdateVersion === 0 ? "first_short_delay" : "consent_required_delay",
+    );
+  const [deliveryResponseDeadline, setDeliveryResponseDeadline] = useState("");
+  const [shortDelayEligibilityConfirmed, setShortDelayEligibilityConfirmed] =
+    useState(false);
   const [deliveryMessage, setDeliveryMessage] = useState(
     initialDeliveryUpdateMessage ?? "",
   );
@@ -185,11 +204,21 @@ export function PreorderOrderOperations({
 
   async function sendDeliveryUpdate(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!deliveryEstimate.trim() || !deliveryMessage.trim()) {
+    const materialChange = deliveryNoticeType === "material_product_change";
+    const affirmativeConsent = deliveryNoticeType !== "first_short_delay";
+    if ((!materialChange && !deliveryEstimate.trim()) || !deliveryMessage.trim()) {
       setError("Add the new estimate and a customer-facing explanation.");
       return;
     }
-    if (!window.confirm("Send this delivery update to the customer?")) return;
+    if (affirmativeConsent && !deliveryResponseDeadline) {
+      setError("Choose the deadline for the customer’s affirmative response.");
+      return;
+    }
+    if (!affirmativeConsent && !shortDelayEligibilityConfirmed) {
+      setError("Confirm that this is the first definite delay and is no more than 30 days later.");
+      return;
+    }
+    if (!window.confirm("Send this order-change notice to the customer?")) return;
     setBusy("delivery-update");
     try {
       await request(
@@ -199,11 +228,16 @@ export function PreorderOrderOperations({
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             action: "send_delivery_update",
+            noticeType: deliveryNoticeType,
+            shortDelayEligibilityConfirmed,
             currentEstimate: deliveryEstimate,
             message: deliveryMessage,
+            responseDeadline: affirmativeConsent
+              ? new Date(deliveryResponseDeadline).toISOString()
+              : null,
           }),
         },
-        "Delivery update recorded and queued for the customer.",
+        "Order-change notice recorded and queued for the customer.",
       );
     } catch (caught) {
       setError(caught instanceof Error ? caught.message : "The delivery update could not be sent.");
@@ -241,44 +275,29 @@ export function PreorderOrderOperations({
   }
 
   const requestedAddressLines = addressLines(requestedShippingAddress);
-  const trackingRequired = ["shipped", "delivered"].includes(fulfillmentStatus);
 
   return (
-    <div className="preorder-order-operations" aria-busy={Boolean(busy)}>
-      <div className="preorder-order-operations__heading">
-        <div>
-          <p className="eyebrow">Order workspace</p>
-          <h2>Actions and communication</h2>
-        </div>
-        <span>{environment === "test" ? "Sandbox" : "Live"}</span>
-      </div>
-
-      {message ? <p className="form-success preorder-owner-feedback" role="status">{message}</p> : null}
-      {error ? <p className="form-error preorder-owner-feedback" role="alert">{error}</p> : null}
-
+    <div className="preorder-order-operations">
       <section className="preorder-owner-card">
         <div className="preorder-owner-card__heading">
           <div><p className="eyebrow">Operations</p><h2>Fulfilment</h2></div>
           <span className={`admin-status admin-status--${initialFulfillmentStatus}`}>
-            {formatPreorderAdminStatus(initialFulfillmentStatus)}
+            {initialFulfillmentStatus.replaceAll("_", " ")}
           </span>
         </div>
-        <p>Update the internal fulfilment stage. Shipping and delivery require complete tracking details.</p>
-        {canUpdateFulfillment ? <form className="preorder-fulfillment-form" onSubmit={saveFulfillment}>
+        <form className="preorder-fulfillment-form" onSubmit={saveFulfillment}>
           <label>
             <span>Status</span>
             <select value={fulfillmentStatus} onChange={(event) => setFulfillmentStatus(event.target.value)}>
               {fulfillmentOptions.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
             </select>
           </label>
-          <label><span>Carrier</span><input required={trackingRequired} value={carrier} maxLength={100} onChange={(event) => setCarrier(event.target.value)} placeholder="UPS" /></label>
-          <label><span>Tracking number</span><input required={trackingRequired} value={trackingNumber} maxLength={200} onChange={(event) => setTrackingNumber(event.target.value)} /></label>
-          <label className="preorder-fulfillment-form__wide"><span>Tracking URL</span><input required={trackingRequired} type="url" value={trackingUrl} maxLength={500} onChange={(event) => setTrackingUrl(event.target.value)} placeholder="https://…" /></label>
+          <label><span>Carrier</span><input value={carrier} maxLength={100} onChange={(event) => setCarrier(event.target.value)} placeholder="UPS" /></label>
+          <label><span>Tracking number</span><input value={trackingNumber} maxLength={200} onChange={(event) => setTrackingNumber(event.target.value)} /></label>
+          <label className="preorder-fulfillment-form__wide"><span>Tracking URL</span><input type="url" value={trackingUrl} maxLength={500} onChange={(event) => setTrackingUrl(event.target.value)} placeholder="https://…" /></label>
           <label className="preorder-fulfillment-form__wide"><span>Private owner note</span><textarea rows={3} maxLength={2000} value={ownerNote} onChange={(event) => setOwnerNote(event.target.value)} /></label>
           <button className="button button--dark" type="submit" disabled={Boolean(busy)}>{busy === "fulfillment" ? "Saving…" : "Save fulfilment"}</button>
-        </form> : (
-          <p className="preorder-operation-unavailable">Fulfilment changes are unavailable because this order is {formatPreorderAdminStatus(orderStatus).toLowerCase()} and its payment is {formatPreorderAdminStatus(paymentStatus).toLowerCase()}.</p>
-        )}
+        </form>
       </section>
 
       {["requested", "processing"].includes(cancellationStatus) ? (
@@ -309,19 +328,50 @@ export function PreorderOrderOperations({
 
       <section className="preorder-owner-card">
         <div className="preorder-owner-card__heading">
-          <div><p className="eyebrow">Customer communication</p><h2>Delivery estimate</h2></div>
+          <div><p className="eyebrow">Customer communication</p><h2>Order-change notice</h2></div>
           <span className={`admin-status admin-status--${deliveryUpdateStatus}`}>
-            {formatPreorderAdminStatus(deliveryUpdateStatus)}
+            {deliveryUpdateStatus.replaceAll("_", " ")}
           </span>
         </div>
-        <p>Use this when the estimate changes after purchase. The customer can accept the new timing or request cancellation.</p>
-        {canSendDeliveryUpdate ? <form className="preorder-owner-delivery-form" onSubmit={sendDeliveryUpdate}>
-          <label><span>Current estimate</span><input required maxLength={200} value={deliveryEstimate} onChange={(event) => setDeliveryEstimate(event.target.value)} /></label>
+        <p>Use this for a shipping delay or a material product change. The notice records whether silence can keep the order active or affirmative consent is required.</p>
+        {deliveryUpdateStatus === "pending" ? (
+          <p className="preorder-manage-form-note">
+            <strong>Pending notice:</strong>{" "}
+            {deliveryUpdateNoticeType.replaceAll("_", " ")} · {deliveryUpdateResponseMode.replaceAll("_", " ")}
+            {deliveryUpdateResponseDeadline
+              ? ` · response due ${formatUtcDateTime(deliveryUpdateResponseDeadline)}`
+              : ""}
+          </p>
+        ) : null}
+        <form className="preorder-owner-delivery-form" onSubmit={sendDeliveryUpdate}>
+          <label>
+            <span>Notice type</span>
+            <select value={deliveryNoticeType} onChange={(event) => setDeliveryNoticeType(event.target.value as PreorderDeliveryNoticeType)}>
+              <option value="first_short_delay" disabled={deliveryUpdateVersion !== 0}>First definite delay of 30 days or less</option>
+              <option value="consent_required_delay">Long, unknown, or subsequent delay</option>
+              <option value="material_product_change">Material product change</option>
+            </select>
+          </label>
+          {deliveryNoticeType !== "material_product_change" ? (
+            <label><span>Current estimate</span><input required maxLength={200} value={deliveryEstimate} onChange={(event) => setDeliveryEstimate(event.target.value)} /></label>
+          ) : null}
+          {deliveryNoticeType !== "first_short_delay" ? (
+            <label><span>Response deadline</span><input required type="datetime-local" value={deliveryResponseDeadline} onChange={(event) => setDeliveryResponseDeadline(event.target.value)} /></label>
+          ) : null}
+          {deliveryNoticeType === "first_short_delay" ? (
+            <label className="preorder-owner-policy-confirmation">
+              <input type="checkbox" checked={shortDelayEligibilityConfirmed} onChange={(event) => setShortDelayEligibilityConfirmed(event.target.checked)} />
+              <span>I confirm this is the first delay and the definite revised shipping date is no more than 30 days later.</span>
+            </label>
+          ) : null}
           <label><span>Customer-facing explanation</span><textarea required rows={4} maxLength={1000} value={deliveryMessage} onChange={(event) => setDeliveryMessage(event.target.value)} placeholder="Explain what changed and what the customer can expect." /></label>
-          <button className="button button--secondary" type="submit" disabled={Boolean(busy)}>{busy === "delivery-update" ? "Sending…" : "Send delivery update"}</button>
-        </form> : (
-          <p className="preorder-operation-unavailable">Delivery updates are available only for active, paid orders that have not shipped and do not have a pending cancellation.</p>
-        )}
+          <p className="preorder-manage-form-note">
+            {deliveryNoticeType === "first_short_delay"
+              ? "Silence may count as consent only for this first, definite delay of no more than 30 days."
+              : "The customer must accept by the deadline or the unshipped order will be cancelled and refunded automatically."}
+          </p>
+          <button className="button button--secondary" type="submit" disabled={Boolean(busy)}>{busy === "delivery-update" ? "Sending…" : "Send order-change notice"}</button>
+        </form>
       </section>
 
       <section className="preorder-owner-card">
@@ -333,10 +383,13 @@ export function PreorderOrderOperations({
 
       <section className="preorder-owner-card preorder-owner-card--danger">
         <p className="eyebrow">Payment operation</p>
-        <h2>{canRefund ? "Full remaining refund" : "No refundable balance"}</h2>
-        <p>{canRefund ? `This immediately submits a ${amountRemainingLabel} refund to the Stripe ${environment} environment.` : "This payment has already been fully refunded or is not eligible for another refund."}</p>
-        {canRefund ? <button className="button preorder-danger-button" type="button" onClick={refundOrder} disabled={Boolean(busy)}>{busy === "refund" ? "Starting refund…" : `Refund ${amountRemainingLabel}`}</button> : null}
+        <h2>Full remaining refund</h2>
+        <p>This immediately submits a {amountRemainingLabel} refund to the Stripe {environment} environment.</p>
+        <button className="button preorder-danger-button" type="button" onClick={refundOrder} disabled={Boolean(busy) || !canRefund}>{busy === "refund" ? "Starting refund…" : canRefund ? `Refund ${amountRemainingLabel}` : "Refund unavailable"}</button>
       </section>
+
+      {message ? <p className="form-success preorder-owner-feedback" role="status">{message}</p> : null}
+      {error ? <p className="form-error preorder-owner-feedback" role="alert">{error}</p> : null}
     </div>
   );
 }

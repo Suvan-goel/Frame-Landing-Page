@@ -1,11 +1,25 @@
 export const PREORDER_SKU = "frame-device-preorder-v1";
 export const PREORDER_PRODUCT_NAME = "Frame device pre-order";
-export const PREORDER_TERMS_VERSION = "draft-2026-08-07-v3";
-export const PREORDER_PRODUCT_STATUS_VERSION = "draft-2026-08-07-v3";
+// The Pre-order Terms and Cancellation and Refund Policy are accepted together
+// and versioned as one legal pack. The database retains `terms_version` for compatibility.
+export const PREORDER_LEGAL_PACK_VERSION = "draft-2026-08-08-v6";
+export const PREORDER_TERMS_VERSION = PREORDER_LEGAL_PACK_VERSION;
+export const PREORDER_LEGAL_PACK_UPDATED = "August 8, 2026";
+export const PREORDER_PRODUCT_STATUS_VERSION = "draft-2026-08-08-v6";
+export const PREORDER_PRODUCT_STATUS_UPDATED = "August 8, 2026";
 // This is deliberately false until the incorporated seller's legal name,
 // company number, registered office, and support details are in the policies.
 export const PREORDER_SELLER_DETAILS_COMPLETE = false;
+// The one-year limited hardware warranty is now defined in the legal pack.
+// Seller identity remains a separate launch gate because the warrantor must be named.
+export const PREORDER_WARRANTY_DETAILS_COMPLETE = true;
 export const PREORDER_DEFAULT_PRICE_CENTS = 29_900;
+export const PREORDER_RELEASE_PRICE_CENTS = 49_900;
+export const PREORDER_SAVINGS_CENTS =
+  PREORDER_RELEASE_PRICE_CENTS - PREORDER_DEFAULT_PRICE_CENTS;
+export const PREORDER_DISCOUNT_PERCENT = Math.round(
+  (PREORDER_SAVINGS_CENTS / PREORDER_RELEASE_PRICE_CENTS) * 100,
+);
 export const PREORDER_SHIPPING_RATE_CENTS = 1_900;
 export const PREORDER_DEFAULT_CURRENCY = "usd";
 export const PREORDER_DEFAULT_ALLOWED_COUNTRIES = ["US"] as const;

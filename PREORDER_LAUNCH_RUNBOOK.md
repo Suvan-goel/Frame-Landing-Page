@@ -13,6 +13,7 @@ Keep all four safeguards in place:
 
 - `PREORDER_MODE` stays `test` locally and is never changed to `live`;
 - `PREORDER_LEGAL_APPROVED_VERSION` stays empty;
+- `PREORDER_PRODUCT_STATUS_APPROVED_VERSION` stays empty;
 - both source legal versions continue to begin with `draft`;
 - the Supabase `live` allocation stays `paused`.
 
@@ -58,7 +59,9 @@ Required hosted staging values:
 ```text
 PREORDER_MODE=test
 PREORDER_LEGAL_APPROVED_VERSION=
+PREORDER_PRODUCT_STATUS_APPROVED_VERSION=
 PREORDER_STAGING_ACCESS_SECRET=<unique secret of at least 32 characters>
+PREORDER_MAINTENANCE_SECRET=<third unique secret of at least 32 characters>
 STRIPE_SECRET_KEY=<test key>
 STRIPE_PREORDER_PRICE_ID=<test $299 price>
 STRIPE_WEBHOOK_SECRET=<staging endpoint signing secret>
@@ -88,11 +91,13 @@ The invitation grants a signed, secure, 12-hour browser session. Rotating `PREOR
 
 Do not complete this section until the lawyer and medical-device regulatory review are finished.
 
-- Replace every draft policy and bracketed placeholder with approved wording.
+- Insert the incorporated seller identity and replace every remaining draft marker or placeholder with approved wording.
+- Review the one-year limited hardware warranty, shipping-delay consent matrix, material-change consent flow, and automatic deadline refund operation with US counsel.
 - Revalidate the provisional $19 US shipping rate using the final packaged dimensions and weight, US fulfilment origin and fees, and lithium-battery classification; confirm Stripe Tax registrations with the relevant advisers.
 - Assign an explicit Stripe product tax code approved for Frame's final product classification.
 - Assign a new non-draft `PREORDER_TERMS_VERSION` and matching product-status version in the application.
 - Set `PREORDER_LEGAL_APPROVED_VERSION` to exactly the approved terms version.
+- Set `PREORDER_PRODUCT_STATUS_APPROVED_VERSION` to exactly the approved Product Status Disclosure version.
 - Re-run the full test suite after the version and copy change.
 
 The application rejects live checkout while the active version begins with `draft` or does not exactly match the configured approval value.
@@ -115,6 +120,7 @@ Required live values:
 ```text
 PREORDER_MODE=live
 PREORDER_LEGAL_APPROVED_VERSION=<exact approved non-draft version>
+PREORDER_PRODUCT_STATUS_APPROVED_VERSION=<exact approved non-draft version>
 STRIPE_SECRET_KEY=<live key>
 STRIPE_PREORDER_PRICE_ID=<live $299 price>
 STRIPE_WEBHOOK_SECRET=<live endpoint signing secret>
@@ -127,9 +133,12 @@ PREORDER_CURRENCY=usd
 PREORDER_ALLOWED_COUNTRIES=US
 PREORDER_ESTIMATED_SHIPPING=Q1 2027
 PREORDER_SHIPPING_RATE_CENTS=1900
+PREORDER_MAINTENANCE_SECRET=<third unique secret of at least 32 characters>
 ```
 
 Copy the Supabase, Resend, sender, operations-email, order-link and rate-limit values into the hosted environment. Use different values for `PREORDER_ORDER_ACCESS_SECRET` and `PREORDER_RATE_LIMIT_SECRET`. Do not expose any secret in source control.
+
+Keep the 15-minute scheduled deadline processor enabled. It converts unanswered long, unknown, repeated-delay, and material-change notices into cancellations and full refunds. The maintenance secret must be different from the order-link, rate-limit, and staging secrets.
 
 Keep the explicit `STRIPE_TEST_*` values in the hosted environment after
 cutover. The application selects Stripe credentials from each order or event's

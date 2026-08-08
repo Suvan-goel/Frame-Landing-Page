@@ -13,7 +13,7 @@ export function InterestFlow({
 }) {
   return (
     <WaitlistSignupProvider>
-      <main className="interest-flow" aria-label="Frame early access">
+      <main className="interest-flow" aria-label="Frame updates">
         <SiteHeader />
         <div className="interest-flow__shell">
           <WaitlistSignupFlow

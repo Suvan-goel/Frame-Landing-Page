@@ -7,6 +7,7 @@ const MAX_MESSAGE_LENGTH = 3000;
 
 const TOPIC_LABELS = new Map([
   ["general", "General question"],
+  ["preorder", "Pre-order support"],
   ["research", "Research or engineering"],
   ["partnerships", "Partnership or press"],
   ["privacy", "Privacy or data request"],

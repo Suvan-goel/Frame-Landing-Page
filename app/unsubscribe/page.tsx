@@ -25,7 +25,7 @@ export default async function UnsubscribePage({
         <p className="eyebrow">Email preferences</p>
         <h1>Stop Frame development updates?</h1>
         <p className="legal-intro">
-          Confirm below and we’ll remove this address from future waitlist and
+          Confirm below and we’ll remove this address from future development and
           product-update emails.
         </p>
         <UnsubscribeControl token={token} />

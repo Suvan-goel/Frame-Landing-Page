@@ -1,17 +1,12 @@
 /* eslint-disable @next/next/no-html-link-for-pages */
 import { notFound } from "next/navigation";
-import { AdminDashboardShell } from "@/app/components/admin-dashboard-shell";
+import { BrandWordmark } from "@/app/components/brand-wordmark";
 import { PreorderSalesControls } from "@/app/components/preorder-sales-controls";
 import {
   PreorderWebhookRecovery,
   type FailedWebhook,
 } from "@/app/components/preorder-webhook-recovery";
-import { requireChatGPTUser } from "@/app/chatgpt-auth";
-import {
-  formatPreorderAdminStatus,
-  summarizePreorderAttention,
-  type PreorderEmailHealth,
-} from "@/lib/preorder-admin-dashboard";
+import { chatGPTSignOutPath, requireChatGPTUser } from "@/app/chatgpt-auth";
 import { evaluatePreorderLaunchReadiness } from "@/lib/preorder-launch-readiness.server";
 import {
   getPreorderSalesSnapshot,
@@ -55,10 +50,6 @@ type FailedWebhookRow = {
   last_attempted_at: string | null;
 };
 
-type EmailDeliveryHealthRow = PreorderEmailHealth & {
-  preorders: { environment: PreorderEnvironment };
-};
-
 export default async function PreorderAdminPage({
   searchParams,
 }: {
@@ -75,7 +66,7 @@ export default async function PreorderAdminPage({
   const supabase = await getSupabaseAdmin();
   const [
     orders,
-    emailDeliveries,
+    failedEmails,
     failedWebhooks,
     snapshot,
     launchReadiness,
@@ -89,11 +80,9 @@ export default async function PreorderAdminPage({
       .returns<PreorderAdminRow[]>(),
     supabase
       .from("preorder_email_deliveries")
-      .select("preorder_id,email_type,status,created_at,preorders!inner(environment)")
-      .eq("preorders.environment", environment)
-      .order("created_at", { ascending: false })
-      .limit(2_000)
-      .returns<EmailDeliveryHealthRow[]>(),
+      .select("id,preorders!inner(environment)", { count: "exact", head: true })
+      .eq("status", "failed")
+      .eq("preorders.environment", environment),
     supabase
       .from("stripe_webhook_events")
       .select("event_id,event_type,status,error_message,processing_attempts,last_attempted_at")
@@ -105,9 +94,7 @@ export default async function PreorderAdminPage({
     getPreorderSalesSnapshot(environment),
     evaluatePreorderLaunchReadiness(),
   ]);
-  if (orders.error || emailDeliveries.error || failedWebhooks.error) {
-    throw new Error("The pre-order owner view is temporarily unavailable.");
-  }
+  if (orders.error) throw new Error("The pre-order owner view is temporarily unavailable.");
 
   const rows = orders.data ?? [];
   const paidRows = rows.filter((order) => order.payment_status === "paid");
@@ -129,6 +116,12 @@ export default async function PreorderAdminPage({
       .join(" + ") || formatPreorderMoney(0, "usd");
   const liveGateReady = launchReadiness.ready;
   const environmentLabel = environment === "test" ? "Sandbox" : "Live";
+  const orderAttentionCount = rows.filter(
+    (order) =>
+      !order.confirmation_email_sent_at ||
+      ["requested", "processing"].includes(order.cancellation_status) ||
+      ["refund_failed", "disputed"].includes(order.payment_status),
+  ).length;
   const failedWebhookRows: FailedWebhook[] = (failedWebhooks.data ?? [])
     .filter((event) =>
       isStripeWebhookRecoveryEligible({
@@ -144,34 +137,24 @@ export default async function PreorderAdminPage({
       processingAttempts: event.processing_attempts,
       lastAttemptedAt: event.last_attempted_at,
     }));
-  const attention = summarizePreorderAttention(
-    rows,
-    emailDeliveries.data ?? [],
-    failedWebhookRows.length,
-  );
 
   return (
-    <AdminDashboardShell
-      activeSection="preorders"
-      actions={
-        <a className="button button--dark" href={`/api/admin/preorders.csv?environment=${environment}`}>
-          Export orders
-        </a>
-      }
-      className="admin-preorders"
-      description="Monitor payments, capacity, customer communication, and fulfilment from one operational view."
-      eyebrow={`Owner workspace · ${environmentLabel}`}
-      title="Pre-orders"
-      userEmail={user.email}
-    >
-      <section className="admin-control-panel admin-control-panel--compact preorder-environment-panel" aria-label="Payment environment">
-        <div className="admin-control-panel__heading">
+    <main className="admin-page">
+      <div className="admin-shell admin-preorders">
+        <header className="admin-header">
           <div>
-            <p className="eyebrow">Payment environment</p>
-            <h2>{environmentLabel} operations</h2>
+            <a className="wordmark" href="/" aria-label="Frame home"><BrandWordmark /></a>
+            <p className="eyebrow">Owner view · {environmentLabel}</p>
+            <h1>Frame Pre-orders</h1>
+            <p>Availability, payments, email delivery and fulfilment in one place.</p>
           </div>
-          <p>Choose the payment data and controls you want to work with.</p>
-        </div>
+          <div className="admin-actions">
+            <a href={`/api/admin/preorders.csv?environment=${environment}`}>Download CSV</a>
+            <a href="/admin/email">Email</a>
+            <a href="/admin/waitlist">Subscribers</a>
+            <a className="text-link" href={chatGPTSignOutPath("/")}>Sign out</a>
+          </div>
+        </header>
 
         <nav className="admin-tabs" aria-label="Pre-order payment environments">
           <a
@@ -190,101 +173,57 @@ export default async function PreorderAdminPage({
           </a>
         </nav>
         <p className="admin-tabs__note">
-          You are viewing <strong>{environmentLabel.toLowerCase()}</strong> records. Orders, capacity, Stripe events, and exports stay separate between environments.
+          Sandbox and live commerce records are kept separate. Changes here affect only the selected environment.
         </p>
-      </section>
 
-      <section className="admin-metrics preorder-admin-metrics" aria-label={`${environmentLabel} pre-order metrics`}>
-        <article><span>Active paid orders</span><strong>{paidRows.length}</strong><small>Currently paid and not refunded</small></article>
-        <article><span>Gross payments</span><strong>{moneySummary(grossByCurrency)}</strong><small>All captured payments before refunds</small></article>
-        <article><span>Refunded</span><strong>{moneySummary(refundedByCurrency)}</strong><small>Returned to customers</small></article>
-        <article className={attention.total ? "admin-metric--attention" : undefined}>
-          <span>Review queue</span>
-          <strong>{attention.total}</strong>
-          <small>{attention.affectedOrderCount} order{attention.affectedOrderCount === 1 ? "" : "s"} · {attention.webhookCount} webhook{attention.webhookCount === 1 ? "" : "s"}</small>
-        </article>
-      </section>
+        <section className="admin-metrics" aria-label={`${environmentLabel} pre-order metrics`}>
+          <article><span>Paid orders</span><strong>{paidRows.length}</strong></article>
+          <article><span>Gross payments</span><strong>{moneySummary(grossByCurrency)}</strong></article>
+          <article><span>Refunded</span><strong>{moneySummary(refundedByCurrency)}</strong></article>
+          <article><span>Needs attention</span><strong>{orderAttentionCount + (failedEmails.count ?? 0) + failedWebhookRows.length}</strong></article>
+        </section>
 
-      <div className="preorder-admin-operations-grid">
         <PreorderSalesControls
           snapshot={snapshot}
           liveGateReady={liveGateReady}
+          launchBlockers={launchReadiness.blockers}
         />
 
-        <div className="preorder-admin-health-stack">
-          <section className={`admin-content-status preorder-admin-readiness ${liveGateReady ? "is-ready" : "is-blocked"}`}>
-            <div className="preorder-admin-readiness__heading">
-              <div>
-                <p className="eyebrow">Go-live readiness</p>
-                <h2>{liveGateReady ? "Launch safeguards are ready." : `${launchReadiness.blockers.length} launch check${launchReadiness.blockers.length === 1 ? "" : "s"} remaining.`}</h2>
-              </div>
-              <span className={`admin-status ${liveGateReady ? "admin-status--paid" : "admin-status--refund_failed"}`}>
-                {liveGateReady ? "Ready" : "Locked"}
-              </span>
-            </div>
-            <dl className="preorder-readiness-facts">
-              <div><dt>Public pre-orders</dt><dd>{liveGateReady ? "Eligible to open" : "Blocked"}</dd></div>
-              <div><dt>Live checkout</dt><dd>{environment === "live" ? formatPreorderAdminStatus(snapshot.salesStatus) : "Managed separately"}</dd></div>
-            </dl>
-            <p>
-              Sandbox checkout can remain available for testing without making public pre-orders live.
-            </p>
-            {launchReadiness.blockers.length ? (
-              <details className="preorder-readiness-details" open={environment === "live"}>
-                <summary>Review launch blockers</summary>
-                <ul>{launchReadiness.blockers.map((blocker) => <li key={blocker}>{blocker}</li>)}</ul>
-              </details>
-            ) : null}
-          </section>
-
-          <PreorderWebhookRecovery
-            environment={environment}
-            events={failedWebhookRows}
-          />
-        </div>
-      </div>
-
-      <section className={`preorder-review-summary ${attention.total ? "has-attention" : "is-clear"}`} aria-label="Operational review summary">
-        <div>
-          <p className="eyebrow">Operational review</p>
-          <h2>{attention.total ? `${attention.total} item${attention.total === 1 ? "" : "s"} to review` : "No outstanding issues"}</h2>
-          <p>
-            {attention.total
-              ? `${attention.orderIssueCount} order-status issue${attention.orderIssueCount === 1 ? "" : "s"}, ${attention.emailOrderCount} order${attention.emailOrderCount === 1 ? "" : "s"} with a failed latest email, and ${attention.webhookCount} recoverable Stripe event${attention.webhookCount === 1 ? "" : "s"}.`
-              : "Every order, latest customer email, and recoverable Stripe event is clear in this environment."}
-          </p>
-        </div>
-        <a href="#preorder-orders">Review orders</a>
-      </section>
-
-        <div className="admin-section-heading" id="preorder-orders">
+        <section className="admin-content-status preorder-admin-readiness">
+          <p className="eyebrow">Launch lock</p>
           <div>
-            <p className="eyebrow">Order directory</p>
-            <h2>{environmentLabel} orders</h2>
+            <span>Live route gate <strong>{liveGateReady ? "Ready" : "Blocked"}</strong></span>
+            <span>Live allocation <strong>{environment === "live" ? snapshot.salesStatus.replaceAll("_", " ") : "Separate"}</strong></span>
+            <span>Current view <strong>{environmentLabel}</strong></span>
           </div>
-          <span>{rows.length} shown</span>
-        </div>
+          <p>
+            Live checkout requires approved terms, verified live payments, signed webhooks, email delivery, dedicated security secrets and an open live allocation. The sandbox can remain open for testing without exposing public sales.
+          </p>
+        </section>
+
+        <PreorderWebhookRecovery
+          environment={environment}
+          events={failedWebhookRows}
+        />
 
         {rows.length ? (
           <div className="admin-table-shell">
-            <table className="admin-table preorder-orders-table">
-              <thead><tr><th>Customer &amp; order</th><th>Payment</th><th>Fulfilment</th><th>Total</th><th>Delivery</th><th>Email</th><th>Placed</th><th><span className="sr-only">Review</span></th></tr></thead>
+            <table className="admin-table">
+              <thead><tr><th>Order</th><th>Payment</th><th>Fulfilment</th><th>Amount</th><th>Ship to</th><th>Confirmation</th><th>Placed</th></tr></thead>
               <tbody>
                 {rows.map((order) => (
                   <tr key={order.id}>
-                    <td className="admin-lead" data-label="Order">
-                      <span className="preorder-order-number">{environment === "test" ? "TEST · " : ""}{formatPreorderNumber(order.order_number)}</span>
-                      <strong><a href={`/admin/preorders/${order.id}`}>{order.full_name}</a></strong>
+                    <td className="admin-lead">
+                      <strong><a href={`/admin/preorders/${order.id}`}>{environment === "test" ? "TEST · " : ""}{formatPreorderNumber(order.order_number)} · {order.full_name}</a></strong>
                       <a href={`mailto:${order.email}`}>{order.email}</a>
-                      <small>{formatPreorderAdminStatus(order.order_status)}{order.cancellation_status !== "none" ? ` · Cancellation ${formatPreorderAdminStatus(order.cancellation_status).toLowerCase()}` : ""}</small>
+                      <small>{order.order_status}{order.cancellation_status !== "none" ? ` · cancellation ${order.cancellation_status}` : ""}</small>
                     </td>
-                    <td data-label="Payment"><span className={`admin-status admin-status--${order.payment_status}`}>{formatPreorderAdminStatus(order.payment_status)}</span></td>
-                    <td data-label="Fulfilment"><span className={`admin-status admin-status--${order.fulfillment_status}`}>{formatPreorderAdminStatus(order.fulfillment_status)}</span></td>
-                    <td data-label="Total"><strong>{formatPreorderMoney(order.amount_total, order.currency)}</strong>{order.amount_refunded ? <><br /><small>{formatPreorderMoney(order.amount_refunded, order.currency)} refunded</small></> : null}</td>
-                    <td data-label="Delivery"><strong>{order.shipping_address?.country ?? "—"}</strong><br /><small>{order.estimated_delivery}</small></td>
-                    <td data-label="Email"><span className={`preorder-email-state ${order.confirmation_email_sent_at ? "is-sent" : "needs-review"}`}>{order.confirmation_email_sent_at ? "Sent" : "Needs review"}</span></td>
-                    <td data-label="Placed"><time dateTime={order.placed_at}>{new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(new Date(order.placed_at))}</time><small className="preorder-time-zone">UTC</small></td>
-                    <td className="preorder-order-action"><a href={`/admin/preorders/${order.id}`} aria-label={`Review ${formatPreorderNumber(order.order_number)}`}>Review <span aria-hidden="true">→</span></a></td>
+                    <td><span className={`admin-status admin-status--${order.payment_status}`}>{order.payment_status.replaceAll("_", " ")}</span></td>
+                    <td><span className={`admin-status admin-status--${order.fulfillment_status}`}>{order.fulfillment_status.replaceAll("_", " ")}</span></td>
+                    <td>{formatPreorderMoney(order.amount_total, order.currency)}{order.amount_refunded ? <><br /><small>{formatPreorderMoney(order.amount_refunded, order.currency)} refunded</small></> : null}</td>
+                    <td>{order.shipping_address?.country ?? "—"}</td>
+                    <td>{order.confirmation_email_sent_at ? "Sent" : "Pending / failed"}</td>
+                    <td><time dateTime={order.placed_at}>{new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(new Date(order.placed_at))}</time></td>
                   </tr>
                 ))}
               </tbody>
@@ -297,6 +236,7 @@ export default async function PreorderAdminPage({
             {environment === "test" && publicSalesPageEnabled ? <a className="button button--dark" href="/preorder/review?source=admin_empty">Open pre-order review</a> : null}
           </div>
         )}
-    </AdminDashboardShell>
+      </div>
+    </main>
   );
 }

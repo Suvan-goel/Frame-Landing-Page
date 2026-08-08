@@ -7,8 +7,10 @@ import {
   PREORDER_DEFAULT_PRICE_CENTS,
   PREORDER_ESTIMATED_SHIPPING,
   PREORDER_MAX_INVENTORY_UNITS,
+  PREORDER_PRODUCT_STATUS_VERSION,
   PREORDER_SELLER_DETAILS_COMPLETE,
   PREORDER_SHIPPING_RATE_CENTS,
+  PREORDER_WARRANTY_DETAILS_COMPLETE,
 } from "./preorder";
 import { getPreorderSalesSnapshot } from "./preorder-operations.server";
 import { getPreorderMode, getRuntimeValue } from "./runtime-env.server";
@@ -43,6 +45,7 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
   const [
     mode,
     approvedTermsVersion,
+    approvedProductStatusVersion,
     dedicatedLiveStripeSecretKey,
     dedicatedLiveStripePriceId,
     dedicatedLiveStripeWebhookSecret,
@@ -53,11 +56,13 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
     adminEmails,
     orderAccessSecret,
     rateLimitSecret,
+    maintenanceSecret,
     configuration,
     liveSalesSnapshot,
   ] = await Promise.all([
     getPreorderMode(),
     getRuntimeValue("PREORDER_LEGAL_APPROVED_VERSION"),
+    getRuntimeValue("PREORDER_PRODUCT_STATUS_APPROVED_VERSION"),
     getRuntimeValue("STRIPE_LIVE_SECRET_KEY"),
     getRuntimeValue("STRIPE_LIVE_PREORDER_PRICE_ID"),
     getRuntimeValue("STRIPE_LIVE_WEBHOOK_SECRET"),
@@ -68,6 +73,7 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
     getRuntimeValue("WAITLIST_ADMIN_EMAILS"),
     getRuntimeValue("PREORDER_ORDER_ACCESS_SECRET"),
     getRuntimeValue("PREORDER_RATE_LIMIT_SECRET"),
+    getRuntimeValue("PREORDER_MAINTENANCE_SECRET"),
     getPreorderConfiguration(),
     getPreorderSalesSnapshot("live").catch(() => null),
   ]);
@@ -80,8 +86,13 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
   if (!PREORDER_SELLER_DETAILS_COMPLETE) {
     blockers.push("The incorporated seller's legal identity and contact details are not complete.");
   }
-  if (!isPreorderLiveApproved({ mode, approvedTermsVersion })) {
-    blockers.push("Approved, non-draft pre-order terms are not active in live mode.");
+  if (!PREORDER_WARRANTY_DETAILS_COMPLETE) {
+    blockers.push("The one-year limited hardware warranty is not complete.");
+  }
+  if (!isPreorderLiveApproved({ mode, approvedTermsVersion, approvedProductStatusVersion })) {
+    blockers.push(
+      `Approved, non-draft pre-order legal pack and Product Status Disclosure ${PREORDER_PRODUCT_STATUS_VERSION} are not active in live mode.`,
+    );
   }
   if (!isStripeSecretForEnvironment(stripeSecretKey, "live")) {
     blockers.push("A dedicated live Stripe secret key is not configured.");
@@ -113,8 +124,17 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
   if (!configuredSecret(rateLimitSecret)) {
     blockers.push("A dedicated endpoint-protection signing secret is not configured.");
   }
+  if (!configuredSecret(maintenanceSecret)) {
+    blockers.push("A dedicated delivery-deadline maintenance secret is not configured.");
+  }
   if (orderAccessSecret && rateLimitSecret && orderAccessSecret === rateLimitSecret) {
     blockers.push("Order-link and endpoint-protection secrets must be different.");
+  }
+  if (
+    maintenanceSecret &&
+    [orderAccessSecret, rateLimitSecret].some((secret) => secret === maintenanceSecret)
+  ) {
+    blockers.push("The delivery-deadline secret must be isolated from customer endpoint secrets.");
   }
 
   if (
@@ -124,7 +144,7 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
       PREORDER_DEFAULT_ALLOWED_COUNTRIES.join(",") ||
     configuration.estimatedShipping !== PREORDER_ESTIMATED_SHIPPING
   ) {
-    blockers.push("The runtime offer does not match the reviewed $299, US-only, Q1 2027 estimated-shipping configuration.");
+    blockers.push("The runtime offer does not match the reviewed $299 pre-order price, $499 release price, US-only, Q1 2027 estimated-shipping configuration.");
   }
   if (configuration.shippingRateCents !== PREORDER_SHIPPING_RATE_CENTS) {
     blockers.push("The pre-order shipping charge is not the reviewed $19 USD rate.");
