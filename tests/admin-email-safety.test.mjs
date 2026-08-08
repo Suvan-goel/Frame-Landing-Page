@@ -110,6 +110,7 @@ test("requires a server review and typed confirmation before any subscriber send
   assert.match(sender, /`SEND \$\{input\.recipientIds\.length\}`/);
   assert.doesNotMatch(composer, /window\.confirm/);
   assert.match(composer, /Send test to me/);
+  assert.match(composer, /senderDisplayName\(readiness\.from\)/);
   assert.match(styles, /\.admin-email-send-panel \.button--light[^{]*\{[^}]*color: var\(--ink\) !important;[^}]*-webkit-text-fill-color: var\(--ink\);/s);
   assert.match(styles, /\.email-send-actions__test[^{]*\{[^}]*color: var\(--ink\) !important;[^}]*-webkit-text-fill-color: var\(--ink\);/s);
   assert.match(composer, /Type <strong>\{review\.confirmationText\}/);
