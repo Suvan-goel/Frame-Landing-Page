@@ -98,7 +98,7 @@ test("keeps the funnel usable only on loopback during development", async () => 
   assert.match(html, /standard US shipping/i);
   assert.match(html, /all 50 states and Washington, DC/);
   assert.match(html, /Estimated shipping/);
-  assert.match(html, /March 2027/);
+  assert.match(html, /Q1 2027/);
   assert.match(html, /not currently FDA cleared or approved/);
   assert.match(html, /Continue to Secure Checkout/);
   assert.match(html, /frame-product-concept-realistic-v3-transparent/);

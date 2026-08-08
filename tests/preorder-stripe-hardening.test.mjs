@@ -153,7 +153,7 @@ test("keeps the reviewed subtotal, shipping, tax and inventory controls explicit
 
   assert.match(offer, /PREORDER_DEFAULT_PRICE_CENTS = 29_900/);
   assert.match(offer, /PREORDER_SHIPPING_RATE_CENTS = 1_900/);
-  assert.match(offer, /PREORDER_ESTIMATED_SHIPPING = "March 2027"/);
+  assert.match(offer, /PREORDER_ESTIMATED_SHIPPING = "Q1 2027"/);
   assert.match(offer, /PREORDER_MAX_INVENTORY_UNITS = 1_000/);
   assert.match(checkout, /shipping_options:/);
   assert.match(checkout, /stripe\.customers\.create/);

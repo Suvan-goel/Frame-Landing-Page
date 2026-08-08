@@ -45,7 +45,7 @@ function checkoutArgs(requestKey, source) {
     p_quantity: 1,
     p_unit_amount: 29_900,
     p_currency: "usd",
-    p_estimated_delivery: "March 2027",
+    p_estimated_delivery: "Q1 2027",
     p_source: source,
     p_utm_source: "synthetic",
     p_utm_medium: "reliability-test",

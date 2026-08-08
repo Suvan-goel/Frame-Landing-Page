@@ -9,7 +9,7 @@ Status: launch candidate. Public access and live checkout must remain disabled u
 - Standard US shipping and handling: $19 USD
 - Applicable sales tax: additional and calculated at checkout
 - Initial territory: the 50 United States and Washington, DC; no territories or international shipping
-- Estimated shipping: March 2027
+- Estimated shipping: Q1 2027
 - Lifetime inventory ceiling: 1,000 units
 - Initial controlled release: 100 units
 - Payment: full one-time payment at checkout; no recurring charge
@@ -27,7 +27,7 @@ Status: launch candidate. Public access and live checkout must remain disabled u
 
 - Keep the launch candidate policies, checkout, emails, order management, refund processing, delay response, inventory controls, and tests current.
 - Keep all public pre-order routes closed.
-- Maintain documentary support for the March 2027 shipping estimate: development milestones, validation plan, supplier/manufacturer lead times, quality work, expected demand, fulfilment capacity, and contingency time.
+- Maintain documentary support for the Q1 2027 shipping estimate: development milestones, validation plan, supplier/manufacturer lead times, quality work, expected demand, fulfilment capacity, and contingency time.
 - Decide the ship-from location and obtain cross-border tax advice. Do not enable a US tax registration without a documented basis.
 - Confirm that `support@framewearable.com`, the transactional sender, and the operations inbox can receive replies and alerts.
 

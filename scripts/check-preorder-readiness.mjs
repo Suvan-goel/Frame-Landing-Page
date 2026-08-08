@@ -87,7 +87,7 @@ const allowedCountries = (process.env.PREORDER_ALLOWED_COUNTRIES ?? "US")
 const estimatedShipping =
   process.env.PREORDER_ESTIMATED_SHIPPING ??
   process.env.PREORDER_ESTIMATED_DELIVERY ??
-  "March 2027";
+  "Q1 2027";
 const shippingRateCents = Number(process.env.PREORDER_SHIPPING_RATE_CENTS ?? "");
 
 if (target === "launch") {
@@ -193,9 +193,9 @@ if (
   expectedCurrency === "usd" &&
   allowedCountries.length === 1 &&
   allowedCountries[0] === "US" &&
-  estimatedShipping === "March 2027"
+  estimatedShipping === "Q1 2027"
 ) {
-  pass("Reviewed offer", "$299 USD, one device, US-only and March 2027 estimated shipping are configured.");
+  pass("Reviewed offer", "$299 USD, one device, US-only and Q1 2027 estimated shipping are configured.");
 } else {
   fail("Reviewed offer", "The runtime offer differs from the reviewed pre-order configuration.");
 }

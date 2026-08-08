@@ -24,7 +24,7 @@ and every remote pre-order surface remains unavailable.
 
 - Stripe test mode is connected at $299 USD for one device.
 - Orders are limited to all 50 United States and Washington, DC; US territories and international destinations are excluded.
-- The recorded estimated shipping window is March 2027.
+- The recorded estimated shipping window is Q1 2027.
 - The product subtotal is $299 USD; $19 USD standard US shipping and applicable sales tax are added at Checkout.
 - Customer confirmation, management, address, delivery, cancellation, shipping and refund emails are connected.
 - Test and live commerce records are separated.
@@ -125,7 +125,7 @@ STRIPE_LIVE_WEBHOOK_ENDPOINT_ID=<live endpoint ID>
 PREORDER_PRICE_CENTS=29900
 PREORDER_CURRENCY=usd
 PREORDER_ALLOWED_COUNTRIES=US
-PREORDER_ESTIMATED_SHIPPING=March 2027
+PREORDER_ESTIMATED_SHIPPING=Q1 2027
 PREORDER_SHIPPING_RATE_CENTS=1900
 ```
 
