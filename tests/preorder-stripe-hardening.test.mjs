@@ -5,6 +5,7 @@ import {
   isStripeWebhookRecoveryEligible,
   STRIPE_WEBHOOK_STALE_AFTER_SECONDS,
 } from "../lib/stripe-webhook-recovery.ts";
+import { summarizePreorderAttention } from "../lib/preorder-admin-dashboard.ts";
 
 test("keeps webhook verification and paid fulfilment independent from the sales switch", async () => {
   const [stripeServer, payments, worker] = await Promise.all([
@@ -62,6 +63,71 @@ test("makes failed and stale background events recoverable", () => {
     isStripeWebhookRecoveryEligible({ status: "processed", lastAttemptedAt: staleAt, now }),
     false,
   );
+});
+
+test("keeps the owner review queue deduplicated and limited to unresolved work", () => {
+  const orders = [
+    {
+      id: "active",
+      order_status: "placed",
+      payment_status: "paid",
+      cancellation_status: "none",
+      confirmation_email_sent_at: "2026-08-08T10:00:00.000Z",
+    },
+    {
+      id: "closed",
+      order_status: "cancelled",
+      payment_status: "refunded",
+      cancellation_status: "completed",
+      confirmation_email_sent_at: null,
+    },
+  ];
+  const deliveries = [
+    { preorder_id: "closed", email_type: "refund_update", status: "failed", created_at: "2026-08-08T09:00:00.000Z" },
+    { preorder_id: "closed", email_type: "refund_update", status: "sent", created_at: "2026-08-08T10:00:00.000Z" },
+    { preorder_id: "closed", email_type: "order_confirmation", status: "failed", created_at: "2026-08-08T08:00:00.000Z" },
+  ];
+
+  assert.deepEqual(summarizePreorderAttention(orders, deliveries, 1), {
+    affectedOrderCount: 1,
+    emailOrderCount: 1,
+    orderIssueCount: 0,
+    total: 2,
+    webhookCount: 1,
+  });
+});
+
+test("keeps every owner pre-order operation clear and environment-aware", async () => {
+  const [dashboard, detail, controls, operations, serverOperations, csv, css] =
+    await Promise.all([
+      readFile(new URL("../app/admin/preorders/page.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../app/admin/preorders/[id]/page.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../app/components/preorder-sales-controls.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../app/components/preorder-order-operations.tsx", import.meta.url), "utf8"),
+      readFile(new URL("../lib/preorder-admin-operations.server.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/admin/preorders.csv/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/globals.css", import.meta.url), "utf8"),
+    ]);
+
+  assert.match(dashboard, /Review queue/);
+  assert.match(dashboard, /summarizePreorderAttention/);
+  assert.match(dashboard, /Go-live readiness/);
+  assert.match(dashboard, /preorder-orders-table/);
+  assert.match(detail, /Device subtotal/);
+  assert.match(detail, /Payment summary/);
+  assert.match(detail, /Recommended next step/);
+  assert.match(detail, /emailErrorMessage/);
+  assert.match(controls, /useEffect/);
+  assert.match(controls, /disabled=\{saving \|\| !hasChanges\}/);
+  assert.match(operations, /canUpdateFulfillment/);
+  assert.match(operations, /canSendDeliveryUpdate/);
+  assert.match(operations, /required=\{trackingRequired\}/);
+  assert.match(serverOperations, /const stripe = await getStripe\(order\.environment\)/);
+  assert.doesNotMatch(serverOperations, /getRuntimeValue\("STRIPE_SECRET_KEY"\)/);
+  assert.match(csv, /itemsByOrder/);
+  assert.match(csv, /paymentsByOrder/);
+  assert.match(css, /\.preorder-admin-operations-grid/);
+  assert.match(css, /\.preorder-orders-table td::before/);
 });
 
 test("keeps the reviewed subtotal, shipping, tax and inventory controls explicit", async () => {

@@ -116,10 +116,18 @@ export async function GET(request: Request) {
     payments = paymentsResult.data ?? [];
   }
 
-  const itemByOrder = new Map(items.map((item) => [item.preorder_id, item]));
-  const paymentByOrder = new Map(
-    payments.map((payment) => [payment.preorder_id, payment]),
-  );
+  const itemsByOrder = new Map<string, ExportItem[]>();
+  for (const item of items) {
+    const grouped = itemsByOrder.get(item.preorder_id) ?? [];
+    grouped.push(item);
+    itemsByOrder.set(item.preorder_id, grouped);
+  }
+  const paymentsByOrder = new Map<string, ExportPayment[]>();
+  for (const payment of payments) {
+    const grouped = paymentsByOrder.get(payment.preorder_id) ?? [];
+    grouped.push(payment);
+    paymentsByOrder.set(payment.preorder_id, grouped);
+  }
   const rows: Array<Array<string | number | boolean | null>> = [
     [
       "order_number", "environment", "placed_at", "order_status",
@@ -133,8 +141,8 @@ export async function GET(request: Request) {
       "product_status_version", "marketing_opt_in",
     ],
     ...orders.map((order) => {
-      const item = itemByOrder.get(order.id);
-      const payment = paymentByOrder.get(order.id);
+      const orderItems = itemsByOrder.get(order.id) ?? [];
+      const orderPayments = paymentsByOrder.get(order.id) ?? [];
       return [
         formatPreorderNumber(order.order_number), order.environment, order.placed_at,
         order.order_status, order.payment_status, order.fulfillment_status,
@@ -146,11 +154,17 @@ export async function GET(request: Request) {
         addressValue(order.shipping_address, "state"),
         addressValue(order.shipping_address, "postal_code"),
         addressValue(order.shipping_address, "country"),
-        item?.product_name ?? null, item?.sku ?? null, item?.quantity ?? null,
+        orderItems.map((item) => item.product_name).join(" | ") || null,
+        orderItems.map((item) => item.sku).join(" | ") || null,
+        orderItems.reduce((total, item) => total + item.quantity, 0) || null,
         order.amount_total, order.amount_refunded, order.currency,
         order.estimated_delivery, order.carrier, order.tracking_number,
         order.tracking_url, order.shipped_at, order.delivered_at,
-        payment?.stripe_payment_intent_id ?? null, order.terms_version,
+        orderPayments
+          .map((payment) => payment.stripe_payment_intent_id)
+          .filter((value): value is string => Boolean(value))
+          .join(" | ") || null,
+        order.terms_version,
         order.product_status_version, order.marketing_opt_in,
       ];
     }),

@@ -9,7 +9,6 @@ import {
 import { createPreorderManagePath } from "./preorder-order-access.server";
 import { reconcilePreorderRefund } from "./preorder-payments.server";
 import type { PreorderEnvironment } from "./preorder-operations.server";
-import { getRuntimeValue } from "./runtime-env.server";
 import { getStripe } from "./stripe.server";
 import { getSupabaseAdmin } from "./supabase-admin.server";
 
@@ -407,13 +406,7 @@ export async function initiatePreorderFullRefund(input: {
     throw new Error("This order is not eligible for another refund.");
   }
 
-  const secretKey = await getRuntimeValue("STRIPE_SECRET_KEY");
-  if (
-    (order.environment === "test" && !secretKey?.startsWith("sk_test_")) ||
-    (order.environment === "live" && !secretKey?.startsWith("sk_live_"))
-  ) {
-    throw new Error(`Stripe ${order.environment} mode is not configured for this refund.`);
-  }
+  const stripe = await getStripe(order.environment);
 
   const supabase = await getSupabaseAdmin();
   const payment = await supabase
@@ -466,7 +459,6 @@ export async function initiatePreorderFullRefund(input: {
 
   let refund: Stripe.Refund;
   try {
-    const stripe = await getStripe(order.environment);
     refund = await stripe.refunds.create(
       {
         payment_intent: payment.data.stripe_payment_intent_id,
