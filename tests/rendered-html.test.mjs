@@ -644,7 +644,19 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(metaPixel, /Allow optional/);
   assert.match(metaPixel, /Privacy choices/);
   assert.match(metaPixel, /const showBanner = preferencesOpen/);
-  assert.match(metaPixel, /style=\{\{ position: "fixed", zIndex: 1100, bottom: 16, left: 16 \}\}/);
+  assert.doesNotMatch(metaPixel, /style=\{\{[^}]*position: "fixed"/);
+  assert.match(
+    css,
+    /\.tracking-consent-trigger\s*\{[^}]*position: fixed;/,
+  );
+  assert.match(
+    css,
+    /\.privacy-page ~ \.tracking-consent-trigger\s*\{[^}]*position: static !important;/,
+  );
+  assert.match(
+    css,
+    /@media \(max-width: 760px\)[\s\S]*?\.tracking-consent\s*\{[^}]*max-height: calc\(100dvh - 24px\);[^}]*overflow-y: auto;/,
+  );
   assert.doesNotMatch(metaPixel, /setTimeout\(loadPixel/);
   assert.match(metaPixel, /1068997465474786/);
   assert.match(metaPixel, /PRIVATE_PREFIXES = \["\/contributors", "\/admin", "\/api"\]/);

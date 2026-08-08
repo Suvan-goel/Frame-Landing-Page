@@ -23,7 +23,7 @@ export default async function PrivacyPage() {
   ]);
 
   return (
-    <main className="legal-page">
+    <main className="legal-page privacy-page">
       <SiteHeader />
       <article className="legal-shell">
         <p className="eyebrow">Privacy</p>
