@@ -248,7 +248,6 @@ export function renderFrameCampaignEmail(input: {
         .email-outer { padding: 12px 0 20px !important; }
         .email-card { width: 100% !important; border-left: 0 !important; border-right: 0 !important; }
         .email-header { padding: 24px !important; }
-        .email-header-note { display: none !important; }
         .email-content { padding: 38px 24px 44px !important; }
         .email-footer { padding: 24px !important; }
         .email-heading { font-size: 30px !important; line-height: 1.14 !important; }
@@ -272,13 +271,7 @@ export function renderFrameCampaignEmail(input: {
                       <a href="${safeSiteUrl}" style="color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:27px;font-weight:400;letter-spacing:-.8px;line-height:1;text-decoration:none">Frame<span style="color:#963f49">.</span></a>
                     </td>
                     <td class="email-header-note" align="right" valign="middle">
-                      <table role="presentation" cellspacing="0" cellpadding="0" border="0" align="right">
-                        <tr>
-                          <td width="6" height="6" bgcolor="#963f49" style="width:6px;height:6px;background:#963f49;border-radius:50%;font-size:0;line-height:0">&nbsp;</td>
-                          <td width="10" style="width:10px;font-size:0;line-height:0">&nbsp;</td>
-                          <td style="color:#77746d;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase">Frame notes</td>
-                        </tr>
-                      </table>
+                      <span style="color:#77746d;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;letter-spacing:.14em;text-transform:uppercase">Update</span>
                     </td>
                   </tr>
                 </table>

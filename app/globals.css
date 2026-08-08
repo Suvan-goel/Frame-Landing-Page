@@ -10070,6 +10070,12 @@ p.preorder-manage-feedback.form-error {
     grid-column: auto;
   }
 
+  .preorder-manage-address-grid input,
+  .preorder-manage-address-grid select,
+  .preorder-manage-address-grid textarea {
+    font-size: 1rem;
+  }
+
   .preorder-manage-form-actions .button {
     width: 100%;
   }
