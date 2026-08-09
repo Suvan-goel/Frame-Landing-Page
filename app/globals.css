@@ -1930,6 +1930,10 @@ h2 {
   border-bottom: 1px solid rgba(243, 239, 230, 0.18);
 }
 
+.research-standards article:last-child {
+  border-bottom: 0;
+}
+
 .research-standards h4 {
   margin: 0;
   color: var(--cream);
