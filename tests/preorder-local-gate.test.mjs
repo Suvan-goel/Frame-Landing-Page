@@ -197,6 +197,7 @@ test("keeps the public homepage free of pre-order discovery and blocks webhook b
   const [
     homeResponse,
     webhookResponse,
+    webhookPostResponse,
     worker,
     robots,
     metaPixel,
@@ -205,6 +206,11 @@ test("keeps the public homepage free of pre-order discovery and blocks webhook b
   ] = await Promise.all([
       render("/"),
       render("/api/stripe/webhook"),
+      render("/api/stripe/webhook", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: "{}",
+      }),
       readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
       readFile(new URL("../app/robots.ts", import.meta.url), "utf8"),
       readFile(new URL("../app/components/meta-pixel.tsx", import.meta.url), "utf8"),
@@ -216,6 +222,8 @@ test("keeps the public homepage free of pre-order discovery and blocks webhook b
   const home = await homeResponse.text();
   assert.doesNotMatch(home, /href=["']\/preorder/i);
   assert.equal(webhookResponse.status, 404);
+  assert.equal(webhookPostResponse.status, 400);
+  assert.match(await webhookPostResponse.text(), /Stripe signature is required/i);
   assert.match(worker, /isPublicPreorderRequest && !preorderRequestAllowed/);
   assert.match(worker, /x-frame-preorder-admin-request/);
   assert.match(worker, /isSharedStripeWebhook && request\.method !== "POST"/);

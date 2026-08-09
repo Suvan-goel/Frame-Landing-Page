@@ -50,11 +50,7 @@ export function isContributorFeaturePath(pathname: string) {
 
 export function isContributorLocalOnlyPath(pathname: string) {
   const normalizedPath = normalizeContributorPath(pathname);
-  return (
-    isContributorFeaturePath(normalizedPath) ||
-    normalizedPath === "/api/stripe/webhook" ||
-    normalizedPath.startsWith("/api/stripe/webhook/")
-  );
+  return isContributorFeaturePath(normalizedPath);
 }
 
 export function isLocalContributorRequest(request: Request) {
