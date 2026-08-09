@@ -103,6 +103,7 @@ export async function sendContributorWelcomeEmail(
     body: JSON.stringify({
       from,
       to: [input.email],
+      reply_to: SUPPORT_EMAIL,
       subject: email.subject,
       text: email.text,
       html: email.html,

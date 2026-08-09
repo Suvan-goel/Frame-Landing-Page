@@ -102,6 +102,7 @@ test("wires the same company source through policies, support, emails, and launc
   assert.match(email, /companyLegalIdentityLine/);
   assert.match(emailDesign, /companyLegalIdentityLine/);
   assert.match(readiness, /COMPANY_DETAILS_CHECK\.missingOrInvalid/);
+  assert.match(readiness, /operationsRecipient[\s\S]+SUPPORT_EMAIL/);
 
   for (const source of files) {
     assert.doesNotMatch(source, /support@framewearable\.com/);

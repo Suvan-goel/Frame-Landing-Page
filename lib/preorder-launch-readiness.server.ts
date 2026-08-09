@@ -17,7 +17,7 @@ import {
 import { getPreorderSalesSnapshot } from "./preorder-operations.server";
 import { getPreorderMode, getRuntimeValue } from "./runtime-env.server";
 import { isStripeSecretForEnvironment } from "./stripe.server";
-import { COMPANY_DETAILS_CHECK } from "./company";
+import { COMPANY_DETAILS_CHECK, SUPPORT_EMAIL } from "./company";
 
 export type PreorderLaunchReadiness = {
   ready: boolean;
@@ -122,6 +122,8 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
       .find(Boolean);
   if (!configuredEmail(operationsRecipient)) {
     blockers.push("A valid pre-order operations recipient is not configured.");
+  } else if (operationsRecipient?.trim().toLowerCase() !== SUPPORT_EMAIL.toLowerCase()) {
+    blockers.push(`Pre-order operational alerts must be routed to the monitored support inbox (${SUPPORT_EMAIL}).`);
   }
   if (!configuredSecret(orderAccessSecret)) {
     blockers.push("A dedicated customer order-link signing secret is not configured.");

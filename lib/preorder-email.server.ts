@@ -131,6 +131,7 @@ async function sendPreorderEmail(input: {
       body: JSON.stringify({
         from,
         to: [input.recipient],
+        reply_to: SUPPORT_EMAIL,
         subject: input.subject,
         text: input.text,
         html: input.html,
