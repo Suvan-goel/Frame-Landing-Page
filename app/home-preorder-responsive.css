@@ -1,0 +1,15 @@
+/* Keep the transparent product canvas centred inside the compact mobile frame. */
+@media (max-width: 680px) {
+  .home-preorder-visual {
+    height: clamp(230px, 58vw, 340px);
+  }
+
+  .home-preorder-visual--device-cutout img {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: min(100%, 620px);
+    max-width: none;
+    transform: translate(-50%, -50%);
+  }
+}
