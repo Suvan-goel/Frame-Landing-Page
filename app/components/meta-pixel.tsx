@@ -191,13 +191,12 @@ export function MetaPixelRouteGuard() {
         >
           <div className="tracking-consent__copy">
             <p className="eyebrow">Privacy choices</p>
-            <h2 id="tracking-consent-title">Optional advertising measurement.</h2>
+            <h2 id="tracking-consent-title">Optional measurement</h2>
             <p id="tracking-consent-description">
-              We use Meta’s optional technology to understand which campaigns
-              are useful. It stays off unless you allow it. Your choice does not
-              affect how the site works.
+              Help us understand which campaigns are useful. Optional advertising
+              measurement stays off unless you allow it.
             </p>
-            <Link href="/privacy">Read our privacy notice</Link>
+            <Link href="/privacy">Privacy notice</Link>
           </div>
           <div className="tracking-consent__actions" aria-label="Optional tracking choices">
             <button
@@ -206,7 +205,7 @@ export function MetaPixelRouteGuard() {
               aria-pressed={consent === "denied"}
               onClick={() => recordConsent("denied")}
             >
-              Decline optional
+              Decline
             </button>
             <button
               className="tracking-consent__button"
@@ -214,7 +213,7 @@ export function MetaPixelRouteGuard() {
               aria-pressed={consent === "granted"}
               onClick={() => recordConsent("granted")}
             >
-              Allow optional
+              Allow
             </button>
           </div>
         </section>

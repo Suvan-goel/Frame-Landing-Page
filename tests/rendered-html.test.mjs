@@ -640,8 +640,8 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(metaPixel, /frame-meta-lead-recorded-v1/);
   assert.match(metaPixel, /frame-optional-tracking-consent-v1/);
   assert.match(metaPixel, /consent !== "granted"/);
-  assert.match(metaPixel, /Decline optional/);
-  assert.match(metaPixel, /Allow optional/);
+  assert.match(metaPixel, />\s*Decline\s*</);
+  assert.match(metaPixel, />\s*Allow\s*</);
   assert.match(metaPixel, /Privacy choices/);
   assert.match(metaPixel, /const showBanner = preferencesOpen/);
   assert.doesNotMatch(metaPixel, /style=\{\{[^}]*position: "fixed"/);
