@@ -30,8 +30,8 @@ const content = {
   ],
   principles: [
     ["Personal, not generic", "Interpreted against your own baseline and daily context."],
-    ["Context before judgment", "A temporary rise is not automatically a concern."],
-    ["Patterns over moments", "Repeated associations matter more than any single event."],
+    ["Context before judgment", "A temporary rise is interpreted alongside what was happening."],
+    ["Patterns over moments", "Repeated patterns reveal what isolated readings can miss."],
     ["Honest gaps", "When a signal is unreliable, Frame does not invent an answer."],
   ],
   researchStandards: [
