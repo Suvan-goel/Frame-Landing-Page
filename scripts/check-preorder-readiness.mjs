@@ -11,6 +11,12 @@ import {
   PREORDER_WARRANTY_DETAILS_COMPLETE,
 } from "../lib/preorder.ts";
 import { COMPANY_DETAILS_CHECK, SUPPORT_EMAIL } from "../lib/company.ts";
+import {
+  comparePreorderUsTaxRegistrationStates,
+  isPreorderTaxReviewApproved,
+  PREORDER_TAX_HEAD_OFFICE_COUNTRY,
+  PREORDER_TAX_POLICY_VERSION,
+} from "../lib/preorder-tax-policy.ts";
 
 const target = process.argv.includes("--launch")
   ? "launch"
@@ -233,6 +239,8 @@ const approvedTermsVersion = process.env.PREORDER_LEGAL_APPROVED_VERSION ?? "";
 const productStatusVersion = PREORDER_PRODUCT_STATUS_VERSION;
 const approvedProductStatusVersion =
   process.env.PREORDER_PRODUCT_STATUS_APPROVED_VERSION ?? "";
+const approvedTaxReviewVersion =
+  process.env.PREORDER_TAX_REVIEW_APPROVED_VERSION ?? "";
 if (target === "launch") {
   if (
     PREORDER_SELLER_DETAILS_COMPLETE &&
@@ -267,6 +275,20 @@ if (target === "launch") {
   } else {
     warn("Legal launch gate", "Review the configured legal version before continuing.");
   }
+}
+
+if (isPreorderTaxReviewApproved(approvedTaxReviewVersion)) {
+  pass(
+    "Tax review gate",
+    `The approved tax policy matches ${PREORDER_TAX_POLICY_VERSION}.`,
+  );
+} else if (target === "launch") {
+  fail(
+    "Tax review gate",
+    `Set PREORDER_TAX_REVIEW_APPROVED_VERSION to ${PREORDER_TAX_POLICY_VERSION} only after the tax position is reviewed.`,
+  );
+} else {
+  pass("Tax review gate", "The live tax-policy approval remains deliberately unset during testing.");
 }
 
 let supabase;
@@ -453,21 +475,45 @@ if (secretKey && priceId) {
     ]);
     if (
       taxSettings.status === "active" &&
-      taxSettings.head_office?.address?.country === "US" &&
+      taxSettings.head_office?.address?.country === PREORDER_TAX_HEAD_OFFICE_COUNTRY &&
       taxSettings.defaults?.tax_behavior === "exclusive" &&
       taxSettings.defaults?.tax_code === PREORDER_STRIPE_PRODUCT_TAX_CODE
     ) {
-      pass("Stripe Tax settings", "US tax settings are active with exclusive physical-goods tax treatment.");
+      pass(
+        "Stripe Tax settings",
+        `${PREORDER_TAX_HEAD_OFFICE_COUNTRY} head-office tax settings are active with exclusive physical-goods tax treatment.`,
+      );
     } else {
-      fail("Stripe Tax settings", "Review the US head office, exclusive tax behavior, and tangible-goods default in Stripe Tax.");
+      fail(
+        "Stripe Tax settings",
+        `Review the ${PREORDER_TAX_HEAD_OFFICE_COUNTRY} head office, exclusive tax behavior, and tangible-goods default in Stripe Tax.`,
+      );
     }
     const activeUsRegistrations = taxRegistrations.data.filter(
       (registration) => registration.country === "US",
     );
-    if (activeUsRegistrations.length) {
-      pass("Stripe Tax registrations", `${activeUsRegistrations.length} active US registration${activeUsRegistrations.length === 1 ? "" : "s"} configured for ${targetEnvironment} mode.`);
+    const usRegistrationComparison = comparePreorderUsTaxRegistrationStates(
+      activeUsRegistrations.map(
+        (registration) => registration.country_options.us?.state ?? "UNKNOWN",
+      ),
+    );
+    if (target === "launch" && usRegistrationComparison.matches) {
+      pass(
+        "Stripe Tax registrations",
+        usRegistrationComparison.required.length
+          ? `The active US registrations match the approved states: ${usRegistrationComparison.required.join(", ")}.`
+          : "No active US registrations are configured, matching the approved remote-seller tax policy.",
+      );
     } else if (target === "launch") {
-      fail("Stripe Tax registrations", "Add every legally required live US tax registration before launch.");
+      fail(
+        "Stripe Tax registrations",
+        `Active US states do not match the approved policy (missing: ${usRegistrationComparison.missing.join(", ") || "none"}; unexpected: ${usRegistrationComparison.unexpected.join(", ") || "none"}).`,
+      );
+    } else if (activeUsRegistrations.length) {
+      pass(
+        "Stripe Tax registrations",
+        `${activeUsRegistrations.length} sandbox US registration${activeUsRegistrations.length === 1 ? "" : "s"} configured for tax testing.`,
+      );
     } else {
       warn("Stripe Tax registrations", "Add a sandbox US registration before testing tax calculations.");
     }

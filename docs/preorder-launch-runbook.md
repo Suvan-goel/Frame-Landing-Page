@@ -20,6 +20,7 @@ Status: launch candidate. Public access and live checkout must remain disabled u
 - `PREORDER_TERMS_VERSION` and `PREORDER_PRODUCT_STATUS_VERSION` remain draft versions.
 - `PREORDER_SELLER_DETAILS_COMPLETE` remains `false` until the incorporated seller details are in every policy.
 - `PREORDER_LEGAL_APPROVED_VERSION` remains empty until the final policy version is deliberately activated.
+- `PREORDER_TAX_REVIEW_APPROVED_VERSION` remains empty until the UK-head-office remote-seller tax policy is deliberately approved.
 - The live allocation remains paused.
 - Public pre-order routes return 404 and the homepage contains no pre-order link.
 
@@ -28,7 +29,9 @@ Status: launch candidate. Public access and live checkout must remain disabled u
 - Keep the launch candidate policies, checkout, emails, order management, refund processing, delay response, inventory controls, and tests current.
 - Keep all public pre-order routes closed.
 - Maintain documentary support for the Q1 2027 shipping estimate: development milestones, validation plan, supplier/manufacturer lead times, quality work, expected demand, fulfilment capacity, and contingency time.
-- Decide the ship-from location and obtain cross-border tax advice. Do not enable a US tax registration without a documented basis.
+- Keep the actual UK operating address as the private Stripe Tax head office until a physical-goods ship-from location is selected. Do not publish the founder's home address as the customer correspondence address.
+- Obtain a suitable public business or mail address for seller and customer correspondence.
+- Obtain cross-border tax advice. Do not enable a US tax registration without a documented basis, and keep Stripe Tax threshold monitoring active as paid pre-orders accumulate.
 - Confirm that `support@framewearable.com` receives customer replies and operational alerts. Transactional sender addresses may remain send-only because every automated email uses `support@framewearable.com` as its reply address.
 
 ## After incorporation is approved
@@ -38,7 +41,7 @@ Status: launch candidate. Public access and live checkout must remain disabled u
 3. Create or rotate a least-privilege live Stripe key and configure `STRIPE_LIVE_SECRET_KEY` in the deployment environment.
 4. Reveal the existing live webhook signing secret and configure `STRIPE_LIVE_WEBHOOK_SECRET` in the deployment environment.
 5. Confirm the live $299 price, free standard US shipping, exclusive tax behaviour, product tax code, and required webhook event set.
-6. Resolve the sales-tax position and configure only the registrations supported by the accountant's conclusion.
+6. Confirm the UK-head-office remote-seller tax policy and configure only the registrations supported by the accountant's conclusion. Set `PREORDER_TAX_REVIEW_APPROVED_VERSION` to the exact policy version only after that review.
 7. Change the policy versions to a dated, non-draft release, set `PREORDER_SELLER_DETAILS_COMPLETE` to `true`, and set `PREORDER_LEGAL_APPROVED_VERSION` to exactly the same terms version.
 8. Deploy behind private staging access while the live allocation remains paused.
 9. Run `npm run preorder:check:launch`; do not continue unless it reports zero failures and zero warnings.

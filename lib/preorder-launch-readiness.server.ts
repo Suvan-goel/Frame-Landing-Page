@@ -18,6 +18,12 @@ import { getPreorderSalesSnapshot } from "./preorder-operations.server";
 import { getPreorderMode, getRuntimeValue } from "./runtime-env.server";
 import { isStripeSecretForEnvironment } from "./stripe.server";
 import { COMPANY_DETAILS_CHECK, SUPPORT_EMAIL } from "./company";
+import {
+  comparePreorderUsTaxRegistrationStates,
+  isPreorderTaxReviewApproved,
+  PREORDER_TAX_HEAD_OFFICE_COUNTRY,
+  PREORDER_TAX_POLICY_VERSION,
+} from "./preorder-tax-policy";
 
 export type PreorderLaunchReadiness = {
   ready: boolean;
@@ -49,6 +55,7 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
     mode,
     approvedTermsVersion,
     approvedProductStatusVersion,
+    approvedTaxReviewVersion,
     dedicatedLiveStripeSecretKey,
     dedicatedLiveStripePriceId,
     dedicatedLiveStripeWebhookSecret,
@@ -66,6 +73,7 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
     getPreorderMode(),
     getRuntimeValue("PREORDER_LEGAL_APPROVED_VERSION"),
     getRuntimeValue("PREORDER_PRODUCT_STATUS_APPROVED_VERSION"),
+    getRuntimeValue("PREORDER_TAX_REVIEW_APPROVED_VERSION"),
     getRuntimeValue("STRIPE_LIVE_SECRET_KEY"),
     getRuntimeValue("STRIPE_LIVE_PREORDER_PRICE_ID"),
     getRuntimeValue("STRIPE_LIVE_WEBHOOK_SECRET"),
@@ -97,6 +105,11 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
   if (!isPreorderLiveApproved({ mode, approvedTermsVersion, approvedProductStatusVersion })) {
     blockers.push(
       `Approved, non-draft pre-order legal pack and Product Status Disclosure ${PREORDER_PRODUCT_STATUS_VERSION} are not active in live mode.`,
+    );
+  }
+  if (!isPreorderTaxReviewApproved(approvedTaxReviewVersion)) {
+    blockers.push(
+      `The reviewed pre-order tax policy ${PREORDER_TAX_POLICY_VERSION} is not explicitly approved.`,
     );
   }
   if (!isStripeSecretForEnvironment(stripeSecretKey, "live")) {
@@ -212,14 +225,23 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
       ]);
       if (
         taxSettings.status !== "active" ||
-        taxSettings.head_office?.address?.country !== "US" ||
+        taxSettings.head_office?.address?.country !== PREORDER_TAX_HEAD_OFFICE_COUNTRY ||
         taxSettings.defaults?.tax_behavior !== "exclusive" ||
         taxSettings.defaults?.tax_code !== PREORDER_STRIPE_PRODUCT_TAX_CODE
       ) {
-        blockers.push("Live Stripe Tax settings are not active for the reviewed US physical-goods offer.");
+        blockers.push(
+          `Live Stripe Tax settings do not match the reviewed ${PREORDER_TAX_HEAD_OFFICE_COUNTRY} head-office physical-goods policy.`,
+        );
       }
-      if (!taxRegistrations.data.some((registration) => registration.country === "US")) {
-        blockers.push("No active US Stripe Tax registration is configured for live sales.");
+      const usRegistrationComparison = comparePreorderUsTaxRegistrationStates(
+        taxRegistrations.data
+          .filter((registration) => registration.country === "US")
+          .map((registration) => registration.country_options.us?.state ?? "UNKNOWN"),
+      );
+      if (!usRegistrationComparison.matches) {
+        blockers.push(
+          "Active US Stripe Tax registrations do not match the explicitly approved pre-order tax policy.",
+        );
       }
     } catch {
       blockers.push("The live Stripe product and price could not be verified.");
