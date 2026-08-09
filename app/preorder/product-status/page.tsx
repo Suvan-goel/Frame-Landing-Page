@@ -91,7 +91,7 @@ export default async function PreorderProductStatusPage() {
             </li>
             <li>
               <span aria-hidden="true">04</span>
-              <p><strong>The pre-order price is {PREORDER_PRICE} plus applicable sales tax, with free standard US shipping.</strong> That is {PREORDER_SAVING} below the {RELEASE_PRICE} release price. You pay in full at checkout, shipping is estimated for {PREORDER_ESTIMATED_SHIPPING}, and you may cancel for a full refund before fulfilment begins.</p>
+              <p><strong>Pre-order for {PREORDER_PRICE} plus applicable sales tax, with free standard US shipping.</strong> Save {PREORDER_SAVING} from the {RELEASE_PRICE} release price. You pay in full at checkout; estimated shipping is {PREORDER_ESTIMATED_SHIPPING}. Cancel before fulfilment for a full refund.</p>
             </li>
           </ol>
         </section>
