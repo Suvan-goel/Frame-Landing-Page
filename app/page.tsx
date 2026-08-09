@@ -359,10 +359,9 @@ export default async function Home() {
             <div className="home-preorder-layout">
               <div className="home-preorder-copy">
                 <p className="eyebrow">Frame pre-order</p>
-                <h2>A new way to understand your health.</h2>
+                <h2>Coming Q1 2027.</h2>
                 <p className="home-preorder-copy__intro">
-                  Estimated dispatch: {preorderOffer.estimatedShipping}. Cancel any time
-                  before fulfilment for a full refund.
+                  Designed to help you see patterns over time—not just isolated readings.
                 </p>
 
                 <dl
@@ -390,6 +389,7 @@ export default async function Home() {
 
                 <p className="home-preorder-price-note">
                   Applicable sales tax is added at checkout. Standard US shipping is free.
+                  Cancel any time before fulfilment for a full refund.
                 </p>
 
                 <div className="home-preorder-actions">
