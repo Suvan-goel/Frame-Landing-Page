@@ -361,7 +361,7 @@ export default async function Home() {
                 <p className="eyebrow">Frame pre-order</p>
                 <h2>Coming Q1 2027.</h2>
                 <p className="home-preorder-copy__intro">
-                  Designed to help you see patterns over time—not just isolated readings.
+                  A new kind of wearable - designed to measure what matters most.
                 </p>
 
                 <dl
