@@ -43,10 +43,6 @@ const content = {
       "Compared with clinical references",
       "Across published human studies, ultrasound-derived measurements have been evaluated against arm cuffs, arterial tonometry, and invasive arterial lines.",
     ],
-    [
-      "Frame will validate its own device",
-      "The evidence establishes the sensing principle—not the performance of Frame’s final product, which remains in development and will undergo dedicated validation.",
-    ],
   ],
 } as const;
 
