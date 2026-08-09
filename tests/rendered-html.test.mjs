@@ -219,8 +219,9 @@ test("server-renders the Frame landing page", async () => {
     /Continuous monitoring should create context, not continuous\s*(?:<!-- -->)?conclusions\./,
   );
   assert.match(html, /Research evidence/);
-  assert.match(html, /Wearable ultrasound, clinically validated\./);
-  assert.match(html, /A 118-person clinical programme/);
+  assert.match(html, /Wearable ultrasound, validated in clinical research\./);
+  assert.match(html, />118</);
+  assert.match(html, /adults recruited/);
   assert.match(html, /Read the clinical validation study/);
   assert.match(
     html,

@@ -35,14 +35,18 @@ const content = {
     ["Honest gaps", "When a signal is unreliable, Frame does not invent an answer."],
   ],
   researchStandards: [
-    [
-      "A 118-person clinical programme",
-      "A peer-reviewed validation study recruited 118 adults and tested a wearable ultrasound blood-pressure sensor during daily activities and in outpatient, cardiac catheterisation, and intensive-care settings.",
-    ],
-    [
-      "Compared with clinical references",
-      "Across published human studies, ultrasound-derived measurements have been evaluated against arm cuffs, arterial tonometry, and invasive arterial lines.",
-    ],
+    {
+      metric: "118",
+      title: "adults recruited",
+      description:
+        "A clinical validation study tested a wearable ultrasound sensor during daily activities and in outpatient, cardiac catheterisation, and intensive-care settings.",
+    },
+    {
+      metric: null,
+      title: "Compared with clinical references",
+      description:
+        "Ultrasound-derived measurements have been evaluated against arm cuffs, arterial tonometry, and invasive arterial lines.",
+    },
   ],
 } as const;
 
@@ -450,15 +454,22 @@ export default async function Home() {
           </div>
           <aside className="research-panel">
             <span className="status-label">Research evidence</span>
-            <h3>Wearable ultrasound, clinically validated.</h3>
+            <h3>Wearable ultrasound, validated in clinical research.</h3>
             <p>
-              Frame uses ultrasound to observe arterial motion beneath the skin. Peer-reviewed human research has shown that wearable ultrasound can capture continuous arterial waveforms and support non-invasive blood-pressure estimation.
+              Peer-reviewed human studies show that wearable ultrasound can capture continuous arterial waveforms and support non-invasive blood-pressure estimation.
             </p>
             <div className="research-standards" aria-label="Published evidence for wearable ultrasound">
-              {content.researchStandards.map(([title, description]) => (
-                <article key={title}>
-                  <h4>{title}</h4>
-                  <p>{description}</p>
+              {content.researchStandards.map((standard) => (
+                <article key={standard.title}>
+                  <h4 className={standard.metric ? "research-standard-title--metric" : undefined}>
+                    {standard.metric ? (
+                      <>
+                        <span className="research-standard-metric">{standard.metric}</span>
+                        <span>{standard.title}</span>
+                      </>
+                    ) : standard.title}
+                  </h4>
+                  <p>{standard.description}</p>
                 </article>
               ))}
             </div>
