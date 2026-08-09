@@ -30,13 +30,13 @@ Status: launch candidate. Public access and live checkout must remain disabled u
 - Keep all public pre-order routes closed.
 - Maintain documentary support for the Q1 2027 shipping estimate: development milestones, validation plan, supplier/manufacturer lead times, quality work, expected demand, fulfilment capacity, and contingency time.
 - Keep the actual UK operating address as the private Stripe Tax head office until a physical-goods ship-from location is selected. Do not publish the founder's home address as the customer correspondence address.
-- Obtain a suitable public business or mail address for seller and customer correspondence.
+- The public seller and customer-correspondence address has been reserved through Stable: `2810 N Church St, STE 89620, Wilmington, DE 19802, United States`. Complete and verify the USPS Form 1583 mail authorization, register the incorporated legal name as a recipient when Atlas confirms it, and do not publish the address before incorporation is approved. Treat it as a correspondence address, not the Delaware registered office, physical headquarters, actual principal place of business, or UK operating address.
 - Obtain cross-border tax advice. Do not enable a US tax registration without a documented basis, and keep Stripe Tax threshold monitoring active as paid pre-orders accumulate.
 - Confirm that `support@framewearable.com` receives customer replies and operational alerts. Transactional sender addresses may remain send-only because every automated email uses `support@framewearable.com` as its reply address.
 
 ## After incorporation is approved
 
-1. Enter the exact company name, registration number, registered office, jurisdiction, and support details once in `lib/company.ts`. Confirm the generated Pre-order Terms, Cancellation and Refund Policy, Product Status Disclosure, Privacy Notice, structured data, and email identity all match the incorporation documents.
+1. Enter the exact company name, registration number, registered office, jurisdiction, and support details once in `lib/company.ts`. Add the reserved Stable address (`2810 N Church St, STE 89620, Wilmington, DE 19802, United States`) separately as the public seller and customer-correspondence address throughout the site footer, pre-order checkout review, Pre-order Terms, Cancellation and Refund Policy, Product Status Disclosure, Privacy Notice, structured data, and applicable customer/marketing email identity. Keep the Delaware registered office and Stable correspondence address accurately labelled and distinct. Confirm all incorporated details match the issued documents before publishing either identity.
 2. Complete Stripe live-account verification, representative details, bank account, business profile, and terms acceptance.
 3. Create or rotate a least-privilege live Stripe key and configure `STRIPE_LIVE_SECRET_KEY` in the deployment environment.
 4. Reveal the existing live webhook signing secret and configure `STRIPE_LIVE_WEBHOOK_SECRET` in the deployment environment.
