@@ -16,6 +16,12 @@ import {
   PREORDER_TERMS_VERSION,
 } from "@/lib/preorder";
 import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
+import {
+  COMPANY_DETAILS,
+  COMPANY_DETAILS_COMPLETE,
+  formatRegisteredOffice,
+  SUPPORT_EMAIL,
+} from "@/lib/company";
 
 const TERMS_TITLE = "Frame Pre-order Terms";
 const TERMS_DESCRIPTION = "Terms for placing and managing a Frame device pre-order.";
@@ -141,15 +147,22 @@ export default async function PreorderTermsPage() {
           <div className="preorder-terms-content">
             <section id="seller">
               <h2>1. Seller and contact details</h2>
-              <p>
-                The seller will be the UK company being incorporated for Frame. Its exact legal name,
-                company number, registered office, jurisdiction of registration, and customer-support details
-                will be inserted here before pre-orders open. Until those details are present, these terms remain
-                a launch candidate and no public order may be accepted.
-              </p>
+              {COMPANY_DETAILS_COMPLETE ? (
+                <p>
+                  The seller is <strong>{COMPANY_DETAILS.legalName}</strong>, registered in {COMPANY_DETAILS.jurisdiction}
+                  {` under registration number ${COMPANY_DETAILS.registrationNumber}`}. Its registered office is {formatRegisteredOffice()}.
+                </p>
+              ) : (
+                <p>
+                  The seller will be the company being incorporated for Frame. Its exact legal name,
+                  registration number, registered office, jurisdiction of registration, and customer-support details
+                  will be inserted here before pre-orders open. Until those details are present, these terms remain
+                  a launch candidate and no public order may be accepted.
+                </p>
+              )}
               <p>
                 Questions and order requests can be submitted through the <Link href="/contact?topic=preorder">Frame pre-order support form</Link>.
-                Never send payment-card details or private medical information.
+                {` You can also email ${SUPPORT_EMAIL}. Never send payment-card details or private medical information.`}
               </p>
             </section>
 
@@ -260,7 +273,10 @@ export default async function PreorderTermsPage() {
             <section id="warranty">
               <h2>8. Warranty and product problems</h2>
               <p>
-                <strong>Frame One-Year Limited Warranty.</strong> The incorporated Frame seller identified in section 1
+                <strong>Frame One-Year Limited Warranty.</strong>{" "}
+                {COMPANY_DETAILS_COMPLETE
+                  ? COMPANY_DETAILS.warrantyProviderName
+                  : "The incorporated Frame seller identified in section 1"}{" "}
                 warrants to the original purchaser that the Frame device will be free from defects in materials and
                 workmanship under normal household, general-wellness use for one year from documented delivery.
               </p>
@@ -325,8 +341,9 @@ export default async function PreorderTermsPage() {
         </div>
 
         <p className="legal-disclaimer">
-          Launch safeguard: this legal pack remains marked as a draft, and public sales remain blocked while the
-          incorporated seller identity and final legal approval are pending.
+          {COMPANY_DETAILS_COMPLETE
+            ? "Launch safeguard: this legal pack remains marked as a draft, and public sales remain blocked until final legal approval is activated."
+            : "Launch safeguard: this legal pack remains marked as a draft, and public sales remain blocked while the incorporated seller identity and final legal approval are pending."}
         </p>
         <HistoryBackLink
           className="button button--secondary preorder-terms-return"

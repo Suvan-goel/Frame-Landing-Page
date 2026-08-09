@@ -1,6 +1,8 @@
+import { SUPPORT_EMAIL } from "@/lib/company";
+
 export const dynamic = "force-dynamic";
 
-const CONTACT_EMAIL = "support@framewearable.com";
+const CONTACT_EMAIL = SUPPORT_EMAIL;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_BODY_BYTES = 16_384;
 const MAX_MESSAGE_LENGTH = 3000;

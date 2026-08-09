@@ -6,6 +6,7 @@ import {
   renderTransactionalNotice,
   renderTransactionalSummaryPanel,
 } from "./transactional-email-design";
+import { SUPPORT_EMAIL } from "./company";
 
 export type ContributorWelcomeEmailInput = {
   origin: string;
@@ -45,7 +46,7 @@ export function renderContributorWelcomeEmail(
       `Membership terms: ${termsUrl}`,
       `Refund policy: ${refundsUrl}`,
       "",
-      "Support: support@framewearable.com",
+      `Support: ${SUPPORT_EMAIL}`,
     ].join("\n"),
     html: renderFrameTransactionalEmail({
       origin: input.origin,

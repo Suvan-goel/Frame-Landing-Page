@@ -1,4 +1,10 @@
 import type { Metadata } from "next";
+import {
+  COMPANY_DETAILS,
+  COMPANY_DETAILS_COMPLETE,
+  formatRegisteredOffice,
+  SUPPORT_EMAIL,
+} from "@/lib/company";
 import Link from "next/link";
 import { SiteHeader } from "../../components/site-header";
 import { CONTRIBUTOR_TERMS_VERSION } from "@/lib/contributor-membership";
@@ -27,7 +33,11 @@ export default function ContributorTermsPage() {
         <section>
           <h2>1. Who provides the membership</h2>
           <p>
-            The membership will be provided by <strong>[LEGAL BUSINESS NAME TO BE CONFIRMED]</strong>, of <strong>[REGISTERED BUSINESS ADDRESS TO BE CONFIRMED]</strong>. Questions may be sent to support@framewearable.com.
+            The membership will be provided by{" "}
+            <strong>{COMPANY_DETAILS_COMPLETE ? COMPANY_DETAILS.legalName : "[LEGAL BUSINESS NAME TO BE CONFIRMED]"}</strong>,
+            of{" "}
+            <strong>{COMPANY_DETAILS_COMPLETE ? formatRegisteredOffice() : "[REGISTERED BUSINESS ADDRESS TO BE CONFIRMED]"}</strong>.
+            {` Questions may be sent to ${SUPPORT_EMAIL}.`}
           </p>
         </section>
         <section>

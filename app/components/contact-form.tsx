@@ -2,6 +2,7 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
+import { SUPPORT_EMAIL } from "@/lib/company";
 
 const MAX_MESSAGE_LENGTH = 3000;
 
@@ -286,7 +287,7 @@ export function ContactForm() {
       <div className="contact-form__footer">
         <p className="contact-form__note">
           Please don’t include private medical information. Your message is sent
-          to support@framewearable.com.
+          to {SUPPORT_EMAIL}.
         </p>
         <button
           className="button button--dark contact-form__submit"

@@ -33,7 +33,7 @@ Status: launch candidate. Public access and live checkout must remain disabled u
 
 ## After incorporation is approved
 
-1. Insert the exact company name, company number, registered office, and support details into the Pre-order Terms, Cancellation and Refund Policy, Product Status Disclosure, and Privacy Notice.
+1. Enter the exact company name, registration number, registered office, jurisdiction, and support details once in `lib/company.ts`. Confirm the generated Pre-order Terms, Cancellation and Refund Policy, Product Status Disclosure, Privacy Notice, structured data, and email identity all match the incorporation documents.
 2. Complete Stripe live-account verification, representative details, bank account, business profile, and terms acceptance.
 3. Create or rotate a least-privilege live Stripe key and configure `STRIPE_LIVE_SECRET_KEY` in the deployment environment.
 4. Reveal the existing live webhook signing secret and configure `STRIPE_LIVE_WEBHOOK_SECRET` in the deployment environment.

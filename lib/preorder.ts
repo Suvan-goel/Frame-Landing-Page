@@ -1,3 +1,5 @@
+import { COMPANY_DETAILS_COMPLETE } from "./company.ts";
+
 export const PREORDER_SKU = "frame-device-preorder-v1";
 export const PREORDER_PRODUCT_NAME = "Frame device pre-order";
 // The Pre-order Terms and Cancellation and Refund Policy are accepted together
@@ -7,9 +9,10 @@ export const PREORDER_TERMS_VERSION = PREORDER_LEGAL_PACK_VERSION;
 export const PREORDER_LEGAL_PACK_UPDATED = "August 8, 2026";
 export const PREORDER_PRODUCT_STATUS_VERSION = "draft-2026-08-08-v6";
 export const PREORDER_PRODUCT_STATUS_UPDATED = "August 8, 2026";
-// This is deliberately false until the incorporated seller's legal name,
-// company number, registered office, and support details are in the policies.
-export const PREORDER_SELLER_DETAILS_COMPLETE = false;
+// This remains false until the single incorporated-company configuration has
+// a valid legal name, registration number, registered office, jurisdiction,
+// support contact, privacy controller, and named warranty provider.
+export const PREORDER_SELLER_DETAILS_COMPLETE = COMPANY_DETAILS_COMPLETE;
 // The one-year limited hardware warranty is now defined in the legal pack.
 // Seller identity remains a separate launch gate because the warrantor must be named.
 export const PREORDER_WARRANTY_DETAILS_COMPLETE = true;

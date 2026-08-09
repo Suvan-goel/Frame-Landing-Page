@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { ContactForm } from "../components/contact-form";
 import { SiteHeader } from "../components/site-header";
+import { SUPPORT_EMAIL } from "@/lib/company";
 
 export const metadata: Metadata = {
   title: "Contact Frame",
@@ -63,7 +64,7 @@ export default function ContactPage() {
 
           <div className="contact-page__direct">
             <span>Direct email</span>
-            <strong>support@framewearable.com</strong>
+            <strong>{SUPPORT_EMAIL}</strong>
           </div>
         </section>
 

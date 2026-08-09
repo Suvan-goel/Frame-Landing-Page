@@ -7,6 +7,9 @@ import {
   renderTransactionalNotice,
   renderTransactionalSummaryPanel,
 } from "./transactional-email-design";
+import { SUPPORT_EMAIL } from "./company";
+
+const PREORDER_SUPPORT_LINE = `Support: ${SUPPORT_EMAIL}`;
 
 export type RenderedAutomatedEmail = {
   subject: string;
@@ -122,7 +125,7 @@ export function renderPreorderShippingEmail(
       ...trackingText,
       ...(manageUrl ? ["", `View your order: ${manageUrl}`] : []),
       "",
-      "Support: support@framewearable.com",
+      PREORDER_SUPPORT_LINE,
     ].join("\n"),
     html: renderFrameTransactionalEmail({
       origin: input.origin,
@@ -245,7 +248,7 @@ export function renderPreorderAddressChangeResolutionEmail(
       ...(input.approved ? ["", "Shipping address:", ...shipping] : []),
       "",
       `View your order: ${manageUrl}`,
-      "Support: support@framewearable.com",
+      PREORDER_SUPPORT_LINE,
     ].join("\n"),
     html: renderFrameTransactionalEmail({
       origin: input.origin,
@@ -304,7 +307,7 @@ export function renderPreorderDeliveryUpdateEmail(
       "",
       "You can accept the updated estimate or cancel for a full refund of the unshipped order.",
       `Review and respond: ${manageUrl}`,
-      "Support: support@framewearable.com",
+      PREORDER_SUPPORT_LINE,
     ].join("\n"),
     html: renderFrameTransactionalEmail({
       origin: input.origin,
@@ -360,7 +363,7 @@ export function renderPreorderRefundUpdateEmail(
       ...(completed ? [] : ["Your bank may take additional time to display the credit."]),
       "",
       `View your order: ${manageUrl}`,
-      "Support: support@framewearable.com",
+      PREORDER_SUPPORT_LINE,
     ].join("\n"),
     html: renderFrameTransactionalEmail({
       origin: input.origin,

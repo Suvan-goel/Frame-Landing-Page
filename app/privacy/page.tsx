@@ -3,6 +3,13 @@ import type { Metadata } from "next";
 import { SiteHeader } from "../components/site-header";
 import { isFoundingContributorSalesPageEnabled } from "@/lib/contributor-sales-page.server";
 import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
+import {
+  COMPANY_DETAILS,
+  COMPANY_DETAILS_COMPLETE,
+  formatRegisteredOffice,
+  SUPPORT_EMAIL,
+} from "@/lib/company";
+import { ORGANIZATION_NAME } from "@/lib/site";
 
 export const metadata: Metadata = {
   title: "Privacy | Frame",
@@ -31,7 +38,7 @@ export default async function PrivacyPage() {
         <p className="legal-updated">Effective August 3, 2026</p>
 
         <p className="legal-intro">
-          This notice explains how Frame Health Technologies handles information
+          This notice explains how {ORGANIZATION_NAME} handles information
           submitted through the Frame website, including its research and
           email-updates signup and contact form.
           {showContributorAreas
@@ -41,6 +48,18 @@ export default async function PrivacyPage() {
             ? " It also covers the Frame device pre-order and customer order-management experience."
             : null}
         </p>
+
+        {COMPANY_DETAILS_COMPLETE ? (
+          <section>
+            <h2>Who is responsible for your information</h2>
+            <p>
+              {COMPANY_DETAILS.privacyControllerName} is the controller responsible for the processing described in
+              this notice. It is registered in {COMPANY_DETAILS.jurisdiction}
+              {` under registration number ${COMPANY_DETAILS.registrationNumber}`}, with its registered office at {formatRegisteredOffice()}.
+              {` Privacy questions can be sent to ${SUPPORT_EMAIL} or submitted through the privacy contact form.`}
+            </p>
+          </section>
+        ) : null}
 
         <section>
           <h2>Contact messages</h2>

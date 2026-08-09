@@ -5,6 +5,11 @@ import {
   SITE_NAME,
   SITE_URL,
 } from "@/lib/site";
+import {
+  COMPANY_DETAILS,
+  COMPANY_DETAILS_COMPLETE,
+  SUPPORT_EMAIL,
+} from "@/lib/company";
 
 const structuredData = {
   "@context": "https://schema.org",
@@ -15,6 +20,29 @@ const structuredData = {
       name: ORGANIZATION_NAME,
       alternateName: SITE_NAME,
       url: SITE_URL,
+      ...(COMPANY_DETAILS_COMPLETE
+        ? {
+            legalName: COMPANY_DETAILS.legalName,
+            identifier: {
+              "@type": "PropertyValue",
+              propertyID: "Registration number",
+              value: COMPANY_DETAILS.registrationNumber,
+            },
+            address: {
+              "@type": "PostalAddress",
+              streetAddress: [
+                COMPANY_DETAILS.registeredOffice.line1,
+                COMPANY_DETAILS.registeredOffice.line2,
+              ]
+                .filter(Boolean)
+                .join(", "),
+              addressLocality: COMPANY_DETAILS.registeredOffice.locality,
+              addressRegion: COMPANY_DETAILS.registeredOffice.region,
+              postalCode: COMPANY_DETAILS.registeredOffice.postalCode,
+              addressCountry: COMPANY_DETAILS.registeredOffice.country,
+            },
+          }
+        : {}),
       logo: {
         "@type": "ImageObject",
         url: `${SITE_URL}/favicon.png`,
@@ -23,7 +51,7 @@ const structuredData = {
       contactPoint: {
         "@type": "ContactPoint",
         contactType: "customer support",
-        email: "support@framewearable.com",
+        email: SUPPORT_EMAIL,
         url: `${SITE_URL}/contact`,
         availableLanguage: "English",
       },

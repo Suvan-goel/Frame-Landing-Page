@@ -13,6 +13,12 @@ import {
   PREORDER_SAVINGS_CENTS,
 } from "@/lib/preorder";
 import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
+import {
+  COMPANY_DETAILS,
+  COMPANY_DETAILS_COMPLETE,
+  formatRegisteredOffice,
+  SUPPORT_EMAIL,
+} from "@/lib/company";
 
 const PRODUCT_STATUS_TITLE = "Frame Product Status Disclosure";
 const PRODUCT_STATUS_DESCRIPTION =
@@ -129,6 +135,23 @@ export default async function PreorderProductStatusPage() {
             investment, subscription, participation in research, or payment for medical services. If we cannot
             supply Frame, we will cancel your order and issue a full refund.
           </p>
+        </section>
+
+        <section>
+          <h2>Seller and support</h2>
+          {COMPANY_DETAILS_COMPLETE ? (
+            <p>
+              The seller is {COMPANY_DETAILS.legalName}, registered in {COMPANY_DETAILS.jurisdiction}
+              {` under registration number ${COMPANY_DETAILS.registrationNumber}`}, with its registered office at {formatRegisteredOffice()}.
+              {` Questions can be sent to ${SUPPORT_EMAIL}.`}
+            </p>
+          ) : (
+            <p>
+              The incorporated seller’s exact legal identity, registration details, registered office, and jurisdiction
+              will be inserted before public pre-orders open. Questions can be submitted through the
+              <Link href="/contact?topic=preorder"> Frame pre-order support form</Link>.
+            </p>
+          )}
         </section>
 
         <section>

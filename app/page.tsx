@@ -14,7 +14,7 @@ import {
   PREORDER_DISCOUNT_PERCENT,
   PREORDER_RELEASE_PRICE_CENTS,
 } from "@/lib/preorder";
-import { INSTAGRAM_URL } from "@/lib/site";
+import { INSTAGRAM_URL, ORGANIZATION_NAME } from "@/lib/site";
 
 const content = {
   navigation: [
@@ -529,7 +529,7 @@ export default async function Home() {
             screen for, monitor, treat, or manage any disease or medical condition,
             guide treatment decisions, or replace an FDA-authorized medical device.
           </p>
-          <p>© {new Date().getFullYear()} Frame Health Technologies</p>
+          <p>© {new Date().getFullYear()} {ORGANIZATION_NAME}</p>
         </div>
       </footer>
     </main>

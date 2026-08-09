@@ -1,3 +1,5 @@
+import { companyLegalIdentityLine, SUPPORT_EMAIL } from "./company";
+
 export type TransactionalEmailLink = {
   label: string;
   href: string;
@@ -98,6 +100,10 @@ export function renderFrameTransactionalEmail(input: {
   footerLinks?: TransactionalEmailLink[];
 }) {
   const safeOrigin = escapeTransactionalEmailHtml(input.origin);
+  const legalIdentity = companyLegalIdentityLine();
+  const legalIdentityHtml = legalIdentity
+    ? `<p style="margin:14px 0 0;color:#8f8f89">${escapeTransactionalEmailHtml(legalIdentity)}</p>`
+    : "";
   const footerLinks =
     input.footerLinks ??
     [
@@ -174,9 +180,10 @@ export function renderFrameTransactionalEmail(input: {
             <tr>
               <td class="email-footer" bgcolor="#20211e" style="padding:30px 42px;background:#20211e;color:#b9b8b1;font-family:Arial,Helvetica,sans-serif;font-size:10px;line-height:1.7">
                 <p style="margin:0 0 11px;color:#fffdf8;font-family:Georgia,'Times New Roman',serif;font-size:20px;line-height:1">Frame<span style="color:#bd6871">.</span></p>
-                <p style="margin:0 0 8px">Questions? <a href="mailto:support@framewearable.com" style="color:#fffdf8;text-decoration:underline">support@framewearable.com</a></p>
+                <p style="margin:0 0 8px">Questions? <a href="mailto:${escapeTransactionalEmailHtml(SUPPORT_EMAIL)}" style="color:#fffdf8;text-decoration:underline">${escapeTransactionalEmailHtml(SUPPORT_EMAIL)}</a></p>
                 <p style="margin:0">${footerLinksHtml}</p>
                 <p style="margin:14px 0 0;color:#8f8f89">${escapeTransactionalEmailHtml(input.footerNote)}</p>
+                ${legalIdentityHtml}
               </td>
             </tr>
           </table>

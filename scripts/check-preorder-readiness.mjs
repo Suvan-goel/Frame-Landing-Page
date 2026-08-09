@@ -10,6 +10,7 @@ import {
   PREORDER_TERMS_VERSION,
   PREORDER_WARRANTY_DETAILS_COMPLETE,
 } from "../lib/preorder.ts";
+import { COMPANY_DETAILS_CHECK } from "../lib/company.ts";
 
 const target = process.argv.includes("--launch")
   ? "launch"
@@ -241,7 +242,9 @@ if (target === "launch") {
   } else {
     fail(
       "Legal launch gate",
-      "Seller details, warranty terms, and approved non-draft legal disclosure versions are not all active.",
+      COMPANY_DETAILS_CHECK.complete
+        ? "Warranty terms and approved non-draft legal disclosure versions are not all active."
+        : `Seller details are incomplete (${COMPANY_DETAILS_CHECK.missingOrInvalid.join(", ")}); approved non-draft legal disclosure versions are not active.`,
     );
   }
 } else {

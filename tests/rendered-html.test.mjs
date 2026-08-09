@@ -851,7 +851,7 @@ test("validates contact messages before sending email", async () => {
   ]);
 
   assert.match(contactForm, /fetch\("\/api\/contact"/);
-  assert.match(contactApi, /const CONTACT_EMAIL = "support@framewearable\.com"/);
+  assert.match(contactApi, /const CONTACT_EMAIL = SUPPORT_EMAIL/);
   assert.match(contactApi, /https:\/\/api\.resend\.com\/emails/);
   assert.match(contactApi, /reply_to: email/);
   assert.doesNotMatch(contactForm, /MIN_MESSAGE_LENGTH|minLength=/);

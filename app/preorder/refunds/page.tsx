@@ -12,6 +12,12 @@ import {
   PREORDER_TERMS_VERSION,
 } from "@/lib/preorder";
 import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
+import {
+  COMPANY_DETAILS,
+  COMPANY_DETAILS_COMPLETE,
+  formatRegisteredOffice,
+  SUPPORT_EMAIL,
+} from "@/lib/company";
 
 const REFUNDS_TITLE = "Frame Pre-order Cancellation and Refund Policy";
 const REFUNDS_DESCRIPTION = "How to cancel, return, or obtain a refund for a Frame pre-order.";
@@ -226,17 +232,27 @@ export default async function PreorderRefundsPage() {
 
             <section id="contact">
               <h2>8. Contact</h2>
-              <p>
-                Use the <Link href="/contact?topic=preorder">Frame pre-order support form</Link> and include the order
-                number and purchase email. The incorporated seller’s legal name, registered address, and final support
-                details will be added before pre-orders open.
-              </p>
+              {COMPANY_DETAILS_COMPLETE ? (
+                <p>
+                  Use the <Link href="/contact?topic=preorder">Frame pre-order support form</Link> or email {SUPPORT_EMAIL}
+                  {" "}and include the order number and purchase email. The seller is {COMPANY_DETAILS.legalName}, registration
+                  {` ${COMPANY_DETAILS.registrationNumber}`}, with its registered office at {formatRegisteredOffice()}.
+                </p>
+              ) : (
+                <p>
+                  Use the <Link href="/contact?topic=preorder">Frame pre-order support form</Link> and include the order
+                  number and purchase email. The incorporated seller’s legal name, registered address, and final support
+                  details will be added before pre-orders open.
+                </p>
+              )}
             </section>
           </div>
         </div>
 
         <p className="legal-disclaimer">
-          This launch candidate is not active for public sales while the incorporated seller details are pending.
+          {COMPANY_DETAILS_COMPLETE
+            ? "This launch candidate is not active for public sales until final legal approval is activated."
+            : "This launch candidate is not active for public sales while the incorporated seller details are pending."}
         </p>
         <nav className="preorder-refunds-actions" aria-label="Refund policy actions">
           <Link className="button button--dark" href="/contact?topic=preorder">

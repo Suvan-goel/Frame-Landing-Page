@@ -17,6 +17,7 @@ import {
 import { getPreorderSalesSnapshot } from "./preorder-operations.server";
 import { getPreorderMode, getRuntimeValue } from "./runtime-env.server";
 import { isStripeSecretForEnvironment } from "./stripe.server";
+import { COMPANY_DETAILS_CHECK } from "./company";
 
 export type PreorderLaunchReadiness = {
   ready: boolean;
@@ -86,7 +87,9 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
 
   const blockers: string[] = [];
   if (!PREORDER_SELLER_DETAILS_COMPLETE) {
-    blockers.push("The incorporated seller's legal identity and contact details are not complete.");
+    blockers.push(
+      `The incorporated seller's legal identity and contact details are not complete: ${COMPANY_DETAILS_CHECK.missingOrInvalid.join(", ")}.`,
+    );
   }
   if (!PREORDER_WARRANTY_DETAILS_COMPLETE) {
     blockers.push("The one-year limited hardware warranty is not complete.");

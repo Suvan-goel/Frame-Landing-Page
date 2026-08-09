@@ -1,3 +1,5 @@
+import { ORGANIZATION_DISPLAY_NAME } from "./company.ts";
+
 export const EMAIL_SUBJECT_MAX_LENGTH = 160;
 export const EMAIL_PREVIEW_MAX_LENGTH = 200;
 export const EMAIL_BODY_MAX_LENGTH = 20_000;
@@ -290,7 +292,7 @@ export function renderFrameCampaignEmail(input: {
               <td class="email-footer" bgcolor="#f7f4ee" style="padding:25px 44px 27px;border-top:1px solid #ebe7df;background:#f7f4ee;color:#77766f;font-family:Arial,Helvetica,sans-serif;font-size:10px;line-height:1.65;text-align:left">
                 <p style="margin:0 0 9px;color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:17px;line-height:1">Frame<span style="color:#963f49">.</span></p>
                 <p style="margin:0 0 8px">${footerLinks}</p>
-                <p style="margin:0">${footerReason} &copy; ${year} Frame Health Technologies.</p>
+                <p style="margin:0">${footerReason} &copy; ${year} ${escapeHtml(ORGANIZATION_DISPLAY_NAME)}.</p>
                 ${postalAddress}
               </td>
             </tr>
