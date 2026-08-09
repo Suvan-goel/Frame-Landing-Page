@@ -66,8 +66,9 @@ export default async function PreorderProductStatusPage() {
         <h1>Product Status Disclosure</h1>
         <p className="legal-updated">{`Last updated ${PREORDER_PRODUCT_STATUS_UPDATED}`}</p>
         <p className="legal-intro">
-          Frame is a future product, not a finished device. Read this disclosure before deciding whether
-          the uncertainty of a development-stage pre-order is right for you.
+          Frame is in development as a new approach to continuous blood pressure tracking. This disclosure
+          explains what the product is designed to do, where development stands today, and what to expect
+          when you pre-order.
         </p>
 
         <section className="product-status-summary" aria-labelledby="product-status-summary-heading">
