@@ -3,13 +3,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
+import {
+  effectiveTrackingConsent,
+  TRACKING_POLICY_ENDPOINT,
+  type OptionalTrackingConsent,
+  type TrackingPolicyMode,
+} from "../../lib/tracking-policy";
 
 export const META_PIXEL_ID = "1068997465474786";
 const META_LEAD_RECORDED_STORAGE_KEY = "frame-meta-lead-recorded-v1";
 export const OPTIONAL_TRACKING_CONSENT_STORAGE_KEY =
   "frame-optional-tracking-consent-v1";
 
-type OptionalTrackingConsent = "granted" | "denied";
 type OptionalTrackingConsentSnapshot = OptionalTrackingConsent | null | "pending";
 
 const OPTIONAL_TRACKING_CONSENT_EVENT = "frame:optional-tracking-consent";
@@ -28,6 +33,10 @@ declare global {
   interface Window {
     fbq?: (...args: unknown[]) => void;
     dataLayer?: Array<Record<string, unknown>>;
+  }
+
+  interface Navigator {
+    globalPrivacyControl?: boolean;
   }
 }
 
@@ -50,6 +59,7 @@ const PRIVATE_EXACT_PATHS = [
   "/founding-contributors/success",
 ];
 const PRIVATE_ADDITIONAL_PREFIXES = ["/preorder", "/preorders"];
+const NO_PIXEL_EXACT_PATHS = ["/contact", "/privacy", "/unsubscribe"];
 function isLocalBrowserHost() {
   if (typeof window === "undefined") return false;
   return ["localhost", "127.0.0.1", "::1"].includes(
@@ -94,6 +104,18 @@ function readServerOptionalTrackingConsent(): OptionalTrackingConsentSnapshot {
   return "pending";
 }
 
+function subscribeToGlobalPrivacyControl() {
+  return () => undefined;
+}
+
+function readGlobalPrivacyControl(): boolean | "pending" {
+  return navigator.globalPrivacyControl === true;
+}
+
+function readServerGlobalPrivacyControl(): boolean | "pending" {
+  return "pending";
+}
+
 function removeMetaPixel() {
   document.getElementById("meta-pixel")?.remove();
   document
@@ -115,12 +137,16 @@ function clearMetaCookies() {
   }
 }
 
-export function isMetaPixelAllowed(pathname: string) {
+export function isPrivacyChoicesAllowed(pathname: string) {
   return (
     !PRIVATE_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)) &&
     !PRIVATE_ADDITIONAL_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)) &&
     !PRIVATE_EXACT_PATHS.includes(pathname)
   );
+}
+
+export function isMetaPixelAllowed(pathname: string) {
+  return isPrivacyChoicesAllowed(pathname) && !NO_PIXEL_EXACT_PATHS.includes(pathname);
 }
 
 export function MetaPixelRouteGuard() {
@@ -131,8 +157,55 @@ export function MetaPixelRouteGuard() {
     readServerOptionalTrackingConsent,
   );
   const [preferencesOpen, setPreferencesOpen] = useState(false);
+  const [policyMode, setPolicyMode] = useState<TrackingPolicyMode | "pending">(
+    "pending",
+  );
+  const globalPrivacyControl = useSyncExternalStore(
+    subscribeToGlobalPrivacyControl,
+    readGlobalPrivacyControl,
+    readServerGlobalPrivacyControl,
+  );
+  const privacyChoicesAllowedOnRoute = isPrivacyChoicesAllowed(pathname);
   const pixelAllowedOnRoute = isMetaPixelAllowed(pathname);
-  const consentReady = consent !== "pending";
+  const consentReady =
+    consent !== "pending" &&
+    policyMode !== "pending" &&
+    globalPrivacyControl !== "pending";
+  const effectiveConsent = consentReady
+    ? effectiveTrackingConsent({
+        storedConsent: consent,
+        policyMode,
+        globalPrivacyControl,
+      })
+    : null;
+  const requiresInitialChoice =
+    consentReady &&
+    policyMode === "explicit-consent" &&
+    consent === null &&
+    !globalPrivacyControl;
+
+  useEffect(() => {
+    if (!privacyChoicesAllowedOnRoute || policyMode !== "pending") return;
+
+    const controller = new AbortController();
+    fetch(TRACKING_POLICY_ENDPOINT, {
+      cache: "no-store",
+      credentials: "same-origin",
+      signal: controller.signal,
+    })
+      .then(async (response) => {
+        if (!response.ok) throw new Error("Tracking policy request failed");
+        const payload = (await response.json()) as { mode?: unknown };
+        return payload.mode === "us-opt-out" ? "us-opt-out" : "explicit-consent";
+      })
+      .then((mode) => setPolicyMode(mode))
+      .catch((error: unknown) => {
+        if (error instanceof DOMException && error.name === "AbortError") return;
+        setPolicyMode("explicit-consent");
+      });
+
+    return () => controller.abort();
+  }, [policyMode, privacyChoicesAllowedOnRoute]);
 
   useEffect(() => {
     if (!consentReady) return;
@@ -140,10 +213,10 @@ export function MetaPixelRouteGuard() {
     if (
       isLocalBrowserHost() ||
       !pixelAllowedOnRoute ||
-      consent !== "granted"
+      effectiveConsent !== "granted"
     ) {
       removeMetaPixel();
-      if (consent !== "granted") clearMetaCookies();
+      if (effectiveConsent !== "granted") clearMetaCookies();
       return;
     }
 
@@ -157,7 +230,7 @@ export function MetaPixelRouteGuard() {
     script.id = "meta-pixel";
     script.text = META_PIXEL_BOOTSTRAP;
     document.head.appendChild(script);
-  }, [consent, consentReady, pathname, pixelAllowedOnRoute]);
+  }, [consentReady, effectiveConsent, pathname, pixelAllowedOnRoute]);
 
   function recordConsent(value: OptionalTrackingConsent) {
     inMemoryTrackingConsent = value;
@@ -177,9 +250,11 @@ export function MetaPixelRouteGuard() {
     }
   }
 
-  if (!consentReady || !pixelAllowedOnRoute) return null;
+  if (!privacyChoicesAllowedOnRoute || !consentReady) return null;
 
-  const showBanner = preferencesOpen;
+  const showBanner =
+    preferencesOpen || (pixelAllowedOnRoute && requiresInitialChoice);
+  const defaultOnDisclosure = policyMode === "us-opt-out" && consent === null;
 
   return (
     <>
@@ -191,10 +266,13 @@ export function MetaPixelRouteGuard() {
         >
           <div className="tracking-consent__copy">
             <p className="eyebrow">Privacy choices</p>
-            <h2 id="tracking-consent-title">Optional measurement</h2>
+            <h2 id="tracking-consent-title">Advertising measurement</h2>
             <p id="tracking-consent-description">
-              Help us understand which campaigns are useful. Optional advertising
-              measurement stays off unless you allow it.
+              {globalPrivacyControl
+                ? "Your browser’s Global Privacy Control is active, so advertising measurement is off."
+                : defaultOnDisclosure
+                  ? "Meta advertising measurement is allowed on eligible public pages. You can turn it off at any time."
+                  : "Help us understand which campaigns are useful. Optional advertising measurement stays off unless you allow it."}
             </p>
             <Link href="/privacy">Privacy notice</Link>
           </div>
@@ -202,15 +280,16 @@ export function MetaPixelRouteGuard() {
             <button
               className="tracking-consent__button"
               type="button"
-              aria-pressed={consent === "denied"}
+              aria-pressed={effectiveConsent === "denied"}
               onClick={() => recordConsent("denied")}
             >
-              Decline
+              Turn off
             </button>
             <button
               className="tracking-consent__button"
               type="button"
-              aria-pressed={consent === "granted"}
+              aria-pressed={effectiveConsent === "granted"}
+              disabled={globalPrivacyControl === true}
               onClick={() => recordConsent("granted")}
             >
               Allow

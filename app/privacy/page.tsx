@@ -35,7 +35,7 @@ export default async function PrivacyPage() {
       <article className="legal-shell">
         <p className="eyebrow">Privacy</p>
         <h1>Privacy notice</h1>
-        <p className="legal-updated">Effective August 3, 2026</p>
+        <p className="legal-updated">Effective August 9, 2026</p>
 
         <p className="legal-intro">
           This notice explains how {ORGANIZATION_NAME} handles information
@@ -162,14 +162,18 @@ export default async function PrivacyPage() {
         <section>
           <h2>Advertising measurement</h2>
           <p>
-            If you allow optional advertising measurement, we use the Meta Pixel
-            to understand whether a visit, updates signup, or optional survey
-            completion came from a Meta ad and to measure and improve our
-            campaigns. The Pixel stays off unless you choose “Allow optional” in
-            the privacy choices banner. It may then use browser identifiers and
-            similar technologies, which Meta processes under its own privacy
-            policy. We do not send your name, email address, age, gender, or
-            written responses to Meta through the Pixel.
+            We use the Meta Pixel on eligible public pages to understand whether
+            a visit, updates signup, or optional survey completion came from a
+            Meta ad and to measure and improve our campaigns. For visitors outside
+            the United States, visitors in US states where Frame applies an
+            explicit-consent policy, and visitors whose location cannot be
+            determined, the Pixel stays off unless they choose “Allow.” For other
+            US visitors, it may start automatically unless they previously turned
+            it off or enabled Global Privacy Control in their browser. The Pixel
+            may use browser identifiers and similar technologies, which Meta
+            processes under its own privacy policy. We do not send your name,
+            email address, age, gender, or written responses to Meta through the
+            Pixel.
             {showContributorAreas
               ? " The Pixel is not initialized on checkout review, payment-success, member sign-in, contributor-profile, private contributor-hub, or administration routes."
               : null}
@@ -180,15 +184,20 @@ export default async function PrivacyPage() {
           <p>
             We store your choice in your browser. You can change or withdraw it
             at any time using the “Privacy choices” control displayed on pages
-            where optional advertising measurement is available. Declining does
-            not affect the website’s essential functions.
+            where optional advertising measurement is available. We honor Global
+            Privacy Control as an opt-out signal. Turning measurement off does not
+            affect the website’s essential functions.
           </p>
         </section>
 
         <section>
           <h2>Sharing and retention</h2>
           <p>
-            We do not sell your information. We share it only with service
+            We do not sell your information for money. Where applicable law
+            treats advertising disclosures as a sale or sharing for cross-context
+            behavioural advertising, the “Privacy choices” control and Global
+            Privacy Control provide a way to opt out. We otherwise share
+            information only with service
             providers that help us host, secure, operate the website, store
             submissions, and deliver messages, or when required by law. These
             providers currently include Supabase for data storage, Resend for

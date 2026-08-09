@@ -23,6 +23,10 @@ import {
   preorderStagingCookieHeader,
 } from "../lib/preorder-staging-access";
 import { preorderReviewRedirectPath } from "../lib/attribution";
+import {
+  TRACKING_POLICY_ENDPOINT,
+  trackingPolicyForRequest,
+} from "../lib/tracking-policy";
 
 interface Env {
   ASSETS: Fetcher;
@@ -231,6 +235,29 @@ const worker = {
           "Content-Type": "text/plain; charset=utf-8",
           "X-Content-Type-Options": "nosniff",
           "X-Robots-Tag": "noindex, nofollow",
+        },
+      });
+    }
+
+    if (url.pathname === TRACKING_POLICY_ENDPOINT) {
+      if (request.method !== "GET" && request.method !== "HEAD") {
+        return new Response("Method not allowed", {
+          status: 405,
+          headers: {
+            Allow: "GET, HEAD",
+            "Cache-Control": "private, no-store",
+            "Content-Type": "text/plain; charset=utf-8",
+            "X-Content-Type-Options": "nosniff",
+          },
+        });
+      }
+
+      const body = JSON.stringify({ mode: trackingPolicyForRequest(request) });
+      return new Response(request.method === "HEAD" ? null : body, {
+        headers: {
+          "Cache-Control": "private, no-store",
+          "Content-Type": "application/json; charset=utf-8",
+          "X-Content-Type-Options": "nosniff",
         },
       });
     }
