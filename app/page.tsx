@@ -359,7 +359,7 @@ export default async function Home() {
             <div className="home-preorder-layout">
               <div className="home-preorder-copy">
                 <p className="eyebrow">Frame pre-order</p>
-                <h2>A new way to understand your health. Coming soon.</h2>
+                <h2>A new way to understand your health.</h2>
                 <p className="home-preorder-copy__intro">
                   Estimated dispatch: {preorderOffer.estimatedShipping}. Cancel any time
                   before fulfilment for a full refund.
