@@ -11534,27 +11534,42 @@ p.preorder-manage-feedback.form-error {
 .tracking-consent-trigger {
   position: fixed;
   z-index: 1100;
-  bottom: 16px;
-  left: 16px;
-  min-height: 38px;
-  padding: 0 13px;
-  border: 1px solid rgba(32, 33, 30, 0.24);
-  background: rgba(250, 248, 242, 0.95);
-  box-shadow: 0 8px 28px rgba(32, 33, 30, 0.1);
-  color: var(--ink-soft);
+  bottom: 14px;
+  left: 14px;
+  min-height: 34px;
+  padding: 0 11px;
+  border: 1px solid rgba(32, 33, 30, 0.13);
+  border-radius: 999px;
+  background: rgba(250, 248, 242, 0.76);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 18px rgba(32, 33, 30, 0.055);
+  color: rgba(32, 33, 30, 0.66);
   cursor: pointer;
-  font: 600 0.68rem/1 var(--sans);
+  font: 600 0.6rem/1 var(--sans);
+  letter-spacing: 0.015em;
   transition:
     background-color 160ms ease,
     border-color 160ms ease,
-    color 160ms ease;
+    box-shadow 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
 }
 
-.tracking-consent-trigger:hover,
+.tracking-consent-trigger:hover {
+  border-color: rgba(141, 62, 70, 0.28);
+  background: rgba(250, 248, 242, 0.96);
+  box-shadow: 0 6px 20px rgba(32, 33, 30, 0.085);
+  color: var(--ink);
+  transform: translateY(-1px);
+}
+
 .tracking-consent-trigger:focus-visible {
-  border-color: var(--ink);
-  background: var(--ink);
-  color: var(--paper);
+  border-color: var(--burgundy);
+  outline: 2px solid rgba(141, 62, 70, 0.4);
+  outline-offset: 2px;
+  background: var(--paper);
+  color: var(--ink);
 }
 
 @media (max-width: 760px) {
