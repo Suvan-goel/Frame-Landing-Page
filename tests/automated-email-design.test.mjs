@@ -68,13 +68,13 @@ function automatedEmails() {
     }),
     renderPreorderRefundUpdateEmail({
       ...preorder,
-      amountRefunded: 55517,
+      amountRefunded: 32292,
       currency: "usd",
       status: "processing",
     }),
     renderPreorderRefundUpdateEmail({
       ...preorder,
-      amountRefunded: 55517,
+      amountRefunded: 32292,
       currency: "usd",
       status: "completed",
     }),

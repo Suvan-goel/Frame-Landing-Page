@@ -11033,6 +11033,13 @@ p.preorder-manage-feedback.form-error {
   white-space: nowrap;
 }
 
+.home-preorder-price-note {
+  margin: 11px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+
 .hero--email-first .home-preorder-hero > .waitlist-signup--compact .waitlist-signup__email-row {
   position: relative;
   display: block;

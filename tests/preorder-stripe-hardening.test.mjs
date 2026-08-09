@@ -111,7 +111,7 @@ test("makes failed and stale background events recoverable", () => {
   );
 });
 
-test("keeps the reviewed subtotal, shipping, tax and inventory controls explicit", async () => {
+test("keeps the reviewed subtotal, free shipping, tax and inventory controls explicit", async () => {
   const [checkout, offer, migration, initialRelease, readiness] = await Promise.all([
     readFile(new URL("../app/api/preorders/checkout/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/preorder.ts", import.meta.url), "utf8"),
@@ -134,7 +134,7 @@ test("keeps the reviewed subtotal, shipping, tax and inventory controls explicit
 
   assert.match(offer, /PREORDER_DEFAULT_PRICE_CENTS = 29_900/);
   assert.match(offer, /PREORDER_RELEASE_PRICE_CENTS = 49_900/);
-  assert.match(offer, /PREORDER_SHIPPING_RATE_CENTS = 1_900/);
+  assert.match(offer, /PREORDER_SHIPPING_RATE_CENTS = 0/);
   assert.match(offer, /PREORDER_ESTIMATED_SHIPPING = "Q1 2027"/);
   assert.match(offer, /PREORDER_MAX_INVENTORY_UNITS = 1_000/);
   assert.match(checkout, /shipping_options:/);
@@ -166,7 +166,7 @@ test("keeps the reviewed subtotal, shipping, tax and inventory controls explicit
   assert.match(migration, /unit_limit <= inventory_limit/);
   assert.match(initialRelease, /sales_status = 'paused'/);
   assert.match(initialRelease, /unit_limit = 100/);
-  assert.match(readiness, /reviewed \$19 USD rate/i);
+  assert.match(readiness, /reviewed free standard US shipping rate/i);
 });
 
 test("allows only the 50 states and Washington DC for launch shipping", async () => {

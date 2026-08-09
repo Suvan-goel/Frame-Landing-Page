@@ -34,7 +34,7 @@ PREORDER_PRICE_CENTS=29900
 PREORDER_CURRENCY=usd
 PREORDER_ALLOWED_COUNTRIES=US
 PREORDER_ESTIMATED_SHIPPING=Q1 2027
-PREORDER_SHIPPING_RATE_CENTS=1900
+PREORDER_SHIPPING_RATE_CENTS=0
 STRIPE_SECRET_KEY=sk_test_...
 STRIPE_PREORDER_PRICE_ID=price_...
 STRIPE_WEBHOOK_SECRET=whsec_...
@@ -49,11 +49,11 @@ PREORDER_RATE_LIMIT_SECRET=<second unique secret of at least 32 characters>
 PREORDER_MAINTENANCE_SECRET=<third unique secret of at least 32 characters>
 ```
 
-The shipping value is a provisional flat $19 USD standard shipping and handling
-charge for all 50 states and Washington, DC. US territories and international
-destinations are excluded from the initial launch. Revalidate the rate against
-the final boxed weight, dimensions, US fulfilment origin, fulfilment fees and
-lithium-battery classification before public sales are opened.
+The shipping value is zero because standard shipping is free for all 50 states
+and Washington, DC. US territories and international destinations are excluded
+from the initial launch. Validate the internal shipping budget against the final
+boxed weight, dimensions, US fulfilment origin, fulfilment fees and lithium-battery
+classification before public sales are opened.
 
 The live environment begins with a cumulative release allocation of 100 units
 inside the fixed 1,000-unit lifetime inventory ceiling. Applying the release

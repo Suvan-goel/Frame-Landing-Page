@@ -14,10 +14,10 @@ function positiveInteger(value: string | undefined, fallback: number) {
   return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-function optionalPositiveInteger(value: string | undefined) {
+function optionalNonNegativeInteger(value: string | undefined) {
   if (!value || !/^\d+$/.test(value)) return null;
   const parsed = Number(value);
-  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : null;
+  return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : null;
 }
 
 function currencyCode(value: string | undefined) {
@@ -56,6 +56,6 @@ export async function getPreorderConfiguration() {
       shippingEstimate?.trim().slice(0, 500) ||
       legacyDeliveryEstimate?.trim().slice(0, 500) ||
       PREORDER_ESTIMATED_SHIPPING,
-    shippingRateCents: optionalPositiveInteger(shippingRateCents),
+    shippingRateCents: optionalNonNegativeInteger(shippingRateCents),
   };
 }

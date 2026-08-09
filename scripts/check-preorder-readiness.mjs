@@ -93,7 +93,10 @@ const estimatedShipping =
   process.env.PREORDER_ESTIMATED_SHIPPING ??
   process.env.PREORDER_ESTIMATED_DELIVERY ??
   "Q1 2027";
-const shippingRateCents = Number(process.env.PREORDER_SHIPPING_RATE_CENTS ?? "");
+const shippingRateValue = process.env.PREORDER_SHIPPING_RATE_CENTS?.trim();
+const shippingRateCents = shippingRateValue === undefined
+  ? Number.NaN
+  : Number(shippingRateValue);
 
 if (target === "launch") {
   if (mode === "live") {
@@ -215,10 +218,10 @@ if (
 } else {
   fail("Reviewed offer", "The runtime offer differs from the reviewed pre-order configuration.");
 }
-if (shippingRateCents === 1_900) {
-  pass("Separate shipping charge", "$19 USD standard US shipping is added at Checkout.");
+if (shippingRateValue === "0" && shippingRateCents === 0) {
+  pass("Free standard shipping", "Standard US shipping is included at no additional charge.");
 } else {
-  fail("Separate shipping charge", "Set PREORDER_SHIPPING_RATE_CENTS to the reviewed $19 USD rate (1900 cents).");
+  fail("Free standard shipping", "Set PREORDER_SHIPPING_RATE_CENTS to the reviewed free rate (0 cents).");
 }
 
 const termsVersion = PREORDER_TERMS_VERSION;

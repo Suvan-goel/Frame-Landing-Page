@@ -6,7 +6,7 @@ Status: launch candidate. Public access and live checkout must remain disabled u
 
 - Product: one future Frame device per checkout
 - Product subtotal: $299 USD
-- Standard US shipping and handling: $19 USD
+- Standard US shipping: free
 - Applicable sales tax: additional and calculated at checkout
 - Initial territory: the 50 United States and Washington, DC; no territories or international shipping
 - Estimated shipping: Q1 2027
@@ -37,7 +37,7 @@ Status: launch candidate. Public access and live checkout must remain disabled u
 2. Complete Stripe live-account verification, representative details, bank account, business profile, and terms acceptance.
 3. Create or rotate a least-privilege live Stripe key and configure `STRIPE_LIVE_SECRET_KEY` in the deployment environment.
 4. Reveal the existing live webhook signing secret and configure `STRIPE_LIVE_WEBHOOK_SECRET` in the deployment environment.
-5. Confirm the live $299 price, $19 shipping charge, exclusive tax behaviour, product tax code, and required webhook event set.
+5. Confirm the live $299 price, free standard US shipping, exclusive tax behaviour, product tax code, and required webhook event set.
 6. Resolve the sales-tax position and configure only the registrations supported by the accountant's conclusion.
 7. Change the policy versions to a dated, non-draft release, set `PREORDER_SELLER_DETAILS_COMPLETE` to `true`, and set `PREORDER_LEGAL_APPROVED_VERSION` to exactly the same terms version.
 8. Deploy behind private staging access while the live allocation remains paused.

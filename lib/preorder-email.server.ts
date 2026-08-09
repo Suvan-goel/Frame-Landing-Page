@@ -1,6 +1,6 @@
 import { getSupabaseAdmin } from "./supabase-admin.server";
 import { getRuntimeValue } from "./runtime-env.server";
-import { formatPreorderMoney, formatPreorderNumber } from "./preorder";
+import { formatPreorderMoney, formatPreorderNumber, formatPreorderShipping } from "./preorder";
 import type {
   PreorderDeliveryNoticeType,
   PreorderDeliveryResponseMode,
@@ -213,7 +213,7 @@ export function renderPreorderConfirmationEmail(
 ) {
   const orderNumber = formatPreorderNumber(input.orderNumber);
   const subtotal = formatPreorderMoney(input.amountSubtotal, input.currency);
-  const shippingAmount = formatPreorderMoney(input.amountShipping, input.currency);
+  const shippingAmount = formatPreorderShipping(input.amountShipping, input.currency);
   const taxAmount = formatPreorderMoney(input.amountTax, input.currency);
   const amount = formatPreorderMoney(input.amountTotal, input.currency);
   const placedAt = new Intl.DateTimeFormat("en-US", { dateStyle: "long" }).format(
@@ -235,7 +235,7 @@ export function renderPreorderConfirmationEmail(
       "",
       `Your Frame pre-order is confirmed. Order ${orderNumber}.`,
       `Product subtotal: ${subtotal}`,
-      `Shipping: ${shippingAmount}`,
+      `Standard US shipping: ${shippingAmount}`,
       `Sales tax: ${taxAmount}`,
       `Total paid: ${amount}`,
       `Quantity: ${input.quantity}`,
@@ -338,7 +338,7 @@ export function renderPreorderConfirmationEmail(
                           <td align="right" style="padding:20px 0 7px;color:#20211e;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.45">${escapeHtml(subtotal)}</td>
                         </tr>
                         <tr>
-                          <td style="padding:7px 0;color:#5d5d57;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.45">Shipping</td>
+                          <td style="padding:7px 0;color:#5d5d57;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.45">Standard US shipping</td>
                           <td align="right" style="padding:7px 0;color:#20211e;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.45">${escapeHtml(shippingAmount)}</td>
                         </tr>
                         <tr>

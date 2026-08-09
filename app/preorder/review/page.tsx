@@ -5,6 +5,7 @@ import { PreorderHeader } from "../../components/preorder-chrome";
 import { getPreorderConfiguration } from "@/lib/preorder-config.server";
 import {
   formatPreorderMoney,
+  formatPreorderShipping,
   PREORDER_DISCOUNT_PERCENT,
   PREORDER_RELEASE_PRICE_CENTS,
   PREORDER_SHIPPING_RATE_CENTS,
@@ -52,7 +53,7 @@ export default async function PreorderReviewPage() {
             offer.currency,
           )}
           discountPercent={PREORDER_DISCOUNT_PERCENT}
-          shippingPriceLabel={formatPreorderMoney(
+          shippingLabel={formatPreorderShipping(
             offer.shippingRateCents ?? PREORDER_SHIPPING_RATE_CENTS,
             offer.currency,
           )}

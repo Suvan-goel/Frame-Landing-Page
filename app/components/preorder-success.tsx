@@ -193,7 +193,7 @@ export function PreorderSuccess() {
             </div>
             <div>
               <dt>Shipping</dt>
-              <dd>{formatMoney(order.amountShippingCents, order.currency)}</dd>
+              <dd>{order.amountShippingCents === 0 ? "Free" : formatMoney(order.amountShippingCents, order.currency)}</dd>
             </div>
             <div>
               <dt>Sales tax</dt>

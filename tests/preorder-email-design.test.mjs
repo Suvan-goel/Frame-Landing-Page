@@ -12,10 +12,10 @@ const confirmation = {
   environment: "live",
   email: "alex@example.com",
   fullName: "Alex Morgan",
-  amountSubtotal: 49900,
-  amountShipping: 1500,
-  amountTax: 4117,
-  amountTotal: 55517,
+  amountSubtotal: 29900,
+  amountShipping: 0,
+  amountTax: 2392,
+  amountTotal: 32292,
   currency: "usd",
   quantity: 1,
   placedAt: "2026-08-08T10:30:00.000Z",
@@ -45,7 +45,9 @@ test("renders the pre-order confirmation as a responsive transactional receipt",
   assert.match(rendered.html, /Order confirmed/);
   assert.match(rendered.html, />Order summary</);
   assert.match(rendered.html, />Total paid</);
-  assert.match(rendered.html, />\$555\.17</);
+  assert.match(rendered.html, />\$322\.92</);
+  assert.match(rendered.html, />Free</);
+  assert.match(rendered.text, /Standard US shipping: Free/);
   assert.match(rendered.html, />Q2 2027</);
   assert.match(rendered.html, /Manage your pre-order/);
   assert.match(rendered.html, /This is a transactional email/);

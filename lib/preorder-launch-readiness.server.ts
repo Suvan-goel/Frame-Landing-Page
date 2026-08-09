@@ -152,7 +152,7 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
     blockers.push("The runtime offer does not match the reviewed $299 pre-order price, $499 release price, US-only, Q1 2027 estimated-shipping configuration.");
   }
   if (configuration.shippingRateCents !== PREORDER_SHIPPING_RATE_CENTS) {
-    blockers.push("The pre-order shipping charge is not the reviewed $19 USD rate.");
+    blockers.push("The pre-order offer does not include the reviewed free standard US shipping rate.");
   }
   if (!liveSalesSnapshot) {
     blockers.push("The live inventory ceiling and release allocation could not be verified.");

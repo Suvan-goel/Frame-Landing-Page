@@ -124,10 +124,10 @@ export async function getAutomatedEmailPreviews(
       configurationLabel: deliveryLabel,
       email: renderPreorderConfirmationEmail({
         ...preorderBase,
-        amountSubtotal: 49900,
-        amountShipping: 1500,
-        amountTax: 4117,
-        amountTotal: 55517,
+        amountSubtotal: 29900,
+        amountShipping: 0,
+        amountTax: 2392,
+        amountTotal: 32292,
         currency: "usd",
         quantity: 1,
         placedAt: "2026-08-08T09:36:00.000Z",
@@ -253,7 +253,7 @@ export async function getAutomatedEmailPreviews(
       configurationLabel: deliveryLabel,
       email: renderPreorderRefundUpdateEmail({
         ...preorderBase,
-        amountRefunded: 55517,
+        amountRefunded: 32292,
         currency: "usd",
         status: "processing",
       }),
@@ -272,7 +272,7 @@ export async function getAutomatedEmailPreviews(
       configurationLabel: deliveryLabel,
       email: renderPreorderRefundUpdateEmail({
         ...preorderBase,
-        amountRefunded: 55517,
+        amountRefunded: 32292,
         currency: "usd",
         status: "completed",
       }),

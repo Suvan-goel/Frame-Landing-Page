@@ -26,7 +26,7 @@ and every remote pre-order surface remains unavailable.
 - Stripe test mode is connected at $299 USD for one device.
 - Orders are limited to all 50 United States and Washington, DC; US territories and international destinations are excluded.
 - The recorded estimated shipping window is Q1 2027.
-- The product subtotal is $299 USD; $19 USD standard US shipping and applicable sales tax are added at Checkout.
+- The offer is $299 USD plus applicable sales tax, with free standard US shipping.
 - Customer confirmation, management, address, delivery, cancellation, shipping and refund emails are connected.
 - Test and live commerce records are separated.
 - The lifetime inventory ceiling is 1,000 units, with an approved initial cumulative release allocation of 100 units.
@@ -93,7 +93,7 @@ Do not complete this section until the lawyer and medical-device regulatory revi
 
 - Insert the incorporated seller identity and replace every remaining draft marker or placeholder with approved wording.
 - Review the one-year limited hardware warranty, shipping-delay consent matrix, material-change consent flow, and automatic deadline refund operation with US counsel.
-- Revalidate the provisional $19 US shipping rate using the final packaged dimensions and weight, US fulfilment origin and fees, and lithium-battery classification; confirm Stripe Tax registrations with the relevant advisers.
+- Validate that the internal shipping budget can absorb the final packaged dimensions and weight, US fulfilment origin and fees, and lithium-battery classification; confirm Stripe Tax registrations with the relevant advisers.
 - Assign an explicit Stripe product tax code approved for Frame's final product classification.
 - Assign a new non-draft `PREORDER_TERMS_VERSION` and matching product-status version in the application.
 - Set `PREORDER_LEGAL_APPROVED_VERSION` to exactly the approved terms version.
@@ -132,7 +132,7 @@ PREORDER_PRICE_CENTS=29900
 PREORDER_CURRENCY=usd
 PREORDER_ALLOWED_COUNTRIES=US
 PREORDER_ESTIMATED_SHIPPING=Q1 2027
-PREORDER_SHIPPING_RATE_CENTS=1900
+PREORDER_SHIPPING_RATE_CENTS=0
 PREORDER_MAINTENANCE_SECRET=<third unique secret of at least 32 characters>
 ```
 

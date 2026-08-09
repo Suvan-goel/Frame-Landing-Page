@@ -4,11 +4,11 @@ export const PREORDER_SKU = "frame-device-preorder-v1";
 export const PREORDER_PRODUCT_NAME = "Frame device pre-order";
 // The Pre-order Terms and Cancellation and Refund Policy are accepted together
 // and versioned as one legal pack. The database retains `terms_version` for compatibility.
-export const PREORDER_LEGAL_PACK_VERSION = "draft-2026-08-08-v6";
+export const PREORDER_LEGAL_PACK_VERSION = "draft-2026-08-09-v7";
 export const PREORDER_TERMS_VERSION = PREORDER_LEGAL_PACK_VERSION;
-export const PREORDER_LEGAL_PACK_UPDATED = "August 8, 2026";
-export const PREORDER_PRODUCT_STATUS_VERSION = "draft-2026-08-08-v6";
-export const PREORDER_PRODUCT_STATUS_UPDATED = "August 8, 2026";
+export const PREORDER_LEGAL_PACK_UPDATED = "August 9, 2026";
+export const PREORDER_PRODUCT_STATUS_VERSION = "draft-2026-08-09-v7";
+export const PREORDER_PRODUCT_STATUS_UPDATED = "August 9, 2026";
 // This remains false until the single incorporated-company configuration has
 // a valid legal name, registration number, registered office, jurisdiction,
 // support contact, privacy controller, and named warranty provider.
@@ -23,7 +23,7 @@ export const PREORDER_SAVINGS_CENTS =
 export const PREORDER_DISCOUNT_PERCENT = Math.round(
   (PREORDER_SAVINGS_CENTS / PREORDER_RELEASE_PRICE_CENTS) * 100,
 );
-export const PREORDER_SHIPPING_RATE_CENTS = 1_900;
+export const PREORDER_SHIPPING_RATE_CENTS = 0;
 export const PREORDER_DEFAULT_CURRENCY = "usd";
 export const PREORDER_DEFAULT_ALLOWED_COUNTRIES = ["US"] as const;
 export const PREORDER_MAX_QUANTITY = 1;
@@ -38,7 +38,7 @@ export function preorderStripeProductDescription(input: {
   estimatedShipping: string;
   sandbox: boolean;
 }) {
-  return `One Frame wearable device pre-order. ${input.sandbox ? "Sandbox only. " : ""}Estimated shipping: ${input.estimatedShipping}; timing may change.`;
+  return `One Frame wearable device pre-order. ${input.sandbox ? "Sandbox only. " : ""}Free standard US shipping; applicable sales tax is calculated at checkout. Estimated shipping: ${input.estimatedShipping}; timing may change.`;
 }
 
 export function formatPreorderNumber(value: number | string) {
@@ -52,6 +52,10 @@ export function formatPreorderMoney(cents: number, currency: string) {
     minimumFractionDigits: cents % 100 === 0 ? 0 : 2,
     maximumFractionDigits: 2,
   }).format(cents / 100);
+}
+
+export function formatPreorderShipping(cents: number, currency: string) {
+  return cents === 0 ? "Free" : formatPreorderMoney(cents, currency);
 }
 
 export function isDraftPreorderVersion(version: string) {

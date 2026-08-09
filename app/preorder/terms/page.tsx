@@ -12,7 +12,6 @@ import {
   PREORDER_LEGAL_PACK_UPDATED,
   PREORDER_RELEASE_PRICE_CENTS,
   PREORDER_SAVINGS_CENTS,
-  PREORDER_SHIPPING_RATE_CENTS,
   PREORDER_TERMS_VERSION,
 } from "@/lib/preorder";
 import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
@@ -27,10 +26,6 @@ const TERMS_TITLE = "Frame Pre-order Terms";
 const TERMS_DESCRIPTION = "Terms for placing and managing a Frame device pre-order.";
 const PRODUCT_PRICE = formatPreorderMoney(
   PREORDER_DEFAULT_PRICE_CENTS,
-  PREORDER_DEFAULT_CURRENCY,
-);
-const SHIPPING_PRICE = formatPreorderMoney(
-  PREORDER_SHIPPING_RATE_CENTS,
   PREORDER_DEFAULT_CURRENCY,
 );
 const RELEASE_PRICE = formatPreorderMoney(
@@ -203,7 +198,7 @@ export default async function PreorderTermsPage() {
               <h2>4. Price, tax, shipping, and payment</h2>
               <p>
                 The pre-order product subtotal is {PRODUCT_PRICE}, which is {PREORDER_SAVING} ({PREORDER_DISCOUNT_PERCENT}%)
-                below Frame&apos;s {RELEASE_PRICE} release price. Standard US shipping and handling is an additional {SHIPPING_PRICE}.
+                below Frame&apos;s {RELEASE_PRICE} release price. Standard US shipping is included at no additional charge.
                 Applicable sales tax is additional and is calculated from the supplied address. The complete total
                 is shown in Stripe Checkout before you pay.
               </p>

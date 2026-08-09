@@ -218,7 +218,6 @@ export async function POST(request: Request) {
       PREORDER_RELEASE_PRICE_CENTS - config.priceCents,
       config.currency,
     );
-    const shippingPriceLabel = formatPreorderMoney(config.shippingRateCents, config.currency);
     const totalBeforeTaxLabel = formatPreorderMoney(
       config.priceCents + config.shippingRateCents,
       config.currency,
@@ -338,7 +337,7 @@ export async function POST(request: Request) {
           {
             shipping_rate_data: {
               type: "fixed_amount",
-              display_name: "Standard US shipping & handling",
+              display_name: "Free standard US shipping",
               fixed_amount: {
                 amount: config.shippingRateCents,
                 currency: config.currency,
@@ -353,8 +352,8 @@ export async function POST(request: Request) {
           submit: {
             message:
               mode === "test"
-                ? `Sandbox payment only. Your ${totalBeforeTaxLabel} total before tax includes the ${productPriceLabel} pre-order price and ${shippingPriceLabel} standard US shipping. The pre-order price is ${preorderSavingsLabel} below the planned ${releasePriceLabel} release price. Frame is still in development; shipping is estimated for ${config.estimatedShipping}.`
-                : `Your ${totalBeforeTaxLabel} total before tax includes the ${productPriceLabel} pre-order price and ${shippingPriceLabel} standard US shipping. The pre-order price is ${preorderSavingsLabel} below the planned ${releasePriceLabel} release price. Frame is still in development; shipping is estimated for ${config.estimatedShipping}.`,
+                ? `Sandbox payment only. Your ${totalBeforeTaxLabel} total before tax includes free standard US shipping; applicable sales tax is calculated at checkout. The pre-order price is ${preorderSavingsLabel} below the planned ${releasePriceLabel} release price. Frame is still in development; shipping is estimated for ${config.estimatedShipping}.`
+                : `Your ${totalBeforeTaxLabel} total before tax includes free standard US shipping; applicable sales tax is calculated at checkout. The pre-order price is ${preorderSavingsLabel} below the planned ${releasePriceLabel} release price. Frame is still in development; shipping is estimated for ${config.estimatedShipping}.`,
           },
           terms_of_service_acceptance: {
             message: `I agree to the [Frame Pre-order Terms](${legalBaseUrl}/preorder/terms) and [Cancellation and Refund Policy](${legalBaseUrl}/preorder/refunds).`,

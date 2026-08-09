@@ -8,7 +8,6 @@ import {
   PREORDER_DEFAULT_CURRENCY,
   PREORDER_DEFAULT_PRICE_CENTS,
   PREORDER_LEGAL_PACK_UPDATED,
-  PREORDER_SHIPPING_RATE_CENTS,
   PREORDER_TERMS_VERSION,
 } from "@/lib/preorder";
 import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
@@ -23,10 +22,6 @@ const REFUNDS_TITLE = "Frame Pre-order Cancellation and Refund Policy";
 const REFUNDS_DESCRIPTION = "How to cancel, return, or obtain a refund for a Frame pre-order.";
 const PRODUCT_PRICE = formatPreorderMoney(
   PREORDER_DEFAULT_PRICE_CENTS,
-  PREORDER_DEFAULT_CURRENCY,
-);
-const SHIPPING_PRICE = formatPreorderMoney(
-  PREORDER_SHIPPING_RATE_CENTS,
   PREORDER_DEFAULT_CURRENCY,
 );
 
@@ -138,8 +133,8 @@ export default async function PreorderRefundsPage() {
               </p>
               <p>
                 A valid cancellation receives a full refund of every amount paid for the unshipped order,
-                including the {PRODUCT_PRICE} product subtotal, {SHIPPING_PRICE} standard shipping and handling,
-                and collected tax. Frame does not charge a cancellation or restocking fee.
+                including the {PRODUCT_PRICE} product subtotal and collected tax. Standard US shipping is free,
+                and Frame does not charge a cancellation or restocking fee.
               </p>
               <p>
                 Once fulfilment is processing, Frame may be unable to stop an ordinary cancellation before
@@ -197,8 +192,8 @@ export default async function PreorderRefundsPage() {
                 Frame may reduce the refund only for diminished value caused by handling beyond that brief inspection.
               </p>
               <p>
-                You are responsible for change-of-mind return shipping. Frame will refund the product price, collected
-                tax attributable to the returned product, and the original standard shipping charge. Frame will
+                You are responsible for change-of-mind return shipping. Frame will refund the product price and collected
+                tax attributable to the returned product. The original standard US shipping was free. Frame will
                 initiate an approved change-of-mind return refund within 14 calendar days after receiving and checking
                 the returned product. The issuer timing described in section 4 then applies.
               </p>

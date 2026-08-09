@@ -42,7 +42,7 @@ export function PreorderCheckoutReview({
   releasePriceLabel,
   savingsLabel,
   discountPercent,
-  shippingPriceLabel,
+  shippingLabel,
   estimatedTotalLabel,
   estimatedShipping,
 }: {
@@ -50,7 +50,7 @@ export function PreorderCheckoutReview({
   releasePriceLabel: string;
   savingsLabel: string;
   discountPercent: number;
-  shippingPriceLabel: string;
+  shippingLabel: string;
   estimatedTotalLabel: string;
   estimatedShipping: string;
 }) {
@@ -249,12 +249,12 @@ export function PreorderCheckoutReview({
                 <dt>Pre-order saving</dt><dd>−{savingsLabel}</dd>
               </div>
               <div><dt>Product subtotal</dt><dd>{priceLabel}</dd></div>
-              <div><dt>Standard US shipping</dt><dd>{shippingPriceLabel}</dd></div>
+              <div><dt>Standard US shipping</dt><dd>{shippingLabel}</dd></div>
               <div className="preorder-order-summary__total">
                 <dt>Total before tax</dt><dd>{estimatedTotalLabel}</dd>
               </div>
             </dl>
-            <p className="preorder-order-summary__tax">Sales tax is calculated at Stripe Checkout.</p>
+            <p className="preorder-order-summary__tax">Applicable sales tax is calculated at Stripe Checkout.</p>
           </div>
         </section>
 

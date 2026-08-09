@@ -123,7 +123,7 @@ test("permanently redirects www requests to the canonical host", async () => {
 test("server-renders the Frame landing page", async () => {
   const response = await render("/", undefined, "http://localhost", {
     PREORDER_MODE: "test",
-    PREORDER_SHIPPING_RATE_CENTS: "1900",
+    PREORDER_SHIPPING_RATE_CENTS: "0",
   });
   assert.equal(response.status, 200);
   assert.match(response.headers.get("content-type") ?? "", /^text\/html\b/i);
@@ -180,10 +180,8 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /See details/);
   assert.match(html, /home-preorder-hero__offer-line/);
   assert.match(html, /Pre order offer/);
-  assert.match(
-    html,
-    /Pre-order today and save\s*(?:<!-- -->)?40\s*(?:<!-- -->)?%/,
-  );
+  assert.match(html, /\$299(?:<!-- -->)?\s*\+ applicable sales tax/);
+  assert.match(html, /Free standard US shipping/i);
   assert.doesNotMatch(html, /home-preorder-hero__saving-note/);
   assert.match(html, /home-preorder-hero__actions/);
   assert.match(html, /hero-email-first__shipping-pill/);
