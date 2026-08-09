@@ -11536,10 +11536,13 @@ p.preorder-manage-feedback.form-error {
   z-index: 1100;
   bottom: 12px;
   left: 12px;
-  min-height: 30px;
-  padding: 0 9px;
+  display: grid;
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  place-items: center;
   border: 1px solid rgba(32, 33, 30, 0.1);
-  border-radius: 999px;
+  border-radius: 50%;
   background: rgba(250, 248, 242, 0.62);
   -webkit-backdrop-filter: blur(10px);
   backdrop-filter: blur(10px);
@@ -11562,6 +11565,38 @@ p.preorder-manage-feedback.form-error {
   box-shadow: 0 4px 14px rgba(32, 33, 30, 0.065);
   color: var(--ink);
   transform: translateY(-1px);
+}
+
+.tracking-consent-trigger__icon {
+  position: relative;
+  display: block;
+  width: 12px;
+  height: 13px;
+}
+
+.tracking-consent-trigger__icon::before {
+  position: absolute;
+  top: 0;
+  left: 3px;
+  width: 6px;
+  height: 7px;
+  border: 1px solid currentColor;
+  border-bottom: 0;
+  border-radius: 5px 5px 0 0;
+  box-sizing: border-box;
+  content: "";
+}
+
+.tracking-consent-trigger__icon::after {
+  position: absolute;
+  bottom: 0;
+  left: 1px;
+  width: 10px;
+  height: 8px;
+  border: 1px solid currentColor;
+  border-radius: 2px;
+  box-sizing: border-box;
+  content: "";
 }
 
 .tracking-consent-trigger:focus-visible {

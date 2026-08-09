@@ -225,7 +225,7 @@ export function MetaPixelRouteGuard() {
           aria-label="Open privacy choices"
           onClick={() => setPreferencesOpen(true)}
         >
-          Privacy
+          <span className="tracking-consent-trigger__icon" aria-hidden="true" />
         </button>
       )}
     </>
