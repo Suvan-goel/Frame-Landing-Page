@@ -112,8 +112,10 @@ test("keeps the funnel usable only on loopback during development", async () => 
   assert.match(home, /See details/);
   assert.match(home, /home-preorder-hero__offer-line/);
   assert.match(home, /Pre order offer/);
-  assert.match(home, /\$299(?:<!-- -->)?\s*\+ applicable sales tax/);
-  assert.match(home, /Free standard US shipping/i);
+  assert.match(
+    home,
+    /Pre-order today and save\s*(?:<!-- -->)?40\s*(?:<!-- -->)?%/,
+  );
   assert.doesNotMatch(home, /home-preorder-hero__saving-note/);
   assert.match(home, /home-preorder-hero__actions/);
   assert.match(home, /hero-email-first__shipping-pill/);

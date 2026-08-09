@@ -247,8 +247,10 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /See details/);
   assert.match(html, /home-preorder-hero__offer-line/);
   assert.match(html, /Pre order offer/);
-  assert.match(html, /\$299(?:<!-- -->)?\s*\+ applicable sales tax/);
-  assert.match(html, /Free standard US shipping/i);
+  assert.match(
+    html,
+    /Pre-order today and save\s*(?:<!-- -->)?40\s*(?:<!-- -->)?%/,
+  );
   assert.doesNotMatch(html, /home-preorder-hero__saving-note/);
   assert.match(html, /home-preorder-hero__actions/);
   assert.match(html, /hero-email-first__shipping-pill/);

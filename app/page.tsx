@@ -142,7 +142,7 @@ export default async function Home() {
                 <p className="home-preorder-hero__offer-line">
                   <span className="home-preorder-hero__offer-tag">Pre order offer</span>
                   <span className="home-preorder-hero__offer-message">
-                    {preorderPriceLabel} + applicable sales tax · Free standard US shipping
+                    Pre-order today and save {PREORDER_DISCOUNT_PERCENT}%
                   </span>
                 </p>
                 <div className="home-preorder-hero__actions">
