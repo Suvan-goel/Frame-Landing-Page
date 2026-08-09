@@ -1,7 +1,6 @@
 import {
   INSTAGRAM_URL,
   ORGANIZATION_NAME,
-  SITE_DESCRIPTION,
   SITE_NAME,
   SITE_URL,
 } from "@/lib/site";
@@ -11,9 +10,10 @@ import {
   SUPPORT_EMAIL,
 } from "@/lib/company";
 
-const structuredData = {
-  "@context": "https://schema.org",
-  "@graph": [
+function structuredData(description: string) {
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
     {
       "@type": "Organization",
       "@id": `${SITE_URL}/#organization`,
@@ -61,19 +61,20 @@ const structuredData = {
       "@id": `${SITE_URL}/#website`,
       url: SITE_URL,
       name: SITE_NAME,
-      description: SITE_DESCRIPTION,
+      description,
       inLanguage: "en-GB",
       publisher: { "@id": `${SITE_URL}/#organization` },
     },
-  ],
-};
+    ],
+  };
+}
 
-export function StructuredData() {
+export function StructuredData({ description }: { description: string }) {
   return (
     <script
       type="application/ld+json"
       dangerouslySetInnerHTML={{
-        __html: JSON.stringify(structuredData).replace(/</g, "\\u003c"),
+        __html: JSON.stringify(structuredData(description)).replace(/</g, "\\u003c"),
       }}
     />
   );

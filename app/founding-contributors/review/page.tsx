@@ -23,7 +23,7 @@ export default async function ContributorReviewPage() {
           <p className="eyebrow">Before payment</p>
           <h2>Know exactly what you’re joining.</h2>
           <p>
-            Review the membership, current product status, and required terms before continuing. Your card details won’t be requested until the next step.
+            See the full membership benefits, current product progress, and terms before continuing. Your card details won’t be requested until the next step.
           </p>
         </aside>
         <CheckoutReview />

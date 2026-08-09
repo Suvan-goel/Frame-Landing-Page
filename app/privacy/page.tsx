@@ -236,10 +236,12 @@ export default async function PrivacyPage() {
           </p>
         </section>
 
-        <p className="legal-disclaimer">
-          Frame is under development and is not intended to diagnose or treat
-          any medical condition.
-        </p>
+        {!showPreorderAreas ? (
+          <p className="legal-disclaimer">
+            Frame is under development and is not intended to diagnose or treat
+            any medical condition.
+          </p>
+        ) : null}
 
         <a className="text-link" href="/">
           <span aria-hidden="true">←</span> Back to home

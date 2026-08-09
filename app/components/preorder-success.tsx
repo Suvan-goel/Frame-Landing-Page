@@ -221,8 +221,8 @@ export function PreorderSuccess() {
               </div>
             ) : null}
             <p>
-              This is our current estimate for when your order will leave our facility, not a guaranteed date.
-              We’ll email you if the timing changes. You can request an address change from your secure management page.
+              We’re currently targeting this window for dispatch. We’ll send progress, timing, and tracking updates
+              to your order email. You can request an address change from your secure management page.
             </p>
           </div>
         </div>

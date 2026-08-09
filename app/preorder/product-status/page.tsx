@@ -19,9 +19,9 @@ import {
   SUPPORT_EMAIL,
 } from "@/lib/company";
 
-const PRODUCT_STATUS_TITLE = "Frame Product Status Disclosure";
+const PRODUCT_STATUS_TITLE = "Frame Product Progress and Pre-order Information";
 const PRODUCT_STATUS_DESCRIPTION =
-  "Important development and intended-use information for Frame pre-orders.";
+  "Current product progress, intended use, shipping plan, and customer protections for Frame pre-orders.";
 const PREORDER_PRICE = formatPreorderMoney(
   PREORDER_DEFAULT_PRICE_CENTS,
   PREORDER_DEFAULT_CURRENCY,
@@ -57,32 +57,31 @@ export default async function PreorderProductStatusPage() {
     <main className="legal-page product-status-page">
       <PreorderHeader backHref="/preorder/review" backLabel="Back" historyBack />
       <article className="legal-shell">
-        <p className="eyebrow">Important pre-order information</p>
-        <h1>Product Status Disclosure</h1>
+        <p className="eyebrow">Frame pre-order information</p>
+        <h1>Product Progress and Pre-order Information</h1>
         <p className="legal-updated">{`Last updated ${PREORDER_PRODUCT_STATUS_UPDATED}`}</p>
         <p className="legal-intro">
-          Frame is in development as a new approach to continuous blood pressure tracking. This disclosure
-          explains what the product is designed to do, where development stands today, and what to expect
-          when you pre-order.
+          Frame is a new approach to continuous blood-pressure tracking. Here is what the product is designed
+          to do, where the programme stands today, and what you can expect when you pre-order.
         </p>
 
         <section className="product-status-summary" aria-labelledby="product-status-summary-heading">
           <div className="product-status-summary__heading">
             <p className="eyebrow">At a glance</p>
-            <h2 id="product-status-summary-heading">Before you pre-order.</h2>
+            <h2 id="product-status-summary-heading">Frame at a glance.</h2>
           </div>
           <ol>
             <li>
               <span aria-hidden="true">01</span>
-              <p><strong>Frame is still being developed.</strong> Final design, specifications, and performance may change.</p>
+              <p><strong>Initial proof of concept is complete.</strong> Frame has also completed its first measurement-validation phase.</p>
             </li>
             <li>
               <span aria-hidden="true">02</span>
-              <p><strong>Performance has not been established.</strong> Accuracy and measurement availability are not yet final.</p>
+              <p><strong>An integrated wearable is now in progress.</strong> Current work covers engineering, wearability, manufacturing, and quality readiness.</p>
             </li>
             <li>
               <span aria-hidden="true">03</span>
-              <p><strong>Frame is not for medical decisions.</strong> It is being developed solely for general-wellness use.</p>
+              <p><strong>Designed for everyday insight.</strong> Frame is intended for general wellness rather than medical decisions.</p>
             </li>
             <li>
               <span aria-hidden="true">04</span>
@@ -92,19 +91,19 @@ export default async function PreorderProductStatusPage() {
         </section>
 
         <section>
-          <h2>What is still being developed</h2>
+          <h2>Where Frame is now</h2>
           <p>
-            Frame is being developed as a non-invasive, upper-arm wearable intended to help people explore
-            blood-pressure patterns across everyday contexts such as sleep, stress, exercise, and recovery.
-            Engineering, validation, manufacturing, and fulfillment work remain, so final design, accuracy,
-            measurement availability, battery life, fit, supported arm sizes, materials, connectivity, software
-            features, and compatibility have not yet been established.
+            Frame combines non-invasive upper-arm ultrasound with personalised software to help people explore
+            blood-pressure patterns across sleep, stress, exercise, and recovery. Initial technical proof-of-concept
+            and measurement-validation phases are complete. Current work focuses on integrating sensing, electronics,
+            software, and data processing into a wearable system.
           </p>
           <p>
-            Development targets are not validated performance claims. Product images and prototypes may not show
-            the final device. If we propose a material change before shipping, we will explain it and ask you to
-            accept by a stated deadline or cancel for a full refund. If you do not affirmatively accept, we will
-            cancel and refund the unshipped order automatically.
+            Before shipping, Frame will complete the remaining performance, wearability, safety, manufacturing,
+            and quality work and confirm final specifications including accuracy, measurement availability, battery
+            life, fit, materials, connectivity, software features, and compatibility. Product images show the intended
+            design direction. If we propose a material change, we will explain it and let you accept it or cancel for
+            a full refund.
           </p>
         </section>
 
@@ -127,7 +126,7 @@ export default async function PreorderProductStatusPage() {
         <section>
           <h2>What your payment means</h2>
           <p>
-            Your payment purchases one future Frame device and is charged in full at checkout. It is not an
+            Your payment secures one Frame device from the pre-order allocation and is charged in full at checkout. It is not an
             investment, subscription, participation in research, or payment for medical services. If we cannot
             supply Frame, we will cancel your order and issue a full refund.
           </p>
@@ -151,30 +150,27 @@ export default async function PreorderProductStatusPage() {
         </section>
 
         <section>
-          <h2>Shipping remains an estimate</h2>
+          <h2>Current shipping plan</h2>
           <p>
-            Based on our current development and manufacturing plan, we estimate shipping in
-            <strong> {PREORDER_ESTIMATED_SHIPPING}</strong>. This is an estimate, not a guaranteed ship date.
-            Development, validation, regulatory, supply-chain, manufacturing, or quality work could cause delay
-            or make the product unavailable.
+            Our current plan targets dispatch in <strong>{PREORDER_ESTIMATED_SHIPPING}</strong>. We’ll keep you
+            informed as Frame moves through validation, manufacturing, and quality readiness.
           </p>
           <p>
-            If we expect a delay, we will email you with a revised date, when available, and a way to accept the
-            delay or cancel for a full refund. The notice will explain whether silence keeps a short first delay
-            active or whether affirmative consent is required. Read the
+            If the schedule changes, we will email you with revised timing and a way to accept the update or cancel
+            for a full refund. The notice will explain whether a response is required. Read the
             <Link href="/preorder/refunds"> Cancellation and Refund Policy</Link> for details.
           </p>
         </section>
 
         <p className="legal-disclaimer">
-          At checkout, you will be asked to acknowledge this development status separately from accepting the
+          At checkout, you’ll confirm that you have reviewed this product status separately from accepting the
           Pre-order Terms. The version you accept will be recorded with your order.
         </p>
         <HistoryBackLink
           className="button button--secondary product-status-return"
           fallbackHref="/preorder/review"
         >
-          Exit
+          Back to pre-order
         </HistoryBackLink>
       </article>
     </main>

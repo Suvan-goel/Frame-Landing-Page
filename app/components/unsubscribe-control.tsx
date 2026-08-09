@@ -2,7 +2,13 @@
 
 import { useState } from "react";
 
-export function UnsubscribeControl({ token }: { token: string }) {
+export function UnsubscribeControl({
+  token,
+  usePreorderLaunchCopy = false,
+}: {
+  token: string;
+  usePreorderLaunchCopy?: boolean;
+}) {
   const [status, setStatus] = useState<"idle" | "submitting" | "done" | "error">(
     "idle",
   );
@@ -27,7 +33,11 @@ export function UnsubscribeControl({ token }: { token: string }) {
         throw new Error(result.error ?? "Your preference could not be updated.");
       }
       setStatus("done");
-      setMessage("You’ve been unsubscribed from Frame development updates.");
+      setMessage(
+        usePreorderLaunchCopy
+          ? "You’ve been unsubscribed from Frame updates."
+          : "You’ve been unsubscribed from Frame development updates.",
+      );
     } catch (error) {
       setStatus("error");
       setMessage(

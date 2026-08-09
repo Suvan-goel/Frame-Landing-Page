@@ -111,7 +111,7 @@ export async function POST(request: Request) {
       custom_text: {
         submit: {
           message:
-            "You are purchasing 12 months of contributor membership. No Frame device is included, ordered, reserved, or paid toward.",
+            "You are purchasing 12 months of private Frame contributor membership, including updates, Q&As, briefings, and product input. Device pre-orders are separate.",
         },
         terms_of_service_acceptance: {
           message:
@@ -126,7 +126,7 @@ export async function POST(request: Request) {
         terms_version: CONTRIBUTOR_TERMS_VERSION,
       },
       payment_intent_data: {
-        description: "Frame Founding Contributor Membership (no device included)",
+        description: "Frame Founding Contributor Membership - 12 months",
         metadata: {
           checkout_intent_id: inserted.data.id,
           membership: "frame_founding_contributor",

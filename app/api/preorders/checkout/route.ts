@@ -128,7 +128,7 @@ export async function POST(request: Request) {
 
   if (payload.productStatusAcknowledged !== true) {
     return jsonResponse(
-      { error: "Confirm that you understand Frame is still in development." },
+      { error: "Review and confirm Frame’s current product status." },
       400,
     );
   }
@@ -352,8 +352,8 @@ export async function POST(request: Request) {
           submit: {
             message:
               mode === "test"
-                ? `Sandbox payment only. Your ${totalBeforeTaxLabel} total before tax includes free standard US shipping; applicable sales tax is calculated at checkout. The pre-order price is ${preorderSavingsLabel} below the planned ${releasePriceLabel} release price. Frame is still in development; shipping is estimated for ${config.estimatedShipping}.`
-                : `Your ${totalBeforeTaxLabel} total before tax includes free standard US shipping; applicable sales tax is calculated at checkout. The pre-order price is ${preorderSavingsLabel} below the planned ${releasePriceLabel} release price. Frame is still in development; shipping is estimated for ${config.estimatedShipping}.`,
+                ? `Sandbox payment only. Your ${totalBeforeTaxLabel} total before tax includes free standard US shipping; applicable sales tax is calculated at checkout. You save ${preorderSavingsLabel} from the planned ${releasePriceLabel} release price. Estimated shipping: ${config.estimatedShipping}.`
+                : `Your ${totalBeforeTaxLabel} total before tax includes free standard US shipping; applicable sales tax is calculated at checkout. You save ${preorderSavingsLabel} from the planned ${releasePriceLabel} release price. Estimated shipping: ${config.estimatedShipping}.`,
           },
           terms_of_service_acceptance: {
             message: `I agree to the [Frame Pre-order Terms](${legalBaseUrl}/preorder/terms) and [Cancellation and Refund Policy](${legalBaseUrl}/preorder/refunds).`,

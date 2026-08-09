@@ -307,7 +307,8 @@ test("keeps launch-candidate policies aligned with cancellation operations", asy
   assert.match(refunds, /replacement or refund at no additional cost/);
   assert.match(refunds, /Frame One-Year Limited/);
   assert.doesNotMatch(refunds, /submit a required pre-dispatch refund to Stripe/);
-  assert.match(productStatus, /Performance has not been established/);
+  assert.match(productStatus, /Initial proof of concept is complete/);
+  assert.match(productStatus, /Current shipping plan/);
   assert.match(productStatus, /has not received FDA marketing/);
   assert.match(productStatus, /version you accept will be recorded/);
   assert.doesNotMatch(ownerOperations, /decline_cancellation/);

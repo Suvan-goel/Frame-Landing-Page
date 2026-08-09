@@ -13,6 +13,7 @@ import {
   PREORDER_RELEASE_PRICE_CENTS,
   PREORDER_SAVINGS_CENTS,
   PREORDER_TERMS_VERSION,
+  isDraftPreorderVersion,
 } from "@/lib/preorder";
 import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
 import {
@@ -36,6 +37,7 @@ const PREORDER_SAVING = formatPreorderMoney(
   PREORDER_SAVINGS_CENTS,
   PREORDER_DEFAULT_CURRENCY,
 );
+const LEGAL_PACK_IS_DRAFT = isDraftPreorderVersion(PREORDER_TERMS_VERSION);
 
 const TERMS_SECTIONS = [
   ["seller", "Seller and contact details"],
@@ -53,7 +55,7 @@ const TERMS_SECTIONS = [
 ] as const;
 
 export const metadata: Metadata = {
-  title: `${TERMS_TITLE}: Launch candidate`,
+  title: `${TERMS_TITLE}${LEGAL_PACK_IS_DRAFT ? ": Launch candidate" : ""}`,
   description: TERMS_DESCRIPTION,
   alternates: { canonical: "/preorder/terms" },
   openGraph: {
@@ -335,11 +337,13 @@ export default async function PreorderTermsPage() {
           </div>
         </div>
 
-        <p className="legal-disclaimer">
-          {COMPANY_DETAILS_COMPLETE
-            ? "Launch safeguard: this legal pack remains marked as a draft, and public sales remain blocked until final legal approval is activated."
-            : "Launch safeguard: this legal pack remains marked as a draft, and public sales remain blocked while the incorporated seller identity and final legal approval are pending."}
-        </p>
+        {LEGAL_PACK_IS_DRAFT ? (
+          <p className="legal-disclaimer">
+            {COMPANY_DETAILS_COMPLETE
+              ? "Launch safeguard: this legal pack remains marked as a draft, and public sales remain blocked until final legal approval is activated."
+              : "Launch safeguard: this legal pack remains marked as a draft, and public sales remain blocked while the incorporated seller identity and final legal approval are pending."}
+          </p>
+        ) : null}
         <HistoryBackLink
           className="button button--secondary preorder-terms-return"
           fallbackHref="/preorder/review"

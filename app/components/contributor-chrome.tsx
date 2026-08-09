@@ -26,7 +26,7 @@ export function ContributorFooter() {
     <footer className="contributor-footer">
       <div>
         <BrandWordmark variant="light" />
-        <p>Frame is under development and is not currently available for sale.</p>
+        <p>Built with Frame Founding Contributors through private updates, briefings, and product input.</p>
       </div>
       <nav aria-label="Membership policies">
         <a href="/contributors/terms">Membership Terms</a>

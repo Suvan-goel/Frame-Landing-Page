@@ -219,16 +219,16 @@ test("server-renders the Frame landing page", async () => {
     /Continuous monitoring should create context, not continuous\s*(?:<!-- -->)?conclusions\./,
   );
   assert.match(html, /Research approach/);
-  assert.match(html, /Evidence before claims\./);
+  assert.match(html, /Evidence-driven by design\./);
   assert.match(html, /Signal integrity/);
   assert.match(html, /Research and engineering inquiries/);
   assert.match(
     html,
-    /Frame is under development\. Pre-order shipping is estimated for Q1 2027 and is not guaranteed\./,
+    /Frame is a general-wellness wearable in development\./,
   );
   assert.match(
     html,
-    /Frame is being developed for general wellness use and is not intended to diagnose,\s*(?:<!-- -->)?screen for, monitor, treat, or manage any disease or medical condition,\s*(?:<!-- -->)?guide treatment decisions, or replace an FDA-authorized medical device\./,
+    /Frame is not intended to guide medical decisions or replace an\s*(?:<!-- -->)?FDA-authorized blood-pressure monitor\./,
   );
   assert.match(html, /frame-product-concept-realistic-v3-transparent-720w\.webp/);
   assert.match(html, /frame-hero-man-transparent-v3-720w\.webp/);
@@ -279,7 +279,7 @@ test("server-renders the dedicated interest page", async () => {
   const html = await response.text();
 
   assert.match(html, /Get updates/);
-  assert.match(html, /Receive Frame development news and help shape what comes next/);
+  assert.match(html, /Get product milestones, launch news, and opportunities to help shape Frame/);
   assert.match(html, /Sign up/);
   assert.match(html, /name="email"/);
   assert.match(html, /aria-label="Back to home"/);
@@ -320,18 +320,18 @@ test("server-renders the Founding Contributor funnel locally", async () => {
   assert.match(membership, /No automatic renewal/);
   assert.match(membership, /12 months of community access/);
   assert.match(membership, /share your perspective, and help shape what comes next/);
-  assert.match(membership, /Membership only\. This does not include or reserve a Frame device/);
+  assert.match(membership, /separate from the Frame device pre-order/);
   assert.doesNotMatch(membership, /founding-disclosure/);
   assert.match(membership, /A thank-you for joining us early\./);
   assert.match(membership, /10% off at launch, up to \$50/);
-  assert.match(membership, /Benefits depend on a commercial launch/);
+  assert.match(membership, /Launch benefits are subject to regional availability/);
   assert.match(membership, /Follow Frame’s development from the inside\./);
   assert.match(membership, /Monthly development updates with access to the full archive/);
   assert.match(membership, /Priority consideration for voluntary research opportunities/);
   assert.match(membership, /Now building an integrated prototype\./);
   assert.match(membership, /Initial measurement validation/);
   assert.match(membership, /Investigated whether ultrasound could capture useful arterial information\./);
-  assert.match(membership, /Next proposed stage/);
+  assert.match(membership, /Next planned stage/);
   assert.match(membership, /What membership revenue supports/);
   assert.match(membership, /Supporting Frame’s next stage\./);
   assert.match(membership, /Sensing, electronics, and software engineering/);
@@ -346,12 +346,12 @@ test("server-renders the Founding Contributor funnel locally", async () => {
   assert.match(review, /Frame Founding Contributor Membership/);
   assert.match(review, /Your card details won’t be requested until the next step/);
   assert.match(review, /Required acknowledgment/);
-  assert.match(review, /this is a membership, not a Frame device order/);
-  assert.match(review, /not ordering, reserving, pre-ordering/);
+  assert.match(review, /this membership is separate from a Frame device order/i);
+  assert.match(review, /any future device purchase would be a separate transaction/);
   assert.match(review, /Membership refund period/);
   assert.match(review, /14 days/);
   assert.match(review, /Continue to secure checkout · \$99/);
-  assert.match(review, /Automatic tax is disabled during testing/);
+  assert.doesNotMatch(review, /Automatic tax is disabled during testing/);
   assert.doesNotMatch(review, /facebook\.com\/tr\?id=/);
 
   assert.equal(successResponse.status, 200);
@@ -468,7 +468,7 @@ test("renders draft contributor policies and keeps member routes private", async
 
   assert.match(await terms.text(), /Draft for testing\. Not approved for live sales\./);
   assert.match(await refunds.text(), /Full refund within 14 days/);
-  assert.match(await productStatus.text(), /No finished Frame product currently exists/);
+  assert.match(await productStatus.text(), /now building an integrated wearable prototype/);
   assert.match(await hub.text(), /Loading your contributor hub/);
   assert.equal(onboarding.status, 307);
   assert.equal(
@@ -643,8 +643,8 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(waitlistFlow, /name="gender"/);
   assert.match(waitlistFlow, /name="email"/);
   assert.match(page, /WaitlistSignupProvider/);
-  assert.match(page, /placement="homepage_hero" compact/);
-  assert.match(page, /placement="homepage_final" tone="light"/);
+  assert.match(page, /<WaitlistSignupFlow\s+placement="homepage_hero"\s+compact/);
+  assert.match(page, /<WaitlistSignupFlow\s+placement="homepage_final"\s+tone="light"/);
   assert.match(waitlistFlow, /router\.push\("\/early-access\/questions"\)/);
   assert.match(qualificationPage, /WaitlistQualificationFlow/);
   assert.match(
@@ -657,7 +657,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(waitlistFlow, /You’re subscribed\./);
   assert.match(
     waitlistFlow,
-    /We read every response\. Your input will help shape Frame’s development\./,
+    /We read every response\. Your input will help shape the Frame experience\./,
   );
   assert.doesNotMatch(waitlistFlow, /formatName\(flow\.firstName\)|Thanks, \{/);
   assert.match(api, /formatName\(value\)\.slice/);

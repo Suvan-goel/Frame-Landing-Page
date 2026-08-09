@@ -25,9 +25,9 @@ export const roadmapStages = [
   ["01", "Technical proof of concept", "Investigated whether ultrasound could capture useful arterial information."],
   ["02", "Initial measurement validation", "Tested whether captured information could support dependable blood-pressure estimation."],
   ["03", "Integrated engineering prototype", "Combining sensing, electronics, software, and data processing into a working prototype."],
-  ["04", "Wearability and safety testing", "Study comfort, contact quality, repeatability, motion tolerance, and safety."],
-  ["05", "Regulatory pathway", "Determine the evidence, quality systems, and authorizations required for any commercial product."],
-  ["06", "Potential commercial product", "Consider manufacture and launch only if the preceding technical and regulatory work supports it."],
+  ["04", "Wearability and safety testing", "Evaluate comfort, contact quality, repeatability, motion tolerance, and safety."],
+  ["05", "Regulatory readiness", "Build the evidence, quality systems, and authorization pathway for commercial release."],
+  ["06", "Commercial production", "Prepare manufacturing and launch based on the completed technical and regulatory programme."],
 ] as const;
 
 export const CURRENT_ROADMAP_STAGE_LABEL = "03";

@@ -117,7 +117,7 @@ export function PreorderCheckoutReview({
     }
     if (!nextProductStatusAcknowledged) {
       setAcknowledgementError("product-status");
-      setError("Confirm that you understand Frame is still in development.");
+      setError("Review and confirm Frame’s current product status.");
       return;
     }
     setAcknowledgementError("terms");
@@ -136,7 +136,7 @@ export function PreorderCheckoutReview({
         missingBoth
           ? "Tick both highlighted checkboxes to continue to secure checkout."
           : !productStatusAcknowledged
-            ? "Confirm that you understand Frame is still in development."
+            ? "Review and confirm Frame’s current product status."
             : "Accept the Pre-order Terms to continue.",
       );
       setAcknowledgementError(
@@ -371,12 +371,13 @@ export function PreorderCheckoutReview({
           <div className="preorder-checkout-body__review">
             <section className="preorder-development-note" aria-labelledby="preorder-development-title">
               <div>
-                <h2 id="preorder-development-title">Frame is still in development.</h2>
+                <h2 id="preorder-development-title">Frame product status</h2>
                 <p>
-                  Frame is being developed solely for general-wellness use. It has not
-                  received FDA marketing authorization as a blood-pressure monitor, and
-                  its performance has not been established for medical use. Do not use
-                  Frame for medical decisions.
+                  Frame is an upper-arm wearable for everyday general-wellness insight.
+                  Final specifications and estimated shipping may evolve as validation
+                  and production readiness are completed. Frame has not received FDA
+                  marketing authorization as a blood-pressure monitor and should not
+                  guide medical decisions.
                 </p>
               </div>
               <Link href="/preorder/product-status">Read Product Status →</Link>
@@ -414,9 +415,9 @@ export function PreorderCheckoutReview({
                 />
                 <span className="checkout-checkbox__copy">
                   <label htmlFor="preorder-product-status-acknowledgement">
-                    <strong>I understand that Frame is a development-stage product.</strong>
+                    <strong>I’ve reviewed Frame’s current product status.</strong>
                   </label>
-                  <span>Specifications, validation and shipping timing may change. Frame is not for medical decisions.</span>
+                  <span>Final specifications and estimated shipping may change. Frame is intended for general wellness rather than medical decisions.</span>
                 </span>
               </div>
               <div className={`checkout-checkbox checkout-checkbox--required preorder-checkout-review__second-check${acknowledgementError === "terms" || acknowledgementError === "both" ? " checkout-checkbox--invalid" : ""}`}>

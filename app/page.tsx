@@ -160,10 +160,15 @@ export default async function Home() {
                 <WaitlistSignupFlow
                   placement="homepage_hero_preorder_waitlist"
                   compact
+                  usePreorderLaunchCopy={showPreorderAreas}
                 />
               </div>
             ) : (
-              <WaitlistSignupFlow placement="homepage_hero" compact />
+              <WaitlistSignupFlow
+                placement="homepage_hero"
+                compact
+                usePreorderLaunchCopy={showPreorderAreas}
+              />
             )}
           </div>
           <figure className="hero-visuals">
@@ -180,7 +185,11 @@ export default async function Home() {
                 decoding="async"
               />
             </div>
-            <figcaption>Product concept. Final design in development.</figcaption>
+            <figcaption>
+              {showPreorderAreas
+                ? "Frame upper-arm wearable · design preview"
+                : "Product concept. Final design in development."}
+            </figcaption>
           </figure>
         </div>
       </section>
@@ -191,10 +200,9 @@ export default async function Home() {
             <p className="eyebrow">Why context matters</p>
             <h2>A single reading cannot show a pattern.</h2>
             <p>
-              Blood pressure changes with sleep, movement, stress, exercise,
-              food, posture, and recovery. Most people only see an occasional
-              snapshot. Frame aims to help make sense of what happens in
-              between, without treating every temporary rise as harmful.
+              {showPreorderAreas
+                ? "Blood pressure changes with sleep, movement, stress, exercise, food, posture, and recovery. Most people only see an occasional snapshot. Frame is built to connect what happens in between, helping you understand personal patterns without treating every temporary rise as harmful."
+                : "Blood pressure changes with sleep, movement, stress, exercise, food, posture, and recovery. Most people only see an occasional snapshot. Frame aims to help make sense of what happens in between, without treating every temporary rise as harmful."}
             </p>
           </div>
           <div className="context-content">
@@ -222,7 +230,11 @@ export default async function Home() {
                   decoding="async"
                 />
               </div>
-              <figcaption>Product concept · final design in development</figcaption>
+              <figcaption>
+                {showPreorderAreas
+                  ? "Adjustable knit band · integrated ultrasound sensor"
+                  : "Product concept · final design in development"}
+              </figcaption>
             </figure>
             <div className="insight-list" aria-label="Response and confidence">
               {content.insights.slice(2).map(([title, description], index) => (
@@ -245,9 +257,9 @@ export default async function Home() {
             <p className="eyebrow">How it works</p>
             <h2>Ultrasound, made wearable.</h2>
             <p>
-              Ultrasound can look beneath the surface and observe the artery
-              itself. Frame is exploring how to make that signal dependable,
-              comfortable, and useful over time.
+              {showPreorderAreas
+                ? "Ultrasound can look beneath the surface and observe the artery itself. Frame combines wearable ultrasound, contextual sensing, and personalised analysis to make arterial signals useful over time."
+                : "Ultrasound can look beneath the surface and observe the artery itself. Frame is exploring how to make that signal dependable, comfortable, and useful over time."}
             </p>
           </div>
           <div className="method-layout">
@@ -266,8 +278,9 @@ export default async function Home() {
                 />
               </div>
               <figcaption>
-                Simplified sensing concept · anatomy and final sensor
-                configuration are illustrative
+                {showPreorderAreas
+                  ? "How Frame observes the artery beneath the skin · simplified illustration"
+                  : "Simplified sensing concept · anatomy and final sensor configuration are illustrative"}
               </figcaption>
             </figure>
             <ol className="method-steps">
@@ -346,11 +359,10 @@ export default async function Home() {
             <div className="home-preorder-layout">
               <div className="home-preorder-copy">
                 <p className="eyebrow">Frame pre-order</p>
-                <h2>Frame, coming Q1 2027.</h2>
+                <h2>Be first to experience Frame.</h2>
                 <p className="home-preorder-copy__intro">
-                  Pre-orders are now open for US delivery. Frame is still in
-                  development, and the shipping window is an estimate rather
-                  than a guaranteed date.
+                  Estimated dispatch: {preorderOffer.estimatedShipping}. Cancel any time
+                  before fulfilment for a full refund.
                 </p>
 
                 <dl
@@ -385,7 +397,7 @@ export default async function Home() {
                     Pre-order now <Arrow />
                   </a>
                   <a className="text-link" href="/preorder/product-status">
-                    Product development status <Arrow />
+                    Product progress and shipping plan <Arrow />
                   </a>
                 </div>
 
@@ -433,10 +445,11 @@ export default async function Home() {
           </div>
           <aside className="research-panel">
             <span className="status-label">Research approach</span>
-            <h3>Evidence before claims.</h3>
+            <h3>{showPreorderAreas ? "Evidence-driven by design." : "Evidence before claims."}</h3>
             <p>
-              Frame is evaluating signal quality, wearability, and measurement
-              accuracy before making broader claims.
+              {showPreorderAreas
+                ? "Frame’s development programme focuses on signal quality, everyday wearability, and measured performance."
+                : "Frame is evaluating signal quality, wearability, and measurement accuracy before making broader claims."}
             </p>
             <div className="research-standards" aria-label="Frame research standards">
               {content.researchStandards.map(([title, description]) => (
@@ -461,13 +474,13 @@ export default async function Home() {
           <div className="container home-contributor-grid">
             <div>
               <p className="eyebrow">Founding Contributors</p>
-              <h2>Join the work, not a product preorder.</h2>
+              <h2>Build Frame with us.</h2>
             </div>
             <div>
               <p>
-                A one-time $99 membership for 12 months of private development
-                updates, founder Q&amp;A, briefings, advisory votes, and optional
-                research opportunities. No device is included or guaranteed.
+                A one-time $99 membership gives you 12 months of private updates,
+                founder Q&amp;A, briefings, advisory votes, and selected research
+                opportunities. Membership is separate from the Frame device pre-order.
               </p>
               <a className="button button--dark" href="/founding-contributors?source=homepage">
                 Explore the membership
@@ -484,7 +497,11 @@ export default async function Home() {
             <h2>Help shape a new way to understand cardiovascular health.</h2>
           </div>
           <div className="final-cta__form final-cta__action">
-            <WaitlistSignupFlow placement="homepage_final" tone="light" />
+            <WaitlistSignupFlow
+              placement="homepage_final"
+              tone="light"
+              usePreorderLaunchCopy={showPreorderAreas}
+            />
             <a
               className="collaboration-link"
               href="/contact?topic=research"
@@ -524,14 +541,26 @@ export default async function Home() {
         </div>
         <div className="container footer-bottom">
           <p>
-            {preorderOffer
-              ? `Frame is under development. Pre-order shipping is estimated for ${preorderOffer.estimatedShipping} and is not guaranteed.`
-              : "Frame is under development and is not currently available for sale."}
-            {" "}
-            Product concepts and interfaces shown are illustrative. Frame is being
-            developed for general wellness use and is not intended to diagnose,
-            screen for, monitor, treat, or manage any disease or medical condition,
-            guide treatment decisions, or replace an FDA-authorized medical device.
+            {showPreorderAreas ? (
+              <>
+                Frame is a general-wellness wearable in development. Product visuals
+                show the intended experience
+                {preorderOffer
+                  ? `; specifications and estimated ${preorderOffer.estimatedShipping} shipping may change.`
+                  : "."}
+                {" "}
+                Frame is not intended to guide medical decisions or replace an
+                FDA-authorized blood-pressure monitor.
+              </>
+            ) : (
+              <>
+                Frame is under development and is not currently available for sale.{" "}
+                Product concepts and interfaces shown are illustrative. Frame is being
+                developed for general wellness use and is not intended to diagnose,
+                screen for, monitor, treat, or manage any disease or medical condition,
+                guide treatment decisions, or replace an FDA-authorized medical device.
+              </>
+            )}
           </p>
           <p>© {new Date().getFullYear()} {ORGANIZATION_NAME}</p>
         </div>

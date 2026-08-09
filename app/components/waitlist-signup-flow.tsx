@@ -681,12 +681,14 @@ export function WaitlistSignupFlow({
   compact = false,
   showFoundingContributorOffer = false,
   finishHref = "#product",
+  usePreorderLaunchCopy = false,
 }: {
   placement: string;
   tone?: "dark" | "light";
   compact?: boolean;
   showFoundingContributorOffer?: boolean;
   finishHref?: string;
+  usePreorderLaunchCopy?: boolean;
 }) {
   const flow = useWaitlistFlow();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -786,7 +788,11 @@ export function WaitlistSignupFlow({
           {!compact ? (
             <div className="waitlist-signup__intro">
               <strong>Get updates</strong>
-              <p>Receive Frame development news and help shape what comes next.</p>
+              <p>
+                {usePreorderLaunchCopy
+                  ? "Get product milestones, launch news, and opportunities to help shape Frame."
+                  : "Receive Frame development news and help shape what comes next."}
+              </p>
             </div>
           ) : null}
           <form onSubmit={handleEmailSubmit} noValidate>
@@ -849,7 +855,10 @@ export function WaitlistSignupFlow({
             </div>
             {!compact ? (
               <p className="form-note" id={`${idPrefix}-email-note`}>
-                Development updates only. Unsubscribe anytime. <a href="/privacy">Privacy</a>
+                {usePreorderLaunchCopy
+                  ? "Product and launch updates. "
+                  : "Development updates only. "}
+                Unsubscribe anytime. <a href="/privacy">Privacy</a>
               </p>
             ) : null}
             <p className="waitlist-signup__live" aria-live="assertive">
@@ -949,7 +958,11 @@ export function WaitlistSignupFlow({
         <div className="interest-flow__success" aria-live={isActivePlacement ? "polite" : "off"}>
           <p className="eyebrow">Thank you</p>
           <h2 ref={headingRef} tabIndex={-1}>Your answers have been saved.</h2>
-          <p>We read every response. Your input will help shape Frame’s development.</p>
+          <p>
+            {usePreorderLaunchCopy
+              ? "We read every response. Your input will help shape the Frame experience."
+              : "We read every response. Your input will help shape Frame’s development."}
+          </p>
           <div className="interest-flow__success-actions">
             <Link className="button button--dark" href={finishHref}><span aria-hidden="true">←</span> Back to home</Link>
           </div>

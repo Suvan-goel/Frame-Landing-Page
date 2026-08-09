@@ -134,7 +134,7 @@ test("keeps the funnel usable only on loopback during development", async () => 
       home.indexOf('href="/preorder/review?source=homepage_hero"'),
   );
   assert.doesNotMatch(home, /home-preorder-saving--hero/);
-  assert.match(home, /Product development status/);
+  assert.match(home, /Product progress and shipping plan/);
   assert.match(home, /\$299/);
   assert.match(home, /\$499/);
   assert.match(home, /Q1 2027/);
@@ -166,7 +166,8 @@ test("keeps the funnel usable only on loopback during development", async () => 
 
   assert.equal(productStatusResponse.status, 200);
   const productStatus = await productStatusResponse.text();
-  assert.match(productStatus, /Performance has not been established/);
+  assert.match(productStatus, /Initial proof of concept is complete/);
+  assert.match(productStatus, /Current shipping plan/);
   assert.match(productStatus, /has not received FDA marketing/);
   assert.match(productStatus, /Pre-order for\s*(?:<!-- -->)?\$299/);
   assert.match(productStatus, /\$200/);
@@ -201,6 +202,9 @@ test("keeps the funnel usable only on loopback during development", async () => 
 test("keeps the public homepage free of pre-order discovery and blocks webhook browsing", async () => {
   const [
     homeResponse,
+    interestResponse,
+    privacyResponse,
+    unsubscribeResponse,
     webhookResponse,
     webhookPostResponse,
     worker,
@@ -210,6 +214,9 @@ test("keeps the public homepage free of pre-order discovery and blocks webhook b
     preorderAccess,
   ] = await Promise.all([
       render("/"),
+      render("/interest"),
+      render("/privacy"),
+      render("/unsubscribe"),
       render("/api/stripe/webhook"),
       render("/api/stripe/webhook", {
         method: "POST",
@@ -226,6 +233,30 @@ test("keeps the public homepage free of pre-order discovery and blocks webhook b
   assert.equal(homeResponse.status, 200);
   const home = await homeResponse.text();
   assert.doesNotMatch(home, /href=["']\/preorder/i);
+  assert.match(home, /Product concept\. Final design in development\./);
+  assert.match(home, /Evidence before claims\./);
+  assert.match(home, /Frame is under development and is not currently available for sale\./);
+  assert.match(home, /Frame is developing a non-invasive upper-arm ultrasound wearable/);
+  assert.doesNotMatch(home, /Evidence-driven by design\./);
+  assert.doesNotMatch(home, /Frame is a general-wellness wearable in development\./);
+
+  assert.equal(interestResponse.status, 200);
+  const interest = await interestResponse.text();
+  assert.match(interest, /Receive Frame development news and help shape what comes next\./);
+  assert.match(interest, /Development updates only\./);
+  assert.doesNotMatch(interest, /Get product milestones, launch news/);
+
+  assert.equal(privacyResponse.status, 200);
+  assert.match(
+    await privacyResponse.text(),
+    /Frame is under development and is not intended to diagnose or treat/,
+  );
+
+  assert.equal(unsubscribeResponse.status, 200);
+  const unsubscribe = await unsubscribeResponse.text();
+  assert.match(unsubscribe, /Stop Frame development updates\?/);
+  assert.match(unsubscribe, /future development and product-update emails/);
+  assert.doesNotMatch(unsubscribe, /Stop Frame updates\?/);
   assert.equal(webhookResponse.status, 404);
   assert.equal(webhookPostResponse.status, 400);
   assert.match(await webhookPostResponse.text(), /Stripe signature is required/i);

@@ -14,20 +14,20 @@ import {
 export const metadata: Metadata = {
   title: "Become a Frame Founding Contributor",
   description:
-    "Join Frame’s private development community with a one-time $99 Founding Contributor Membership.",
+    "Permanent Founding Contributor status plus 12 months of private updates, founder Q&As, briefings, and product input.",
   alternates: { canonical: "/founding-contributors" },
   robots: { index: false, follow: false },
   openGraph: {
     title: "Become a Frame Founding Contributor",
     description:
-      "Permanent founding status and 12 months inside Frame’s private development community. No device included.",
+      "Permanent founding status and 12 months of private updates, founder Q&As, briefings, and product input.",
     images: ["/og-founding-contributors.png"],
   },
   twitter: {
     card: "summary_large_image",
     title: "Become a Frame Founding Contributor",
     description:
-      "Permanent founding status and 12 months inside Frame’s private development community. No device included.",
+      "Permanent founding status and 12 months of private updates, founder Q&As, briefings, and product input.",
     images: ["/og-founding-contributors.png"],
   },
 };
@@ -44,16 +44,16 @@ const faq = [
     "Published research supports ultrasound-based measurement of arterial signals and blood-pressure estimation. Frame has completed early proof-of-concept work and is now developing an integrated prototype.",
   ],
   [
-    "Will Frame definitely launch?",
-    "No. Frame may encounter technical, financial, manufacturing, safety, or regulatory obstacles and may never launch.",
+    "Where is Frame in the roadmap?",
+    "Frame has completed its initial technical proof-of-concept and measurement-validation phases and is now building an integrated wearable prototype.",
   ],
   [
     "What does the $99 pay for?",
     "It purchases the 12-month contributor membership and the present-day community benefits listed on this page.",
   ],
   [
-    "What happens if Frame never launches?",
-    "The membership remains a purchase of current community services, not a promise of a future device. The separate 14-day membership refund policy still applies.",
+    "What if product plans change?",
+    "Your membership purchases the current 12-month community programme and does not depend on a device launch. The separate 14-day membership refund policy still applies.",
   ],
   [
     "Can the community provide medical advice?",
@@ -89,7 +89,7 @@ export default async function FoundingContributorsPage() {
             </a>
           </div>
           <p className="founding-hero__note" role="note">
-            Membership only. This does not include or reserve a Frame device. Frame is still in development.
+            $99 one-time membership · 12 months of private community access · separate from the Frame device pre-order.
           </p>
         </div>
         <figure className="founding-hero__visual">
@@ -103,7 +103,7 @@ export default async function FoundingContributorsPage() {
               unoptimized
             />
           </div>
-          <figcaption>Concept visualization. Not a finished product.</figcaption>
+          <figcaption>Frame wearable · design preview</figcaption>
         </figure>
       </section>
 
@@ -130,7 +130,7 @@ export default async function FoundingContributorsPage() {
           <p className="eyebrow">Where Frame is today</p>
           <h2>Now building an integrated prototype.</h2>
           <p>
-            Frame has completed its initial technical proof-of-concept and measurement-validation phases. We’re now combining sensing, electronics, software, and data processing into a working prototype. Wearability, safety, and regulatory work still lie ahead.
+            Frame has completed its initial technical proof-of-concept and measurement-validation phases. We’re now integrating sensing, electronics, software, and data processing into a single wearable system. The next phase focuses on comfort, safety, and regulatory readiness.
           </p>
         </div>
         <ol className="founding-roadmap">
@@ -141,8 +141,8 @@ export default async function FoundingContributorsPage() {
               : status === "completed"
                 ? "Completed"
                 : label === NEXT_ROADMAP_STAGE_LABEL
-                  ? "Next proposed stage"
-                  : "Proposed";
+                  ? "Next planned stage"
+                  : "Planned";
 
             return (
               <li
@@ -169,7 +169,7 @@ export default async function FoundingContributorsPage() {
         </div>
         <div>
           <p>
-            Membership revenue supports Frame’s development and the operation of the Founding Contributor programme. Current priorities include the work below, but allocations may change as the project develops.
+            Membership revenue supports Frame’s development and the operation of the Founding Contributor programme through the current priorities below.
           </p>
           <ul>
             <li>Prototype components, equipment, and testing</li>
@@ -186,7 +186,7 @@ export default async function FoundingContributorsPage() {
           <p className="eyebrow">Early supporter benefits</p>
           <h2>A thank-you for joining us early.</h2>
           <p>
-            If Frame becomes commercially available, early supporters may receive:
+            Founding Contributor status is designed to unlock the following if Frame launches in your region:
           </p>
         </div>
         <div className="founding-conditional__grid">
@@ -195,7 +195,7 @@ export default async function FoundingContributorsPage() {
           ))}
         </div>
         <p className="founding-conditional__note">
-          Benefits depend on a commercial launch. Regional availability, eligibility, and consent requirements may apply.
+          Launch benefits are subject to regional availability, eligibility, stock, and applicable terms.
         </p>
       </section>
 
@@ -217,7 +217,7 @@ export default async function FoundingContributorsPage() {
       <section className="founding-final-cta">
         <p className="eyebrow">Join the development community</p>
         <h2>Become a Frame Founding Contributor.</h2>
-        <p>$99 once. No automatic renewal. No device included.</p>
+        <p>$99 once · 12 months of access · no automatic renewal.</p>
         <a className="button button--light" href="/founding-contributors/review">
           Review the membership
         </a>

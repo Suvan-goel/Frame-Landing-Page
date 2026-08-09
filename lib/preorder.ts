@@ -7,7 +7,7 @@ export const PREORDER_PRODUCT_NAME = "Frame device pre-order";
 export const PREORDER_LEGAL_PACK_VERSION = "draft-2026-08-09-v7";
 export const PREORDER_TERMS_VERSION = PREORDER_LEGAL_PACK_VERSION;
 export const PREORDER_LEGAL_PACK_UPDATED = "August 9, 2026";
-export const PREORDER_PRODUCT_STATUS_VERSION = "draft-2026-08-09-v7";
+export const PREORDER_PRODUCT_STATUS_VERSION = "draft-2026-08-09-v8";
 export const PREORDER_PRODUCT_STATUS_UPDATED = "August 9, 2026";
 // This remains false until the single incorporated-company configuration has
 // a valid legal name, registration number, registered office, jurisdiction,
@@ -38,7 +38,7 @@ export function preorderStripeProductDescription(input: {
   estimatedShipping: string;
   sandbox: boolean;
 }) {
-  return `One Frame wearable device pre-order. ${input.sandbox ? "Sandbox only. " : ""}Free standard US shipping; applicable sales tax is calculated at checkout. Estimated shipping: ${input.estimatedShipping}; timing may change.`;
+  return `One Frame wearable device pre-order. ${input.sandbox ? "Sandbox only. " : ""}Free standard US shipping; applicable sales tax is calculated at checkout. Estimated shipping: ${input.estimatedShipping}.`;
 }
 
 export function formatPreorderNumber(value: number | string) {

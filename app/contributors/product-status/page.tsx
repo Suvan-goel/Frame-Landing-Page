@@ -3,8 +3,8 @@ import Link from "next/link";
 import { SiteHeader } from "../../components/site-header";
 
 export const metadata: Metadata = {
-  title: "Important Product Status Disclosure | Frame",
-  description: "Important information about Frame’s early development status.",
+  title: "Product progress and membership scope | Frame",
+  description: "Current Frame product progress and how it relates to the Founding Contributor Membership.",
   robots: { index: false, follow: false },
 };
 
@@ -13,27 +13,23 @@ export default function ProductStatusPage() {
     <main className="legal-page">
       <SiteHeader backHref="/founding-contributors/review" backLabel="Membership review" />
       <article className="legal-shell">
-        <p className="eyebrow">Important information</p>
-        <h1>Product Status Disclosure</h1>
+        <p className="eyebrow">Frame Founding Contributors</p>
+        <h1>Product progress and membership scope</h1>
         <p className="legal-intro">
-          Frame is an early-stage development project. No finished Frame product currently exists.
+          Frame has completed its initial technical proof-of-concept and measurement-validation phases and is now building an integrated wearable prototype.
         </p>
         <section>
-          <h2>The Founding Contributor Membership is not:</h2>
-          <ul>
-            <li>a purchase or pre-order of a Frame device;</li>
-            <li>a product reservation, deposit, or place in a delivery queue;</li>
-            <li>an investment in Frame;</li>
-            <li>a charitable donation;</li>
-            <li>a guarantee that Frame will launch;</li>
-            <li>a guarantee of regulatory authorization; or</li>
-            <li>a guarantee of any product feature, performance level, price, or delivery date.</li>
-          </ul>
+          <h2>What your membership purchases</h2>
+          <p>
+            Your $99 payment purchases the 12-month community programme, permanent Founding Contributor status,
+            and the current benefits described in the Membership Terms. It is separate from a device purchase or
+            pre-order and does not reserve inventory or a place in a delivery queue.
+          </p>
         </section>
         <section>
-          <h2>Development may change</h2>
+          <h2>Where product development stands</h2>
           <p>
-            The immediate objective is to investigate whether ultrasound can capture useful arterial information, whether that information can support blood-pressure estimation, and whether the approach could eventually become wearable. Frame may change substantially during this work or may never become commercially available.
+            Current work combines ultrasound sensing, electronics, software, and data processing into a single wearable system. The next stages focus on comfort, repeatability, safety, manufacturing, and regulatory readiness. Any future launch benefits remain subject to availability, eligibility, stock, and the terms in force at that time.
           </p>
         </section>
         <section>
@@ -42,9 +38,6 @@ export default function ProductStatusPage() {
             Current Frame concepts, renders, demonstrations, development information, and community discussions must not be used to make medical decisions. Frame does not diagnose, treat, or provide personal medical guidance.
           </p>
         </section>
-        <p className="legal-disclaimer">
-          Your $99 payment purchases the membership benefits described in the Membership Terms. It does not purchase a future device.
-        </p>
         <Link className="text-link" href="/founding-contributors/review">← Back to membership review</Link>
       </article>
     </main>

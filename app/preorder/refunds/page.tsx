@@ -9,6 +9,7 @@ import {
   PREORDER_DEFAULT_PRICE_CENTS,
   PREORDER_LEGAL_PACK_UPDATED,
   PREORDER_TERMS_VERSION,
+  isDraftPreorderVersion,
 } from "@/lib/preorder";
 import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
 import {
@@ -24,6 +25,7 @@ const PRODUCT_PRICE = formatPreorderMoney(
   PREORDER_DEFAULT_PRICE_CENTS,
   PREORDER_DEFAULT_CURRENCY,
 );
+const LEGAL_PACK_IS_DRAFT = isDraftPreorderVersion(PREORDER_TERMS_VERSION);
 
 const REFUND_SECTIONS = [
   ["cancelling", "Cancel before fulfilment"],
@@ -37,7 +39,7 @@ const REFUND_SECTIONS = [
 ] as const;
 
 export const metadata: Metadata = {
-  title: `${REFUNDS_TITLE}: Launch candidate`,
+  title: `${REFUNDS_TITLE}${LEGAL_PACK_IS_DRAFT ? ": Launch candidate" : ""}`,
   description: REFUNDS_DESCRIPTION,
   alternates: { canonical: "/preorder/refunds" },
   openGraph: {
@@ -244,11 +246,13 @@ export default async function PreorderRefundsPage() {
           </div>
         </div>
 
-        <p className="legal-disclaimer">
-          {COMPANY_DETAILS_COMPLETE
-            ? "This launch candidate is not active for public sales until final legal approval is activated."
-            : "This launch candidate is not active for public sales while the incorporated seller details are pending."}
-        </p>
+        {LEGAL_PACK_IS_DRAFT ? (
+          <p className="legal-disclaimer">
+            {COMPANY_DETAILS_COMPLETE
+              ? "This launch candidate is not active for public sales until final legal approval is activated."
+              : "This launch candidate is not active for public sales while the incorporated seller details are pending."}
+          </p>
+        ) : null}
         <nav className="preorder-refunds-actions" aria-label="Refund policy actions">
           <Link className="button button--dark" href="/contact?topic=preorder">
             Contact pre-order support

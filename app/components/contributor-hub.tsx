@@ -250,7 +250,7 @@ export function ContributorHub() {
               <ol>
                 {dashboard.roadmap.map((step) => (
                   <li key={step.label} className={`is-${step.status}`}>
-                    <span>{step.label}</span><strong>{step.title}</strong><small>{step.status === "current" ? "Current focus" : step.status === "completed" ? "Completed" : "Proposed, not guaranteed"}</small>
+                    <span>{step.label}</span><strong>{step.title}</strong><small>{step.status === "current" ? "Current focus" : step.status === "completed" ? "Completed" : "Planned"}</small>
                   </li>
                 ))}
               </ol>
@@ -260,7 +260,7 @@ export function ContributorHub() {
 
         {active === "updates" ? (
           <section className="hub-section">
-            <div className="hub-section-heading"><p className="eyebrow">Development journal</p><h1>Updates</h1><p>What was attempted, what was learned, and where uncertainty remains.</p></div>
+            <div className="hub-section-heading"><p className="eyebrow">Development journal</p><h1>Updates</h1><p>What we built, what we learned, and what happens next.</p></div>
             <div className="hub-stack">
               {dashboard.updates.map((update) => (
                 <article className="hub-card hub-update" key={update.id}>
@@ -305,7 +305,7 @@ export function ContributorHub() {
 
         {active === "votes" ? (
           <section className="hub-section">
-            <div className="hub-section-heading"><p className="eyebrow">Contributor input</p><h1>Advisory votes</h1><p>Votes inform the team but do not bind product, engineering, clinical, regulatory, or company decisions.</p></div>
+            <div className="hub-section-heading"><p className="eyebrow">Contributor input</p><h1>Advisory votes</h1><p>Votes help shape selected product and communication decisions; the team retains responsibility for final technical, clinical, and regulatory choices.</p></div>
             <div className="hub-stack">
               {dashboard.votes.map((vote) => (
                 <form className="hub-card hub-vote" key={vote.id} onSubmit={(event) => submitVote(event, vote)}>
@@ -357,7 +357,7 @@ export function ContributorHub() {
                 <div><dt>Status</dt><dd>{member.membershipStatus}</dd></div>
                 <div><dt>Paid</dt><dd>{money(member.amountPaidCents, member.currency)} on {dateLabel(member.paidAt)}</dd></div>
                 <div><dt>Access period</dt><dd>{dateLabel(member.accessStartsAt)} – {dateLabel(member.accessExpiresAt)}</dd></div>
-                <div><dt>Future product discount</dt><dd>{member.futureDiscountEligible ? "Eligible, if a product becomes available" : "Not eligible"}</dd></div>
+                <div><dt>Future product discount</dt><dd>{member.futureDiscountEligible ? "Eligible at launch, subject to regional availability" : "Not eligible"}</dd></div>
                 <div><dt>Terms accepted</dt><dd>{member.termsVersion}</dd></div>
               </dl>
               <nav><Link href="/contributors/terms">Membership Terms</Link><Link href="/contributors/refunds">Refund Policy</Link><Link href="/contributors/product-status">Product Status</Link><Link href="/contact">Contact support</Link></nav>

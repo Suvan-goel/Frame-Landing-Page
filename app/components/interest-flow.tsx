@@ -8,8 +8,10 @@ import {
 
 export function InterestFlow({
   showFoundingContributorOffer,
+  usePreorderLaunchCopy,
 }: {
   showFoundingContributorOffer: boolean;
+  usePreorderLaunchCopy: boolean;
 }) {
   return (
     <WaitlistSignupProvider>
@@ -20,6 +22,7 @@ export function InterestFlow({
             placement="interest_page"
             showFoundingContributorOffer={showFoundingContributorOffer}
             finishHref="/"
+            usePreorderLaunchCopy={usePreorderLaunchCopy}
           />
         </div>
       </main>
