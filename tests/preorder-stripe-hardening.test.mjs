@@ -45,6 +45,47 @@ test("queues signed events after a durable claim and tracks modern refund events
   assert.match(readiness, /"refund\.updated"/);
 });
 
+test("runs authenticated delivery-deadline maintenance on the scheduled cadence", async () => {
+  const [worker, viteConfig, route, expiration] = await Promise.all([
+    readFile(new URL("../worker/index.ts", import.meta.url), "utf8"),
+    readFile(new URL("../vite.config.ts", import.meta.url), "utf8"),
+    readFile(
+      new URL(
+        "../app/api/internal/preorders/delivery-delay-expirations/route.ts",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(
+      new URL("../lib/preorder-delivery-expiration.server.ts", import.meta.url),
+      "utf8",
+    ),
+  ]);
+
+  assert.match(viteConfig, /crons: \["\*\/15 \* \* \* \*"\]/);
+  assert.match(worker, /async scheduled\(/);
+  assert.match(worker, /if \(!env\.PREORDER_MAINTENANCE_SECRET\)/);
+  assert.match(
+    worker,
+    /api\/internal\/preorders\/delivery-delay-expirations/,
+  );
+  assert.match(
+    worker,
+    /Authorization: `Bearer \$\{env\.PREORDER_MAINTENANCE_SECRET\}`/,
+  );
+  assert.match(worker, /ctx\.waitUntil\(/);
+  assert.match(route, /crypto\.subtle\.digest\("SHA-256"/);
+  assert.match(route, /return response\(\{ error: "Not found\." \}, 404\)/);
+  assert.match(route, /batchSize: 25/);
+  assert.match(route, /sendPreorderMaintenanceFailureEmail/);
+  assert.match(route, /return response\(\{ status: "partial", \.\.\.result \}, 503\)/);
+  assert.match(expiration, /affirmative_consent_required/);
+  assert.match(expiration, /delivery_update_response_deadline/);
+  assert.match(expiration, /automatic_cancellation_and_full_refund/);
+  assert.match(expiration, /delivery-consent-expired-/);
+  assert.match(expiration, /deliveryUpdateVersion: order\.delivery_update_version/);
+});
+
 test("makes failed and stale background events recoverable", () => {
   const now = Date.parse("2026-08-06T12:00:00.000Z");
   const staleAt = new Date(

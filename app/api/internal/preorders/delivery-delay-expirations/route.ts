@@ -1,4 +1,5 @@
 import { processExpiredPreorderDeliveryUpdates } from "@/lib/preorder-delivery-expiration.server";
+import { sendPreorderMaintenanceFailureEmail } from "@/lib/preorder-email.server";
 import { getRuntimeValue } from "@/lib/runtime-env.server";
 
 export const dynamic = "force-dynamic";
@@ -45,7 +46,29 @@ export async function POST(request: Request) {
       origin: new URL(request.url).origin,
       batchSize: 25,
     });
-    return response({ status: result.failures.length ? "partial" : "complete", ...result });
+    if (result.failures.length) {
+      const origin = new URL(request.url).origin;
+      const notifications = await Promise.allSettled(
+        result.failures.map((failure) =>
+          sendPreorderMaintenanceFailureEmail({
+            origin,
+            preorderId: failure.orderId,
+            deliveryUpdateVersion: failure.deliveryUpdateVersion,
+            error: failure.error,
+          }),
+        ),
+      );
+      for (const notification of notifications) {
+        if (notification.status === "rejected") {
+          console.error(
+            "Pre-order maintenance failure notification failed",
+            notification.reason,
+          );
+        }
+      }
+      return response({ status: "partial", ...result }, 503);
+    }
+    return response({ status: "complete", ...result });
   } catch (error) {
     console.error("Pre-order delivery-deadline processing failed", error);
     return response({ error: "Deadline processing failed." }, 503);

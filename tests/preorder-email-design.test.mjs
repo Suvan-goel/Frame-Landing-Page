@@ -1,6 +1,9 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { renderPreorderConfirmationEmail } from "../lib/preorder-email.server.ts";
+import {
+  renderPreorderConfirmationEmail,
+  renderPreorderMaintenanceFailureEmail,
+} from "../lib/preorder-email.server.ts";
 
 const confirmation = {
   origin: "https://framewearable.com",
@@ -78,4 +81,23 @@ test("labels sandbox confirmations without changing the receipt structure", () =
   assert.match(rendered.html, /Sandbox &middot;/);
   assert.match(rendered.html, /No live charge was made/);
   assert.match(rendered.text, /Sandbox order: no live charge was made/);
+});
+
+test("renders a safe, actionable owner alert when deadline maintenance fails", () => {
+  const rendered = renderPreorderMaintenanceFailureEmail({
+    origin: "https://framewearable.com",
+    orderNumber: 1042,
+    environment: "test",
+    deliveryUpdateVersion: 3,
+    error: "Refund <script>alert('failure')</script> did not complete.",
+  });
+
+  assert.match(rendered.subject, /^\[Sandbox\]/);
+  assert.match(rendered.subject, /FR-001042/);
+  assert.match(rendered.html, /Maintenance alert/);
+  assert.match(rendered.html, /Automatic retry remains active/);
+  assert.match(rendered.html, /href="https:\/\/framewearable\.com\/admin\/preorders"/);
+  assert.doesNotMatch(rendered.html, /<script>alert/);
+  assert.match(rendered.html, /&lt;script&gt;alert\(&#039;failure&#039;\)&lt;\/script&gt;/);
+  assert.match(rendered.text, /scheduled processor will retry/i);
 });

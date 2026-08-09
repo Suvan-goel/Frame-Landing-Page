@@ -154,7 +154,11 @@ export async function processExpiredPreorderDeliveryUpdates(input: {
   }
 
   let refundsStarted = 0;
-  const failures: Array<{ orderId: string; error: string }> = [];
+  const failures: Array<{
+    orderId: string;
+    deliveryUpdateVersion: number;
+    error: string;
+  }> = [];
   for (const order of [...orders.values()].slice(0, batchSize)) {
     try {
       const processed = await processExpiredPreorderDeliveryUpdate({
@@ -167,6 +171,7 @@ export async function processExpiredPreorderDeliveryUpdates(input: {
     } catch (error) {
       failures.push({
         orderId: order.id,
+        deliveryUpdateVersion: order.delivery_update_version,
         error: error instanceof Error ? error.message.slice(0, 300) : "Unknown error",
       });
     }

@@ -50,7 +50,7 @@ export function UnsubscribeControl({ token }: { token: string }) {
         onClick={unsubscribe}
         disabled={status === "submitting"}
       >
-        {status === "submitting" ? "Updating…" : "Unsubscribe me"}
+        {status === "submitting" ? "Updating…" : "Unsubscribe"}
       </button>
       {message ? (
         <p className="unsubscribe-result" role="alert">
