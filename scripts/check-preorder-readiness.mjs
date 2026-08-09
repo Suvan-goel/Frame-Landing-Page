@@ -10,7 +10,7 @@ import {
   PREORDER_TERMS_VERSION,
   PREORDER_WARRANTY_DETAILS_COMPLETE,
 } from "../lib/preorder.ts";
-import { COMPANY_DETAILS_CHECK } from "../lib/company.ts";
+import { COMPANY_DETAILS_CHECK, SUPPORT_EMAIL } from "../lib/company.ts";
 
 const target = process.argv.includes("--launch")
   ? "launch"
@@ -199,12 +199,16 @@ if (configured("RESEND_API_KEY") && configured("PREORDER_FROM_EMAIL")) {
 const operationsRecipient =
   process.env.PREORDER_OPERATIONS_EMAIL?.trim() ||
   process.env.WAITLIST_ADMIN_EMAILS?.split(",").map((email) => email.trim()).find(Boolean);
-if (operationsRecipient && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(operationsRecipient)) {
-  pass("Operations email", "A valid owner notification recipient is configured.");
+if (
+  operationsRecipient &&
+  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(operationsRecipient) &&
+  operationsRecipient.toLowerCase() === SUPPORT_EMAIL.toLowerCase()
+) {
+  pass("Operations email", `Owner notifications are routed to ${SUPPORT_EMAIL}.`);
 } else if (target === "launch") {
-  fail("Operations email", "Configure PREORDER_OPERATIONS_EMAIL before launch.");
+  fail("Operations email", `Route PREORDER_OPERATIONS_EMAIL to the monitored inbox (${SUPPORT_EMAIL}) before launch.`);
 } else {
-  warn("Operations email", "Owner action notifications do not have a valid recipient.");
+  warn("Operations email", `Owner action notifications are not routed to the monitored inbox (${SUPPORT_EMAIL}).`);
 }
 
 if (

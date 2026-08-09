@@ -29,7 +29,7 @@ Status: launch candidate. Public access and live checkout must remain disabled u
 - Keep all public pre-order routes closed.
 - Maintain documentary support for the Q1 2027 shipping estimate: development milestones, validation plan, supplier/manufacturer lead times, quality work, expected demand, fulfilment capacity, and contingency time.
 - Decide the ship-from location and obtain cross-border tax advice. Do not enable a US tax registration without a documented basis.
-- Confirm that `support@framewearable.com`, the transactional sender, and the operations inbox can receive replies and alerts.
+- Confirm that `support@framewearable.com` receives customer replies and operational alerts. Transactional sender addresses may remain send-only because every automated email uses `support@framewearable.com` as its reply address.
 
 ## After incorporation is approved
 

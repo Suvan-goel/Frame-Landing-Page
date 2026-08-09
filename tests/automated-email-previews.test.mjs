@@ -30,6 +30,21 @@ test("uses isolated preview renderers without changing live email delivery", asy
   assert.match(catalogSource, /renderContributorWelcomeEmail\(/);
 });
 
+test("routes automated customer replies to the monitored support inbox", async () => {
+  const [preorderSource, contributorSource, catalogSource, environmentExample] = await Promise.all([
+    readFile(new URL("../lib/preorder-email.server.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/contributor-email.server.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/automated-email-previews.server.ts", import.meta.url), "utf8"),
+    readFile(new URL("../.env.example", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(preorderSource, /reply_to: SUPPORT_EMAIL/);
+  assert.match(contributorSource, /reply_to: SUPPORT_EMAIL/);
+  assert.match(catalogSource, /replyTo: SUPPORT_EMAIL/);
+  assert.match(catalogSource, /reply_to: SUPPORT_EMAIL/);
+  assert.match(environmentExample, /^PREORDER_OPERATIONS_EMAIL=support@framewearable\.com$/m);
+});
+
 test("keeps automated email previews and test sending owner-only", async () => {
   const [pageSource, routeSource, componentSource, navigationSource] = await Promise.all([
     readFile(new URL("../app/admin/automated-emails/page.tsx", import.meta.url), "utf8"),
