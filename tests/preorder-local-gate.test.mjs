@@ -234,7 +234,7 @@ test("keeps the public homepage free of pre-order discovery and blocks webhook b
   const home = await homeResponse.text();
   assert.doesNotMatch(home, /href=["']\/preorder/i);
   assert.match(home, /Product concept\. Final design in development\./);
-  assert.match(home, /Evidence before claims\./);
+  assert.match(home, /Wearable ultrasound, clinically validated\./);
   assert.match(home, /Frame is under development and is not currently available for sale\./);
   assert.match(home, /Frame is developing a non-invasive upper-arm ultrasound wearable/);
   assert.doesNotMatch(home, /Evidence-driven by design\./);

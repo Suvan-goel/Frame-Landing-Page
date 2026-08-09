@@ -35,9 +35,18 @@ const content = {
     ["Honest gaps", "When a signal is unreliable, Frame does not invent an answer."],
   ],
   researchStandards: [
-    ["Signal integrity", "Report confidence and coverage alongside every measurement."],
-    ["Human validation", "Evaluate comfort, motion tolerance, and repeatability in real use."],
-    ["Responsible claims", "Only communicate conclusions supported by evidence."],
+    [
+      "A 118-person clinical programme",
+      "A peer-reviewed validation study recruited 118 adults and tested a wearable ultrasound blood-pressure sensor during daily activities and in outpatient, cardiac catheterisation, and intensive-care settings.",
+    ],
+    [
+      "Compared with clinical references",
+      "Across published human studies, ultrasound-derived measurements have been evaluated against arm cuffs, arterial tonometry, and invasive arterial lines.",
+    ],
+    [
+      "Frame will validate its own device",
+      "The evidence establishes the sensing principle—not the performance of Frame’s final product, which remains in development and will undergo dedicated validation.",
+    ],
   ],
 } as const;
 
@@ -444,14 +453,12 @@ export default async function Home() {
             </div>
           </div>
           <aside className="research-panel">
-            <span className="status-label">Research approach</span>
-            <h3>{showPreorderAreas ? "Evidence-driven by design." : "Evidence before claims."}</h3>
+            <span className="status-label">Research evidence</span>
+            <h3>Wearable ultrasound, clinically validated.</h3>
             <p>
-              {showPreorderAreas
-                ? "Frame’s development programme focuses on signal quality, everyday wearability, and measured performance."
-                : "Frame is evaluating signal quality, wearability, and measurement accuracy before making broader claims."}
+              Frame uses ultrasound to observe arterial motion beneath the skin. Peer-reviewed human research has shown that wearable ultrasound can capture continuous arterial waveforms and support non-invasive blood-pressure estimation.
             </p>
-            <div className="research-standards" aria-label="Frame research standards">
+            <div className="research-standards" aria-label="Published evidence for wearable ultrasound">
               {content.researchStandards.map(([title, description]) => (
                 <article key={title}>
                   <h4>{title}</h4>
@@ -461,9 +468,11 @@ export default async function Home() {
             </div>
             <a
               className="text-link"
-              href="/contact?topic=research"
+              href="https://www.nature.com/articles/s41551-024-01279-3"
+              target="_blank"
+              rel="noreferrer"
             >
-              Research and engineering inquiries <Arrow />
+              Read the clinical validation study <Arrow />
             </a>
           </aside>
         </div>

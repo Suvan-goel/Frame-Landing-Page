@@ -218,10 +218,10 @@ test("server-renders the Frame landing page", async () => {
     html,
     /Continuous monitoring should create context, not continuous\s*(?:<!-- -->)?conclusions\./,
   );
-  assert.match(html, /Research approach/);
-  assert.match(html, /Evidence-driven by design\./);
-  assert.match(html, /Signal integrity/);
-  assert.match(html, /Research and engineering inquiries/);
+  assert.match(html, /Research evidence/);
+  assert.match(html, /Wearable ultrasound, clinically validated\./);
+  assert.match(html, /A 118-person clinical programme/);
+  assert.match(html, /Read the clinical validation study/);
   assert.match(
     html,
     /Frame is a general-wellness wearable in development\./,
@@ -268,7 +268,7 @@ test("server-renders the Frame landing page", async () => {
   assert.doesNotMatch(html, /id="footer-waitlist-/);
   assert.match(html, /href="https:\/\/www\.instagram\.com\/framewearable\/"/);
   assert.match(html, /Frame on Instagram \(opens in a new tab\)/);
-  assert.equal(html.match(/href="\/contact(?:\?topic=research)?"/g)?.length, 3);
+  assert.equal(html.match(/href="\/contact(?:\?topic=research)?"/g)?.length, 2);
   assert.doesNotMatch(html, /mailto:support@framewearable\.com/);
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
