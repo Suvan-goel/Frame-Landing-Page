@@ -9,7 +9,6 @@ import {
   PREORDER_DEFAULT_PRICE_CENTS,
   PREORDER_ESTIMATED_SHIPPING,
   PREORDER_PRODUCT_STATUS_UPDATED,
-  PREORDER_RELEASE_PRICE_CENTS,
   PREORDER_SAVINGS_CENTS,
 } from "@/lib/preorder";
 import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
@@ -25,10 +24,6 @@ const PRODUCT_STATUS_DESCRIPTION =
   "Important development and intended-use information for Frame pre-orders.";
 const PREORDER_PRICE = formatPreorderMoney(
   PREORDER_DEFAULT_PRICE_CENTS,
-  PREORDER_DEFAULT_CURRENCY,
-);
-const RELEASE_PRICE = formatPreorderMoney(
-  PREORDER_RELEASE_PRICE_CENTS,
   PREORDER_DEFAULT_CURRENCY,
 );
 const PREORDER_SAVING = formatPreorderMoney(
@@ -91,7 +86,7 @@ export default async function PreorderProductStatusPage() {
             </li>
             <li>
               <span aria-hidden="true">04</span>
-              <p><strong>Pre-order for {PREORDER_PRICE} plus applicable sales tax, with free standard US shipping.</strong> Save {PREORDER_SAVING} from the {RELEASE_PRICE} release price. You pay in full at checkout; estimated shipping is {PREORDER_ESTIMATED_SHIPPING}. Cancel before fulfilment for a full refund.</p>
+              <p><strong>Pre-order for {PREORDER_PRICE}.</strong> Save {PREORDER_SAVING} from the release price.</p>
             </li>
           </ol>
         </section>

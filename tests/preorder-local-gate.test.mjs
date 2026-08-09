@@ -168,9 +168,10 @@ test("keeps the funnel usable only on loopback during development", async () => 
   const productStatus = await productStatusResponse.text();
   assert.match(productStatus, /Performance has not been established/);
   assert.match(productStatus, /has not received FDA marketing/);
-  assert.match(productStatus, /You pay in full at checkout/);
+  assert.match(productStatus, /Pre-order for\s*(?:<!-- -->)?\$299/);
+  assert.match(productStatus, /\$200/);
+  assert.match(productStatus, /from the release price/);
   assert.match(productStatus, /Last updated August 9, 2026/);
-  assert.match(productStatus, /plus applicable sales tax, with free standard US shipping/i);
 
   assert.equal(termsResponse.status, 200);
   const terms = await termsResponse.text();
