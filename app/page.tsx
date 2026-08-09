@@ -473,14 +473,6 @@ export default async function Home() {
                 </article>
               ))}
             </div>
-            <a
-              className="text-link"
-              href="https://www.nature.com/articles/s41551-024-01279-3"
-              target="_blank"
-              rel="noreferrer"
-            >
-              Read the clinical validation study <Arrow />
-            </a>
           </aside>
         </div>
       </section>

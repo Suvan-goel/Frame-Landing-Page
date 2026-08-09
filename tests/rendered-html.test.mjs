@@ -222,7 +222,7 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /Wearable ultrasound, validated in clinical research\./);
   assert.match(html, />118</);
   assert.match(html, /adults recruited/);
-  assert.match(html, /Read the clinical validation study/);
+  assert.doesNotMatch(html, /Read the clinical validation study/);
   assert.match(
     html,
     /Frame is a general-wellness wearable in development\./,

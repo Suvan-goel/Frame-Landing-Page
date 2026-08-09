@@ -1959,13 +1959,6 @@ h2 {
   line-height: 1.55;
 }
 
-.research-panel .text-link {
-  margin-top: 21px;
-  border-color: rgba(243, 239, 230, 0.24);
-  color: #d8afb0;
-  font-size: 0.82rem;
-}
-
 .final-cta {
   padding: clamp(84px, 6.5vw, 104px) 0;
   background: var(--burgundy);
