@@ -29,10 +29,10 @@ const content = {
     ["Confidence", "What was measured reliably, and what was not."],
   ],
   principles: [
-    ["Personal, not generic", "Your own baseline comes first—not a one-size-fits-all average."],
+    ["Personal, not generic", "Your baseline provides the reference point for every reading."],
     ["Context before judgment", "Each change is considered alongside what was happening around it."],
     ["Patterns over moments", "Trends across time reveal what isolated readings can miss."],
-    ["Honest gaps", "If the signal is unclear, Frame says so instead of filling in the blanks."],
+    ["Honest gaps", "When a signal is unreliable, Frame does not invent an answer."],
   ],
   researchStandards: [
     {
