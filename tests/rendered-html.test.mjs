@@ -192,7 +192,7 @@ test("permanently redirects www requests to the canonical host", async () => {
   assert.equal(response.headers.get("x-frame-options"), "DENY");
 });
 
-test("internally canonicalizes www form posts without weakening origin checks", async () => {
+test("accepts canonicalized and cached www form posts without weakening origin checks", async () => {
   const sameSiteResponse = await render(
     "/api/admin/time-zone",
     {
@@ -209,6 +209,41 @@ test("internally canonicalizes www form posts without weakening origin checks", 
   assert.equal(sameSiteResponse.status, 401);
   assert.equal(await sameSiteResponse.text(), "Authentication required.");
 
+  const cachedRedirectResponse = await render(
+    "/api/admin/time-zone",
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+        origin: "https://www.framewearable.com",
+      },
+      body: "tab=qualified&timezone=America%2FNew_York",
+    },
+    "https://framewearable.com",
+  );
+
+  assert.equal(cachedRedirectResponse.status, 401);
+  assert.equal(await cachedRedirectResponse.text(), "Authentication required.");
+
+  const opaqueRedirectResponse = await render(
+    "/api/admin/time-zone",
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+        origin: "null",
+        "sec-fetch-dest": "document",
+        "sec-fetch-mode": "navigate",
+        "sec-fetch-site": "same-site",
+      },
+      body: "tab=qualified&timezone=America%2FNew_York",
+    },
+    "https://framewearable.com",
+  );
+
+  assert.equal(opaqueRedirectResponse.status, 401);
+  assert.equal(await opaqueRedirectResponse.text(), "Authentication required.");
+
   const crossSiteResponse = await render(
     "/api/admin/time-zone",
     {
@@ -224,6 +259,28 @@ test("internally canonicalizes www form posts without weakening origin checks", 
 
   assert.equal(crossSiteResponse.status, 403);
   assert.equal(await crossSiteResponse.text(), "Request origin is not allowed.");
+
+  const opaqueCrossSiteResponse = await render(
+    "/api/admin/time-zone",
+    {
+      method: "POST",
+      headers: {
+        "content-type": "application/x-www-form-urlencoded",
+        origin: "null",
+        "sec-fetch-dest": "document",
+        "sec-fetch-mode": "navigate",
+        "sec-fetch-site": "cross-site",
+      },
+      body: "tab=qualified&timezone=America%2FNew_York",
+    },
+    "https://framewearable.com",
+  );
+
+  assert.equal(opaqueCrossSiteResponse.status, 403);
+  assert.equal(
+    await opaqueCrossSiteResponse.text(),
+    "Request origin is not allowed.",
+  );
 });
 
 test("applies restrictive browser security headers without blocking configured integrations", async () => {

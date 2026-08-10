@@ -1,6 +1,7 @@
 import { getChatGPTUser } from "@/app/chatgpt-auth";
 import { setPersistedAdminTimeZone } from "@/lib/admin-settings.server";
 import { isAdminTimeZone } from "@/lib/admin-time-zone";
+import { hasAllowedFormRequestOrigin } from "@/lib/request-origin.server";
 import { isWaitlistAdmin } from "@/lib/supabase-admin.server";
 
 export const dynamic = "force-dynamic";
@@ -25,8 +26,7 @@ function response(body: string, status: number) {
 }
 
 export async function POST(request: Request) {
-  const origin = request.headers.get("origin");
-  if (origin && origin !== new URL(request.url).origin) {
+  if (!hasAllowedFormRequestOrigin(request)) {
     return response("Request origin is not allowed.", 403);
   }
 
