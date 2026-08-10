@@ -13,7 +13,8 @@ location.
 
 - Regulatory review: founder confirmed complete on August 10, 2026; conclusion
   reported as no site-copy changes required.
-- Regulatory reviewer and secure evidence location: not recorded here.
+- Regulatory reviewer: founder. A separate secure evidence-location record was
+  waived by the founder on August 10, 2026 and is not a launch prerequisite.
 - Commercial offer: founder approved the price, expected release price,
   shipping, delivery window, per-checkout quantity, initial allocation, return
   period and warranty terms recorded below on August 10, 2026.
@@ -81,7 +82,8 @@ working from the same offer:
 - Approved legal-pack version: —
 - Approved Product Status Disclosure version: —
 - Approved tax-policy version: `uk-remote-seller-2026-08-09-v1`
-- Secure evidence location: —
+- Secure evidence location: separate location record waived by founder on
+  August 10, 2026; not a launch prerequisite.
 
 ## Legal review handoff
 
@@ -111,7 +113,8 @@ Review record:
   registration, registered-office, authorised correspondence-address,
   privacy-controller and named-warrantor values remain to be inserted from the
   issued and approved company records.
-- Secure evidence location: —
+- Secure evidence location: separate location record waived by founder on
+  August 10, 2026; not a launch prerequisite.
 
 ## Founder-approved tax posture
 
@@ -150,7 +153,8 @@ Tax record:
 - UK corporation-tax, VAT and permanent-establishment treatment: no external
   pre-launch conclusion is represented; the founder accepts responsibility for
   obtaining and implementing any required registrations, filings or changes.
-- Secure evidence location: —
+- Secure evidence location: separate location record waived by founder on
+  August 10, 2026; not a launch prerequisite.
 
 The product remains classified as tangible goods; the absence of registrations
 must not be implemented by marking it tax-exempt. Set
