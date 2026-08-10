@@ -171,7 +171,7 @@ The application rejects live checkout while the active version begins with `draf
 
 Create a separate Stripe live Product and one-time $299 USD Price. Never reuse test IDs in live configuration.
 
-Before private live verification, the live Stripe Account must show all onboarding details submitted, the Stripe Services Agreement accepted, live charges and card payments active, payouts enabled with an automatic schedule, and no current, past-due, failed, or pending-verification requirements. Its US company name must match `lib/company.ts`; configure the Frame public website, monitored support email and `/contact` URL, merchant category, product description, a 5–22 character statement descriptor containing `FRAME`, and an icon or logo plus primary brand colour. The pre-order Checkout session supplies its own Frame presentation and links the Pre-order Terms, Cancellation and Refund Policy, and Privacy Notice on Stripe's hosted page.
+Before private live verification, the live Stripe Account must show the Stripe Services Agreement accepted and live charges and card payments active. By default, it must also show every onboarding detail submitted, payouts enabled with an automatic schedule, and no current, past-due, failed, or pending-verification requirements. If the company payout account alone is still missing or being verified, `PREORDER_ALLOW_BANK_PENDING_LAUNCH=true` may temporarily waive only the external-account, payout-enabled and automatic-schedule checks. Live charges must remain active and every non-bank verification requirement must still be clear; customer proceeds remain in Stripe until the payout account is connected. Its US company name must match `lib/company.ts`; configure the Frame public website, monitored support email and `/contact` URL, merchant category, product description, a 5–22 character statement descriptor containing `FRAME`, and an icon or logo plus primary brand colour. The pre-order Checkout session supplies its own Frame presentation and links the Pre-order Terms, Cancellation and Refund Policy, and Privacy Notice on Stripe's hosted page.
 
 The live objects were created on August 6, 2026:
 
@@ -193,6 +193,7 @@ PREORDER_PREVIEW_MODE=false
 PREORDER_LIVE_SMOKE_ACCESS_SECRET=<fourth unique secret of at least 32 characters>
 PREORDER_PUBLIC_LAUNCH_ENABLED=false
 PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID=
+PREORDER_ALLOW_BANK_PENDING_LAUNCH=false
 PREORDER_FROM_EMAIL=Frame Pre-orders <preorders@framewearable.com>
 PREORDER_OPERATIONS_EMAIL=support@framewearable.com
 PREORDER_ORDER_ACCESS_SECRET=<stable dedicated secret of at least 32 characters>
@@ -262,7 +263,7 @@ commit.
 
 1. Configure live mode with `PREORDER_PUBLIC_LAUNCH_ENABLED=false`, an empty `PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID`, and a unique `PREORDER_LIVE_SMOKE_ACCESS_SECRET`. Public pre-order routes remain hidden.
 2. Keep the Supabase `live` allocation `paused` and set its released-unit ceiling to exactly `1`.
-3. Run `npm run preorder:check:email`, `npm run preorder:check:payments`, `npm run preorder:check:operations`, then `npm run preorder:check:live-smoke`; do not continue unless all report zero failures, including every email identity/authentication check, live payment/order comparison, operations-health and inventory check, and live Stripe Account activation, verification, payout, identity, customer-support, descriptor, agreement, and branding check.
+3. Run `npm run preorder:check:email`, `npm run preorder:check:payments`, `npm run preorder:check:operations`, then `npm run preorder:check:live-smoke`; do not continue unless all report zero failures, including every email identity/authentication check, live payment/order comparison, operations-health and inventory check, and live Stripe Account activation, verification, identity, customer-support, descriptor, agreement, and branding check. If `PREORDER_ALLOW_BANK_PENDING_LAUNCH=true`, the only permitted warning is that the payout account and automatic schedule remain pending.
 4. Deploy the approved live configuration while the public-launch lock and paused allocation remain in place.
 5. Create the 15-minute invitation with `npm run preorder:live-smoke-link`. Do not share it; it opens the real card-payment path for two hours in that browser.
 6. From the authenticated owner view, open the one-unit live allocation. The control rejects any larger non-public live opening.
@@ -272,6 +273,8 @@ commit.
 10. Run `npm run preorder:check:payments`, `npm run preorder:check:operations`, then `npm run preorder:check:launch`. They verify that the private live order reconciles exactly with Stripe, came from the private path, completed through the webhook, recorded a delivered confirmation outcome, was fully refunded, and left no failed or stalled operational work.
 11. Publish the public-cutover configuration and open the 100-unit live allocation from the authenticated owner view.
 12. Confirm the public homepage button reaches review and Stripe live Checkout, then monitor the first public order before allowing more traffic.
+
+If launch used the bank-pending exception, connect the approved company payout account as soon as it is available, configure automatic payouts, set `PREORDER_ALLOW_BANK_PENDING_LAUNCH=false`, and rerun `npm run preorder:check:launch`. Do not leave the exception enabled after Stripe reports payouts as available.
 
 Opening the live allocation is intentionally the last step. The owner API will refuse it if any launch safeguard fails.
 

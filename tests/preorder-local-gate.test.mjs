@@ -385,6 +385,7 @@ test("keeps the public homepage free of pre-order discovery and blocks webhook b
   assert.match(environmentExample, /^PREORDER_MAINTENANCE_SECRET=/m);
   assert.match(environmentExample, /^PREORDER_PUBLIC_LAUNCH_ENABLED=false$/m);
   assert.match(environmentExample, /^PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID=$/m);
+  assert.match(environmentExample, /^PREORDER_ALLOW_BANK_PENDING_LAUNCH=false$/m);
   assert.match(environmentExample, /^PREORDER_LIVE_SMOKE_ACCESS_SECRET=/m);
   assert.match(preorderAccess, /PREORDER_PRODUCT_STATUS_VERSION/);
   assert.match(preorderAccess, /approvedProductStatusVersion === PREORDER_PRODUCT_STATUS_VERSION/);

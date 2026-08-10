@@ -127,7 +127,7 @@ Public requests remain blocked unless all of the following are true:
 - `PREORDER_PUBLIC_LAUNCH_ENABLED=true` and `PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID` identifies the fully refunded private live-verification order;
 - the one-year limited hardware warranty and the scheduled delivery-deadline processor are active; and
 - a live Stripe secret and approved live Price are configured; and
-- the live Stripe Account passes the read-only activation, card capability, payout, KYC, legal identity, business/support profile, statement descriptor, agreement acceptance, and branding checks.
+- the live Stripe Account passes the read-only activation, card capability, KYC, legal identity, business/support profile, statement descriptor, agreement acceptance, and branding checks. Payouts and an automatic schedule are also required unless `PREORDER_ALLOW_BANK_PENDING_LAUNCH=true` explicitly permits the missing or verifying external payout account; that exception never waives live charges or a non-bank verification requirement.
 - every paid live Stripe pre-order passes `npm run preorder:check:payments`, with no orphaned sessions, amount mismatches, stale refund state, or unrecorded dispute.
 - `npm run preorder:check:operations` reports `SAFE TO ACCEPT ORDERS`, with no failed or stalled operational work and exact inventory totals.
 

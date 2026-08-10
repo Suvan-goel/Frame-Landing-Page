@@ -211,6 +211,8 @@ const liveSmokeSecret = process.env.PREORDER_LIVE_SMOKE_ACCESS_SECRET ?? "";
 const publicLaunchEnabled = process.env.PREORDER_PUBLIC_LAUNCH_ENABLED ?? "false";
 const verifiedLiveSmokeOrderId =
   process.env.PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID ?? "";
+const allowBankPendingLaunch =
+  process.env.PREORDER_ALLOW_BANK_PENDING_LAUNCH === "true";
 if (configured("PREORDER_LIVE_SMOKE_ACCESS_SECRET", 32)) {
   pass("Private live-verification gate", "A revocable live-verification secret is configured.");
   const conflictingSecretNames = [
@@ -628,9 +630,15 @@ if (isLiveTarget && /^(?:sk|rk)_live_/.test(secretKey)) {
   try {
     const stripe = new Stripe(secretKey, { httpClient: Stripe.createFetchHttpClient() });
     const account = await stripe.accounts.retrieveCurrent();
-    for (const check of evaluateStripeAccountReadiness(account)) {
+    for (const check of evaluateStripeAccountReadiness(account, undefined, {
+      allowBankPendingLaunch,
+    })) {
       if (check.ready) {
-        pass(check.name, check.readyDetail);
+        if (check.warning) {
+          warn(check.name, check.warning);
+        } else {
+          pass(check.name, check.readyDetail);
+        }
       } else {
         fail(check.name, check.blocker);
       }

@@ -9224,13 +9224,21 @@ h2 {
   color: var(--ink-soft);
 }
 
-.preorder-sales-controls__blockers ul {
+.preorder-sales-controls__blockers ul,
+.preorder-sales-controls__warnings ul {
   display: grid;
   gap: 5px;
   margin: 10px 0 0;
   padding-left: 18px;
-  color: var(--burgundy);
   font-size: 0.7rem;
+}
+
+.preorder-sales-controls__blockers ul {
+  color: var(--burgundy);
+}
+
+.preorder-sales-controls__warnings ul {
+  color: var(--ink);
 }
 
 .preorder-manage-page {

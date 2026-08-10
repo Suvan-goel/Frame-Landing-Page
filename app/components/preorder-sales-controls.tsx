@@ -11,10 +11,12 @@ export function PreorderSalesControls({
   snapshot,
   liveGateReady,
   launchBlockers,
+  launchWarnings,
 }: {
   snapshot: PreorderSalesSnapshot;
   liveGateReady: boolean;
   launchBlockers: string[];
+  launchWarnings: string[];
 }) {
   const router = useRouter();
   const [salesStatus, setSalesStatus] = useState(snapshot.salesStatus);
@@ -139,6 +141,16 @@ export function PreorderSalesControls({
               {launchBlockers.map((blocker) => <li key={blocker}>{blocker}</li>)}
             </ul>
           ) : null}
+        </div>
+      ) : null}
+      {snapshot.environment === "live" && launchWarnings.length ? (
+        <div className="preorder-sales-controls__warnings" role="status">
+          <p className="preorder-sales-controls__note">
+            Live checkout may open, but this temporary launch condition still needs attention.
+          </p>
+          <ul>
+            {launchWarnings.map((warning) => <li key={warning}>{warning}</li>)}
+          </ul>
         </div>
       ) : null}
       {message ? <p className="form-success" role="status">{message}</p> : null}

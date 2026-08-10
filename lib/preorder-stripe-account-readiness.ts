@@ -16,6 +16,11 @@ export type StripeAccountReadinessCheck = {
   ready: boolean;
   readyDetail: string;
   blocker: string;
+  warning?: string;
+};
+
+export type StripeAccountReadinessOptions = {
+  allowBankPendingLaunch?: boolean;
 };
 
 export const STRIPE_LIVE_ACCOUNT_EXPECTATION: Readonly<StripeAccountReadinessExpectation> =
@@ -58,9 +63,20 @@ function isHexColor(value: string | null | undefined) {
   return /^#[0-9a-f]{6}$/i.test(value ?? "");
 }
 
+function isExternalAccountRequirement(value: string | null | undefined) {
+  return value === "external_account" || value?.startsWith("external_account.");
+}
+
+function requirementsWithoutExternalAccount(
+  values: string[] | null | undefined,
+) {
+  return (values ?? []).filter((value) => !isExternalAccountRequirement(value));
+}
+
 export function evaluateStripeAccountReadiness(
   account: Stripe.Account,
   expectation: StripeAccountReadinessExpectation = STRIPE_LIVE_ACCOUNT_EXPECTATION,
+  options: StripeAccountReadinessOptions = {},
 ): StripeAccountReadinessCheck[] {
   const requirements = account.requirements;
   const profile = account.business_profile;
@@ -71,6 +87,8 @@ export function evaluateStripeAccountReadiness(
   const legalNameMatches =
     normalizeIdentity(expectation.legalName).length > 0 &&
     normalizeIdentity(account.company?.name) === normalizeIdentity(expectation.legalName);
+  const cardPaymentsActive =
+    account.charges_enabled && account.capabilities?.card_payments === "active";
   const verificationClear =
     Boolean(requirements) &&
     !requirements?.disabled_reason &&
@@ -78,6 +96,31 @@ export function evaluateStripeAccountReadiness(
     (requirements?.past_due?.length ?? 0) === 0 &&
     (requirements?.pending_verification?.length ?? 0) === 0 &&
     (requirements?.errors?.length ?? 0) === 0;
+  const explicitExternalAccountRequirement = [
+    ...(requirements?.currently_due ?? []),
+    ...(requirements?.past_due ?? []),
+    ...(requirements?.pending_verification ?? []),
+    ...(requirements?.errors ?? []).map((error) => error.requirement),
+  ].some(isExternalAccountRequirement);
+  const onlyBankVerificationOutstanding =
+    Boolean(requirements) &&
+    requirementsWithoutExternalAccount(requirements?.currently_due).length === 0 &&
+    requirementsWithoutExternalAccount(requirements?.past_due).length === 0 &&
+    requirementsWithoutExternalAccount(requirements?.pending_verification).length === 0 &&
+    (requirements?.errors ?? []).every((error) =>
+      isExternalAccountRequirement(error.requirement),
+    ) &&
+    (!requirements?.disabled_reason ||
+      (explicitExternalAccountRequirement &&
+        requirements.disabled_reason.startsWith("requirements.")));
+  const bankPendingLaunchException =
+    options.allowBankPendingLaunch === true &&
+    cardPaymentsActive &&
+    !account.payouts_enabled &&
+    onlyBankVerificationOutstanding;
+  const automaticPayoutSchedule =
+    Boolean(settings?.payouts?.schedule.interval) &&
+    settings?.payouts?.schedule.interval !== "manual";
   const brandingReady =
     Boolean(settings?.branding.icon || settings?.branding.logo) &&
     isHexColor(settings?.branding.primary_color);
@@ -96,8 +139,10 @@ export function evaluateStripeAccountReadiness(
     },
     {
       name: "Stripe account submission",
-      ready: account.details_submitted,
-      readyDetail: "Stripe account onboarding details have been submitted.",
+      ready: account.details_submitted || bankPendingLaunchException,
+      readyDetail: bankPendingLaunchException
+        ? "All charge-enabling Stripe details are submitted; only the payout account remains pending."
+        : "Stripe account onboarding details have been submitted.",
       blocker: "Complete and submit every required Stripe account onboarding detail.",
     },
     {
@@ -108,29 +153,36 @@ export function evaluateStripeAccountReadiness(
     },
     {
       name: "Stripe verification",
-      ready: verificationClear,
-      readyDetail: "Stripe reports no current, overdue, failed, or pending verification requirements.",
+      ready: verificationClear || bankPendingLaunchException,
+      readyDetail: bankPendingLaunchException
+        ? "Stripe reports no outstanding verification requirement other than the payout account."
+        : "Stripe reports no current, overdue, failed, or pending verification requirements.",
       blocker:
-        "Resolve every current, overdue, failed, or pending Stripe verification requirement before launch.",
+        "Resolve every non-bank current, overdue, failed, or pending Stripe verification requirement before launch.",
     },
     {
       name: "Stripe card payments",
-      ready: account.charges_enabled && account.capabilities?.card_payments === "active",
+      ready: cardPaymentsActive,
       readyDetail: "Live charges and the card-payments capability are active.",
       blocker: "Live charges and the Stripe card-payments capability must both be active.",
     },
     {
       name: "Stripe payouts",
-      ready: account.payouts_enabled,
-      readyDetail: "Stripe reports that funds can be paid out.",
+      ready: account.payouts_enabled || bankPendingLaunchException,
+      readyDetail: bankPendingLaunchException
+        ? "The authorised bank-pending launch exception is active; proceeds will remain in Stripe until a payout account is connected."
+        : "Stripe reports that funds can be paid out.",
       blocker: "Attach and verify the payout account until Stripe reports payouts as enabled.",
+      warning: bankPendingLaunchException
+        ? "Bank-pending launch is active: customer proceeds will remain in Stripe until the company payout account is approved and connected."
+        : undefined,
     },
     {
       name: "Stripe payout schedule",
-      ready:
-        Boolean(settings?.payouts?.schedule.interval) &&
-        settings?.payouts?.schedule.interval !== "manual",
-      readyDetail: "An automatic Stripe payout schedule is configured.",
+      ready: automaticPayoutSchedule || bankPendingLaunchException,
+      readyDetail: bankPendingLaunchException
+        ? "The automatic payout schedule is deferred until the company payout account is connected."
+        : "An automatic Stripe payout schedule is configured.",
       blocker: "Configure an automatic Stripe payout schedule rather than manual payouts.",
     },
     {
@@ -172,8 +224,9 @@ export function evaluateStripeAccountReadiness(
 export function stripeAccountReadinessBlockers(
   account: Stripe.Account,
   expectation: StripeAccountReadinessExpectation = STRIPE_LIVE_ACCOUNT_EXPECTATION,
+  options: StripeAccountReadinessOptions = {},
 ) {
-  return evaluateStripeAccountReadiness(account, expectation)
+  return evaluateStripeAccountReadiness(account, expectation, options)
     .filter((check) => !check.ready)
     .map((check) => check.blocker);
 }

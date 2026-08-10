@@ -100,6 +100,86 @@ test("blocks inactive payments, payouts, verification, identity, and customer-fa
   ]);
 });
 
+test("allows an explicitly authorised bank-pending launch when live card payments are active", () => {
+  const account = readyAccount();
+  account.details_submitted = false;
+  account.payouts_enabled = false;
+  account.requirements.currently_due = ["external_account"];
+  account.requirements.past_due = ["external_account"];
+  account.requirements.disabled_reason = "requirements.past_due";
+  account.settings.payouts.schedule.interval = "manual";
+
+  const checks = evaluateStripeAccountReadiness(account, expectation, {
+    allowBankPendingLaunch: true,
+  });
+
+  assert.equal(checks.every((check) => check.ready), true);
+  assert.deepEqual(
+    checks.filter((check) => check.warning).map((check) => check.name),
+    ["Stripe payouts"],
+  );
+  assert.deepEqual(
+    stripeAccountReadinessBlockers(account, expectation, {
+      allowBankPendingLaunch: true,
+    }),
+    [],
+  );
+});
+
+test("bank-pending launch never waives a non-bank verification requirement", () => {
+  const account = readyAccount();
+  account.payouts_enabled = false;
+  account.requirements.currently_due = ["external_account", "representative.verification.document"];
+  account.settings.payouts.schedule.interval = "manual";
+
+  const failedNames = evaluateStripeAccountReadiness(account, expectation, {
+    allowBankPendingLaunch: true,
+  })
+    .filter((check) => !check.ready)
+    .map((check) => check.name);
+
+  assert.deepEqual(failedNames, [
+    "Stripe verification",
+    "Stripe payouts",
+    "Stripe payout schedule",
+  ]);
+});
+
+test("bank-pending launch never waives inactive live card payments", () => {
+  const account = readyAccount();
+  account.charges_enabled = false;
+  account.payouts_enabled = false;
+  account.capabilities.card_payments = "pending";
+  account.requirements.currently_due = ["external_account"];
+  account.settings.payouts.schedule.interval = "manual";
+
+  const failedNames = evaluateStripeAccountReadiness(account, expectation, {
+    allowBankPendingLaunch: true,
+  })
+    .filter((check) => !check.ready)
+    .map((check) => check.name);
+
+  assert.deepEqual(failedNames, [
+    "Stripe verification",
+    "Stripe card payments",
+    "Stripe payouts",
+    "Stripe payout schedule",
+  ]);
+});
+
+test("still requires automatic payouts after Stripe enables the payout account", () => {
+  const account = readyAccount();
+  account.settings.payouts.schedule.interval = "manual";
+
+  const failedNames = evaluateStripeAccountReadiness(account, expectation, {
+    allowBankPendingLaunch: true,
+  })
+    .filter((check) => !check.ready)
+    .map((check) => check.name);
+
+  assert.deepEqual(failedNames, ["Stripe payout schedule"]);
+});
+
 test("requires a real incorporated legal name in the launch expectation", () => {
   const checks = evaluateStripeAccountReadiness(readyAccount(), {
     ...expectation,

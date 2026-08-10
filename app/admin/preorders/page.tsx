@@ -184,6 +184,7 @@ export default async function PreorderAdminPage({
           snapshot={snapshot}
           liveGateReady={liveGateReady}
           launchBlockers={launchReadiness.blockers}
+          launchWarnings={launchReadiness.warnings}
         />
 
         <section className="admin-content-status preorder-admin-readiness">

@@ -24,7 +24,7 @@ import {
   PREORDER_TAX_HEAD_OFFICE_COUNTRY,
   PREORDER_TAX_POLICY_VERSION,
 } from "./preorder-tax-policy";
-import { stripeAccountReadinessBlockers } from "./preorder-stripe-account-readiness";
+import { evaluateStripeAccountReadiness } from "./preorder-stripe-account-readiness";
 import {
   getPreorderEmailDnsSnapshot,
   PREORDER_EMAIL_REPLY_TO,
@@ -34,6 +34,7 @@ import {
 export type PreorderLaunchReadiness = {
   ready: boolean;
   blockers: string[];
+  warnings: string[];
 };
 
 function configuredSecret(value: string | undefined) {
@@ -71,6 +72,7 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
     maintenanceSecret,
     liveSmokeAccessSecret,
     stagingAccessSecret,
+    allowBankPendingLaunch,
     configuration,
     liveSalesSnapshot,
     emailDns,
@@ -92,6 +94,7 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
     getRuntimeValue("PREORDER_MAINTENANCE_SECRET"),
     getRuntimeValue("PREORDER_LIVE_SMOKE_ACCESS_SECRET"),
     getRuntimeValue("PREORDER_STAGING_ACCESS_SECRET"),
+    getRuntimeValue("PREORDER_ALLOW_BANK_PENDING_LAUNCH"),
     getPreorderConfiguration(),
     getPreorderSalesSnapshot("live").catch(() => null),
     getPreorderEmailDnsSnapshot().catch(() => null),
@@ -102,6 +105,7 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
   const stripeWebhookSecret = dedicatedLiveStripeWebhookSecret;
 
   const blockers: string[] = [];
+  const warnings: string[] = [];
   if (!PREORDER_SELLER_DETAILS_COMPLETE) {
     blockers.push(
       `The incorporated seller's legal identity and contact details are not complete: ${COMPANY_DETAILS_CHECK.missingOrInvalid.join(", ")}.`,
@@ -277,7 +281,15 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
         httpClient: Stripe.createFetchHttpClient(),
       });
       const account = await stripe.accounts.retrieveCurrent();
-      blockers.push(...stripeAccountReadinessBlockers(account));
+      const accountChecks = evaluateStripeAccountReadiness(account, undefined, {
+        allowBankPendingLaunch: allowBankPendingLaunch === "true",
+      });
+      blockers.push(
+        ...accountChecks.filter((check) => !check.ready).map((check) => check.blocker),
+      );
+      warnings.push(
+        ...accountChecks.flatMap((check) => check.warning ? [check.warning] : []),
+      );
     } catch {
       blockers.push(
         "The live Stripe account activation, verification, payout, profile, descriptor, and branding state could not be verified with the configured key.",
@@ -314,5 +326,5 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
     }
   }
 
-  return { ready: blockers.length === 0, blockers };
+  return { ready: blockers.length === 0, blockers, warnings };
 }
