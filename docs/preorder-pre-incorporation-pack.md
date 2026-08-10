@@ -14,6 +14,9 @@ location.
 - Regulatory review: founder confirmed complete on August 10, 2026; conclusion
   reported as no site-copy changes required.
 - Regulatory reviewer and secure evidence location: not recorded here.
+- Commercial offer: founder approved the price, expected release price,
+  shipping, delivery window, per-checkout quantity, initial allocation, return
+  period and warranty terms recorded below on August 10, 2026.
 - Incorporated seller identity: awaiting Stripe Atlas confirmation.
 - Legal approval: pending recorded approval.
 - Cross-border tax approval: pending recorded approval.
@@ -43,7 +46,11 @@ policies, emails, Stripe validation and tests:
 Record the final decision without changing source until all reviewers are
 working from the same offer:
 
-- Owner approval date: —
+- Owner approval date: August 10, 2026
+- Owner-approved scope: $299 plus applicable sales tax; $499 expected release
+  price; free standard US shipping; Q1 2027 estimated shipping; one device per
+  checkout; initial 100-unit release; 30-day voluntary returns; one-year
+  limited hardware warranty.
 - Legal approval date and approver: —
 - Tax approval date and approver: —
 - Approved legal-pack version: —
