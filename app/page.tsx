@@ -33,7 +33,7 @@ const content = {
     ["Personal by design", "Your baseline provides the reference for how patterns are shown."],
     [
       "Made for everyday wear",
-      "Frame’s screenless upper-arm design is intended to stay quietly in the background.",
+      "Frame’s upper-arm form is designed to fit into daily life.",
     ],
     ["Context built in", "Motion, contact, sleep, and activity help explain what was happening."],
     ["Confidence stays visible", "Uncertain and interrupted periods remain clearly marked."],
