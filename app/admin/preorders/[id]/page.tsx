@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-html-link-for-pages */
 import { notFound } from "next/navigation";
 import { AdminDashboardShell } from "@/app/components/admin-dashboard-shell";
 import { PreorderOrderOperations } from "@/app/components/preorder-order-operations";

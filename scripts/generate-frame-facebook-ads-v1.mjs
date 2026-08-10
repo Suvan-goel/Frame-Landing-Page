@@ -134,7 +134,7 @@ function escapeXml(value) {
     .replaceAll(">", "&gt;");
 }
 
-function textLines(lines, { x, y, size, lineHeight, className, anchor = "start" }) {
+function textLines(lines, { x, y, lineHeight, className, anchor = "start" }) {
   return lines
     .map(
       (line, index) =>
@@ -318,7 +318,6 @@ function transparentProductBackdrop(format) {
 }
 
 async function renderTransparentProductFeedOrSquare(name, concept, format) {
-  const { width, height } = formats[format];
   const placement =
     format === "square"
       ? { width: 500, left: 550, top: 550 }
@@ -345,7 +344,6 @@ async function renderTransparentProductFeedOrSquare(name, concept, format) {
 }
 
 async function renderTransparentProductStory(name, concept) {
-  const { width, height } = formats.story;
   const product = await sharp(concept.source).resize({ width: 850 }).png().toBuffer();
   const wordmark = await resizedWordmark(concept.wordmarkWidths?.story ?? 190);
 

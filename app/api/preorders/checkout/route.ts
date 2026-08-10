@@ -217,7 +217,6 @@ export async function POST(request: Request) {
     if (config.shippingRateCents !== PREORDER_SHIPPING_RATE_CENTS) {
       throw new Error("Pre-order shipping does not match the reviewed offer.");
     }
-    const productPriceLabel = formatPreorderMoney(config.priceCents, config.currency);
     const releasePriceLabel = formatPreorderMoney(PREORDER_RELEASE_PRICE_CENTS, config.currency);
     const preorderSavingsLabel = formatPreorderMoney(
       PREORDER_RELEASE_PRICE_CENTS - config.priceCents,

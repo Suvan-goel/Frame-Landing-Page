@@ -53,3 +53,28 @@ test("wires the approved tax policy through runtime and launch checks", async ()
   assert.match(runtimeEnv, /PREORDER_TAX_REVIEW_APPROVED_VERSION\?: string/);
   assert.match(environmentExample, /^PREORDER_TAX_REVIEW_APPROVED_VERSION=$/m);
 });
+
+test("keeps one canonical launch runbook with every approval gate", async () => {
+  const [runbook, pointer, handoff] = await Promise.all([
+    readFile(new URL("../PREORDER_LAUNCH_RUNBOOK.md", import.meta.url), "utf8"),
+    readFile(new URL("../docs/preorder-launch-runbook.md", import.meta.url), "utf8"),
+    readFile(
+      new URL("../docs/preorder-pre-incorporation-pack.md", import.meta.url),
+      "utf8",
+    ),
+  ]);
+
+  assert.match(runbook, /This is the canonical launch runbook/);
+  assert.match(
+    runbook,
+    /PREORDER_TAX_REVIEW_APPROVED_VERSION=<exact approved tax-policy version>/,
+  );
+  assert.match(runbook, /MAILING_POSTAL_ADDRESS=<authorised public correspondence address>/);
+  assert.match(pointer, /\.\.\/PREORDER_LAUNCH_RUNBOOK\.md/);
+  assert.doesNotMatch(pointer, /PREORDER_MODE=/);
+  assert.match(
+    handoff,
+    /Regulatory review: founder confirmed complete[\s\S]+no site-copy changes required/i,
+  );
+  assert.doesNotMatch(handoff, /proceed without a separate medical-device regulatory/i);
+});

@@ -1,20 +1,30 @@
 # Frame pre-order launch runbook
 
-This runbook keeps the public checkout closed until every commercial, operational and legal dependency is ready. The database `live` allocation must remain `paused` until the final cutover step.
+This is the canonical launch runbook. The supporting evidence and handoff template
+is [`docs/preorder-pre-incorporation-pack.md`](docs/preorder-pre-incorporation-pack.md).
+Do not duplicate launch instructions elsewhere.
 
-## 0. Current local-only hold
+This runbook keeps the public checkout closed until every commercial,
+operational and legal dependency is ready. The database `live` allocation must
+remain `paused` until the final cutover step.
 
-Do not deploy the pre-order source or change hosted pre-order settings during the
-current implementation phase. The public homepage must remain waitlist-only,
-and remote pre-order pages, owner routes and APIs must return `404`. Local
-loopback requests remain available for development and Stripe test-mode checks.
+## 0. Current public launch hold
 
-Keep all four safeguards in place:
+Pre-order source may be deployed while the launch locks below remain intact.
+The public homepage must remain waitlist-only, and remote pre-order pages,
+checkout APIs and public status routes must return `404`. Owner routes must
+remain authenticated and launch-gated. Local loopback requests remain available
+for development and Stripe test-mode checks.
 
-- `PREORDER_MODE` stays `test` locally and is never changed to `live`;
+Keep every safeguard in place:
+
+- `PREORDER_MODE` stays `test` or `off` until private live verification;
 - `PREORDER_LEGAL_APPROVED_VERSION` stays empty;
 - `PREORDER_PRODUCT_STATUS_APPROVED_VERSION` stays empty;
+- `PREORDER_TAX_REVIEW_APPROVED_VERSION` stays empty;
 - both source legal versions continue to begin with `draft`;
+- `PREORDER_PUBLIC_LAUNCH_ENABLED` stays `false` and
+  `PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID` stays empty; and
 - the Supabase `live` allocation stays `paused`.
 
 Run `npm run preorder:test:visibility` after any routing, homepage, Worker or
@@ -136,9 +146,15 @@ npm run preorder:staging-link -- https://staging.example.com
 
 The invitation grants a signed, secure, 12-hour browser session. Rotating `PREORDER_STAGING_ACCESS_SECRET` revokes outstanding access.
 
-## 3. Legal and regulatory hold
+## 3. Company, legal, tax and fulfilment hold
 
-Do not complete this section until the lawyer and medical-device regulatory review are finished.
+The founder confirmed on August 10, 2026 that the regulatory review is complete
+and requires no site-copy changes. Retain the underlying review record outside
+the repository and reassess it before any material claim, intended-use, output,
+alert or product-design change.
+
+Do not release the legal or tax approval locks until the remaining reviews and
+company-identity work are finished.
 
 - Insert the incorporated seller identity, the document-matched registered office, and the separately authorised customer correspondence address. Set `correspondenceAddressAuthorized` only after mail-provider approval, configure `MAILING_POSTAL_ADDRESS`, and replace every remaining draft marker or placeholder with approved wording.
 - Review the one-year limited hardware warranty, shipping-delay consent matrix, material-change consent flow, and automatic deadline refund operation with US counsel.
@@ -172,9 +188,16 @@ Required live values:
 PREORDER_MODE=live
 PREORDER_LEGAL_APPROVED_VERSION=<exact approved non-draft version>
 PREORDER_PRODUCT_STATUS_APPROVED_VERSION=<exact approved non-draft version>
+PREORDER_TAX_REVIEW_APPROVED_VERSION=<exact approved tax-policy version>
+PREORDER_PREVIEW_MODE=false
 PREORDER_LIVE_SMOKE_ACCESS_SECRET=<fourth unique secret of at least 32 characters>
 PREORDER_PUBLIC_LAUNCH_ENABLED=false
 PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID=
+PREORDER_FROM_EMAIL=Frame Pre-orders <preorders@framewearable.com>
+PREORDER_OPERATIONS_EMAIL=support@framewearable.com
+PREORDER_ORDER_ACCESS_SECRET=<stable dedicated secret of at least 32 characters>
+PREORDER_RATE_LIMIT_SECRET=<different dedicated secret of at least 32 characters>
+PREORDER_STAGING_ACCESS_SECRET=<different staging secret of at least 32 characters>
 STRIPE_SECRET_KEY=<live key>
 STRIPE_PREORDER_PRICE_ID=<live $299 price>
 STRIPE_WEBHOOK_SECRET=<live endpoint signing secret>
@@ -188,6 +211,10 @@ PREORDER_ALLOWED_COUNTRIES=US
 PREORDER_ESTIMATED_SHIPPING=Q1 2027
 PREORDER_SHIPPING_RATE_CENTS=0
 PREORDER_MAINTENANCE_SECRET=<third unique secret of at least 32 characters>
+MAILING_POSTAL_ADDRESS=<authorised public correspondence address>
+RESEND_API_KEY=<restricted sending key>
+SUPABASE_URL=<production project URL>
+SUPABASE_SECRET_KEY=<production server secret>
 ```
 
 Copy the Supabase, Resend, sender, operations-email, order-link and rate-limit values into the hosted environment. Use different values for `PREORDER_ORDER_ACCESS_SECRET` and `PREORDER_RATE_LIMIT_SECRET`. Do not expose any secret in source control.
@@ -228,6 +255,10 @@ processed in the Worker background. Failed work and processing that has stalled
 for five minutes appears in the owner recovery panel and can be safely retried.
 
 ## 5. Final cutover
+
+Before each Sites publish, commit the exact validated source on `main`, push
+`main`, and run `npm run release:check`. Package and publish only that exact
+commit.
 
 1. Configure live mode with `PREORDER_PUBLIC_LAUNCH_ENABLED=false`, an empty `PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID`, and a unique `PREORDER_LIVE_SMOKE_ACCESS_SECRET`. Public pre-order routes remain hidden.
 2. Keep the Supabase `live` allocation `paused` and set its released-unit ceiling to exactly `1`.
