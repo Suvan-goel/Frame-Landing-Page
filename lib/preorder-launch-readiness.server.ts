@@ -17,13 +17,19 @@ import {
 import { getPreorderSalesSnapshot } from "./preorder-operations.server";
 import { getPreorderMode, getRuntimeValue } from "./runtime-env.server";
 import { isStripeSecretForEnvironment } from "./stripe.server";
-import { COMPANY_DETAILS_CHECK, SUPPORT_EMAIL } from "./company";
+import { COMPANY_DETAILS_CHECK } from "./company";
 import {
   comparePreorderUsTaxRegistrationStates,
   isPreorderTaxReviewApproved,
   PREORDER_TAX_HEAD_OFFICE_COUNTRY,
   PREORDER_TAX_POLICY_VERSION,
 } from "./preorder-tax-policy";
+import { stripeAccountReadinessBlockers } from "./preorder-stripe-account-readiness";
+import {
+  getPreorderEmailDnsSnapshot,
+  PREORDER_EMAIL_REPLY_TO,
+  preorderEmailReadinessBlockers,
+} from "./preorder-email-readiness";
 
 export type PreorderLaunchReadiness = {
   ready: boolean;
@@ -32,10 +38,6 @@ export type PreorderLaunchReadiness = {
 
 function configuredSecret(value: string | undefined) {
   return Boolean(value && value.length >= 32);
-}
-
-function configuredEmail(value: string | undefined) {
-  return Boolean(value && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value.trim()));
 }
 
 const requiredWebhookEvents = [
@@ -67,8 +69,11 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
     orderAccessSecret,
     rateLimitSecret,
     maintenanceSecret,
+    liveSmokeAccessSecret,
+    stagingAccessSecret,
     configuration,
     liveSalesSnapshot,
+    emailDns,
   ] = await Promise.all([
     getPreorderMode(),
     getRuntimeValue("PREORDER_LEGAL_APPROVED_VERSION"),
@@ -85,8 +90,11 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
     getRuntimeValue("PREORDER_ORDER_ACCESS_SECRET"),
     getRuntimeValue("PREORDER_RATE_LIMIT_SECRET"),
     getRuntimeValue("PREORDER_MAINTENANCE_SECRET"),
+    getRuntimeValue("PREORDER_LIVE_SMOKE_ACCESS_SECRET"),
+    getRuntimeValue("PREORDER_STAGING_ACCESS_SECRET"),
     getPreorderConfiguration(),
     getPreorderSalesSnapshot("live").catch(() => null),
+    getPreorderEmailDnsSnapshot().catch(() => null),
   ]);
 
   const stripeSecretKey = dedicatedLiveStripeSecretKey;
@@ -124,20 +132,21 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
   if (!liveStripeWebhookEndpointId?.startsWith("we_")) {
     blockers.push("The live Stripe webhook endpoint reference is not configured.");
   }
-  if (!resendApiKey?.startsWith("re_") || !preorderFromEmail?.trim()) {
-    blockers.push("Customer email delivery is not configured.");
-  }
   const operationsRecipient =
     operationsEmail?.trim() ??
     adminEmails
       ?.split(",")
       .map((email) => email.trim())
       .find(Boolean);
-  if (!configuredEmail(operationsRecipient)) {
-    blockers.push("A valid pre-order operations recipient is not configured.");
-  } else if (operationsRecipient?.trim().toLowerCase() !== SUPPORT_EMAIL.toLowerCase()) {
-    blockers.push(`Pre-order operational alerts must be routed to the monitored support inbox (${SUPPORT_EMAIL}).`);
-  }
+  blockers.push(
+    ...preorderEmailReadinessBlockers({
+      apiKey: resendApiKey,
+      from: preorderFromEmail,
+      operationsRecipient,
+      replyTo: PREORDER_EMAIL_REPLY_TO,
+      dns: emailDns,
+    }),
+  );
   if (!configuredSecret(orderAccessSecret)) {
     blockers.push("A dedicated customer order-link signing secret is not configured.");
   }
@@ -147,6 +156,9 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
   if (!configuredSecret(maintenanceSecret)) {
     blockers.push("A dedicated delivery-deadline maintenance secret is not configured.");
   }
+  if (!configuredSecret(liveSmokeAccessSecret)) {
+    blockers.push("A dedicated private live-verification signing secret is not configured.");
+  }
   if (orderAccessSecret && rateLimitSecret && orderAccessSecret === rateLimitSecret) {
     blockers.push("Order-link and endpoint-protection secrets must be different.");
   }
@@ -155,6 +167,17 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
     [orderAccessSecret, rateLimitSecret].some((secret) => secret === maintenanceSecret)
   ) {
     blockers.push("The delivery-deadline secret must be isolated from customer endpoint secrets.");
+  }
+  if (
+    liveSmokeAccessSecret &&
+    [
+      orderAccessSecret,
+      rateLimitSecret,
+      maintenanceSecret,
+      stagingAccessSecret,
+    ].some((secret) => secret && secret === liveSmokeAccessSecret)
+  ) {
+    blockers.push("The private live-verification secret must use independent signing material.");
   }
 
   if (
@@ -245,6 +268,20 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
       }
     } catch {
       blockers.push("The live Stripe product and price could not be verified.");
+    }
+  }
+
+  if (isStripeSecretForEnvironment(stripeSecretKey, "live")) {
+    try {
+      const stripe = new Stripe(stripeSecretKey, {
+        httpClient: Stripe.createFetchHttpClient(),
+      });
+      const account = await stripe.accounts.retrieveCurrent();
+      blockers.push(...stripeAccountReadinessBlockers(account));
+    } catch {
+      blockers.push(
+        "The live Stripe account activation, verification, payout, profile, descriptor, and branding state could not be verified with the configured key.",
+      );
     }
   }
 

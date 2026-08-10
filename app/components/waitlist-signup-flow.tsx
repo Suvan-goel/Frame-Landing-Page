@@ -790,7 +790,7 @@ export function WaitlistSignupFlow({
               <strong>Get updates</strong>
               <p>
                 {usePreorderLaunchCopy
-                  ? "Get product milestones, launch news, and opportunities to help shape Frame."
+                  ? "Product milestones, launch news, and opportunities to shape what comes next."
                   : "Receive Frame development news and help shape what comes next."}
               </p>
             </div>

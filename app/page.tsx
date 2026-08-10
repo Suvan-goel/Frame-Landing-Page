@@ -14,6 +14,7 @@ import {
   PREORDER_DISCOUNT_PERCENT,
   PREORDER_RELEASE_PRICE_CENTS,
 } from "@/lib/preorder";
+import { companyLegalIdentityLine } from "@/lib/company";
 import { INSTAGRAM_URL, ORGANIZATION_NAME } from "@/lib/site";
 
 const content = {
@@ -23,16 +24,16 @@ const content = {
     { label: "Research", href: "#research" },
   ],
   insights: [
-    ["Baseline", "What is normal for you during comparable periods."],
+    ["Baseline", "What is typical for you during comparable periods."],
     ["Recovery", "How quickly you return toward your usual pattern."],
     ["Response", "How your cardiovascular system changes around meaningful events."],
     ["Confidence", "What was measured reliably, and what was not."],
   ],
   principles: [
-    ["Personal, not generic", "Your baseline provides the reference point for every reading."],
-    ["Context before judgment", "Each change is considered alongside what was happening around it."],
-    ["Patterns over moments", "Trends across time reveal what isolated readings can miss."],
-    ["Honest gaps", "When a signal is unreliable, Frame does not invent an answer."],
+    ["Personal by design", "Your baseline provides the reference for how patterns are shown."],
+    ["Made for everyday wear", "A screenless upper-arm form is designed to fit into daily life."],
+    ["Context built in", "Motion, contact, sleep, and activity help explain what was happening."],
+    ["Confidence stays visible", "Uncertain and interrupted periods remain clearly marked."],
   ],
   researchStandards: [
     {
@@ -75,10 +76,11 @@ export default async function Home() {
     ? formatPreorderMoney(preorderSavingsCents, preorderOffer.currency)
     : null;
   const preorderHref = "/preorder/review?source=homepage";
+  const legalIdentityLine = companyLegalIdentityLine();
   const mobileNavigation = [
     ...content.navigation,
     ...(preorderOffer
-      ? [{ label: "Pre-order", href: "#preorder" } as const]
+      ? [{ label: "Pricing", href: "#preorder" } as const]
       : []),
     ...(showLocalContributorAreas
       ? [{ label: "Contributors", href: "/founding-contributors" } as const]
@@ -99,7 +101,7 @@ export default async function Home() {
                 {item.label}
               </a>
             ))}
-            {preorderOffer ? <a href="#preorder">Pre-order</a> : null}
+            {preorderOffer ? <a href="#preorder">Pricing</a> : null}
             {showLocalContributorAreas ? (
               <a href="/founding-contributors">Contributors</a>
             ) : null}
@@ -210,8 +212,8 @@ export default async function Home() {
             <h2>A single reading cannot show a pattern.</h2>
             <p>
               {showPreorderAreas
-                ? "Blood pressure changes with sleep, movement, stress, exercise, food, posture, and recovery. Most people only see an occasional snapshot. Frame is built to connect what happens in between, helping you understand personal patterns without treating every temporary rise as harmful."
-                : "Blood pressure changes with sleep, movement, stress, exercise, food, posture, and recovery. Most people only see an occasional snapshot. Frame aims to help make sense of what happens in between, without treating every temporary rise as harmful."}
+                ? "Blood pressure changes with sleep, movement, stress, exercise, food, posture, and recovery. Most people only see an occasional snapshot. Frame is built to connect what happens in between, helping you see how personal patterns relate to everyday life."
+                : "Blood pressure changes with sleep, movement, stress, exercise, food, posture, and recovery. Most people only see an occasional snapshot. Frame aims to connect what happens in between, helping you see how personal patterns relate to everyday life."}
             </p>
           </div>
           <div className="context-content">
@@ -267,8 +269,8 @@ export default async function Home() {
             <h2>Ultrasound, made wearable.</h2>
             <p>
               {showPreorderAreas
-                ? "Ultrasound can look beneath the surface and observe the artery itself. Frame combines wearable ultrasound, contextual sensing, and personalised analysis to make arterial signals useful over time."
-                : "Ultrasound can look beneath the surface and observe the artery itself. Frame is exploring how to make that signal dependable, comfortable, and useful over time."}
+                ? "Ultrasound can observe arterial motion beneath the skin. Frame combines wearable ultrasound, contextual sensing, and personalised analysis to show how those signals change over time."
+                : "Ultrasound can observe arterial motion beneath the skin. Frame is exploring how to make that signal dependable, comfortable, and useful over time."}
             </p>
           </div>
           <div className="method-layout">
@@ -354,8 +356,8 @@ export default async function Home() {
             </p>
             <blockquote>
               <span>Pattern to explore</span>
-              “On three similar nights, later meals were associated with a
-              higher overnight pattern.”
+              “On three similar nights, later meals were associated with higher
+              overnight readings.”
               <small>An association, not a conclusion.</small>
             </blockquote>
           </div>
@@ -453,26 +455,37 @@ export default async function Home() {
             </div>
           </div>
           <aside className="research-panel">
-            <span className="status-label">Research evidence</span>
-            <h3>Wearable ultrasound, validated in clinical research.</h3>
-            <p>
-              Peer-reviewed human studies show that wearable ultrasound can capture continuous arterial waveforms and support non-invasive blood-pressure estimation.
-            </p>
-            <div className="research-standards" aria-label="Published evidence for wearable ultrasound">
-              {content.researchStandards.map((standard) => (
-                <article key={standard.title}>
-                  <h4 className={standard.metric ? "research-standard-title--metric" : undefined}>
-                    {standard.metric ? (
-                      <>
-                        <span className="research-standard-metric">{standard.metric}</span>
-                        <span>{standard.title}</span>
-                      </>
-                    ) : standard.title}
-                  </h4>
-                  <p>{standard.description}</p>
-                </article>
-              ))}
+            <div className="research-panel__body">
+              <span className="status-label">Research evidence</span>
+              <h3>Wearable ultrasound, validated in clinical research.</h3>
+              <p>
+                Peer-reviewed human studies show that wearable ultrasound can capture continuous arterial waveforms and support non-invasive blood-pressure estimation.
+              </p>
+              <div className="research-standards" aria-label="Published evidence for wearable ultrasound">
+                {content.researchStandards.map((standard) => (
+                  <article key={standard.title}>
+                    <h4 className={standard.metric ? "research-standard-title--metric" : undefined}>
+                      {standard.metric ? (
+                        <>
+                          <span className="research-standard-metric">{standard.metric}</span>
+                          <span>{standard.title}</span>
+                        </>
+                      ) : standard.title}
+                    </h4>
+                    <p>{standard.description}</p>
+                  </article>
+                ))}
+              </div>
             </div>
+            <a
+              className="research-citation"
+              href="https://www.nature.com/articles/s41551-024-01279-3"
+              target="_blank"
+              rel="noreferrer"
+              aria-label="Read the wearable ultrasound clinical validation paper in Nature Biomedical Engineering"
+            >
+              Zhou et al., Nature Biomedical Engineering, 2025 <Arrow />
+            </a>
           </aside>
         </div>
       </section>
@@ -501,8 +514,8 @@ export default async function Home() {
       <section className="final-cta" id="early-access">
         <div className="container final-grid">
           <div className="final-cta__copy">
-            <p className="eyebrow">Get updates</p>
-            <h2>Help shape a new way to understand cardiovascular health.</h2>
+            <p className="eyebrow">Development updates</p>
+            <h2>Follow Frame from prototype to launch.</h2>
           </div>
           <div className="final-cta__form final-cta__action">
             <WaitlistSignupFlow
@@ -548,28 +561,31 @@ export default async function Home() {
           </div>
         </div>
         <div className="container footer-bottom">
-          <p>
-            {showPreorderAreas ? (
-              <>
-                Frame is a general-wellness wearable in development. Product visuals
-                show the intended experience
-                {preorderOffer
-                  ? `; specifications and estimated ${preorderOffer.estimatedShipping} shipping may change.`
-                  : "."}
-                {" "}
-                Frame is not intended to guide medical decisions or replace an
-                FDA-authorized blood-pressure monitor.
-              </>
-            ) : (
-              <>
-                Frame is under development and is not currently available for sale.{" "}
-                Product concepts and interfaces shown are illustrative. Frame is being
-                developed for general wellness use and is not intended to diagnose,
-                screen for, monitor, treat, or manage any disease or medical condition,
-                guide treatment decisions, or replace an FDA-authorized medical device.
-              </>
-            )}
-          </p>
+          <div className="footer-bottom__disclosures">
+            <p>
+              {showPreorderAreas ? (
+                <>
+                  Frame is a general-wellness wearable in development. Product visuals
+                  show the intended experience
+                  {preorderOffer
+                    ? `; specifications and estimated ${preorderOffer.estimatedShipping} shipping may change.`
+                    : "."}
+                  {" "}
+                  Frame is not intended to guide medical decisions or replace an
+                  FDA-authorized blood-pressure monitor.
+                </>
+              ) : (
+                <>
+                  Frame is under development and is not currently available for sale.{" "}
+                  Product concepts and interfaces shown are illustrative. Frame is being
+                  developed for general wellness use and is not intended to diagnose,
+                  screen for, monitor, treat, or manage any disease or medical condition,
+                  guide treatment decisions, or replace an FDA-authorized medical device.
+                </>
+              )}
+            </p>
+            {legalIdentityLine ? <p className="footer-bottom__legal">{legalIdentityLine}</p> : null}
+          </div>
           <p>© {new Date().getFullYear()} {ORGANIZATION_NAME}</p>
         </div>
       </footer>

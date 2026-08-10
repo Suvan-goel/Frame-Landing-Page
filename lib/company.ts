@@ -1,4 +1,4 @@
-export type RegisteredOffice = {
+export type PostalAddress = {
   line1: string;
   line2: string;
   locality: string;
@@ -7,10 +7,14 @@ export type RegisteredOffice = {
   country: string;
 };
 
+export type RegisteredOffice = PostalAddress;
+
 export type CompanyDetails = {
   legalName: string;
   registrationNumber: string;
   registeredOffice: RegisteredOffice;
+  correspondenceAddress: PostalAddress;
+  correspondenceAddressAuthorized: boolean;
   jurisdiction: string;
   supportEmail: string;
   warrantyProviderName: string;
@@ -19,9 +23,11 @@ export type CompanyDetails = {
 
 export const PUBLIC_BRAND_NAME = "Frame Health Technologies";
 
-// Complete these values from the issued incorporation documents, then bump the
-// pre-order legal-pack versions for review. The warranty provider and privacy
-// controller deliberately derive from the same legal name so they cannot drift.
+// Complete the incorporation values from the issued documents, and add the
+// separately authorised public correspondence address only after the mail
+// provider has approved the incorporated company as a recipient. The warranty
+// provider and privacy controller deliberately derive from the legal name so
+// they cannot drift.
 const incorporatedLegalName = "";
 
 export const COMPANY_DETAILS: Readonly<CompanyDetails> = Object.freeze({
@@ -35,6 +41,15 @@ export const COMPANY_DETAILS: Readonly<CompanyDetails> = Object.freeze({
     postalCode: "",
     country: "",
   }),
+  correspondenceAddress: Object.freeze({
+    line1: "",
+    line2: "",
+    locality: "",
+    region: "",
+    postalCode: "",
+    country: "",
+  }),
+  correspondenceAddressAuthorized: false,
   jurisdiction: "",
   supportEmail: "support@framewearable.com",
   warrantyProviderName: incorporatedLegalName,
@@ -66,13 +81,19 @@ export function evaluateCompanyDetails(
   details: CompanyDetails = COMPANY_DETAILS,
 ): CompanyDetailsCheck {
   const missingOrInvalid: string[] = [];
-  const requiredText: Array<[keyof CompanyDetails | `registeredOffice.${keyof RegisteredOffice}`, string]> = [
+  const requiredText: Array<[string, string]> = [
     ["legalName", details.legalName],
     ["registrationNumber", details.registrationNumber],
     ["registeredOffice.line1", details.registeredOffice.line1],
     ["registeredOffice.locality", details.registeredOffice.locality],
+    ["registeredOffice.region", details.registeredOffice.region],
     ["registeredOffice.postalCode", details.registeredOffice.postalCode],
     ["registeredOffice.country", details.registeredOffice.country],
+    ["correspondenceAddress.line1", details.correspondenceAddress.line1],
+    ["correspondenceAddress.locality", details.correspondenceAddress.locality],
+    ["correspondenceAddress.region", details.correspondenceAddress.region],
+    ["correspondenceAddress.postalCode", details.correspondenceAddress.postalCode],
+    ["correspondenceAddress.country", details.correspondenceAddress.country],
     ["jurisdiction", details.jurisdiction],
     ["warrantyProviderName", details.warrantyProviderName],
     ["privacyControllerName", details.privacyControllerName],
@@ -83,6 +104,9 @@ export function evaluateCompanyDetails(
   }
   if (!isSupportEmail(details.supportEmail)) {
     missingOrInvalid.push("supportEmail");
+  }
+  if (!details.correspondenceAddressAuthorized) {
+    missingOrInvalid.push("correspondenceAddressAuthorized");
   }
   if (
     details.legalName.trim() &&
@@ -110,25 +134,35 @@ export const ORGANIZATION_DISPLAY_NAME = COMPANY_DETAILS_COMPLETE
   ? COMPANY_DETAILS.legalName
   : PUBLIC_BRAND_NAME;
 
-export function formatRegisteredOffice(
-  office: RegisteredOffice = COMPANY_DETAILS.registeredOffice,
-) {
+export function formatPostalAddress(address: PostalAddress) {
   return [
-    office.line1,
-    office.line2,
-    office.locality,
-    office.region,
-    office.postalCode,
-    office.country,
+    address.line1,
+    address.line2,
+    address.locality,
+    address.region,
+    address.postalCode,
+    address.country,
   ]
     .map((part) => part.trim())
     .filter(Boolean)
     .join(", ");
 }
 
+export function formatRegisteredOffice(
+  office: RegisteredOffice = COMPANY_DETAILS.registeredOffice,
+) {
+  return formatPostalAddress(office);
+}
+
+export function formatCorrespondenceAddress(
+  address: PostalAddress = COMPANY_DETAILS.correspondenceAddress,
+) {
+  return formatPostalAddress(address);
+}
+
 export function companyLegalIdentityLine(
   details: CompanyDetails = COMPANY_DETAILS,
 ) {
   if (!evaluateCompanyDetails(details).complete) return null;
-  return `${details.legalName} · Registration ${details.registrationNumber} · Registered in ${details.jurisdiction} · ${formatRegisteredOffice(details.registeredOffice)}`;
+  return `${details.legalName} · Registration ${details.registrationNumber} · Registered in ${details.jurisdiction} · Registered office: ${formatRegisteredOffice(details.registeredOffice)} · Customer correspondence: ${formatCorrespondenceAddress(details.correspondenceAddress)}`;
 }

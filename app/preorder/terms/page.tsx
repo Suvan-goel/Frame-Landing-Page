@@ -19,6 +19,7 @@ import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
 import {
   COMPANY_DETAILS,
   COMPANY_DETAILS_COMPLETE,
+  formatCorrespondenceAddress,
   formatRegisteredOffice,
   SUPPORT_EMAIL,
 } from "@/lib/company";
@@ -148,11 +149,12 @@ export default async function PreorderTermsPage() {
                 <p>
                   The seller is <strong>{COMPANY_DETAILS.legalName}</strong>, registered in {COMPANY_DETAILS.jurisdiction}
                   {` under registration number ${COMPANY_DETAILS.registrationNumber}`}. Its registered office is {formatRegisteredOffice()}.
+                  {` Customer and order correspondence should be sent to ${formatCorrespondenceAddress()}.`}
                 </p>
               ) : (
                 <p>
                   The seller will be the company being incorporated for Frame. Its exact legal name,
-                  registration number, registered office, jurisdiction of registration, and customer-support details
+                  registration number, registered office, authorised correspondence address, jurisdiction of registration, and customer-support details
                   will be inserted here before pre-orders open. Until those details are present, these terms remain
                   a launch candidate and no public order may be accepted.
                 </p>

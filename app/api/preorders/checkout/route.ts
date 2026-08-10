@@ -97,6 +97,8 @@ export async function POST(request: Request) {
   if (!(await isPreorderSalesRequestEnabled(request))) {
     return jsonResponse({ error: "Not found." }, 404);
   }
+  const liveSmokeRequest =
+    request.headers.get("x-frame-preorder-live-smoke-request") === "1";
 
   const contentLength = Number(request.headers.get("content-length") ?? "0");
   if (contentLength > MAX_BODY_BYTES) {
@@ -198,6 +200,9 @@ export async function POST(request: Request) {
     if (!environment) {
       throw new Error("Pre-order Checkout is disabled.");
     }
+    if (liveSmokeRequest && environment !== "live") {
+      throw new Error("Private live verification requires the live payment environment.");
+    }
     const [approvedTermsVersion, approvedProductStatusVersion] = await Promise.all([
       getRuntimeValue("PREORDER_LEGAL_APPROVED_VERSION"),
       getRuntimeValue("PREORDER_PRODUCT_STATUS_APPROVED_VERSION"),
@@ -249,7 +254,7 @@ export async function POST(request: Request) {
     }
 
     const now = new Date();
-    const marketingOptIn = payload.marketingOptIn === true;
+    const marketingOptIn = !liveSmokeRequest && payload.marketingOptIn === true;
     reservedIntentId = await reservePreorderCheckout({
       requestKey,
       environment,
@@ -258,7 +263,9 @@ export async function POST(request: Request) {
       unitAmount: config.priceCents,
       currency: config.currency,
       estimatedDelivery: config.estimatedShipping,
-      source: cleanAttribution(payload.source) ?? "preorder_review",
+      source: liveSmokeRequest
+        ? "private_live_smoke"
+        : cleanAttribution(payload.source) ?? "preorder_review",
       utmSource: cleanAttribution(payload.utmSource),
       utmMedium: cleanAttribution(payload.utmMedium),
       utmCampaign: cleanAttribution(payload.utmCampaign),
@@ -310,6 +317,7 @@ export async function POST(request: Request) {
           flow: "frame_preorder",
           checkout_intent_id: reservedIntentId,
           environment,
+          ...(liveSmokeRequest ? { verification_mode: "live_smoke" } : {}),
         },
       },
       { idempotencyKey: `frame-preorder-customer-${reservedIntentId}` },
@@ -351,12 +359,14 @@ export async function POST(request: Request) {
         custom_text: {
           submit: {
             message:
-              mode === "test"
+              liveSmokeRequest
+                ? `Private live verification: your card will be charged ${totalBeforeTaxLabel} plus applicable tax. Refund the order immediately after verifying the order record, confirmation email, and management link. Free standard US shipping is included.`
+                : mode === "test"
                 ? `Sandbox payment only. Your ${totalBeforeTaxLabel} total before tax includes free standard US shipping; applicable sales tax is calculated at checkout. You save ${preorderSavingsLabel} from the planned ${releasePriceLabel} release price. Estimated shipping: ${config.estimatedShipping}.`
                 : `Your ${totalBeforeTaxLabel} total before tax includes free standard US shipping; applicable sales tax is calculated at checkout. You save ${preorderSavingsLabel} from the planned ${releasePriceLabel} release price. Estimated shipping: ${config.estimatedShipping}.`,
           },
           terms_of_service_acceptance: {
-            message: `I agree to the [Frame Pre-order Terms](${legalBaseUrl}/preorder/terms) and [Cancellation and Refund Policy](${legalBaseUrl}/preorder/refunds).`,
+            message: `I agree to the [Frame Pre-order Terms](${legalBaseUrl}/preorder/terms) and [Cancellation and Refund Policy](${legalBaseUrl}/preorder/refunds), and acknowledge the [Privacy Notice](${legalBaseUrl}/privacy).`,
           },
         },
         submit_type: "pay",
@@ -367,6 +377,7 @@ export async function POST(request: Request) {
           environment,
           terms_version: PREORDER_TERMS_VERSION,
           product_status_version: PREORDER_PRODUCT_STATUS_VERSION,
+          ...(liveSmokeRequest ? { verification_mode: "live_smoke" } : {}),
         },
         payment_intent_data: {
           description:
@@ -379,6 +390,7 @@ export async function POST(request: Request) {
             environment,
             terms_version: PREORDER_TERMS_VERSION,
             product_status_version: PREORDER_PRODUCT_STATUS_VERSION,
+            ...(liveSmokeRequest ? { verification_mode: "live_smoke" } : {}),
           },
         },
         expires_at: sessionExpiresAt,

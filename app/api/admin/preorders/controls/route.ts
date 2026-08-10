@@ -7,6 +7,11 @@ import {
 } from "@/lib/preorder-operations.server";
 import { PREORDER_MAX_INVENTORY_UNITS } from "@/lib/preorder";
 import { isWaitlistAdmin } from "@/lib/supabase-admin.server";
+import {
+  isPreorderLiveSmokeConfigured,
+  isPreorderPublicLaunchConfigured,
+} from "@/lib/preorder-live-smoke-access";
+import { getRuntimeValue } from "@/lib/runtime-env.server";
 
 export const dynamic = "force-dynamic";
 
@@ -100,6 +105,53 @@ export async function POST(request: Request) {
         },
         409,
       );
+    }
+    const [mode, publicLaunchEnabled, verifiedOrderId, liveSmokeSecret] =
+      await Promise.all([
+        getRuntimeValue("PREORDER_MODE"),
+        getRuntimeValue("PREORDER_PUBLIC_LAUNCH_ENABLED"),
+        getRuntimeValue("PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID"),
+        getRuntimeValue("PREORDER_LIVE_SMOKE_ACCESS_SECRET"),
+      ]);
+    const publicLaunchConfigured = isPreorderPublicLaunchConfigured({
+      enabled: publicLaunchEnabled,
+      verifiedOrderId,
+    });
+    if (!publicLaunchConfigured) {
+      if (publicLaunchEnabled === "true") {
+        return jsonResponse(
+          {
+            error:
+              "Public launch remains locked until the fully refunded live verification order ID is configured.",
+          },
+          409,
+        );
+      }
+      if (
+        !isPreorderLiveSmokeConfigured({
+          mode,
+          publicLaunchEnabled,
+          verifiedOrderId,
+          secret: liveSmokeSecret,
+        })
+      ) {
+        return jsonResponse(
+          {
+            error:
+              "Configure the private live-verification gate before opening a non-public live allocation.",
+          },
+          409,
+        );
+      }
+      if (unitLimit !== 1) {
+        return jsonResponse(
+          {
+            error:
+              "Private live verification may open exactly one released unit. Keep public launch disabled until that order is verified and refunded.",
+          },
+          409,
+        );
+      }
     }
   }
 

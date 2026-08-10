@@ -15,6 +15,7 @@ import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
 import {
   COMPANY_DETAILS,
   COMPANY_DETAILS_COMPLETE,
+  formatCorrespondenceAddress,
   formatRegisteredOffice,
   SUPPORT_EMAIL,
 } from "@/lib/company";
@@ -234,11 +235,12 @@ export default async function PreorderRefundsPage() {
                   Use the <Link href="/contact?topic=preorder">Frame pre-order support form</Link> or email {SUPPORT_EMAIL}
                   {" "}and include the order number and purchase email. The seller is {COMPANY_DETAILS.legalName}, registration
                   {` ${COMPANY_DETAILS.registrationNumber}`}, with its registered office at {formatRegisteredOffice()}.
+                  {` Customer and order correspondence should be sent to ${formatCorrespondenceAddress()}.`}
                 </p>
               ) : (
                 <p>
                   Use the <Link href="/contact?topic=preorder">Frame pre-order support form</Link> and include the order
-                  number and purchase email. The incorporated seller’s legal name, registered address, and final support
+                  number and purchase email. The incorporated seller’s legal name, registered office, authorised correspondence address, and final support
                   details will be added before pre-orders open.
                 </p>
               )}

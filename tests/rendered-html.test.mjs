@@ -185,6 +185,64 @@ test("permanently redirects www requests to the canonical host", async () => {
     response.headers.get("location"),
     "https://framewearable.com/privacy?source=www",
   );
+  assert.equal(
+    response.headers.get("strict-transport-security"),
+    "max-age=31536000",
+  );
+  assert.equal(response.headers.get("x-frame-options"), "DENY");
+});
+
+test("applies restrictive browser security headers without blocking configured integrations", async () => {
+  const response = await render(
+    "/",
+    undefined,
+    "https://framewearable.com",
+    {
+      NEXT_PUBLIC_SUPABASE_URL: "https://frame-project.supabase.co",
+    },
+  );
+
+  assert.equal(response.status, 200);
+  assert.equal(
+    response.headers.get("strict-transport-security"),
+    "max-age=31536000",
+  );
+  assert.equal(response.headers.get("x-content-type-options"), "nosniff");
+  assert.equal(response.headers.get("x-frame-options"), "DENY");
+  assert.equal(response.headers.get("x-xss-protection"), "0");
+  assert.equal(
+    response.headers.get("referrer-policy"),
+    "strict-origin-when-cross-origin",
+  );
+  assert.match(response.headers.get("permissions-policy") ?? "", /camera=\(\)/);
+  assert.match(response.headers.get("permissions-policy") ?? "", /payment=\(\)/);
+
+  const policy = response.headers.get("content-security-policy") ?? "";
+  assert.match(policy, /default-src 'self'/);
+  assert.match(policy, /object-src 'none'/);
+  assert.match(policy, /base-uri 'self'/);
+  assert.match(policy, /form-action 'self'/);
+  assert.match(policy, /frame-src 'none'/);
+  assert.match(policy, /frame-ancestors 'none'/);
+  assert.match(policy, /https:\/\/connect\.facebook\.net/);
+  assert.match(policy, /https:\/\/www\.facebook\.com/);
+  assert.match(policy, /https:\/\/frame-project\.supabase\.co/);
+  assert.match(policy, /wss:\/\/frame-project\.supabase\.co/);
+  assert.match(policy, /upgrade-insecure-requests/);
+  assert.doesNotMatch(policy, /'unsafe-eval'/);
+});
+
+test("keeps local development compatible without enabling transport policy", async () => {
+  const response = await render("/", undefined, "http://localhost", {
+    PREORDER_MODE: "test",
+  });
+  const policy = response.headers.get("content-security-policy") ?? "";
+
+  assert.equal(response.status, 200);
+  assert.equal(response.headers.get("strict-transport-security"), null);
+  assert.match(policy, /'unsafe-eval'/);
+  assert.match(policy, /connect-src[^;]* ws:/);
+  assert.doesNotMatch(policy, /upgrade-insecure-requests/);
 });
 
 test("server-renders the Frame landing page", async () => {
@@ -280,7 +338,7 @@ test("server-renders the dedicated interest page", async () => {
   const html = await response.text();
 
   assert.match(html, /Get updates/);
-  assert.match(html, /Get product milestones, launch news, and opportunities to help shape Frame/);
+  assert.match(html, /Product milestones, launch news, and opportunities to shape what comes next/);
   assert.match(html, /Sign up/);
   assert.match(html, /name="email"/);
   assert.match(html, /aria-label="Back to home"/);

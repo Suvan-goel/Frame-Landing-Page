@@ -13,6 +13,9 @@ import {
   type PreorderDeliveryDraft,
 } from "@/lib/preorder-checkout-draft";
 import { PREORDER_US_STATE_OPTIONS } from "@/lib/preorder-shipping";
+import { companyLegalIdentityLine } from "@/lib/company";
+
+const sellerIdentityLine = companyLegalIdentityLine();
 
 function readCheckoutDraft(key: string) {
   try {
@@ -468,6 +471,9 @@ export function PreorderCheckoutReview({
             <Link href="/preorder/refunds">Cancellation and Refund Policy</Link>
             <Link href="/privacy">Privacy Notice</Link>
           </div>
+          {sellerIdentityLine ? (
+            <p className="checkout-review__seller-identity">{sellerIdentityLine}</p>
+          ) : null}
         </footer>
       </div>
     </form>

@@ -1,7 +1,7 @@
 import { getRuntimeValue } from "./runtime-env.server";
 import {
   COMPANY_DETAILS_COMPLETE,
-  formatRegisteredOffice,
+  formatCorrespondenceAddress,
   SUPPORT_EMAIL,
 } from "./company";
 
@@ -28,7 +28,7 @@ export async function getMailingRuntimeConfiguration() {
     SUPPORT_EMAIL;
   const postalAddress =
     (await getRuntimeValue("MAILING_POSTAL_ADDRESS"))?.trim() ||
-    (COMPANY_DETAILS_COMPLETE ? formatRegisteredOffice() : "");
+    (COMPANY_DETAILS_COMPLETE ? formatCorrespondenceAddress() : "");
 
   return { apiKey, from, replyTo, postalAddress };
 }

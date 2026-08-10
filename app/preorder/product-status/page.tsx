@@ -15,6 +15,7 @@ import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
 import {
   COMPANY_DETAILS,
   COMPANY_DETAILS_COMPLETE,
+  formatCorrespondenceAddress,
   formatRegisteredOffice,
   SUPPORT_EMAIL,
 } from "@/lib/company";
@@ -138,11 +139,12 @@ export default async function PreorderProductStatusPage() {
             <p>
               The seller is {COMPANY_DETAILS.legalName}, registered in {COMPANY_DETAILS.jurisdiction}
               {` under registration number ${COMPANY_DETAILS.registrationNumber}`}, with its registered office at {formatRegisteredOffice()}.
+              {` Customer and order correspondence should be sent to ${formatCorrespondenceAddress()}.`}
               {` Questions can be sent to ${SUPPORT_EMAIL}.`}
             </p>
           ) : (
             <p>
-              The incorporated seller’s exact legal identity, registration details, registered office, and jurisdiction
+              The incorporated seller’s exact legal identity, registration details, registered office, authorised correspondence address, and jurisdiction
               will be inserted before public pre-orders open. Questions can be submitted through the
               <Link href="/contact?topic=preorder"> Frame pre-order support form</Link>.
             </p>

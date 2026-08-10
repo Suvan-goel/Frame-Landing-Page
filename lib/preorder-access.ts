@@ -6,6 +6,7 @@ import {
   PREORDER_WARRANTY_DETAILS_COMPLETE,
 } from "./preorder";
 import { isLoopbackHost } from "./contributor-local-only";
+import { isPreorderPublicLaunchConfigured } from "./preorder-live-smoke-access";
 
 const PREORDER_PUBLIC_ROUTE_ROOTS = [
   "/preorder",
@@ -46,9 +47,17 @@ export function isPreorderRequestAllowed(input: {
   mode?: string;
   approvedTermsVersion?: string;
   approvedProductStatusVersion?: string;
+  publicLaunchEnabled?: string;
+  verifiedLiveSmokeOrderId?: string;
 }) {
   if (isLoopbackHost(input.host)) return true;
-  return isPreorderLiveApproved(input);
+  return (
+    isPreorderLiveApproved(input) &&
+    isPreorderPublicLaunchConfigured({
+      enabled: input.publicLaunchEnabled,
+      verifiedOrderId: input.verifiedLiveSmokeOrderId,
+    })
+  );
 }
 
 function normalizePathname(pathname: string) {

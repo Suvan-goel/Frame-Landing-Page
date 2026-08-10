@@ -7,6 +7,19 @@ The public homepage remains unchanged and contains no pre-order link. Remote
 pre-order pages and APIs are rejected by the Worker before application routing.
 Use `npm run preorder:test:visibility` to verify that boundary.
 
+Run `npm run preorder:check:email` for a read-only transactional-email preflight.
+It validates the exact Frame pre-order sender, support routing, inbound MX, root
+SPF, Resend DKIM and return-path records, and the DMARC enforcement policy. It
+does not send an email or change DNS or Resend. A restricted sending-only Resend
+credential is preferred; the check does not require domain-administration access.
+
+Run `npm run preorder:check:payments:test` to reconcile every paid Stripe test
+pre-order against its stored checkout intent, order and payment record. The live
+equivalent is `npm run preorder:check:payments`. Both commands are read-only:
+they compare identifiers, customer references, subtotal, shipping, tax, total,
+currency, captured amount, refunds and disputes, and detect paid Stripe sessions
+that never became orders. They never create or refund a payment or update a row.
+
 ## Fast UI preview
 
 ```bash
@@ -43,11 +56,18 @@ STRIPE_TEST_PREORDER_PRICE_ID=price_...
 STRIPE_TEST_WEBHOOK_SECRET=whsec_...
 STRIPE_TEST_WEBHOOK_ENDPOINT_ID=we_...
 RESEND_API_KEY=re_...
+MAILING_POSTAL_ADDRESS=<authorised public customer correspondence address>
 PREORDER_FROM_EMAIL=Frame Pre-orders <preorders@framewearable.com>
 PREORDER_ORDER_ACCESS_SECRET=<unique secret of at least 32 characters>
 PREORDER_RATE_LIMIT_SECRET=<second unique secret of at least 32 characters>
 PREORDER_MAINTENANCE_SECRET=<third unique secret of at least 32 characters>
 ```
+
+As of August 10, 2026, the public domain publishes Microsoft inbound MX,
+one bounded root SPF policy, Resend DKIM, Resend return-path SPF and feedback
+MX, and a DMARC `p=quarantine` policy. Keep those records in place. Public DNS
+cannot prove that the individual support mailbox is actively monitored, so a
+controlled reply test remains a separate final rehearsal after explicit approval.
 
 The shipping value is zero because standard shipping is free for all 50 states
 and Washington, DC. US territories and international destinations are excluded
@@ -84,12 +104,15 @@ sales are paused.
 Public requests remain blocked unless all of the following are true:
 
 - `PREORDER_MODE=live`;
-- the incorporated seller details are complete;
+- the incorporated seller details, registered office, and separately authorised public correspondence address are complete;
 - the source legal and Product Status versions no longer begin with `draft`;
 - `PREORDER_LEGAL_APPROVED_VERSION` exactly matches that source version; and
 - `PREORDER_PRODUCT_STATUS_APPROVED_VERSION` exactly matches the Product Status version;
+- `PREORDER_PUBLIC_LAUNCH_ENABLED=true` and `PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID` identifies the fully refunded private live-verification order;
 - the one-year limited hardware warranty and the scheduled delivery-deadline processor are active; and
-- a live Stripe secret and approved live Price are configured.
+- a live Stripe secret and approved live Price are configured; and
+- the live Stripe Account passes the read-only activation, card capability, payout, KYC, legal identity, business/support profile, statement descriptor, agreement acceptance, and branding checks.
+- every paid live Stripe pre-order passes `npm run preorder:check:payments`, with no orphaned sessions, amount mismatches, stale refund state, or unrecorded dispute.
 
 The draft pages, prices, countries, tax setting, shipping treatment, product
 copy, cancellation process, and delivery wording must all be replaced or

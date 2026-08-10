@@ -38,7 +38,7 @@ test("routes automated customer replies to the monitored support inbox", async (
     readFile(new URL("../.env.example", import.meta.url), "utf8"),
   ]);
 
-  assert.match(preorderSource, /reply_to: SUPPORT_EMAIL/);
+  assert.match(preorderSource, /reply_to: PREORDER_EMAIL_REPLY_TO/);
   assert.match(contributorSource, /reply_to: SUPPORT_EMAIL/);
   assert.match(catalogSource, /replyTo: SUPPORT_EMAIL/);
   assert.match(catalogSource, /reply_to: SUPPORT_EMAIL/);

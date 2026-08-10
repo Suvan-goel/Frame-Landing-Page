@@ -15,6 +15,7 @@ export type FrameRuntimeEnv = {
   RESEND_API_KEY?: string;
   MAILING_FROM_EMAIL?: string;
   MAILING_REPLY_TO_EMAIL?: string;
+  MAILING_POSTAL_ADDRESS?: string;
   CONTRIBUTOR_FROM_EMAIL?: string;
   STRIPE_SECRET_KEY?: string;
   STRIPE_WEBHOOK_SECRET?: string;
@@ -45,6 +46,9 @@ export type FrameRuntimeEnv = {
   PREORDER_ORDER_ACCESS_SECRET?: string;
   PREORDER_RATE_LIMIT_SECRET?: string;
   PREORDER_STAGING_ACCESS_SECRET?: string;
+  PREORDER_LIVE_SMOKE_ACCESS_SECRET?: string;
+  PREORDER_PUBLIC_LAUNCH_ENABLED?: string;
+  PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID?: string;
   PREORDER_OPERATIONS_EMAIL?: string;
   PREORDER_MAINTENANCE_SECRET?: string;
 };
@@ -103,6 +107,10 @@ export async function isPreorderSalesRequestEnabled(request: Request) {
     approvedTermsVersion: await getRuntimeValue("PREORDER_LEGAL_APPROVED_VERSION"),
     approvedProductStatusVersion: await getRuntimeValue(
       "PREORDER_PRODUCT_STATUS_APPROVED_VERSION",
+    ),
+    publicLaunchEnabled: await getRuntimeValue("PREORDER_PUBLIC_LAUNCH_ENABLED"),
+    verifiedLiveSmokeOrderId: await getRuntimeValue(
+      "PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID",
     ),
   });
 }

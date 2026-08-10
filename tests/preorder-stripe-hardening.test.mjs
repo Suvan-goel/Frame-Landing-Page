@@ -162,6 +162,10 @@ test("keeps the reviewed subtotal, free shipping, tax and inventory controls exp
     checkout,
     /\[Cancellation and Refund Policy\]\(\$\{legalBaseUrl\}\/preorder\/refunds\)/,
   );
+  assert.match(
+    checkout,
+    /\[Privacy Notice\]\(\$\{legalBaseUrl\}\/privacy\)/,
+  );
   assert.match(migration, /inventory_limit = 1000/);
   assert.match(migration, /unit_limit <= inventory_limit/);
   assert.match(initialRelease, /sales_status = 'paused'/);

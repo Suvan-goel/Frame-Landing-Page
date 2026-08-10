@@ -10,19 +10,29 @@ import {
   PREORDER_TERMS_VERSION,
   PREORDER_WARRANTY_DETAILS_COMPLETE,
 } from "../lib/preorder.ts";
-import { COMPANY_DETAILS_CHECK, SUPPORT_EMAIL } from "../lib/company.ts";
+import { COMPANY_DETAILS_CHECK } from "../lib/company.ts";
 import {
   comparePreorderUsTaxRegistrationStates,
   isPreorderTaxReviewApproved,
   PREORDER_TAX_HEAD_OFFICE_COUNTRY,
   PREORDER_TAX_POLICY_VERSION,
 } from "../lib/preorder-tax-policy.ts";
+import { evaluateStripeAccountReadiness } from "../lib/preorder-stripe-account-readiness.ts";
+import {
+  evaluatePreorderEmailReadiness,
+  getPreorderEmailDnsSnapshot,
+  PREORDER_EMAIL_REPLY_TO,
+} from "../lib/preorder-email-readiness.ts";
+import { runPreorderPaymentReconciliation } from "../lib/preorder-payment-reconciliation.server.ts";
 
 const target = process.argv.includes("--launch")
   ? "launch"
-  : process.argv.includes("--staging")
+  : process.argv.includes("--live-smoke")
+    ? "live-smoke"
+    : process.argv.includes("--staging")
     ? "staging"
     : "local";
+const isLiveTarget = target === "launch" || target === "live-smoke";
 
 async function loadLocalEnvironment() {
   try {
@@ -67,13 +77,19 @@ function configured(name, minimumLength = 1) {
   return Boolean(process.env[name] && process.env[name].length >= minimumLength);
 }
 
+function isUuid(value) {
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+    String(value ?? "").trim(),
+  );
+}
+
 function isReservedTestRecipient(recipient) {
   const domain = String(recipient ?? "").trim().toLowerCase().split("@").pop();
   return domain === "example.com" || domain === "example.net" || domain === "example.org";
 }
 
 const mode = process.env.PREORDER_MODE ?? "off";
-const targetEnvironment = target === "launch" ? "live" : "test";
+const targetEnvironment = isLiveTarget ? "live" : "test";
 const secretKey = targetEnvironment === "live"
   ? process.env.STRIPE_LIVE_SECRET_KEY ?? ""
   : process.env.STRIPE_TEST_SECRET_KEY ?? process.env.STRIPE_SECRET_KEY ?? "";
@@ -104,9 +120,9 @@ const shippingRateCents = shippingRateValue === undefined
   ? Number.NaN
   : Number(shippingRateValue);
 
-if (target === "launch") {
+if (isLiveTarget) {
   if (mode === "live") {
-    pass("Runtime mode", "Live mode is configured; the allocation must remain paused until cutover.");
+    pass("Runtime mode", "Live mode is configured; the allocation must remain paused until the controlled opening step.");
   } else {
     fail("Runtime mode", `Expected live mode, found ${mode}.`);
   }
@@ -133,12 +149,12 @@ if (webhookSecret.startsWith("whsec_") && webhookSecret.length >= 24) {
 } else {
   fail(
     "Webhook signing",
-    target === "launch"
+    isLiveTarget
       ? "STRIPE_LIVE_WEBHOOK_SECRET is required."
       : "Add STRIPE_WEBHOOK_SECRET before testing signed events.",
   );
 }
-if (target === "launch") {
+if (isLiveTarget) {
   if (webhookEndpointId.startsWith("we_")) {
     pass("Webhook endpoint reference", "The live Stripe endpoint reference is configured.");
   } else {
@@ -153,7 +169,7 @@ for (const [name, label] of [
 ]) {
   if (configured(name, 32)) {
     pass(label, "A dedicated secret is configured.");
-  } else if (target === "launch") {
+  } else if (isLiveTarget) {
     fail(label, `Add a dedicated ${name} value of at least 32 characters.`);
   } else {
     warn(label, `Add a dedicated ${name} value before deployment; local fallbacks remain active.`);
@@ -195,26 +211,93 @@ if (configured("PREORDER_STAGING_ACCESS_SECRET", 32)) {
   warn("Private staging gate", "Not configured locally; loopback testing remains available.");
 }
 
-if (configured("RESEND_API_KEY") && configured("PREORDER_FROM_EMAIL")) {
-  pass("Customer email", "Email delivery credentials and a sender are configured.");
-} else if (target === "launch") {
-  fail("Customer email", "Configure Resend and PREORDER_FROM_EMAIL before accepting live orders.");
+const liveSmokeSecret = process.env.PREORDER_LIVE_SMOKE_ACCESS_SECRET ?? "";
+const publicLaunchEnabled = process.env.PREORDER_PUBLIC_LAUNCH_ENABLED ?? "false";
+const verifiedLiveSmokeOrderId =
+  process.env.PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID ?? "";
+if (configured("PREORDER_LIVE_SMOKE_ACCESS_SECRET", 32)) {
+  pass("Private live-verification gate", "A revocable live-verification secret is configured.");
+  const conflictingSecretNames = [
+    "PREORDER_ORDER_ACCESS_SECRET",
+    "PREORDER_RATE_LIMIT_SECRET",
+    "PREORDER_MAINTENANCE_SECRET",
+    "PREORDER_STAGING_ACCESS_SECRET",
+  ].filter(
+    (name) =>
+      process.env[name] && process.env[name] === liveSmokeSecret,
+  );
+  if (conflictingSecretNames.length) {
+    fail(
+      "Live-verification secret isolation",
+      "The live-verification gate must use its own unique signing secret.",
+    );
+  } else {
+    pass(
+      "Live-verification secret isolation",
+      "The live-verification gate uses independent signing material.",
+    );
+  }
+} else if (isLiveTarget) {
+  fail(
+    "Private live-verification gate",
+    "Add PREORDER_LIVE_SMOKE_ACCESS_SECRET before live verification.",
+  );
 } else {
-  warn("Customer email", "Resend is not configured, so customer messages cannot be delivered yet.");
+  warn(
+    "Private live-verification gate",
+    "Not configured locally; no real payment path can be invited.",
+  );
 }
+
+if (target === "live-smoke") {
+  if (publicLaunchEnabled === "false" && !verifiedLiveSmokeOrderId) {
+    pass(
+      "Public launch lock",
+      "Public discovery remains disabled and no verification order has been approved yet.",
+    );
+  } else {
+    fail(
+      "Public launch lock",
+      "Keep PREORDER_PUBLIC_LAUNCH_ENABLED=false and PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID empty during the live verification purchase.",
+    );
+  }
+} else if (target === "launch") {
+  if (publicLaunchEnabled === "true" && isUuid(verifiedLiveSmokeOrderId)) {
+    pass(
+      "Public launch approval",
+      "Public launch references a specific verified live-smoke order.",
+    );
+  } else {
+    fail(
+      "Public launch approval",
+      "Set PREORDER_PUBLIC_LAUNCH_ENABLED=true and add the verified, fully refunded live-smoke order ID before final cutover.",
+    );
+  }
+}
+
 const operationsRecipient =
   process.env.PREORDER_OPERATIONS_EMAIL?.trim() ||
   process.env.WAITLIST_ADMIN_EMAILS?.split(",").map((email) => email.trim()).find(Boolean);
-if (
-  operationsRecipient &&
-  /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(operationsRecipient) &&
-  operationsRecipient.toLowerCase() === SUPPORT_EMAIL.toLowerCase()
-) {
-  pass("Operations email", `Owner notifications are routed to ${SUPPORT_EMAIL}.`);
-} else if (target === "launch") {
-  fail("Operations email", `Route PREORDER_OPERATIONS_EMAIL to the monitored inbox (${SUPPORT_EMAIL}) before launch.`);
-} else {
-  warn("Operations email", `Owner action notifications are not routed to the monitored inbox (${SUPPORT_EMAIL}).`);
+let emailDns = null;
+try {
+  emailDns = await getPreorderEmailDnsSnapshot();
+} catch {
+  emailDns = null;
+}
+for (const check of evaluatePreorderEmailReadiness({
+  apiKey: process.env.RESEND_API_KEY,
+  from: process.env.PREORDER_FROM_EMAIL,
+  operationsRecipient,
+  replyTo: PREORDER_EMAIL_REPLY_TO,
+  dns: emailDns,
+})) {
+  if (check.ready) {
+    pass(check.name, check.readyDetail);
+  } else if (isLiveTarget) {
+    fail(check.name, check.blocker);
+  } else {
+    warn(check.name, check.blocker);
+  }
 }
 
 if (
@@ -241,7 +324,7 @@ const approvedProductStatusVersion =
   process.env.PREORDER_PRODUCT_STATUS_APPROVED_VERSION ?? "";
 const approvedTaxReviewVersion =
   process.env.PREORDER_TAX_REVIEW_APPROVED_VERSION ?? "";
-if (target === "launch") {
+if (isLiveTarget) {
   if (
     PREORDER_SELLER_DETAILS_COMPLETE &&
     PREORDER_WARRANTY_DETAILS_COMPLETE &&
@@ -282,7 +365,7 @@ if (isPreorderTaxReviewApproved(approvedTaxReviewVersion)) {
     "Tax review gate",
     `The approved tax policy matches ${PREORDER_TAX_POLICY_VERSION}.`,
   );
-} else if (target === "launch") {
+} else if (isLiveTarget) {
   fail(
     "Tax review gate",
     `Set PREORDER_TAX_REVIEW_APPROVED_VERSION to ${PREORDER_TAX_POLICY_VERSION} only after the tax position is reviewed.`,
@@ -320,11 +403,17 @@ if (supabase) {
     } else {
       fail("Inventory ceiling", "Apply the 1,000-unit inventory-ceiling migration.");
     }
-    if (target === "launch") {
-      if (Number.isSafeInteger(live?.unit_limit) && live.unit_limit >= 1 && live.unit_limit <= 1_000) {
-        pass("Live release allocation", `${live.unit_limit} units are released within the lifetime ceiling.`);
+    if (target === "live-smoke") {
+      if (live?.unit_limit === 1) {
+        pass("Live verification allocation", "Exactly one live unit is released while checkout remains paused.");
       } else {
-        fail("Live release allocation", "Set a controlled live release allocation between 1 and 1,000 units while sales remain paused.");
+        fail("Live verification allocation", "Set the paused live release ceiling to exactly one unit before creating the invitation.");
+      }
+    } else if (target === "launch") {
+      if (live?.unit_limit === 100) {
+        pass("Live release allocation", "The approved 100-unit initial batch is staged while checkout remains paused.");
+      } else {
+        fail("Live release allocation", "Restore the paused live release ceiling to the approved 100-unit initial batch before public cutover.");
       }
     } else if (live?.unit_limit === 100) {
       pass("Initial live release", "The approved 100-unit initial allocation is recorded and remains paused.");
@@ -335,6 +424,50 @@ if (supabase) {
       pass("Test allocation", `Test pre-orders are ${test.sales_status}.`);
     } else {
       fail("Test allocation", "The test sales control is missing.");
+    }
+  }
+
+  if (target === "launch" && isUuid(verifiedLiveSmokeOrderId)) {
+    const verificationOrder = await supabase
+      .from("preorders")
+      .select("id,checkout_intent_id,environment,payment_status,amount_total,amount_refunded,confirmation_email_sent_at")
+      .eq("id", verifiedLiveSmokeOrderId)
+      .maybeSingle();
+    if (verificationOrder.error || !verificationOrder.data) {
+      fail(
+        "Live verification evidence",
+        verificationOrder.error?.message ?? "The configured verification order was not found.",
+      );
+    } else {
+      const verificationIntent = await supabase
+        .from("preorder_checkout_intents")
+        .select("id,environment,status,source")
+        .eq("id", verificationOrder.data.checkout_intent_id)
+        .maybeSingle();
+      const order = verificationOrder.data;
+      const intent = verificationIntent.data;
+      if (
+        !verificationIntent.error &&
+        intent?.environment === "live" &&
+        intent.status === "paid" &&
+        intent.source === "private_live_smoke" &&
+        order.environment === "live" &&
+        order.payment_status === "refunded" &&
+        order.amount_total > 0 &&
+        order.amount_refunded === order.amount_total &&
+        Boolean(order.confirmation_email_sent_at)
+      ) {
+        pass(
+          "Live verification evidence",
+          "The referenced private live order completed through the webhook, sent its confirmation, and was fully refunded.",
+        );
+      } else {
+        fail(
+          "Live verification evidence",
+          verificationIntent.error?.message ??
+            "The referenced order is not a completed, confirmation-sent, fully refunded private live-verification order.",
+        );
+      }
     }
   }
 
@@ -441,7 +574,7 @@ if (secretKey && priceId) {
         : price.product;
     if (
       price.active &&
-      price.livemode === (target === "launch") &&
+      price.livemode === isLiveTarget &&
       price.type === "one_time" &&
       price.unit_amount === expectedPrice &&
       price.currency === expectedCurrency &&
@@ -454,7 +587,7 @@ if (secretKey && priceId) {
     }
     if (product?.tax_code === PREORDER_STRIPE_PRODUCT_TAX_CODE) {
       pass("Stripe product tax code", "General - Tangible Goods is configured explicitly.");
-    } else if (target === "launch") {
+    } else if (isLiveTarget) {
       fail("Stripe product tax code", "Assign the adviser-approved tax code to the live Stripe Product.");
     } else {
       warn("Stripe product tax code", "Assign the approved product tax code before launch; test Checkout can use the account preset.");
@@ -497,14 +630,14 @@ if (secretKey && priceId) {
         (registration) => registration.country_options.us?.state ?? "UNKNOWN",
       ),
     );
-    if (target === "launch" && usRegistrationComparison.matches) {
+    if (isLiveTarget && usRegistrationComparison.matches) {
       pass(
         "Stripe Tax registrations",
         usRegistrationComparison.required.length
           ? `The active US registrations match the approved states: ${usRegistrationComparison.required.join(", ")}.`
           : "No active US registrations are configured, matching the approved remote-seller tax policy.",
       );
-    } else if (target === "launch") {
+    } else if (isLiveTarget) {
       fail(
         "Stripe Tax registrations",
         `Active US states do not match the approved policy (missing: ${usRegistrationComparison.missing.join(", ") || "none"}; unexpected: ${usRegistrationComparison.unexpected.join(", ") || "none"}).`,
@@ -523,13 +656,67 @@ if (secretKey && priceId) {
 } else {
   fail(
     "Stripe price",
-    target === "launch"
+    isLiveTarget
       ? "STRIPE_LIVE_PREORDER_PRICE_ID and STRIPE_LIVE_SECRET_KEY are required."
       : "STRIPE_PREORDER_PRICE_ID and STRIPE_SECRET_KEY are required.",
   );
 }
 
-if (target === "launch" && /^(?:sk|rk)_live_/.test(secretKey) && webhookEndpointId) {
+if (isLiveTarget && /^(?:sk|rk)_live_/.test(secretKey)) {
+  try {
+    const stripe = new Stripe(secretKey, { httpClient: Stripe.createFetchHttpClient() });
+    const account = await stripe.accounts.retrieveCurrent();
+    for (const check of evaluateStripeAccountReadiness(account)) {
+      if (check.ready) {
+        pass(check.name, check.readyDetail);
+      } else {
+        fail(check.name, check.blocker);
+      }
+    }
+  } catch (error) {
+    fail(
+      "Stripe account readiness",
+      error instanceof Error
+        ? `The configured key could not verify the live Account object: ${error.message}`
+        : "The configured key could not verify the live Account object.",
+    );
+  }
+}
+
+if (isLiveTarget && supabase && /^(?:sk|rk)_live_/.test(secretKey)) {
+  try {
+    const stripe = new Stripe(secretKey, { httpClient: Stripe.createFetchHttpClient() });
+    const reconciliation = await runPreorderPaymentReconciliation({
+      supabase,
+      stripe,
+      environment: "live",
+    });
+    if (reconciliation.ready) {
+      pass(
+        "Payment reconciliation",
+        `${reconciliation.summary.storedOrders} stored live order${reconciliation.summary.storedOrders === 1 ? "" : "s"} match ${reconciliation.summary.stripePaidSessions} paid Stripe pre-order session${reconciliation.summary.stripePaidSessions === 1 ? "" : "s"}.`,
+      );
+    } else {
+      const examples = reconciliation.issues
+        .slice(0, 3)
+        .map((issue) => issue.code)
+        .join(", ");
+      fail(
+        "Payment reconciliation",
+        `${reconciliation.issues.length} mismatch${reconciliation.issues.length === 1 ? "" : "es"} found${examples ? ` (${examples})` : ""}; run npm run preorder:check:payments for the read-only detail.`,
+      );
+    }
+  } catch (error) {
+    fail(
+      "Payment reconciliation",
+      error instanceof Error
+        ? `The read-only Stripe/order comparison could not complete: ${error.message}`
+        : "The read-only Stripe/order comparison could not complete.",
+    );
+  }
+}
+
+if (isLiveTarget && /^(?:sk|rk)_live_/.test(secretKey) && webhookEndpointId) {
   try {
     const stripe = new Stripe(secretKey, { httpClient: Stripe.createFetchHttpClient() });
     const endpoint = await stripe.webhookEndpoints.retrieve(webhookEndpointId);

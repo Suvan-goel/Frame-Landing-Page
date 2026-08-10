@@ -31,15 +31,32 @@ function structuredData(description: string) {
             address: {
               "@type": "PostalAddress",
               streetAddress: [
-                COMPANY_DETAILS.registeredOffice.line1,
-                COMPANY_DETAILS.registeredOffice.line2,
+                COMPANY_DETAILS.correspondenceAddress.line1,
+                COMPANY_DETAILS.correspondenceAddress.line2,
               ]
                 .filter(Boolean)
                 .join(", "),
-              addressLocality: COMPANY_DETAILS.registeredOffice.locality,
-              addressRegion: COMPANY_DETAILS.registeredOffice.region,
-              postalCode: COMPANY_DETAILS.registeredOffice.postalCode,
-              addressCountry: COMPANY_DETAILS.registeredOffice.country,
+              addressLocality: COMPANY_DETAILS.correspondenceAddress.locality,
+              addressRegion: COMPANY_DETAILS.correspondenceAddress.region,
+              postalCode: COMPANY_DETAILS.correspondenceAddress.postalCode,
+              addressCountry: COMPANY_DETAILS.correspondenceAddress.country,
+            },
+            location: {
+              "@type": "Place",
+              name: "Registered office",
+              address: {
+                "@type": "PostalAddress",
+                streetAddress: [
+                  COMPANY_DETAILS.registeredOffice.line1,
+                  COMPANY_DETAILS.registeredOffice.line2,
+                ]
+                  .filter(Boolean)
+                  .join(", "),
+                addressLocality: COMPANY_DETAILS.registeredOffice.locality,
+                addressRegion: COMPANY_DETAILS.registeredOffice.region,
+                postalCode: COMPANY_DETAILS.registeredOffice.postalCode,
+                addressCountry: COMPANY_DETAILS.registeredOffice.country,
+              },
             },
           }
         : {}),

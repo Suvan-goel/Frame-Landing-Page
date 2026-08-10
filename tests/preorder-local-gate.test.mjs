@@ -8,6 +8,106 @@ import {
   PREORDER_TERMS_VERSION,
   PREORDER_WARRANTY_DETAILS_COMPLETE,
 } from "../lib/preorder.ts";
+import {
+  createPreorderLiveSmokeAccessToken,
+  createPreorderLiveSmokeCookieValue,
+  isPreorderLiveSmokeConfigured,
+  isPreorderPublicLaunchConfigured,
+  preorderLiveSmokeCookieHeader,
+  verifyPreorderLiveSmokeAccessToken,
+  verifyPreorderLiveSmokeCookieValue,
+} from "../lib/preorder-live-smoke-access.ts";
+
+const LIVE_SMOKE_TEST_SECRET =
+  "live-smoke-test-secret-that-is-distinct-and-long-enough";
+
+test("keeps live verification private, expiring, and separate from public launch", async () => {
+  assert.equal(
+    isPreorderLiveSmokeConfigured({
+      mode: "test",
+      publicLaunchEnabled: "false",
+      verifiedOrderId: "",
+      secret: LIVE_SMOKE_TEST_SECRET,
+    }),
+    false,
+  );
+  assert.equal(
+    isPreorderLiveSmokeConfigured({
+      mode: "live",
+      secret: LIVE_SMOKE_TEST_SECRET,
+    }),
+    false,
+  );
+  assert.equal(
+    isPreorderLiveSmokeConfigured({
+      mode: "live",
+      publicLaunchEnabled: "true",
+      verifiedOrderId: "",
+      secret: LIVE_SMOKE_TEST_SECRET,
+    }),
+    false,
+  );
+  assert.equal(
+    isPreorderLiveSmokeConfigured({
+      mode: "live",
+      publicLaunchEnabled: "false",
+      verifiedOrderId: "",
+      secret: LIVE_SMOKE_TEST_SECRET,
+    }),
+    true,
+  );
+  assert.equal(
+    isPreorderLiveSmokeConfigured({
+      mode: "live",
+      publicLaunchEnabled: "false",
+      verifiedOrderId: "123e4567-e89b-42d3-a456-426614174000",
+      secret: LIVE_SMOKE_TEST_SECRET,
+    }),
+    false,
+  );
+
+  const token = await createPreorderLiveSmokeAccessToken(
+    LIVE_SMOKE_TEST_SECRET,
+  );
+  assert.equal(
+    await verifyPreorderLiveSmokeAccessToken(token, LIVE_SMOKE_TEST_SECRET),
+    true,
+  );
+  assert.equal(
+    await verifyPreorderLiveSmokeAccessToken(
+      `${token.slice(0, -1)}${token.endsWith("a") ? "b" : "a"}`,
+      LIVE_SMOKE_TEST_SECRET,
+    ),
+    false,
+  );
+
+  const cookie = await createPreorderLiveSmokeCookieValue(
+    LIVE_SMOKE_TEST_SECRET,
+  );
+  assert.equal(
+    await verifyPreorderLiveSmokeCookieValue(cookie, LIVE_SMOKE_TEST_SECRET),
+    true,
+  );
+  assert.match(
+    preorderLiveSmokeCookieHeader(cookie),
+    /HttpOnly; Secure; SameSite=Strict/,
+  );
+
+  assert.equal(
+    isPreorderPublicLaunchConfigured({
+      enabled: "true",
+      verifiedOrderId: "",
+    }),
+    false,
+  );
+  assert.equal(
+    isPreorderPublicLaunchConfigured({
+      enabled: "true",
+      verifiedOrderId: "123e4567-e89b-42d3-a456-426614174000",
+    }),
+    true,
+  );
+});
 
 async function render(path = "/", init, origin = "https://framewearable.com", env = {}) {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
@@ -212,6 +312,10 @@ test("keeps the public homepage free of pre-order discovery and blocks webhook b
     metaPixel,
     environmentExample,
     preorderAccess,
+    liveSmokeAccess,
+    checkoutRoute,
+    salesControlsRoute,
+    liveSmokeLinkScript,
   ] = await Promise.all([
       render("/"),
       render("/interest"),
@@ -228,6 +332,10 @@ test("keeps the public homepage free of pre-order discovery and blocks webhook b
       readFile(new URL("../app/components/meta-pixel.tsx", import.meta.url), "utf8"),
       readFile(new URL("../.env.example", import.meta.url), "utf8"),
       readFile(new URL("../lib/preorder-access.ts", import.meta.url), "utf8"),
+      readFile(new URL("../lib/preorder-live-smoke-access.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/preorders/checkout/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../app/api/admin/preorders/controls/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../scripts/create-preorder-live-smoke-link.mjs", import.meta.url), "utf8"),
     ]);
 
   assert.equal(homeResponse.status, 200);
@@ -270,7 +378,20 @@ test("keeps the public homepage free of pre-order discovery and blocks webhook b
   assert.match(environmentExample, /^PREORDER_LEGAL_APPROVED_VERSION=$/m);
   assert.match(environmentExample, /^PREORDER_PRODUCT_STATUS_APPROVED_VERSION=$/m);
   assert.match(environmentExample, /^PREORDER_MAINTENANCE_SECRET=/m);
+  assert.match(environmentExample, /^PREORDER_PUBLIC_LAUNCH_ENABLED=false$/m);
+  assert.match(environmentExample, /^PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID=$/m);
+  assert.match(environmentExample, /^PREORDER_LIVE_SMOKE_ACCESS_SECRET=/m);
   assert.match(preorderAccess, /PREORDER_PRODUCT_STATUS_VERSION/);
   assert.match(preorderAccess, /approvedProductStatusVersion === PREORDER_PRODUCT_STATUS_VERSION/);
   assert.match(preorderAccess, /PREORDER_WARRANTY_DETAILS_COMPLETE/);
+  assert.match(preorderAccess, /isPreorderPublicLaunchConfigured/);
+  assert.match(worker, /x-frame-preorder-live-smoke-request/);
+  assert.match(worker, /verifyPreorderLiveSmokeAccessToken/);
+  assert.match(liveSmokeAccess, /SameSite=Strict/);
+  assert.match(liveSmokeAccess, /ACCESS_TOKEN_TTL_SECONDS = 15 \* 60/);
+  assert.match(checkoutRoute, /source: liveSmokeRequest[\s\S]+private_live_smoke/);
+  assert.match(checkoutRoute, /verification_mode: "live_smoke"/);
+  assert.match(salesControlsRoute, /unitLimit !== 1/);
+  assert.match(salesControlsRoute, /Public launch remains locked/);
+  assert.match(liveSmokeLinkScript, /origin\.origin !== SITE_URL/);
 });

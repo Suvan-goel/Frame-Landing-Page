@@ -6,6 +6,7 @@ import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
 import {
   COMPANY_DETAILS,
   COMPANY_DETAILS_COMPLETE,
+  formatCorrespondenceAddress,
   formatRegisteredOffice,
   SUPPORT_EMAIL,
 } from "@/lib/company";
@@ -56,6 +57,7 @@ export default async function PrivacyPage() {
               {COMPANY_DETAILS.privacyControllerName} is the controller responsible for the processing described in
               this notice. It is registered in {COMPANY_DETAILS.jurisdiction}
               {` under registration number ${COMPANY_DETAILS.registrationNumber}`}, with its registered office at {formatRegisteredOffice()}.
+              {` Its customer and privacy correspondence address is ${formatCorrespondenceAddress()}.`}
               {` Privacy questions can be sent to ${SUPPORT_EMAIL} or submitted through the privacy contact form.`}
             </p>
           </section>

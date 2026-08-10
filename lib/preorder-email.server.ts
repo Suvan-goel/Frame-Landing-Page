@@ -13,6 +13,7 @@ import {
   renderTransactionalSummaryPanel,
 } from "./transactional-email-design";
 import { companyLegalIdentityLine, SUPPORT_EMAIL } from "./company";
+import { PREORDER_EMAIL_REPLY_TO } from "./preorder-email-readiness";
 
 const PREORDER_SUPPORT_LINE = `Support: ${SUPPORT_EMAIL}`;
 
@@ -131,7 +132,7 @@ async function sendPreorderEmail(input: {
       body: JSON.stringify({
         from,
         to: [input.recipient],
-        reply_to: SUPPORT_EMAIL,
+        reply_to: PREORDER_EMAIL_REPLY_TO,
         subject: input.subject,
         text: input.text,
         html: input.html,

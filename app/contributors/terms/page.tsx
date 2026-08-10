@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import {
   COMPANY_DETAILS,
   COMPANY_DETAILS_COMPLETE,
+  formatCorrespondenceAddress,
   formatRegisteredOffice,
   SUPPORT_EMAIL,
 } from "@/lib/company";
@@ -37,6 +38,8 @@ export default function ContributorTermsPage() {
             <strong>{COMPANY_DETAILS_COMPLETE ? COMPANY_DETAILS.legalName : "[LEGAL BUSINESS NAME TO BE CONFIRMED]"}</strong>,
             of{" "}
             <strong>{COMPANY_DETAILS_COMPLETE ? formatRegisteredOffice() : "[REGISTERED BUSINESS ADDRESS TO BE CONFIRMED]"}</strong>.
+            {" "}Customer correspondence should be sent to{" "}
+            <strong>{COMPANY_DETAILS_COMPLETE ? formatCorrespondenceAddress() : "[CORRESPONDENCE ADDRESS TO BE CONFIRMED]"}</strong>.
             {` Questions may be sent to ${SUPPORT_EMAIL}.`}
           </p>
         </section>

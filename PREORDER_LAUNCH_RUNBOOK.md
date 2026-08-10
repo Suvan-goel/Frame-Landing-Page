@@ -38,6 +38,33 @@ Run the local preflight at any time:
 npm run preorder:check
 ```
 
+Run the email-only preflight without sending a message or touching provider
+settings:
+
+```bash
+npm run preorder:check:email
+```
+
+It must confirm the exact pre-order sender and support routing plus inbound MX,
+one bounded root SPF policy, Resend DKIM and return-path SPF/MX, and an enforced
+DMARC quarantine or reject policy. Keep the Resend API key restricted to sending;
+domain-administration permission is not required by this check.
+
+Run the sandbox payment comparison after any checkout, refund or webhook change:
+
+```bash
+npm run preorder:check:payments:test
+```
+
+The live form is `npm run preorder:check:payments`. It reads all Frame pre-order
+Checkout Sessions created from August 1, 2026 onward and compares every paid
+session with Supabase checkout-intent, order and payment records plus Stripe's
+PaymentIntent, latest Charge, Refunds and Disputes. It reports safe order/session
+references but no customer details, and cannot move money or update either system.
+The restricted Stripe key therefore needs read access to Checkout Sessions,
+PaymentIntents, Charges, Refunds and Disputes in addition to its existing runtime
+permissions.
+
 Run the sandbox concurrency and recovery checks before each hosted rehearsal and final cutover:
 
 ```bash
@@ -91,7 +118,7 @@ The invitation grants a signed, secure, 12-hour browser session. Rotating `PREOR
 
 Do not complete this section until the lawyer and medical-device regulatory review are finished.
 
-- Insert the incorporated seller identity and replace every remaining draft marker or placeholder with approved wording.
+- Insert the incorporated seller identity, the document-matched registered office, and the separately authorised customer correspondence address. Set `correspondenceAddressAuthorized` only after mail-provider approval, configure `MAILING_POSTAL_ADDRESS`, and replace every remaining draft marker or placeholder with approved wording.
 - Review the one-year limited hardware warranty, shipping-delay consent matrix, material-change consent flow, and automatic deadline refund operation with US counsel.
 - Validate that the internal shipping budget can absorb the final packaged dimensions and weight, US fulfilment origin and fees, and lithium-battery classification; confirm Stripe Tax registrations with the relevant advisers.
 - Assign an explicit Stripe product tax code approved for Frame's final product classification.
@@ -105,6 +132,8 @@ The application rejects live checkout while the active version begins with `draf
 ## 4. Live payment and hosted configuration
 
 Create a separate Stripe live Product and one-time $299 USD Price. Never reuse test IDs in live configuration.
+
+Before private live verification, the live Stripe Account must show all onboarding details submitted, the Stripe Services Agreement accepted, live charges and card payments active, payouts enabled with an automatic schedule, and no current, past-due, failed, or pending-verification requirements. Its US company name must match `lib/company.ts`; configure the Frame public website, monitored support email and `/contact` URL, merchant category, product description, a 5–22 character statement descriptor containing `FRAME`, and an icon or logo plus primary brand colour. The pre-order Checkout session supplies its own Frame presentation and links the Pre-order Terms, Cancellation and Refund Policy, and Privacy Notice on Stripe's hosted page.
 
 The live objects were created on August 6, 2026:
 
@@ -121,6 +150,9 @@ Required live values:
 PREORDER_MODE=live
 PREORDER_LEGAL_APPROVED_VERSION=<exact approved non-draft version>
 PREORDER_PRODUCT_STATUS_APPROVED_VERSION=<exact approved non-draft version>
+PREORDER_LIVE_SMOKE_ACCESS_SECRET=<fourth unique secret of at least 32 characters>
+PREORDER_PUBLIC_LAUNCH_ENABLED=false
+PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID=
 STRIPE_SECRET_KEY=<live key>
 STRIPE_PREORDER_PRICE_ID=<live $299 price>
 STRIPE_WEBHOOK_SECRET=<live endpoint signing secret>
@@ -138,14 +170,17 @@ PREORDER_MAINTENANCE_SECRET=<third unique secret of at least 32 characters>
 
 Copy the Supabase, Resend, sender, operations-email, order-link and rate-limit values into the hosted environment. Use different values for `PREORDER_ORDER_ACCESS_SECRET` and `PREORDER_RATE_LIMIT_SECRET`. Do not expose any secret in source control.
 
-Keep the 15-minute scheduled deadline processor enabled. It converts unanswered long, unknown, repeated-delay, and material-change notices into cancellations and full refunds. The maintenance secret must be different from the order-link, rate-limit, and staging secrets.
+Keep the 15-minute scheduled deadline processor enabled. It converts unanswered long, unknown, repeated-delay, and material-change notices into cancellations and full refunds. The maintenance, order-link, rate-limit, staging, and live-verification secrets must all be different.
 
 Keep the explicit `STRIPE_TEST_*` values in the hosted environment after
 cutover. The application selects Stripe credentials from each order or event's
 recorded environment, allowing test-order refunds and delayed signed test
 webhooks to be handled without ever using the live key. Both standard `sk_*`
 and restricted `rk_*` Stripe keys are accepted when they match the selected
-environment.
+environment. A restricted live key must retain read access to the Account object
+in addition to the existing checkout, refund, tax, price/product, and webhook
+permissions. The readiness commands use that access only to inspect activation,
+verification, payout, profile, descriptor, agreement, and branding state.
 
 The live Stripe webhook endpoint is:
 
@@ -172,12 +207,18 @@ for five minutes appears in the owner recovery panel and can be safely retried.
 
 ## 5. Final cutover
 
-1. Confirm the Supabase `live` allocation is still `paused`.
-2. Run `npm run preorder:check:launch` against the exact values intended for production.
-3. Complete one live-mode smoke purchase only if approved by the payment and legal launch plan, then refund it and verify the order, webhook and email records.
-4. Confirm the fixed 1,000-unit inventory ceiling and the initial 100-unit cumulative live release allocation.
-5. Open the `live` allocation from the authenticated owner view.
-6. Confirm the public homepage button reaches review and Stripe live Checkout.
+1. Configure live mode with `PREORDER_PUBLIC_LAUNCH_ENABLED=false`, an empty `PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID`, and a unique `PREORDER_LIVE_SMOKE_ACCESS_SECRET`. Public pre-order routes remain hidden.
+2. Keep the Supabase `live` allocation `paused` and set its released-unit ceiling to exactly `1`.
+3. Run `npm run preorder:check:email`, `npm run preorder:check:payments`, then `npm run preorder:check:live-smoke`; do not continue unless all report zero failures, including every email identity/authentication check, live payment/order comparison, and live Stripe Account activation, verification, payout, identity, customer-support, descriptor, agreement, and branding check.
+4. Deploy the approved live configuration while the public-launch lock and paused allocation remain in place.
+5. Create the 15-minute invitation with `npm run preorder:live-smoke-link`. Do not share it; it opens the real card-payment path for two hours in that browser.
+6. From the authenticated owner view, open the one-unit live allocation. The control rejects any larger non-public live opening.
+7. Use the invitation to complete one real-card order. Immediately pause the live allocation after Stripe accepts the payment.
+8. Verify the charged subtotal, shipping and tax, signed webhook, live order record, confirmation email, management link and operational alert. Then issue a full refund and wait until the order shows `refunded` with the full amount reconciled.
+9. Copy that live pre-order UUID into `PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID`, restore the paused released-unit ceiling to `100`, and set `PREORDER_PUBLIC_LAUNCH_ENABLED=true` in the coordinated public-cutover configuration.
+10. Run `npm run preorder:check:payments` again, then `npm run preorder:check:launch`. They verify that the private live order reconciles exactly with Stripe, came from the private path, completed through the webhook, sent its confirmation, and was fully refunded.
+11. Publish the public-cutover configuration and open the 100-unit live allocation from the authenticated owner view.
+12. Confirm the public homepage button reaches review and Stripe live Checkout, then monitor the first public order before allowing more traffic.
 
 Opening the live allocation is intentionally the last step. The owner API will refuse it if any launch safeguard fails.
 
