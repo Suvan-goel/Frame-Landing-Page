@@ -37,6 +37,15 @@ location.
   incorporated recipient.
 - Q1 2027 delivery-basis record: founder waived the separate internal evidence
   record on August 10, 2026. The advertised estimate remains unchanged.
+- Provisional US fulfilment reserve: founder approved a $40 per-order planning
+  allowance on August 10, 2026, split between $30 for outbound fulfilment and
+  $10 pooled for delivery, return and warranty exceptions. The initial 100-unit
+  release therefore carries a $4,000 internal fulfilment allowance.
+- Provisional battery transport assumption: founder confirmed on August 10,
+  2026 that the planned product contains one rechargeable lithium-ion or
+  lithium-polymer battery, installed in the wearable, with an expected total
+  rating below 20 Wh. Production-battery evidence and carrier acceptance remain
+  required before transport.
 - Public pre-orders: disabled.
 
 Reopen the regulatory review before any material change to product claims,
@@ -161,6 +170,73 @@ physical operation is introduced.
 This decision removes the evidence record as an internal launch prerequisite.
 It does not change the existing customer-facing delay notices, consent,
 cancellation or automatic-refund safeguards.
+
+## Provisional US fulfilment budget
+
+- Decision owner: founder
+- Decision date: August 10, 2026
+- Initial release: 100 units
+- Outbound fulfilment allowance: $30 per shipped order
+- Pooled exception allowance: $10 per order
+- Total planning allowance: $40 per order; $4,000 for the initial release
+- Customer-facing standard US shipping price: free
+
+The outbound allowance is a conservative ceiling rather than an expected cost
+for every shipment. It is based on a parcel of no more than 2 pounds and no more
+than one cubic foot, shipped by tracked domestic US ground service. The allowance
+includes postage, packaging, pick-and-pack handling and insurance approximately
+equal to the $299 product price. The pooled exception allowance covers the
+portfolio-level cost of loss, damage, address correction, authorised returns,
+warranty returns and replacement shipments; it is not assigned to each customer.
+
+This record does not select a manufacturer, ship-from location, warehouse,
+carrier or 3PL. Before inventory is committed or fulfilment begins, obtain a
+written quote using the final packaged product and reopen this decision if any
+of the following is true:
+
+- the final parcel exceeds 2 pounds or one cubic foot;
+- the fully loaded outbound cost exceeds $30 per order;
+- the expected exception and warranty cost exceeds the $10 pooled allowance;
+- fulfilment will not originate from a domestic US location;
+- a manufacturer, warehouse or 3PL creates a US physical operation or changes
+  the approved tax facts; or
+- the selected carrier cannot accept the final battery classification and
+  packaging.
+
+## Provisional battery transport record
+
+- Decision owner: founder
+- Decision date: August 10, 2026
+- Planned chemistry: rechargeable lithium-ion or lithium-polymer
+- Planned quantity: one battery per wearable
+- Planned configuration: installed in the wearable during transport
+- Expected total battery rating: below 20 Wh
+- Preliminary domestic shipping description: lithium-ion battery contained in
+  equipment (UN3481), subject to production-battery and carrier confirmation
+
+This is sufficient to plan domestic US fulfilment, but it is not a completed
+dangerous-goods classification or permission to transport the product. Before
+approving the production battery and before the first fulfilment hand-off,
+retain all of the following in the launch evidence folder:
+
+- the battery manufacturer, part number and technical data sheet;
+- nominal voltage, amp-hour capacity and exact calculated or manufacturer-rated
+  watt-hour value, with the required Wh marking on the battery;
+- the battery manufacturer's matching UN 38.3 test summary;
+- confirmation that the battery and product are new, undamaged and not recalled;
+- a final packing specification showing rigid outer packaging, protection from
+  damage and short circuit, prevention of inadvertent activation, cushioning
+  against movement, complete delivery and return addresses, and any marks the
+  selected service requires; and
+- written acceptance of the product, packaging and service level from the
+  selected carrier, warehouse or 3PL.
+
+The fulfilment procedure must also keep customer returns, damaged products and
+replacement batteries out of the ordinary outbound workflow until the selected
+carrier supplies a compliant returns procedure for those conditions. Reopen
+this record if the chemistry, installed configuration, quantity or watt-hour
+rating changes. Do not offer the finished product for transport until the
+evidence above is complete.
 
 ## Incorporation-day data sheet
 

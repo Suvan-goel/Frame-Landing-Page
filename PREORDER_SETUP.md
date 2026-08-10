@@ -89,9 +89,18 @@ controlled reply test remains a separate final rehearsal after explicit approval
 
 The shipping value is zero because standard shipping is free for all 50 states
 and Washington, DC. US territories and international destinations are excluded
-from the initial launch. Validate the internal shipping budget against the final
-boxed weight, dimensions, US fulfilment origin, fulfilment fees and lithium-battery
-classification before public sales are opened.
+from the initial launch. The founder-approved provisional fulfilment allowance
+is $40 per order: $30 for outbound fulfilment plus a $10 pooled allowance for
+delivery, return and warranty exceptions. Validate that allowance against the
+final boxed weight, dimensions, US fulfilment origin, fulfilment fees and
+lithium-battery assumptions before inventory is committed or fulfilment begins,
+using the revalidation triggers in `docs/preorder-pre-incorporation-pack.md`.
+The founder-approved provisional product configuration is one rechargeable
+lithium-ion or lithium-polymer battery, installed in each wearable and expected
+to be below 20 Wh. Before the production battery is approved or the first unit
+is offered for transport, complete the data-sheet, exact Wh, UN 38.3, packing,
+marking, carrier-acceptance and returns-procedure evidence listed in the same
+pack. The assumption is not itself a completed transport classification.
 
 The live environment begins with a cumulative release allocation of 100 units
 inside the fixed 1,000-unit lifetime inventory ceiling. Applying the release

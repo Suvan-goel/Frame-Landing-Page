@@ -180,7 +180,20 @@ release the tax lock outside the controlled incorporation-day sequence.
 
 - Insert the incorporated seller identity, the document-matched registered office, and the separately authorised customer correspondence address. Set `correspondenceAddressAuthorized` only after mail-provider approval, configure `MAILING_POSTAL_ADDRESS`, and replace every remaining draft marker or placeholder with approved wording.
 - Preserve the founder-approved one-year limited hardware warranty, shipping-delay consent matrix, material-change consent flow, and automatic deadline refund operation unless the founder reopens the legal-page review.
-- Validate that the internal shipping budget can absorb the final packaged dimensions and weight, US fulfilment origin and fees, and lithium-battery classification; reassess the tax policy before any US physical operation or fulfilment decision.
+- Preserve the founder-approved provisional fulfilment allowance of $40 per
+  order ($30 outbound plus a $10 pooled exception allowance), or replace it with
+  a documented final quote. Before inventory is committed or fulfilment begins,
+  validate the final packaged dimensions and weight, US fulfilment origin and
+  fees against the revalidation triggers in
+  `docs/preorder-pre-incorporation-pack.md`; reassess the tax policy before any
+  US physical operation or fulfilment decision.
+- Preserve the founder-approved provisional battery assumption: one rechargeable
+  lithium-ion or lithium-polymer battery, installed in each wearable, expected
+  below 20 Wh. Before approving the production battery or handing the first unit
+  to a fulfiller, complete every evidence and carrier-acceptance item in the
+  provisional battery transport record. Keep returns, damaged devices and
+  replacement batteries out of the ordinary outbound workflow until the carrier
+  has approved a compliant procedure.
 - Keep the founder-approved tangible-goods Stripe product tax code `txcd_99999999` unless the product classification changes.
 - Assign a new non-draft `PREORDER_TERMS_VERSION` and matching product-status version in the application.
 - Set `PREORDER_LEGAL_APPROVED_VERSION` to exactly the approved terms version.
