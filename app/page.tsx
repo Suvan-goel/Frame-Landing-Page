@@ -182,7 +182,9 @@ export default async function Home() {
               />
             )}
           </div>
-          <figure className="hero-visuals">
+          <figure
+            className={`hero-visuals${showPreorderAreas ? " hero-visuals--preorder" : ""}`}
+          >
             <div className="hero-lifestyle">
               <img
                 src="/frame-hero-man-transparent-v3-720w.webp"
@@ -198,7 +200,7 @@ export default async function Home() {
             </div>
             <figcaption>
               {showPreorderAreas
-                ? "Frame upper-arm wearable · design preview"
+                ? "Design preview"
                 : "Product concept. Final design in development."}
             </figcaption>
           </figure>

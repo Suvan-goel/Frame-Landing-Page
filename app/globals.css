@@ -1506,6 +1506,20 @@ h2 {
   letter-spacing: 0.03em;
 }
 
+.hero-visuals--preorder figcaption {
+  right: 20px;
+  bottom: 16px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--ink);
+  font-size: 0.61rem;
+  font-weight: 680;
+  letter-spacing: normal;
+  text-align: right;
+  backdrop-filter: none;
+}
+
 .context-section {
   background: var(--paper);
 }
@@ -5095,6 +5109,10 @@ h2 {
     font-size: 0.7rem;
     text-align: right;
     backdrop-filter: none;
+  }
+
+  .hero-visuals--preorder figcaption {
+    font-size: 0.61rem;
   }
 
   .context-intro,

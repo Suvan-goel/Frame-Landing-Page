@@ -15,9 +15,11 @@ credential is preferred; the check does not require domain-administration access
 The signed `/api/resend/webhook` endpoint also records `sent`, `delivered`,
 `delivery_delayed`, `failed`, `bounced`, `complained` and `suppressed` outcomes
 for each new pre-order email. Apply
-`20260810120000_track_preorder_email_delivery_outcomes.sql` before deploying the
-matching application source. Existing historical sends remain labelled as
-legacy; new tracked sends must reach a delivered outcome within ten minutes.
+all migrations through `20260810130000_start_preorder_numbers_at_ten.sql` before
+deploying the matching application source. Existing historical sends remain
+labelled as legacy; new tracked sends must reach a delivered outcome within ten
+minutes. The numbering migration ensures the first generated customer pre-order
+number is at least 10 without reusing any number already issued.
 
 Run `npm run preorder:check:payments:test` to reconcile every paid Stripe test
 pre-order against its stored checkout intent, order and payment record. The live
