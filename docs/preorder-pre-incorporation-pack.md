@@ -31,7 +31,8 @@ location.
   corporation-tax, VAT and permanent-establishment treatment remain pending.
 - Authorised correspondence address: pending provider approval for the
   incorporated recipient.
-- Q1 2027 delivery basis: evidence record to be completed below.
+- Q1 2027 delivery-basis record: founder waived the separate internal evidence
+  record on August 10, 2026. The advertised estimate remains unchanged.
 - Public pre-orders: disabled.
 
 Reopen the regulatory review before any material change to product claims,
@@ -133,31 +134,16 @@ set `PREORDER_TAX_REVIEW_APPROVED_VERSION` until the remaining head-office and
 cross-border conclusions are documented. Reassess immediately if the confirmed
 launch facts change.
 
-## Q1 2027 delivery-basis record
+## Q1 2027 delivery-basis decision
 
-The evidence should show a reasonable basis for the advertised window on the
-date public orders open. Link to controlled source material rather than copying
-commercially sensitive details into this repository.
+- Decision owner: founder
+- Decision date: August 10, 2026
+- Decision: skip the separate internal delivery-basis evidence record.
+- Advertised estimate: Q1 2027, unchanged.
 
-| Evidence area | Owner | Current conclusion | Evidence location | Reviewed date |
-| --- | --- | --- | --- | --- |
-| Product-development milestones | — | — | — | — |
-| Integrated BP validation plan | — | — | — | — |
-| Supplier component lead times | — | — | — | — |
-| Manufacturer capacity and production lead time | — | — | — | — |
-| Quality and acceptance work | — | — | — | — |
-| Battery certification and transport classification | — | — | — | — |
-| Packaging dimensions, weight and cost | — | — | — | — |
-| US fulfilment origin, capacity and fees | — | — | — | — |
-| Demand assumption for the 100-unit release | — | — | — | — |
-| Schedule contingency and decision dates | — | — | — | — |
-
-Final delivery-window approval:
-
-- Decision owner: —
-- Approval date: —
-- Approved window: —
-- Next mandatory review date: —
+This decision removes the evidence record as an internal launch prerequisite.
+It does not change the existing customer-facing delay notices, consent,
+cancellation or automatic-refund safeguards.
 
 ## Incorporation-day data sheet
 
