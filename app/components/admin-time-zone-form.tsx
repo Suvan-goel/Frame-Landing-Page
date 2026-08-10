@@ -20,7 +20,7 @@ export function AdminTimeZoneForm({
   return (
     <form
       className="admin-timezone"
-      action="/api/admin/time-zone"
+      action="/api/admin/time-zone?form=v2"
       method="post"
     >
       <input type="hidden" name="tab" value={activeTab} />

@@ -1270,7 +1270,7 @@ test("separates, visualizes, exports, and permanently deletes admin leads", asyn
   assert.match(timeZoneHelpers, /Europe\/Rome/);
   assert.match(timeZoneHelpers, /America\/New_York/);
   assert.match(adminPage, /getPersistedAdminTimeZone/);
-  assert.match(timeZoneForm, /action="\/api\/admin\/time-zone"/);
+  assert.match(timeZoneForm, /action="\/api\/admin\/time-zone\?form=v2"/);
   assert.match(timeZoneForm, /method="post"/);
   assert.match(adminSettings, /from\("admin_settings"\)/);
   assert.match(adminSettings, /setPersistedAdminTimeZone/);
