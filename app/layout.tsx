@@ -48,8 +48,8 @@ export async function generateMetadata(): Promise<Metadata> {
       telephone: false,
     },
     icons: {
-      icon: "/favicon.png",
-      shortcut: "/favicon.png",
+      icon: "/favicon-transparent.png",
+      shortcut: "/favicon-transparent.png",
       apple: "/favicon.png",
     },
     openGraph: {
