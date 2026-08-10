@@ -227,7 +227,11 @@ const worker = {
     const respond = (response: Response) =>
       withPublicResponseHeaders(response, url, env);
 
-    if (url.hostname.toLowerCase() === "www.framewearable.com") {
+    const isWwwRequest = url.hostname.toLowerCase() === "www.framewearable.com";
+    if (
+      isWwwRequest &&
+      (request.method === "GET" || request.method === "HEAD")
+    ) {
       return respond(Response.redirect(
         `https://framewearable.com${url.pathname}${url.search}`,
         308,
@@ -474,6 +478,15 @@ const worker = {
     }
 
     const appHeaders = new Headers(request.headers);
+    let appUrl = url;
+    if (isWwwRequest) {
+      appUrl = new URL(
+        `https://framewearable.com${url.pathname}${url.search}`,
+      );
+      if (appHeaders.get("origin") === url.origin) {
+        appHeaders.set("origin", appUrl.origin);
+      }
+    }
     appHeaders.set(
       "x-frame-contributor-local-request",
       isLocalRequest && contributorFeatureEnabled ? "1" : "0",
@@ -495,11 +508,16 @@ const worker = {
       liveSmokeRequestAllowed ? "1" : "0",
     );
 
-    const response = await handler.fetch(
-      new Request(request, { headers: appHeaders }),
-      env,
-      ctx,
-    );
+    let appRequest = new Request(request, { headers: appHeaders });
+    if (appUrl !== url) {
+      appRequest = new Request(appUrl, appRequest);
+      const requestCf = (request as Request & { cf?: unknown }).cf;
+      if (requestCf !== undefined) {
+        Object.defineProperty(appRequest, "cf", { value: requestCf });
+      }
+    }
+
+    const response = await handler.fetch(appRequest, env, ctx);
 
     return respond(response);
   },
