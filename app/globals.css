@@ -2801,24 +2801,6 @@ h2 {
   line-height: 1.65;
 }
 
-.contact-form__status {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  margin: 1px 0 0;
-  color: var(--ink-soft);
-  font-size: 0.6rem;
-  white-space: nowrap;
-}
-
-.contact-form__status span {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  background: var(--burgundy);
-  box-shadow: 0 0 0 4px rgba(141, 62, 70, 0.1);
-}
-
 .contact-form__fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

@@ -353,6 +353,7 @@ test("server-renders the contact page", async () => {
   assert.match(html, /<title>Contact Frame<\/title>/i);
   assert.match(html, /Start a conversation\./);
   assert.match(html, /How can we help\?/);
+  assert.doesNotMatch(html, /Replies by email/i);
   assert.match(html, /name="name"/);
   assert.match(html, /name="email"/);
   assert.match(html, /name="topic"/);

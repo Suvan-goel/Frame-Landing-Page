@@ -165,10 +165,6 @@ export function ContactForm() {
           <h2>How can we help?</h2>
           <p>Share a few details and we’ll make sure your message reaches the right person.</p>
         </div>
-        <p className="contact-form__status">
-          <span aria-hidden="true" />
-          Replies by email
-        </p>
       </div>
 
       <div className="contact-form__fields">
