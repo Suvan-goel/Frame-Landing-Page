@@ -23,7 +23,12 @@ location.
 - Incorporated seller identity: awaiting Stripe Atlas confirmation.
 - Final legal-pack release approval: pending insertion of the incorporated
   seller identity and assignment of a non-draft version.
-- Cross-border tax approval: pending recorded approval.
+- US sales-tax launch posture: founder confirmed on August 10, 2026 that Frame
+  will have no US office, employees, inventory, warehouse, 3PL, other physical
+  operations or prior sales contributing to state thresholds when pre-orders
+  open. No US registrations or tax collection are planned initially.
+- Remaining cross-border tax approval: Stripe Tax head-office country and UK
+  corporation-tax, VAT and permanent-establishment treatment remain pending.
 - Authorised correspondence address: pending provider approval for the
   incorporated recipient.
 - Q1 2027 delivery basis: evidence record to be completed below.
@@ -105,17 +110,28 @@ Ask the adviser to decide, using the actual operating and fulfilment facts:
 
 Tax record:
 
-- Adviser: —
-- Advice date: —
-- Stripe Tax head-office country: —
-- Ship-from location: —
-- US registration states at launch: —
-- Threshold-monitoring owner and cadence: —
-- Approved tax-policy version: —
+- Adviser: no external adviser recorded; founder confirmed the launch operating
+  facts and approved the initial US sales-tax posture.
+- Owner confirmation date: August 10, 2026
+- Stripe Tax head-office country: Great Britain is the current application
+  assumption; final cross-border confirmation remains pending.
+- Ship-from location: not yet selected. Reassess before placing inventory with
+  any manufacturer, warehouse or 3PL.
+- US registration states at launch: none, based on the confirmed absence of US
+  physical operations and prior threshold sales.
+- Threshold monitoring: keep Stripe Tax live-mode threshold monitoring enabled;
+  review its alerts throughout the pre-order period and before any US physical
+  operation or fulfilment decision.
+- Source policy matching the zero-registration posture:
+  `uk-remote-seller-2026-08-09-v1`.
+- Approved cross-border tax-policy version: —
 - Secure evidence location: —
 
-Do not add a registration or set `PREORDER_TAX_REVIEW_APPROVED_VERSION` without
-the documented conclusion.
+The product remains classified as tangible goods; the absence of registrations
+must not be implemented by marking it tax-exempt. Do not add a registration or
+set `PREORDER_TAX_REVIEW_APPROVED_VERSION` until the remaining head-office and
+cross-border conclusions are documented. Reassess immediately if the confirmed
+launch facts change.
 
 ## Q1 2027 delivery-basis record
 

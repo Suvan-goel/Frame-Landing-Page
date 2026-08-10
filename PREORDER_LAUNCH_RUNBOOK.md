@@ -159,6 +159,16 @@ copy approval does not release the live legal gates: the incorporated seller
 identity must still be inserted and the completed pack assigned an approved,
 non-draft version.
 
+For the initial US sales-tax posture, the founder confirmed on August 10, 2026
+that Frame will have no US office, employees, inventory, warehouse, 3PL, other
+physical operations or prior sales contributing to state thresholds when
+pre-orders open. The launch plan therefore has no US registrations and collects
+no US sales tax initially while retaining tangible-goods classification and
+live threshold monitoring. Reassess before any US physical operation,
+fulfilment decision or threshold alert. This operating-fact confirmation does
+not release the tax gate until the Stripe Tax head-office country and remaining
+cross-border conclusions are documented.
+
 Do not release the legal or tax approval locks until the remaining reviews and
 company-identity work are finished.
 

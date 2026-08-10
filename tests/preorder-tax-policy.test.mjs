@@ -80,5 +80,10 @@ test("keeps one canonical launch runbook with every approval gate", async () => 
     handoff,
     /Legal-page copy review: founder confirmed[\s\S]+Pre-order Terms[\s\S]+Cancellation and Refund Policy[\s\S]+Privacy Notice[\s\S]+no copy changes/i,
   );
+  assert.match(
+    handoff,
+    /US sales-tax launch posture: founder confirmed[\s\S]+no US registrations or tax collection are planned initially/i,
+  );
+  assert.match(handoff, /must not be implemented by marking it tax-exempt/i);
   assert.doesNotMatch(handoff, /proceed without a separate medical-device regulatory/i);
 });
