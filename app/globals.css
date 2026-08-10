@@ -1575,7 +1575,7 @@ h2 {
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
   column-gap: clamp(48px, 6vw, 76px);
   row-gap: 24px;
-  align-items: end;
+  align-items: start;
 }
 
 .context-intro > .eyebrow {
@@ -1657,7 +1657,7 @@ h2 {
   grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr);
   column-gap: clamp(48px, 6vw, 76px);
   row-gap: 24px;
-  align-items: end;
+  align-items: start;
   margin-bottom: 64px;
 }
 
