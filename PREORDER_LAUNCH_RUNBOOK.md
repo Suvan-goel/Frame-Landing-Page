@@ -159,23 +159,29 @@ copy approval does not release the live legal gates: the incorporated seller
 identity must still be inserted and the completed pack assigned an approved,
 non-draft version.
 
+The founder elected on August 10, 2026 to proceed without separate pre-launch
+US counsel or cross-border tax-adviser sign-off. This is a recorded owner
+decision and does not represent external professional advice or approval.
+
 For the initial US sales-tax posture, the founder confirmed on August 10, 2026
 that Frame will have no US office, employees, inventory, warehouse, 3PL, other
 physical operations or prior sales contributing to state thresholds when
 pre-orders open. The launch plan therefore has no US registrations and collects
 no US sales tax initially while retaining tangible-goods classification and
 live threshold monitoring. Reassess before any US physical operation,
-fulfilment decision or threshold alert. This operating-fact confirmation does
-not release the tax gate until the Stripe Tax head-office country and remaining
-cross-border conclusions are documented.
+fulfilment decision or threshold alert. The founder approved Great Britain as
+the Stripe Tax head-office country for this operating model and approved tax
+policy version `uk-remote-seller-2026-08-09-v1`. The tax lock may use only that
+exact version during the controlled incorporation-day launch sequence.
 
-Do not release the legal or tax approval locks until the remaining reviews and
-company-identity work are finished.
+Do not release the legal approval lock until the company-identity work is
+finished and the completed legal pack has a matching non-draft version. Do not
+release the tax lock outside the controlled incorporation-day sequence.
 
 - Insert the incorporated seller identity, the document-matched registered office, and the separately authorised customer correspondence address. Set `correspondenceAddressAuthorized` only after mail-provider approval, configure `MAILING_POSTAL_ADDRESS`, and replace every remaining draft marker or placeholder with approved wording.
-- Review the one-year limited hardware warranty, shipping-delay consent matrix, material-change consent flow, and automatic deadline refund operation with US counsel.
-- Validate that the internal shipping budget can absorb the final packaged dimensions and weight, US fulfilment origin and fees, and lithium-battery classification; confirm Stripe Tax registrations with the relevant advisers.
-- Assign an explicit Stripe product tax code approved for Frame's final product classification.
+- Preserve the founder-approved one-year limited hardware warranty, shipping-delay consent matrix, material-change consent flow, and automatic deadline refund operation unless the founder reopens the legal-page review.
+- Validate that the internal shipping budget can absorb the final packaged dimensions and weight, US fulfilment origin and fees, and lithium-battery classification; reassess the tax policy before any US physical operation or fulfilment decision.
+- Keep the founder-approved tangible-goods Stripe product tax code `txcd_99999999` unless the product classification changes.
 - Assign a new non-draft `PREORDER_TERMS_VERSION` and matching product-status version in the application.
 - Set `PREORDER_LEGAL_APPROVED_VERSION` to exactly the approved terms version.
 - Set `PREORDER_PRODUCT_STATUS_APPROVED_VERSION` to exactly the approved Product Status Disclosure version.

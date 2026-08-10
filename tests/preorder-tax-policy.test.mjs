@@ -87,6 +87,15 @@ test("keeps one canonical launch runbook with every approval gate", async () => 
   assert.match(handoff, /must not be implemented by marking it tax-exempt/i);
   assert.match(
     handoff,
+    /External-review decision: founder elected[\s\S]+without separate pre-launch US counsel or cross-border tax-adviser sign-off/i,
+  );
+  assert.match(
+    handoff,
+    /Approved tax-policy version: `uk-remote-seller-2026-08-09-v1`/i,
+  );
+  assert.doesNotMatch(runbook, /with US counsel|relevant advisers/i);
+  assert.match(
+    handoff,
     /Q1 2027 delivery-basis record: founder waived[\s\S]+advertised estimate remains unchanged/i,
   );
   assert.doesNotMatch(handoff, /\| Evidence area \| Owner \|/);
