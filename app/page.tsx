@@ -516,7 +516,7 @@ export default async function Home() {
       <section className="final-cta" id="early-access">
         <div className="container final-grid">
           <div className="final-cta__copy">
-            <p className="eyebrow">Development updates</p>
+            <p className="eyebrow">Building Frame</p>
             <h2>Follow Frame from prototype to launch.</h2>
           </div>
           <div className="final-cta__form final-cta__action">
