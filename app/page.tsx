@@ -31,7 +31,7 @@ const content = {
   ],
   principles: [
     ["Personal by design", "Your baseline provides the reference for how patterns are shown."],
-    ["Made for everyday wear", "A screenless upper-arm form is designed to fit into daily life."],
+    ["Made for everyday wear", "The screenless upper-arm form is designed to fit into daily life."],
     ["Context built in", "Motion, contact, sleep, and activity help explain what was happening."],
     ["Confidence stays visible", "Uncertain and interrupted periods remain clearly marked."],
   ],
