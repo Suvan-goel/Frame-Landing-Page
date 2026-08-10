@@ -149,7 +149,11 @@ export function isMetaPixelAllowed(pathname: string) {
   return isPrivacyChoicesAllowed(pathname) && !NO_PIXEL_EXACT_PATHS.includes(pathname);
 }
 
-export function MetaPixelRouteGuard() {
+export function MetaPixelRouteGuard({
+  useRedesignedConsent = false,
+}: {
+  useRedesignedConsent?: boolean;
+}) {
   const pathname = usePathname();
   const consent = useSyncExternalStore(
     subscribeToOptionalTrackingConsent,
@@ -260,12 +264,23 @@ export function MetaPixelRouteGuard() {
     <>
       {showBanner ? (
         <section
-          className="tracking-consent"
+          className={
+            useRedesignedConsent
+              ? "tracking-consent tracking-consent--redesigned"
+              : "tracking-consent"
+          }
           aria-labelledby="tracking-consent-title"
           aria-describedby="tracking-consent-description"
         >
           <div className="tracking-consent__copy">
-            <p className="eyebrow">Privacy choices</p>
+            {useRedesignedConsent ? (
+              <div className="tracking-consent__header">
+                <p className="eyebrow">Privacy choices</p>
+                <Link href="/privacy">Privacy notice</Link>
+              </div>
+            ) : (
+              <p className="eyebrow">Privacy choices</p>
+            )}
             <h2 id="tracking-consent-title">Advertising measurement</h2>
             <p id="tracking-consent-description">
               {globalPrivacyControl
@@ -274,7 +289,9 @@ export function MetaPixelRouteGuard() {
                   ? "Meta advertising measurement is allowed on eligible public pages. You can turn it off at any time."
                   : "Help us understand which campaigns are useful. Optional advertising measurement stays off unless you allow it."}
             </p>
-            <Link href="/privacy">Privacy notice</Link>
+            {useRedesignedConsent ? null : (
+              <Link href="/privacy">Privacy notice</Link>
+            )}
           </div>
           <div className="tracking-consent__actions" aria-label="Optional tracking choices">
             <button

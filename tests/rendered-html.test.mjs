@@ -878,6 +878,12 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     css,
     /@media \(max-width: 760px\)[\s\S]*?\.tracking-consent\s*\{[^}]*max-height: calc\(100dvh - 24px\);[^}]*overflow-y: auto;/,
   );
+  assert.match(
+    css,
+    /\.tracking-consent--redesigned\s*\{[^}]*max-height: calc\(100dvh - 32px\);/,
+  );
+  assert.match(layout, /useRedesignedConsent=\{preorderSalesEnabled\}/);
+  assert.match(metaPixel, /tracking-consent--redesigned/);
   assert.doesNotMatch(metaPixel, /setTimeout\(loadPixel/);
   assert.match(metaPixel, /1068997465474786/);
   assert.match(metaPixel, /PRIVATE_PREFIXES = \["\/contributors", "\/admin", "\/api"\]/);
@@ -899,7 +905,10 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(contributorPayments, /existingContributor\.checkout_intent_id === intent\.id/);
   assert.doesNotMatch(page, /Connect a real waitlist API/);
   assert.match(layout, /url: "\/og-launch-v2\.png"/);
-  assert.match(layout, /\{children\}[\s\S]*?<MetaPixelRouteGuard \/>/);
+  assert.match(
+    layout,
+    /\{children\}[\s\S]*?<MetaPixelRouteGuard useRedesignedConsent=\{preorderSalesEnabled\} \/>/,
+  );
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
   assert.match(api, /from\("waitlist_signups"\)/);
   assert.match(api, /first_name: update\.firstName/);

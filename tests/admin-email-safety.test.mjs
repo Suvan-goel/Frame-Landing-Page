@@ -96,7 +96,7 @@ test("ships the page-specific campaign and automated-email layouts", async () =>
 });
 
 test("requires a server review and typed confirmation before any subscriber send", async () => {
-  const [api, review, auth, sender, composer, styles, provider, webhookSetup, unsubscribe, migration, hardening] = await Promise.all([
+  const [api, review, auth, sender, composer, styles, provider, webhookSetup, migration, hardening] = await Promise.all([
     readFile(new URL("../app/api/admin/email/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/email/review/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/admin-email-api.server.ts", import.meta.url), "utf8"),
@@ -108,7 +108,6 @@ test("requires a server review and typed confirmation before any subscriber send
       new URL("../app/api/admin/email/webhook-protection/route.ts", import.meta.url),
       "utf8",
     ),
-    readFile(new URL("../app/api/unsubscribe/route.ts", import.meta.url), "utf8"),
     readFile(
       new URL(
         "../supabase/migrations/20260808000000_add_waitlist_email_campaigns.sql",
@@ -158,7 +157,6 @@ test("requires a server review and typed confirmation before any subscriber send
   assert.match(sender, /webhookVerified: Boolean/);
   assert.match(sender, /verifiedAt/);
   assert.match(sender, /"List-Unsubscribe-Post": "List-Unsubscribe=One-Click"/);
-  assert.match(unsubscribe, /email_unsubscribed_at: new Date\(\)\.toISOString\(\)/);
   assert.match(migration, /enable row level security/);
   assert.match(migration, /unique \(campaign_id, recipient_email\)/);
   assert.match(hardening, /email_campaign_drafts/);

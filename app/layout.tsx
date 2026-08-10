@@ -98,7 +98,8 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const description = (await isPreorderSalesPageEnabled())
+  const preorderSalesEnabled = await isPreorderSalesPageEnabled();
+  const description = preorderSalesEnabled
     ? SITE_DESCRIPTION
     : LEGACY_SITE_DESCRIPTION;
 
@@ -107,7 +108,7 @@ export default async function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <StructuredData description={description} />
         {children}
-        <MetaPixelRouteGuard />
+        <MetaPixelRouteGuard useRedesignedConsent={preorderSalesEnabled} />
       </body>
     </html>
   );

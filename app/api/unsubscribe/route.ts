@@ -1,4 +1,5 @@
 import { getSupabaseAdmin } from "@/lib/supabase-admin.server";
+import { unsubscribeWaitlist } from "@/lib/waitlist-unsubscribe.server";
 
 export const dynamic = "force-dynamic";
 
@@ -35,20 +36,50 @@ export async function POST(request: Request) {
     return noStoreJson({ error: "This unsubscribe link is invalid." }, 400);
   }
 
-  const supabase = await getSupabaseAdmin();
-  const { error } = await supabase
-    .from("waitlist_signups")
-    .update({ email_unsubscribed_at: new Date().toISOString() })
-    .eq("email_unsubscribe_token", token)
-    .is("email_unsubscribed_at", null);
+  try {
+    const supabase = await getSupabaseAdmin();
+    const status = await unsubscribeWaitlist(
+      {
+        async markUnsubscribed(unsubscribeToken, unsubscribedAt) {
+          const { data, error } = await supabase
+            .from("waitlist_signups")
+            .update({ email_unsubscribed_at: unsubscribedAt })
+            .eq("email_unsubscribe_token", unsubscribeToken)
+            .is("email_unsubscribed_at", null)
+            .select("id")
+            .maybeSingle<{ id: number }>();
+          if (error) throw error;
+          return Boolean(data);
+        },
+        async findByToken(unsubscribeToken) {
+          const { data, error } = await supabase
+            .from("waitlist_signups")
+            .select("id,email_unsubscribed_at")
+            .eq("email_unsubscribe_token", unsubscribeToken)
+            .maybeSingle<{
+              id: number;
+              email_unsubscribed_at: string | null;
+            }>();
+          if (error) throw error;
+          return data
+            ? { unsubscribedAt: data.email_unsubscribed_at }
+            : null;
+        },
+      },
+      token,
+      new Date().toISOString(),
+    );
 
-  if (error) {
+    if (status === "not_found") {
+      return noStoreJson({ error: "This unsubscribe link is invalid." }, 400);
+    }
+
+    return noStoreJson({ status });
+  } catch (error) {
     console.error("Waitlist unsubscribe failed", error);
     return noStoreJson(
       { error: "We couldn’t update your email preference. Please try again." },
       503,
     );
   }
-
-  return noStoreJson({ status: "unsubscribed" });
 }
