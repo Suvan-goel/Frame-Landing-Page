@@ -33,6 +33,8 @@ function createWaitlistRepositoryFixture() {
         id: nextId++,
         email: input.email,
         signupToken: `00000000-0000-4000-8000-${String(nextId).padStart(12, "0")}`,
+        metaEventId: `10000000-0000-4000-8000-${String(nextId).padStart(12, "0")}`,
+        createdAt: "2026-08-10T12:00:00.000Z",
         qualificationStatus: "not_started",
         surveyCompletedAt: null,
         qualification: null,
@@ -48,6 +50,21 @@ function createWaitlistRepositoryFixture() {
     async findByToken(signupToken) {
       return records.find((record) => record.signupToken === signupToken) ?? null;
     },
+    async findMetaLeadByEventId(metaEventId) {
+      const record = records.find(
+        (candidate) => candidate.metaEventId === metaEventId,
+      );
+      return record
+        ? {
+            metaEventId: record.metaEventId,
+            email: record.email,
+            metaClickId: record.attribution.metaClickId,
+            createdAt: record.createdAt,
+            metaCapiStatus: "not_attempted",
+          }
+        : null;
+    },
+    async updateMetaTrackingDiagnostics() {},
     async markSkipped(id, skippedAt) {
       const record = records.find((candidate) => candidate.id === id);
       record.qualificationStatus = "skipped";
@@ -688,6 +705,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     waitlistOptions,
     interestPage,
     metaPixel,
+    metaTracking,
     contributorMigration,
     contributorCheckout,
     contributorAccess,
@@ -729,6 +747,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
       new URL("../app/components/meta-pixel.tsx", import.meta.url),
       "utf8",
     ),
+    readFile(new URL("../lib/meta-tracking.ts", import.meta.url), "utf8"),
     readFile(
       new URL(
         "../supabase/migrations/20260803000000_add_founding_contributors.sql",
@@ -819,7 +838,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(api, /genderValues/);
   assert.match(api, /age < MIN_AGE \|\| age > MAX_AGE/);
   assert.match(waitlistFlow, /window\.sessionStorage/);
-  assert.match(waitlistFlow, /trackMetaLead\(token\)/);
+  assert.match(waitlistFlow, /trackMetaLead\(metaEventId\)/);
   assert.doesNotMatch(waitlistFlow, /className="interest-flow__back" href=\{finishHref\}>Back<\/Link>/);
   assert.match(
     waitlistFlow,
@@ -853,8 +872,12 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   );
   assert.match(
     metaPixel,
-    /window\.fbq\("trackSingle", META_PIXEL_ID, "Lead"/,
+    /"trackSingle",\s*META_PIXEL_ID,\s*"Lead"/,
   );
+  assert.match(metaPixel, /eventID: lead\.eventId/);
+  assert.match(metaPixel, /frame-meta-pending-leads-v1/);
+  assert.match(metaPixel, /action: "deliver_meta_lead"/);
+  assert.match(waitlistFlow, /tracking: getMetaTrackingContext\(\)/);
   assert.match(metaPixel, /frame-meta-lead-recorded-v1/);
   assert.match(metaPixel, /frame-optional-tracking-consent-v1/);
   assert.match(metaPixel, /effectiveConsent !== "granted"/);
@@ -864,7 +887,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(metaPixel, /preferencesOpen \|\| \(pixelAllowedOnRoute && requiresInitialChoice\)/);
   assert.match(metaPixel, /navigator\.globalPrivacyControl === true/);
   assert.match(metaPixel, /readServerGlobalPrivacyControl/);
-  assert.match(metaPixel, /TRACKING_POLICY_ENDPOINT/);
+  assert.match(metaPixel, /requestTrackingPolicyMode/);
   assert.doesNotMatch(metaPixel, /style=\{\{[^}]*position: "fixed"/);
   assert.match(
     css,
@@ -885,7 +908,8 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(layout, /useRedesignedConsent=\{preorderSalesEnabled\}/);
   assert.match(metaPixel, /tracking-consent--redesigned/);
   assert.doesNotMatch(metaPixel, /setTimeout\(loadPixel/);
-  assert.match(metaPixel, /1068997465474786/);
+  assert.match(metaPixel, /META_PIXEL_ID/);
+  assert.match(metaTracking, /1068997465474786/);
   assert.match(metaPixel, /PRIVATE_PREFIXES = \["\/contributors", "\/admin", "\/api"\]/);
   assert.match(metaPixel, /"\/founding-contributors\/review"/);
   assert.match(metaPixel, /"\/founding-contributors\/success"/);
@@ -1063,6 +1087,80 @@ test("rejects an invalid email before creating a waitlist record", async () => {
 
   assert.equal(response.status, 400);
   assert.match(await response.text(), /valid email address/i);
+});
+
+test("returns one stable Lead ID and applies trusted US and GPC policy to CAPI", async () => {
+  const tracking = {
+    version: 1,
+    storedConsent: null,
+    globalPrivacyControl: false,
+    pixelReady: false,
+    eventSourceUrl: "http://localhost/interest?fbclid=must-not-reach-meta-url",
+    fbp: null,
+    fbc: null,
+  };
+  const cf = { country: "US", regionCode: "CA" };
+  const environment = { META_CONVERSIONS_API_ACCESS_TOKEN: "" };
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("meta-policy-test", `${process.pid}-${Date.now()}`);
+  const { default: testWorker } = await import(workerUrl.href);
+  const postWaitlist = (body, extraHeaders = {}) => {
+    const request = new Request("http://localhost/api/waitlist", {
+      method: "POST",
+      headers: { "content-type": "application/json", ...extraHeaders },
+      body: JSON.stringify(body),
+    });
+    Object.defineProperty(request, "cf", { value: cf });
+    return testWorker.fetch(
+      request,
+      {
+        ASSETS: {
+          fetch: async () => new Response("Not found", { status: 404 }),
+        },
+        ...environment,
+      },
+      {
+        waitUntil() {},
+        passThroughOnException() {},
+      },
+    );
+  };
+
+  const capture = await postWaitlist({
+    action: "capture_email",
+    email: "codex-meta-policy-test-20260810@example.com",
+    placement: "tracking_test",
+    metaClickId: "codex-test-click-id",
+    tracking,
+  });
+  const captured = await capture.json();
+
+  assert.equal(capture.status, 201);
+  assert.equal(captured.leadCreated, true);
+  assert.match(captured.metaEventId, /^[0-9a-f-]{36}$/i);
+
+  const allowedReplay = await postWaitlist({
+    action: "deliver_meta_lead",
+    metaEventId: captured.metaEventId,
+    browserLeadAttempted: true,
+    tracking,
+  });
+  const allowedResult = await allowedReplay.json();
+  assert.equal(allowedResult.permitted, true);
+  assert.equal(allowedResult.capiStatus, "skipped_not_configured");
+
+  const gpcReplay = await postWaitlist(
+    {
+      action: "deliver_meta_lead",
+      metaEventId: captured.metaEventId,
+      browserLeadAttempted: false,
+      tracking,
+    },
+    { "sec-gpc": "1" },
+  );
+  const gpcResult = await gpcReplay.json();
+  assert.equal(gpcResult.permitted, false);
+  assert.equal(gpcResult.capiStatus, "skipped_not_permitted");
 });
 
 test("validates contact messages before sending email", async () => {

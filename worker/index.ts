@@ -38,6 +38,7 @@ import {
   TRACKING_POLICY_ENDPOINT,
   trackingPolicyForRequest,
 } from "../lib/tracking-policy";
+import { META_TRACKING_POLICY_HEADER } from "../lib/meta-tracking";
 
 interface Env {
   ASSETS: Fetcher;
@@ -506,6 +507,10 @@ const worker = {
     appHeaders.set(
       "x-frame-preorder-live-smoke-request",
       liveSmokeRequestAllowed ? "1" : "0",
+    );
+    appHeaders.set(
+      META_TRACKING_POLICY_HEADER,
+      trackingPolicyForRequest(request),
     );
 
     let appRequest = new Request(request, { headers: appHeaders });

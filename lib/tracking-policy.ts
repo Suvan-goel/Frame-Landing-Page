@@ -1,7 +1,14 @@
 export const TRACKING_POLICY_ENDPOINT = "/api/privacy/tracking-policy";
+export const TRACKING_POLICY_REQUEST_TIMEOUT_MS = 2_500;
 
 export type TrackingPolicyMode = "explicit-consent" | "us-opt-out";
 export type OptionalTrackingConsent = "granted" | "denied";
+
+type TrackingPolicyRequestOptions = {
+  fetcher?: typeof fetch;
+  signal?: AbortSignal;
+  timeoutMs?: number;
+};
 
 type CloudflareLocation = {
   country?: unknown;
@@ -52,4 +59,34 @@ export function effectiveTrackingConsent(input: {
   if (input.globalPrivacyControl) return "denied";
   if (input.storedConsent) return input.storedConsent;
   return input.policyMode === "us-opt-out" ? "granted" : null;
+}
+
+export async function requestTrackingPolicyMode(
+  options: TrackingPolicyRequestOptions = {},
+): Promise<TrackingPolicyMode> {
+  const controller = new AbortController();
+  const abortFromCaller = () => controller.abort();
+  if (options.signal?.aborted) return "explicit-consent";
+  options.signal?.addEventListener("abort", abortFromCaller, { once: true });
+
+  const timeout = setTimeout(
+    () => controller.abort(),
+    options.timeoutMs ?? TRACKING_POLICY_REQUEST_TIMEOUT_MS,
+  );
+
+  try {
+    const response = await (options.fetcher ?? fetch)(TRACKING_POLICY_ENDPOINT, {
+      cache: "no-store",
+      credentials: "same-origin",
+      signal: controller.signal,
+    });
+    if (!response.ok) return "explicit-consent";
+    const payload = (await response.json()) as { mode?: unknown };
+    return payload.mode === "us-opt-out" ? "us-opt-out" : "explicit-consent";
+  } catch {
+    return "explicit-consent";
+  } finally {
+    clearTimeout(timeout);
+    options.signal?.removeEventListener("abort", abortFromCaller);
+  }
 }

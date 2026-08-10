@@ -5,20 +5,39 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import {
   effectiveTrackingConsent,
-  TRACKING_POLICY_ENDPOINT,
+  requestTrackingPolicyMode,
   type OptionalTrackingConsent,
   type TrackingPolicyMode,
 } from "../../lib/tracking-policy";
+import {
+  META_PIXEL_ID,
+  META_TRACKING_STATE_VERSION,
+  type MetaTrackingClientState,
+} from "../../lib/meta-tracking";
 
-export const META_PIXEL_ID = "1068997465474786";
 const META_LEAD_RECORDED_STORAGE_KEY = "frame-meta-lead-recorded-v1";
+const META_PENDING_LEADS_STORAGE_KEY = "frame-meta-pending-leads-v1";
+const META_PENDING_LEAD_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000;
+const META_PENDING_LEAD_LIMIT = 50;
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 export const OPTIONAL_TRACKING_CONSENT_STORAGE_KEY =
   "frame-optional-tracking-consent-v1";
+export { META_PIXEL_ID } from "../../lib/meta-tracking";
 
 type OptionalTrackingConsentSnapshot = OptionalTrackingConsent | null | "pending";
 
 const OPTIONAL_TRACKING_CONSENT_EVENT = "frame:optional-tracking-consent";
 let inMemoryTrackingConsent: OptionalTrackingConsent | null = null;
+let inMemoryEffectiveTrackingConsent: OptionalTrackingConsent | null = null;
+let inMemoryPixelAllowedOnRoute = false;
+let inMemoryPendingMetaLeads: PendingMetaLead[] = [];
+const metaLeadDeliveriesInFlight = new Set<string>();
+const metaLeadsRecordedInMemory = new Set<string>();
+
+type PendingMetaLead = {
+  eventId: string;
+  queuedAt: number;
+};
 
 export type WaitlistAnalyticsEvent =
   | "waitlist_form_viewed"
@@ -137,6 +156,202 @@ function clearMetaCookies() {
   }
 }
 
+function readCookie(name: string) {
+  const prefix = `${name}=`;
+  const cookie = document.cookie
+    .split(";")
+    .map((value) => value.trim())
+    .find((value) => value.startsWith(prefix));
+  return cookie ? decodeURIComponent(cookie.slice(prefix.length)).slice(0, 500) : null;
+}
+
+function readPendingMetaLeads() {
+  try {
+    const parsed = JSON.parse(
+      window.localStorage.getItem(META_PENDING_LEADS_STORAGE_KEY) ?? "[]",
+    ) as unknown;
+    if (!Array.isArray(parsed)) return inMemoryPendingMetaLeads;
+    const oldestAllowed = Date.now() - META_PENDING_LEAD_MAX_AGE_MS;
+    const stored = parsed.filter(
+      (value): value is PendingMetaLead =>
+        Boolean(value) &&
+        typeof value === "object" &&
+        UUID_PATTERN.test((value as PendingMetaLead).eventId) &&
+        typeof (value as PendingMetaLead).queuedAt === "number" &&
+        (value as PendingMetaLead).queuedAt >= oldestAllowed,
+    );
+    const inMemory = inMemoryPendingMetaLeads.filter(
+      (lead) => lead.queuedAt >= oldestAllowed,
+    );
+    const combined = [...stored, ...inMemory].filter(
+      (lead, index, leads) =>
+        leads.findIndex((candidate) => candidate.eventId === lead.eventId) ===
+        index,
+    );
+    inMemoryPendingMetaLeads = combined.slice(-META_PENDING_LEAD_LIMIT);
+    return inMemoryPendingMetaLeads;
+  } catch {
+    return inMemoryPendingMetaLeads;
+  }
+}
+
+function writePendingMetaLeads(leads: PendingMetaLead[]) {
+  inMemoryPendingMetaLeads = leads;
+  try {
+    const storedConsent = readOptionalTrackingConsent();
+    const storagePermitted =
+      navigator.globalPrivacyControl !== true &&
+      storedConsent !== "denied" &&
+      (storedConsent === "granted" ||
+        inMemoryEffectiveTrackingConsent === "granted");
+    if (leads.length && storagePermitted) {
+      window.localStorage.setItem(
+        META_PENDING_LEADS_STORAGE_KEY,
+        JSON.stringify(leads),
+      );
+    } else {
+      window.localStorage.removeItem(META_PENDING_LEADS_STORAGE_KEY);
+    }
+  } catch {
+    // Pending delivery remains best effort if browser storage is unavailable.
+  }
+}
+
+function clearPendingMetaLeads() {
+  writePendingMetaLeads([]);
+}
+
+function queueMetaLead(eventId: string) {
+  const pending = readPendingMetaLeads();
+  if (!pending.some((lead) => lead.eventId === eventId)) {
+    pending.push({ eventId, queuedAt: Date.now() });
+  }
+  writePendingMetaLeads(pending);
+}
+
+function metaLeadWasRecorded(eventId: string) {
+  if (metaLeadsRecordedInMemory.has(eventId)) return true;
+  try {
+    return (
+      window.localStorage.getItem(
+        `${META_LEAD_RECORDED_STORAGE_KEY}:Lead:${eventId}`,
+      ) === "true"
+    );
+  } catch {
+    return false;
+  }
+}
+
+function markMetaLeadRecorded(eventId: string) {
+  metaLeadsRecordedInMemory.add(eventId);
+  try {
+    window.localStorage.setItem(
+      `${META_LEAD_RECORDED_STORAGE_KEY}:Lead:${eventId}`,
+      "true",
+    );
+  } catch {
+    // A queued fbq call should not be repeated solely because storage is unavailable.
+  }
+}
+
+export function getMetaTrackingContext(): MetaTrackingClientState {
+  const storedConsent = readOptionalTrackingConsent();
+  const globalPrivacyControl = navigator.globalPrivacyControl === true;
+  const identifiersPermitted =
+    !globalPrivacyControl &&
+    storedConsent !== "denied" &&
+    (storedConsent === "granted" ||
+      inMemoryEffectiveTrackingConsent === "granted");
+  const source = new URL(window.location.href);
+  source.search = "";
+  source.hash = "";
+
+  return {
+    version: META_TRACKING_STATE_VERSION,
+    storedConsent,
+    globalPrivacyControl,
+    pixelReady: typeof window.fbq === "function",
+    eventSourceUrl: source.href,
+    fbp: identifiersPermitted ? readCookie("_fbp") : null,
+    fbc: identifiersPermitted ? readCookie("_fbc") : null,
+  };
+}
+
+async function notifyMetaLeadDelivery(eventId: string) {
+  try {
+    const response = await fetch("/api/waitlist", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "same-origin",
+      cache: "no-store",
+      keepalive: true,
+      body: JSON.stringify({
+        action: "deliver_meta_lead",
+        metaEventId: eventId,
+        browserLeadAttempted: true,
+        tracking: getMetaTrackingContext(),
+      }),
+    });
+    return response.ok;
+  } catch {
+    return false;
+  }
+}
+
+async function deliverPendingMetaLead(lead: PendingMetaLead) {
+  if (metaLeadDeliveriesInFlight.has(lead.eventId)) return;
+  metaLeadDeliveriesInFlight.add(lead.eventId);
+  try {
+    if (!metaLeadWasRecorded(lead.eventId)) {
+      const fbq = window.fbq;
+      if (typeof fbq !== "function") return;
+      fbq(
+        "trackSingle",
+        META_PIXEL_ID,
+        "Lead",
+        { content_name: "Frame updates signup" },
+        { eventID: lead.eventId },
+      );
+      markMetaLeadRecorded(lead.eventId);
+    }
+
+    if (await notifyMetaLeadDelivery(lead.eventId)) {
+      writePendingMetaLeads(
+        readPendingMetaLeads().filter(
+          (candidate) => candidate.eventId !== lead.eventId,
+        ),
+      );
+    }
+  } catch {
+    // Keep the pending ID so a later route change or visit can replay it.
+  } finally {
+    metaLeadDeliveriesInFlight.delete(lead.eventId);
+  }
+}
+
+function replayPendingMetaLeads() {
+  if (typeof window === "undefined" || isLocalBrowserHost()) return;
+  if (
+    navigator.globalPrivacyControl === true ||
+    readOptionalTrackingConsent() === "denied" ||
+    inMemoryEffectiveTrackingConsent === "denied"
+  ) {
+    clearPendingMetaLeads();
+    return;
+  }
+  if (
+    inMemoryEffectiveTrackingConsent !== "granted" ||
+    !inMemoryPixelAllowedOnRoute ||
+    typeof window.fbq !== "function"
+  ) {
+    return;
+  }
+
+  for (const lead of readPendingMetaLeads()) {
+    void deliverPendingMetaLead(lead);
+  }
+}
+
 export function isPrivacyChoicesAllowed(pathname: string) {
   return (
     !PRIVATE_PREFIXES.some((prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`)) &&
@@ -192,26 +407,20 @@ export function MetaPixelRouteGuard({
     if (!privacyChoicesAllowedOnRoute || policyMode !== "pending") return;
 
     const controller = new AbortController();
-    fetch(TRACKING_POLICY_ENDPOINT, {
-      cache: "no-store",
-      credentials: "same-origin",
-      signal: controller.signal,
-    })
-      .then(async (response) => {
-        if (!response.ok) throw new Error("Tracking policy request failed");
-        const payload = (await response.json()) as { mode?: unknown };
-        return payload.mode === "us-opt-out" ? "us-opt-out" : "explicit-consent";
-      })
-      .then((mode) => setPolicyMode(mode))
-      .catch((error: unknown) => {
-        if (error instanceof DOMException && error.name === "AbortError") return;
-        setPolicyMode("explicit-consent");
-      });
+    let active = true;
+    void requestTrackingPolicyMode({ signal: controller.signal }).then((mode) => {
+      if (active) setPolicyMode(mode);
+    });
 
-    return () => controller.abort();
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, [policyMode, privacyChoicesAllowedOnRoute]);
 
   useEffect(() => {
+    inMemoryPixelAllowedOnRoute = pixelAllowedOnRoute;
+    inMemoryEffectiveTrackingConsent = consentReady ? effectiveConsent : null;
     if (!consentReady) return;
 
     if (
@@ -220,12 +429,18 @@ export function MetaPixelRouteGuard({
       effectiveConsent !== "granted"
     ) {
       removeMetaPixel();
-      if (effectiveConsent !== "granted") clearMetaCookies();
+      if (effectiveConsent !== "granted") {
+        clearMetaCookies();
+      }
+      if (effectiveConsent === "denied") {
+        clearPendingMetaLeads();
+      }
       return;
     }
 
     if (typeof window.fbq === "function") {
       window.fbq("trackSingle", META_PIXEL_ID, "PageView");
+      replayPendingMetaLeads();
       return;
     }
     if (document.getElementById("meta-pixel")) return;
@@ -234,6 +449,7 @@ export function MetaPixelRouteGuard({
     script.id = "meta-pixel";
     script.text = META_PIXEL_BOOTSTRAP;
     document.head.appendChild(script);
+    replayPendingMetaLeads();
   }, [consentReady, effectiveConsent, pathname, pixelAllowedOnRoute]);
 
   function recordConsent(value: OptionalTrackingConsent) {
@@ -251,6 +467,7 @@ export function MetaPixelRouteGuard({
     if (value === "denied") {
       removeMetaPixel();
       clearMetaCookies();
+      clearPendingMetaLeads();
     }
   }
 
@@ -327,10 +544,7 @@ export function MetaPixelRouteGuard({
   );
 }
 
-function trackMetaConversion(
-  eventName: "Lead" | "QualifiedLead",
-  recordKey: string,
-) {
+function trackMetaConversion(eventName: "QualifiedLead", recordKey: string) {
   if (typeof window === "undefined" || typeof window.fbq !== "function") {
     return;
   }
@@ -346,15 +560,9 @@ function trackMetaConversion(
     // Tracking should still work when browser storage is unavailable.
   }
 
-  if (eventName === "Lead") {
-    window.fbq("trackSingle", META_PIXEL_ID, "Lead", {
-      content_name: "Frame updates signup",
-    });
-  } else {
-    window.fbq("trackSingleCustom", META_PIXEL_ID, "QualifiedLead", {
-      content_name: "Frame optional qualification survey",
-    });
-  }
+  window.fbq("trackSingleCustom", META_PIXEL_ID, "QualifiedLead", {
+    content_name: "Frame optional qualification survey",
+  });
 
   try {
     window.localStorage.setItem(storageKey, "true");
@@ -363,8 +571,24 @@ function trackMetaConversion(
   }
 }
 
-export function trackMetaLead(recordKey = "legacy") {
-  trackMetaConversion("Lead", recordKey);
+export function trackMetaLead(metaEventId?: string) {
+  if (typeof window === "undefined" || isLocalBrowserHost()) return;
+  if (
+    navigator.globalPrivacyControl === true ||
+    readOptionalTrackingConsent() === "denied" ||
+    inMemoryEffectiveTrackingConsent === "denied"
+  ) {
+    clearPendingMetaLeads();
+    return;
+  }
+
+  const eventId =
+    metaEventId && UUID_PATTERN.test(metaEventId)
+      ? metaEventId
+      : crypto.randomUUID();
+  if (metaLeadWasRecorded(eventId)) return;
+  queueMetaLead(eventId);
+  replayPendingMetaLeads();
 }
 
 export function trackMetaQualifiedLead(recordKey: string) {

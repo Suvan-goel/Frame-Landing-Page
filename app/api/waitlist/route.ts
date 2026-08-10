@@ -13,12 +13,21 @@ import {
   captureWaitlistEmail,
   completeWaitlistQualification,
   skipWaitlistQualification,
+  type MetaLeadRecord,
   type QualificationUpdate,
   type WaitlistRecordState,
   type WaitlistRepository,
 } from "@/lib/waitlist-service.server";
 import { getWaitlistPreviewRepository } from "@/lib/waitlist-preview.server";
 import { submitLegacyWaitlist } from "@/lib/legacy-waitlist-submission.server";
+import { sendMetaLeadConversion } from "@/lib/meta-conversions.server";
+import {
+  META_TRACKING_POLICY_HEADER,
+  META_TRACKING_STATE_VERSION,
+  resolveMetaTrackingDecision,
+  type MetaTrackingClientState,
+} from "@/lib/meta-tracking";
+import type { TrackingPolicyMode } from "@/lib/tracking-policy";
 
 export const dynamic = "force-dynamic";
 
@@ -33,9 +42,11 @@ const MAX_LONG_TEXT_LENGTH = 750;
 const MIN_FRUSTRATION_LENGTH = 20;
 const MIN_AGE = 18;
 const MAX_AGE = 120;
+const MAX_META_IDENTIFIER_LENGTH = 500;
 
 type WaitlistAction =
   | "capture_email"
+  | "deliver_meta_lead"
   | "submit_qualification"
   | "skip_qualification";
 
@@ -88,15 +99,19 @@ function validEmail(value: unknown) {
 
 function waitlistRepository(supabase: SupabaseClient): WaitlistRepository {
   const recordSelect =
-    "id,survey_token,qualification_status,survey_completed_at";
+    "id,survey_token,meta_event_id,created_at,qualification_status,survey_completed_at";
   const toRecord = (row: {
     id: number;
     survey_token: string;
+    meta_event_id: string;
+    created_at: string;
     qualification_status: string;
     survey_completed_at: string | null;
   }): WaitlistRecordState => ({
     id: row.id,
     signupToken: row.survey_token,
+    metaEventId: row.meta_event_id,
+    createdAt: row.created_at,
     qualificationStatus: row.qualification_status,
     surveyCompletedAt: row.survey_completed_at,
   });
@@ -110,6 +125,8 @@ function waitlistRepository(supabase: SupabaseClient): WaitlistRepository {
         .maybeSingle<{
           id: number;
           survey_token: string;
+          meta_event_id: string;
+          created_at: string;
           qualification_status: string;
           survey_completed_at: string | null;
         }>();
@@ -135,6 +152,8 @@ function waitlistRepository(supabase: SupabaseClient): WaitlistRepository {
         .single<{
           id: number;
           survey_token: string;
+          meta_event_id: string;
+          created_at: string;
           qualification_status: string;
           survey_completed_at: string | null;
         }>();
@@ -156,11 +175,79 @@ function waitlistRepository(supabase: SupabaseClient): WaitlistRepository {
         .maybeSingle<{
           id: number;
           survey_token: string;
+          meta_event_id: string;
+          created_at: string;
           qualification_status: string;
           survey_completed_at: string | null;
         }>();
       if (error) throw error;
       return data ? toRecord(data) : null;
+    },
+    async findMetaLeadByEventId(metaEventId) {
+      const { data, error } = await supabase
+        .from("waitlist_signups")
+        .select("meta_event_id,email,meta_click_id,created_at,meta_capi_status")
+        .eq("meta_event_id", metaEventId)
+        .maybeSingle<{
+          meta_event_id: string;
+          email: string;
+          meta_click_id: string | null;
+          created_at: string;
+          meta_capi_status: string;
+        }>();
+      if (error) throw error;
+      return data
+        ? {
+            metaEventId: data.meta_event_id,
+            email: data.email,
+            metaClickId: data.meta_click_id,
+            createdAt: data.created_at,
+            metaCapiStatus: data.meta_capi_status,
+          }
+        : null;
+    },
+    async updateMetaTrackingDiagnostics(metaEventId, update) {
+      const values: Record<string, string | boolean | null> = {};
+      if (update.policyMode !== undefined) {
+        values.meta_tracking_policy_mode = update.policyMode;
+      }
+      if (update.consentState !== undefined) {
+        values.meta_tracking_consent_state = update.consentState;
+      }
+      if (update.decision !== undefined) {
+        values.meta_tracking_decision = update.decision;
+      }
+      if (update.clientStateValid !== undefined) {
+        values.meta_tracking_client_state_valid = update.clientStateValid;
+      }
+      if (update.globalPrivacyControl !== undefined) {
+        values.meta_gpc = update.globalPrivacyControl;
+      }
+      if (update.pixelReadyAtCapture !== undefined) {
+        values.meta_pixel_ready_at_capture = update.pixelReadyAtCapture;
+      }
+      if (update.browserLeadAttemptedAt !== undefined) {
+        values.meta_browser_lead_attempted_at = update.browserLeadAttemptedAt;
+      }
+      if (update.capiStatus !== undefined) {
+        values.meta_capi_status = update.capiStatus;
+      }
+      if (update.capiSentAt !== undefined) {
+        values.meta_capi_sent_at = update.capiSentAt;
+      }
+      if (update.capiLastError !== undefined) {
+        values.meta_capi_last_error = update.capiLastError;
+      }
+      if (update.recordedAt !== undefined) {
+        values.meta_tracking_recorded_at = update.recordedAt;
+      }
+      if (!Object.keys(values).length) return;
+
+      const { error } = await supabase
+        .from("waitlist_signups")
+        .update(values)
+        .eq("meta_event_id", metaEventId);
+      if (error) throw error;
     },
     async markSkipped(id, skippedAt) {
       const { error } = await supabase
@@ -209,6 +296,200 @@ async function repositoryForRequest(request: Request) {
   return waitlistRepository(await getSupabaseAdmin());
 }
 
+type ParsedMetaTrackingState = {
+  state: MetaTrackingClientState;
+  valid: boolean;
+};
+
+function parseMetaTrackingState(value: unknown): ParsedMetaTrackingState {
+  const fallback: MetaTrackingClientState = {
+    version: META_TRACKING_STATE_VERSION,
+    storedConsent: null,
+    globalPrivacyControl: false,
+    pixelReady: false,
+    eventSourceUrl: null,
+    fbp: null,
+    fbc: null,
+  };
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return { state: fallback, valid: false };
+  }
+
+  const candidate = value as Record<string, unknown>;
+  const storedConsent = candidate.storedConsent;
+  const valid =
+    candidate.version === META_TRACKING_STATE_VERSION &&
+    (storedConsent === null ||
+      storedConsent === "granted" ||
+      storedConsent === "denied") &&
+    typeof candidate.globalPrivacyControl === "boolean" &&
+    typeof candidate.pixelReady === "boolean";
+  if (!valid) return { state: fallback, valid: false };
+
+  return {
+    valid: true,
+    state: {
+      version: META_TRACKING_STATE_VERSION,
+      storedConsent,
+      globalPrivacyControl: candidate.globalPrivacyControl as boolean,
+      pixelReady: candidate.pixelReady as boolean,
+      eventSourceUrl: cleanText(candidate.eventSourceUrl, MAX_REFERRER_LENGTH),
+      fbp: cleanText(candidate.fbp, MAX_META_IDENTIFIER_LENGTH),
+      fbc: cleanText(candidate.fbc, MAX_META_IDENTIFIER_LENGTH),
+    },
+  };
+}
+
+function trustedTrackingPolicy(request: Request): TrackingPolicyMode {
+  return request.headers.get(META_TRACKING_POLICY_HEADER) === "us-opt-out"
+    ? "us-opt-out"
+    : "explicit-consent";
+}
+
+function eventSourceUrl(value: string | null, request: Request) {
+  const requestUrl = new URL(request.url);
+  if (value) {
+    try {
+      const candidate = new URL(value);
+      if (
+        candidate.origin === requestUrl.origin &&
+        (candidate.protocol === "https:" || candidate.protocol === "http:")
+      ) {
+        candidate.search = "";
+        candidate.hash = "";
+        return candidate.href.slice(0, MAX_REFERRER_LENGTH);
+      }
+    } catch {
+      // Fall back to the request origin below.
+    }
+  }
+  return new URL("/", requestUrl.origin).href;
+}
+
+function clientIpAddress(request: Request) {
+  const value =
+    request.headers.get("cf-connecting-ip") ??
+    request.headers.get("x-forwarded-for")?.split(",")[0] ??
+    null;
+  return cleanText(value, 100);
+}
+
+async function recordMetaDiagnostics(
+  repository: WaitlistRepository,
+  metaEventId: string,
+  update: Parameters<WaitlistRepository["updateMetaTrackingDiagnostics"]>[1],
+) {
+  try {
+    await repository.updateMetaTrackingDiagnostics(metaEventId, update);
+  } catch (error) {
+    console.error("Meta tracking diagnostics update failed", error);
+  }
+}
+
+async function deliverMetaLead(
+  repository: WaitlistRepository,
+  lead: MetaLeadRecord,
+  trackingValue: unknown,
+  request: Request,
+  browserLeadAttempted: boolean,
+) {
+  const parsed = parseMetaTrackingState(trackingValue);
+  const policyMode = trustedTrackingPolicy(request);
+  const globalPrivacyControl =
+    request.headers.get("sec-gpc") === "1" ||
+    parsed.state.globalPrivacyControl;
+  const decision = resolveMetaTrackingDecision({
+    policyMode,
+    storedConsent: parsed.state.storedConsent,
+    globalPrivacyControl,
+    clientStateValid: parsed.valid,
+  });
+  const now = new Date().toISOString();
+  const diagnostics = {
+    policyMode,
+    consentState: parsed.state.storedConsent ?? "unset",
+    decision: decision.reason,
+    clientStateValid: parsed.valid,
+    globalPrivacyControl,
+    ...(!browserLeadAttempted
+      ? { pixelReadyAtCapture: parsed.state.pixelReady }
+      : {}),
+    ...(browserLeadAttempted ? { browserLeadAttemptedAt: now } : {}),
+    recordedAt: now,
+  } as const;
+
+  if (!decision.permitted) {
+    const capiStatus =
+      lead.metaCapiStatus === "sent"
+        ? "sent"
+        : "skipped_not_permitted";
+    await recordMetaDiagnostics(repository, lead.metaEventId, {
+      ...diagnostics,
+      capiStatus,
+      capiLastError: null,
+    });
+    return { permitted: false, capiStatus };
+  }
+
+  if (lead.metaCapiStatus === "sent") {
+    await recordMetaDiagnostics(repository, lead.metaEventId, diagnostics);
+    return { permitted: true, capiStatus: "sent" as const };
+  }
+
+  const parsedCreatedAt = Date.parse(lead.createdAt);
+  const eventTime = Number.isFinite(parsedCreatedAt)
+    ? Math.floor(parsedCreatedAt / 1000)
+    : Math.floor(Date.now() / 1000);
+  const capi = await sendMetaLeadConversion({
+    eventId: lead.metaEventId,
+    email: lead.email,
+    eventTime,
+    eventSourceUrl: eventSourceUrl(parsed.state.eventSourceUrl, request),
+    clientIpAddress: clientIpAddress(request),
+    clientUserAgent: cleanText(request.headers.get("user-agent"), 500),
+    metaClickId: lead.metaClickId,
+    fbp: parsed.state.fbp,
+    fbc: parsed.state.fbc,
+  });
+  await recordMetaDiagnostics(repository, lead.metaEventId, {
+    ...diagnostics,
+    capiStatus: capi.status,
+    capiSentAt: capi.status === "sent" ? now : null,
+    capiLastError: capi.error,
+  });
+  return { permitted: true, capiStatus: capi.status };
+}
+
+async function deliverMetaLeadAction(
+  payload: Record<string, unknown>,
+  request: Request,
+) {
+  const metaEventId =
+    typeof payload.metaEventId === "string" ? payload.metaEventId : "";
+  if (!UUID_PATTERN.test(metaEventId)) {
+    return jsonResponse({ error: "This conversion session is no longer valid." }, 400);
+  }
+
+  try {
+    const repository = await repositoryForRequest(request);
+    const lead = await repository.findMetaLeadByEventId(metaEventId);
+    if (!lead) {
+      return jsonResponse({ error: "This conversion session is no longer valid." }, 404);
+    }
+    const result = await deliverMetaLead(
+      repository,
+      lead,
+      payload.tracking,
+      request,
+      payload.browserLeadAttempted === true,
+    );
+    return jsonResponse({ status: "recorded", ...result });
+  } catch (error) {
+    console.error("Meta Lead replay failed", error);
+    return jsonResponse({ error: "The conversion signal could not be recorded." }, 503);
+  }
+}
+
 async function captureEmail(payload: Record<string, unknown>, request: Request) {
   // A filled honeypot receives the same successful shape without creating a
   // record or a conversion event.
@@ -226,7 +507,8 @@ async function captureEmail(payload: Record<string, unknown>, request: Request) 
   }
 
   try {
-    const result = await captureWaitlistEmail(await repositoryForRequest(request), {
+    const repository = await repositoryForRequest(request);
+    const result = await captureWaitlistEmail(repository, {
       email,
       placement:
         cleanText(payload.placement, MAX_ATTRIBUTION_LENGTH) ?? "landing_page",
@@ -238,6 +520,17 @@ async function captureEmail(payload: Record<string, unknown>, request: Request) 
       metaClickId: cleanText(payload.metaClickId, MAX_ATTRIBUTION_LENGTH),
       referrer: cleanText(payload.referrer, MAX_REFERRER_LENGTH),
     });
+
+    if (result.leadCreated) {
+      try {
+        const lead = await repository.findMetaLeadByEventId(result.metaEventId);
+        if (lead) {
+          await deliverMetaLead(repository, lead, payload.tracking, request, false);
+        }
+      } catch (error) {
+        console.error("Initial Meta Lead delivery failed", error);
+      }
+    }
     return jsonResponse(result, result.leadCreated ? 201 : 200);
   } catch (error) {
     console.error("Waitlist email capture failed", error);
@@ -389,6 +682,7 @@ export async function POST(request: Request) {
 
 
   if (action === "capture_email") return captureEmail(payload, request);
+  if (action === "deliver_meta_lead") return deliverMetaLeadAction(payload, request);
   if (action === "submit_qualification") return submitQualification(payload, request);
   if (action === "skip_qualification") return skipQualification(payload, request);
   return jsonResponse({ error: "The submitted action is invalid." }, 400);

@@ -36,7 +36,7 @@ export default async function PrivacyPage() {
       <article className="legal-shell">
         <p className="eyebrow">Privacy</p>
         <h1>Privacy notice</h1>
-        <p className="legal-updated">Effective August 9, 2026</p>
+        <p className="legal-updated">Effective August 10, 2026</p>
 
         <p className="legal-intro">
           This notice explains how {ORGANIZATION_NAME} handles information
@@ -169,13 +169,15 @@ export default async function PrivacyPage() {
             Meta ad and to measure and improve our campaigns. For visitors outside
             the United States, visitors in US states where Frame applies an
             explicit-consent policy, and visitors whose location cannot be
-            determined, the Pixel stays off unless they choose “Allow.” For other
+            determined, Meta measurement stays off unless they choose “Allow.” For other
             US visitors, it may start automatically unless they previously turned
-            it off or enabled Global Privacy Control in their browser. The Pixel
-            may use browser identifiers and similar technologies, which Meta
-            processes under its own privacy policy. We do not send your name,
-            email address, age, gender, or written responses to Meta through the
-            Pixel.
+            it off or enabled Global Privacy Control in their browser. Permitted
+            Meta processes Pixel information under its own privacy policy. We do
+            not send your name, email address, age, gender, survey selections,
+            health-related answers, or written responses through the Pixel. If
+            Frame enables the Meta Conversions API in the future, the same regional
+            policy, privacy choice, and Global Privacy Control rules will apply,
+            and this notice will describe the permitted data used for matching.
             {showContributorAreas
               ? " The Pixel is not initialized on checkout review, payment-success, member sign-in, contributor-profile, private contributor-hub, or administration routes."
               : null}

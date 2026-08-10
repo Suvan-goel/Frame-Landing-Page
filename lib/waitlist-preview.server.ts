@@ -36,6 +36,8 @@ export function getWaitlistPreviewRepository(): WaitlistRepository {
         id: nextPreviewId++,
         email: input.email,
         signupToken: crypto.randomUUID(),
+        metaEventId: crypto.randomUUID(),
+        createdAt: new Date().toISOString(),
         qualificationStatus: "not_started",
         surveyCompletedAt: null,
         signup: input,
@@ -50,6 +52,23 @@ export function getWaitlistPreviewRepository(): WaitlistRepository {
     },
     async findByToken(signupToken) {
       return recordByToken(signupToken);
+    },
+    async findMetaLeadByEventId(metaEventId) {
+      const record = Array.from(previewRecords.values()).find(
+        (candidate) => candidate.metaEventId === metaEventId,
+      );
+      return record
+        ? {
+            metaEventId: record.metaEventId,
+            email: record.email,
+            metaClickId: record.signup.metaClickId,
+            createdAt: record.createdAt,
+            metaCapiStatus: "not_attempted",
+          }
+        : null;
+    },
+    async updateMetaTrackingDiagnostics() {
+      // Preview diagnostics intentionally remain in memory only.
     },
     async markSkipped(id, skippedAt) {
       const record = Array.from(previewRecords.values()).find(

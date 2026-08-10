@@ -21,6 +21,7 @@ import {
   genderValues,
 } from "@/lib/waitlist-options";
 import {
+  getMetaTrackingContext,
   trackMetaLead,
   trackMetaQualifiedLead,
   trackWaitlistEvent,
@@ -353,11 +354,14 @@ export function WaitlistSignupProvider({
               email: normalizedEmail,
               website,
               placement,
+              tracking: getMetaTrackingContext(),
               ...attributionPayload(),
             }),
           });
           const result = await responsePayload(response);
           const token = typeof result.signupToken === "string" ? result.signupToken : "";
+          const metaEventId =
+            typeof result.metaEventId === "string" ? result.metaEventId : "";
 
           if (!response.ok || !token) {
             throw new Error(
@@ -378,7 +382,9 @@ export function WaitlistSignupProvider({
             placement,
             result: result.leadCreated === true ? "created" : "already_registered",
           });
-          if (result.leadCreated === true) trackMetaLead(token);
+          if (result.leadCreated === true && metaEventId) {
+            trackMetaLead(metaEventId);
+          }
           router.push("/early-access/questions");
         } catch (error) {
           const message =

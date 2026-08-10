@@ -1,8 +1,37 @@
 export type WaitlistRecordState = {
   id: number;
   signupToken: string;
+  metaEventId: string;
+  createdAt: string;
   qualificationStatus: string;
   surveyCompletedAt: string | null;
+};
+
+export type MetaLeadRecord = {
+  metaEventId: string;
+  email: string;
+  metaClickId: string | null;
+  createdAt: string;
+  metaCapiStatus: string;
+};
+
+export type MetaTrackingDiagnosticsUpdate = {
+  policyMode?: "explicit-consent" | "us-opt-out";
+  consentState?: "granted" | "denied" | "unset";
+  decision?: string;
+  clientStateValid?: boolean;
+  globalPrivacyControl?: boolean;
+  pixelReadyAtCapture?: boolean;
+  browserLeadAttemptedAt?: string;
+  capiStatus?:
+    | "not_attempted"
+    | "sent"
+    | "skipped_not_configured"
+    | "skipped_not_permitted"
+    | "failed";
+  capiSentAt?: string | null;
+  capiLastError?: string | null;
+  recordedAt?: string;
 };
 
 export type NewWaitlistRecord = {
@@ -36,6 +65,11 @@ export type WaitlistRepository = {
   insert(input: NewWaitlistRecord): Promise<WaitlistRecordState>;
   resubscribe(id: number): Promise<void>;
   findByToken(signupToken: string): Promise<WaitlistRecordState | null>;
+  findMetaLeadByEventId(metaEventId: string): Promise<MetaLeadRecord | null>;
+  updateMetaTrackingDiagnostics(
+    metaEventId: string,
+    update: MetaTrackingDiagnosticsUpdate,
+  ): Promise<void>;
   markSkipped(id: number, skippedAt: string): Promise<void>;
   completeIfIncomplete(
     id: number,
@@ -62,6 +96,7 @@ export async function captureWaitlistEmail(
     return {
       status: "already_registered" as const,
       signupToken: existing.signupToken,
+      metaEventId: existing.metaEventId,
       leadCreated: false,
     };
   }
@@ -71,6 +106,7 @@ export async function captureWaitlistEmail(
     return {
       status: "joined" as const,
       signupToken: inserted.signupToken,
+      metaEventId: inserted.metaEventId,
       leadCreated: true,
     };
   } catch (error) {
@@ -81,6 +117,7 @@ export async function captureWaitlistEmail(
     return {
       status: "already_registered" as const,
       signupToken: raced.signupToken,
+      metaEventId: raced.metaEventId,
       leadCreated: false,
     };
   }

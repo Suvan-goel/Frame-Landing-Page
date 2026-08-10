@@ -13,6 +13,8 @@ export type FrameRuntimeEnv = {
   SUPABASE_SECRET_KEY?: string;
   WAITLIST_ADMIN_EMAILS?: string;
   RESEND_API_KEY?: string;
+  META_CONVERSIONS_API_ACCESS_TOKEN?: string;
+  META_CONVERSIONS_API_TEST_EVENT_CODE?: string;
   MAILING_FROM_EMAIL?: string;
   MAILING_REPLY_TO_EMAIL?: string;
   MAILING_POSTAL_ADDRESS?: string;
