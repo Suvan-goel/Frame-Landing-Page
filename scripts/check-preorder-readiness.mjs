@@ -18,6 +18,7 @@ import {
   PREORDER_TAX_POLICY_VERSION,
 } from "../lib/preorder-tax-policy.ts";
 import { evaluateStripeAccountReadiness } from "../lib/preorder-stripe-account-readiness.ts";
+import { verifyPreorderLiveSmokeOrder } from "../lib/preorder-live-opening-readiness.server.ts";
 import {
   evaluatePreorderEmailReadiness,
   getPreorderEmailDnsSnapshot,
@@ -426,35 +427,12 @@ if (supabase) {
   }
 
   if (target === "launch" && isUuid(verifiedLiveSmokeOrderId)) {
-    const verificationOrder = await supabase
-      .from("preorders")
-      .select("id,checkout_intent_id,environment,payment_status,amount_total,amount_refunded,confirmation_email_sent_at")
-      .eq("id", verifiedLiveSmokeOrderId)
-      .maybeSingle();
-    if (verificationOrder.error || !verificationOrder.data) {
-      fail(
-        "Live verification evidence",
-        verificationOrder.error?.message ?? "The configured verification order was not found.",
-      );
-    } else {
-      const verificationIntent = await supabase
-        .from("preorder_checkout_intents")
-        .select("id,environment,status,source")
-        .eq("id", verificationOrder.data.checkout_intent_id)
-        .maybeSingle();
-      const order = verificationOrder.data;
-      const intent = verificationIntent.data;
-      if (
-        !verificationIntent.error &&
-        intent?.environment === "live" &&
-        intent.status === "paid" &&
-        intent.source === "private_live_smoke" &&
-        order.environment === "live" &&
-        order.payment_status === "refunded" &&
-        order.amount_total > 0 &&
-        order.amount_refunded === order.amount_total &&
-        Boolean(order.confirmation_email_sent_at)
-      ) {
+    try {
+      const evidence = await verifyPreorderLiveSmokeOrder({
+        supabase,
+        orderId: verifiedLiveSmokeOrderId,
+      });
+      if (evidence.ready) {
         pass(
           "Live verification evidence",
           "The referenced private live order completed through the webhook, sent its confirmation, and was fully refunded.",
@@ -462,10 +440,17 @@ if (supabase) {
       } else {
         fail(
           "Live verification evidence",
-          verificationIntent.error?.message ??
+          evidence.blocker ??
             "The referenced order is not a completed, confirmation-sent, fully refunded private live-verification order.",
         );
       }
+    } catch (error) {
+      fail(
+        "Live verification evidence",
+        error instanceof Error
+          ? error.message
+          : "The configured verification order could not be verified.",
+      );
     }
   }
 

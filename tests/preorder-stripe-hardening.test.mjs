@@ -199,6 +199,14 @@ test("keeps checkout review recovery, consent feedback, and proxy origins safe",
   assert.match(draft, /frame-preorder-request-v1/);
   assert.match(review, /sessionStorage\.setItem/);
   assert.match(review, /sessionStorage\.getItem/);
+  assert.match(review, /saveDeliveryDraft\(nextDelivery\)/);
+  assert.match(review, /clearCheckoutRequestKey\(\)/);
+  assert.match(
+    review,
+    /const restored = parsePreorderDeliveryDraft[\s\S]+if \(restored && !deliveryChangedSinceMount\.current\)/,
+  );
+  assert.match(review, /deliveryRef\.current = restored[\s\S]+setDelivery\(restored\)/);
+  assert.match(review, /const nextDelivery = \{ \.\.\.deliveryRef\.current, \[field\]: value \}/);
   assert.match(review, /requestKey\.current = null/);
   assert.match(success, /sessionStorage\.removeItem/);
   assert.match(review, /productStatusCheckbox\.current\?\.focus/);

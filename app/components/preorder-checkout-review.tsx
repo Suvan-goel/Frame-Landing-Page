@@ -25,16 +25,32 @@ function readCheckoutDraft(key: string) {
   }
 }
 
-function saveCheckoutDraft(delivery: PreorderDeliveryDraft, requestKey: string) {
+function saveDeliveryDraft(delivery: PreorderDeliveryDraft) {
   try {
     window.sessionStorage.setItem(
       PREORDER_DELIVERY_DRAFT_KEY,
       serializePreorderDeliveryDraft(delivery),
     );
+  } catch {
+    // Storage may be unavailable; checkout must still continue.
+  }
+}
+
+function saveCheckoutDraft(delivery: PreorderDeliveryDraft, requestKey: string) {
+  saveDeliveryDraft(delivery);
+  try {
     window.sessionStorage.setItem(
       PREORDER_CHECKOUT_REQUEST_KEY,
       serializePreorderCheckoutRequestKey(requestKey),
     );
+  } catch {
+    // Storage may be unavailable; checkout must still continue.
+  }
+}
+
+function clearCheckoutRequestKey() {
+  try {
+    window.sessionStorage.removeItem(PREORDER_CHECKOUT_REQUEST_KEY);
   } catch {
     // Storage may be unavailable; checkout must still continue.
   }
@@ -75,6 +91,8 @@ export function PreorderCheckoutReview({
   >(null);
   const [cancelled, setCancelled] = useState(false);
   const requestKey = useRef<string | null>(null);
+  const deliveryRef = useRef(delivery);
+  const deliveryChangedSinceMount = useRef(false);
   const productStatusCheckbox = useRef<HTMLInputElement>(null);
   const termsCheckbox = useRef<HTMLInputElement>(null);
 
@@ -82,11 +100,14 @@ export function PreorderCheckoutReview({
     const timer = window.setTimeout(() => {
       const checkoutWasCancelled = new URLSearchParams(window.location.search).get("cancelled") === "1";
       setCancelled(checkoutWasCancelled);
-      if (checkoutWasCancelled) {
-        const restored = parsePreorderDeliveryDraft(
-          readCheckoutDraft(PREORDER_DELIVERY_DRAFT_KEY),
-        );
-        if (restored) setDelivery(restored);
+      const restored = parsePreorderDeliveryDraft(
+        readCheckoutDraft(PREORDER_DELIVERY_DRAFT_KEY),
+      );
+      if (restored && !deliveryChangedSinceMount.current) {
+        deliveryRef.current = restored;
+        setDelivery(restored);
+      }
+      if (checkoutWasCancelled && !deliveryChangedSinceMount.current) {
         requestKey.current = parsePreorderCheckoutRequestKey(
           readCheckoutDraft(PREORDER_CHECKOUT_REQUEST_KEY),
         );
@@ -99,8 +120,13 @@ export function PreorderCheckoutReview({
     field: keyof PreorderDeliveryDraft,
     value: string,
   ) {
+    const nextDelivery = { ...deliveryRef.current, [field]: value };
+    deliveryChangedSinceMount.current = true;
+    deliveryRef.current = nextDelivery;
     requestKey.current = null;
-    setDelivery((current) => ({ ...current, [field]: value }));
+    clearCheckoutRequestKey();
+    saveDeliveryDraft(nextDelivery);
+    setDelivery(nextDelivery);
     setError("");
   }
 

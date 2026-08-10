@@ -17,6 +17,7 @@ import {
   verifyPreorderLiveSmokeAccessToken,
   verifyPreorderLiveSmokeCookieValue,
 } from "../lib/preorder-live-smoke-access.ts";
+import { evaluatePreorderLiveSmokeEvidence } from "../lib/preorder-live-opening-readiness.ts";
 
 const LIVE_SMOKE_TEST_SECRET =
   "live-smoke-test-secret-that-is-distinct-and-long-enough";
@@ -106,6 +107,51 @@ test("keeps live verification private, expiring, and separate from public launch
       verifiedOrderId: "123e4567-e89b-42d3-a456-426614174000",
     }),
     true,
+  );
+});
+
+test("requires real fully refunded private live-smoke evidence before public opening", () => {
+  const order = {
+    id: "123e4567-e89b-42d3-a456-426614174000",
+    checkoutIntentId: "223e4567-e89b-42d3-a456-426614174000",
+    environment: "live",
+    paymentStatus: "refunded",
+    amountTotal: 29_900,
+    amountRefunded: 29_900,
+    confirmationEmailSentAt: "2026-08-10T12:00:00.000Z",
+  };
+  const intent = {
+    id: order.checkoutIntentId,
+    environment: "live",
+    status: "paid",
+    source: "private_live_smoke",
+  };
+
+  assert.equal(evaluatePreorderLiveSmokeEvidence({ order, intent }).ready, true);
+  assert.equal(
+    evaluatePreorderLiveSmokeEvidence({
+      order: { ...order, paymentStatus: "paid" },
+      intent,
+    }).ready,
+    false,
+  );
+  assert.equal(
+    evaluatePreorderLiveSmokeEvidence({
+      order: { ...order, amountRefunded: 1 },
+      intent,
+    }).ready,
+    false,
+  );
+  assert.equal(
+    evaluatePreorderLiveSmokeEvidence({
+      order,
+      intent: { ...intent, source: "preorder_review" },
+    }).ready,
+    false,
+  );
+  assert.equal(
+    evaluatePreorderLiveSmokeEvidence({ order: null, intent: null }).ready,
+    false,
   );
 });
 
@@ -320,6 +366,7 @@ test("keeps the public homepage free of pre-order discovery and blocks webhook b
     liveSmokeAccess,
     checkoutRoute,
     salesControlsRoute,
+    liveOpeningReadiness,
     liveSmokeLinkScript,
   ] = await Promise.all([
       render("/"),
@@ -340,6 +387,7 @@ test("keeps the public homepage free of pre-order discovery and blocks webhook b
       readFile(new URL("../lib/preorder-live-smoke-access.ts", import.meta.url), "utf8"),
       readFile(new URL("../app/api/preorders/checkout/route.ts", import.meta.url), "utf8"),
       readFile(new URL("../app/api/admin/preorders/controls/route.ts", import.meta.url), "utf8"),
+      readFile(new URL("../lib/preorder-live-opening-readiness.server.ts", import.meta.url), "utf8"),
       readFile(new URL("../scripts/create-preorder-live-smoke-link.mjs", import.meta.url), "utf8"),
     ]);
 
@@ -399,5 +447,9 @@ test("keeps the public homepage free of pre-order discovery and blocks webhook b
   assert.match(checkoutRoute, /verification_mode: "live_smoke"/);
   assert.match(salesControlsRoute, /unitLimit !== 1/);
   assert.match(salesControlsRoute, /Public launch remains locked/);
+  assert.match(salesControlsRoute, /evaluatePreorderLiveOpeningReadiness/);
+  assert.match(liveOpeningReadiness, /verifyPreorderLiveSmokeOrder/);
+  assert.match(liveOpeningReadiness, /runPreorderOperationsHealth/);
+  assert.match(liveOpeningReadiness, /runPreorderPaymentReconciliation/);
   assert.match(liveSmokeLinkScript, /origin\.origin !== SITE_URL/);
 });

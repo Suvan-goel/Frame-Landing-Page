@@ -6,12 +6,14 @@ import {
   type PreorderSalesStatus,
 } from "@/lib/preorder-operations.server";
 import { PREORDER_MAX_INVENTORY_UNITS } from "@/lib/preorder";
-import { isWaitlistAdmin } from "@/lib/supabase-admin.server";
 import {
   isPreorderLiveSmokeConfigured,
   isPreorderPublicLaunchConfigured,
 } from "@/lib/preorder-live-smoke-access";
+import { evaluatePreorderLiveOpeningReadiness } from "@/lib/preorder-live-opening-readiness.server";
 import { getRuntimeValue } from "@/lib/runtime-env.server";
+import { getStripe } from "@/lib/stripe.server";
+import { getSupabaseAdmin, isWaitlistAdmin } from "@/lib/supabase-admin.server";
 
 export const dynamic = "force-dynamic";
 
@@ -96,7 +98,14 @@ export async function POST(request: Request) {
   }
 
   if (environment === "live" && salesStatus === "open") {
-    const readiness = await evaluatePreorderLaunchReadiness();
+    const [readiness, mode, publicLaunchEnabled, verifiedOrderId, liveSmokeSecret] =
+      await Promise.all([
+        evaluatePreorderLaunchReadiness(),
+        getRuntimeValue("PREORDER_MODE"),
+        getRuntimeValue("PREORDER_PUBLIC_LAUNCH_ENABLED"),
+        getRuntimeValue("PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID"),
+        getRuntimeValue("PREORDER_LIVE_SMOKE_ACCESS_SECRET"),
+      ]);
     if (!readiness.ready) {
       return jsonResponse(
         {
@@ -106,13 +115,39 @@ export async function POST(request: Request) {
         409,
       );
     }
-    const [mode, publicLaunchEnabled, verifiedOrderId, liveSmokeSecret] =
-      await Promise.all([
-        getRuntimeValue("PREORDER_MODE"),
-        getRuntimeValue("PREORDER_PUBLIC_LAUNCH_ENABLED"),
-        getRuntimeValue("PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID"),
-        getRuntimeValue("PREORDER_LIVE_SMOKE_ACCESS_SECRET"),
+
+    try {
+      const [supabase, stripe] = await Promise.all([
+        getSupabaseAdmin(),
+        getStripe("live"),
       ]);
+      const openingReadiness = await evaluatePreorderLiveOpeningReadiness({
+        supabase,
+        stripe,
+        publicLaunchEnabled,
+        verifiedOrderId,
+      });
+      if (!openingReadiness.ready) {
+        return jsonResponse(
+          {
+            error:
+              "Live sales cannot be opened while payment, operational, or verification evidence is incomplete.",
+            blockers: openingReadiness.blockers,
+          },
+          409,
+        );
+      }
+    } catch (error) {
+      console.error("Pre-order live opening safeguard failed", error);
+      return jsonResponse(
+        {
+          error:
+            "Live sales cannot be opened because the final payment and operations safeguards could not be verified.",
+        },
+        503,
+      );
+    }
+
     const publicLaunchConfigured = isPreorderPublicLaunchConfigured({
       enabled: publicLaunchEnabled,
       verifiedOrderId,
