@@ -13,6 +13,7 @@ import {
   formatCorrespondenceAddress,
   formatRegisteredOffice,
 } from "../lib/company.ts";
+import { CONTACT_TOPICS } from "../lib/contact-topics.ts";
 import { PREORDER_SELLER_DETAILS_COMPLETE } from "../lib/preorder.ts";
 
 const completeCompany = {
@@ -55,6 +56,20 @@ test("keeps the incorporated company identity closed until every issued detail i
   assert.equal(companyLegalIdentityLine(), null);
   assert.equal(ORGANIZATION_DISPLAY_NAME, PUBLIC_BRAND_NAME);
   assert.equal(SUPPORT_EMAIL, COMPANY_DETAILS.supportEmail);
+});
+
+test("routes each contact-form topic to the intended support alias", () => {
+  assert.deepEqual(
+    Object.fromEntries(CONTACT_TOPICS.map(({ value, recipient }) => [value, recipient])),
+    {
+      general: "support@framewearable.com",
+      preorder: "preorders@framewearable.com",
+      research: "research@framewearable.com",
+      partnerships: "partnerships@framewearable.com",
+      privacy: "privacy@framewearable.com",
+      other: "support@framewearable.com",
+    },
+  );
 });
 
 test("accepts one complete identity and formats it consistently", () => {
@@ -162,7 +177,8 @@ test("wires the same company source through policies, support, emails, and launc
   assert.match(productStatus, /formatCorrespondenceAddress/);
   assert.match(privacy, /COMPANY_DETAILS\.privacyControllerName/);
   assert.match(privacy, /formatCorrespondenceAddress/);
-  assert.match(contact, /const CONTACT_EMAIL = SUPPORT_EMAIL/);
+  assert.match(contact, /const topicConfig = getContactTopic\(topic\)/);
+  assert.match(contact, /to: \[topicConfig\.recipient\]/);
   assert.match(email, /companyLegalIdentityLine/);
   assert.match(emailDesign, /companyLegalIdentityLine/);
   assert.match(readiness, /COMPANY_DETAILS_CHECK\.missingOrInvalid/);

@@ -1,20 +1,10 @@
-import { SUPPORT_EMAIL } from "@/lib/company";
+import { getContactTopic } from "@/lib/contact-topics";
 
 export const dynamic = "force-dynamic";
 
-const CONTACT_EMAIL = SUPPORT_EMAIL;
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_BODY_BYTES = 16_384;
 const MAX_MESSAGE_LENGTH = 3000;
-
-const TOPIC_LABELS = new Map([
-  ["general", "General question"],
-  ["preorder", "Pre-order support"],
-  ["research", "Research or engineering"],
-  ["partnerships", "Partnership or press"],
-  ["privacy", "Privacy or data request"],
-  ["other", "Something else"],
-]);
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return Response.json(body, {
@@ -93,8 +83,8 @@ export async function POST(request: Request) {
   if (!EMAIL_PATTERN.test(email) || email.includes("..")) {
     return jsonResponse({ error: "Enter a valid email address." }, 400);
   }
-  const topicLabel = TOPIC_LABELS.get(topic);
-  if (!topicLabel) {
+  const topicConfig = getContactTopic(topic);
+  if (!topicConfig) {
     return jsonResponse({ error: "Choose what you’d like to discuss." }, 400);
   }
   if (!message) {
@@ -120,7 +110,7 @@ export async function POST(request: Request) {
     "Frame Website <website@framewearable.com>";
   const safeName = escapeHtml(name);
   const safeEmail = escapeHtml(email);
-  const safeTopic = escapeHtml(topicLabel);
+  const safeTopic = escapeHtml(topicConfig.label);
   const safeMessage = escapeHtml(message).replace(/\n/g, "<br>");
 
   try {
@@ -133,10 +123,10 @@ export async function POST(request: Request) {
       },
       body: JSON.stringify({
         from: fromEmail,
-        to: [CONTACT_EMAIL],
+        to: [topicConfig.recipient],
         reply_to: email,
-        subject: `Frame contact: ${topicLabel} | ${name}`,
-        text: `Name: ${name}\nEmail: ${email}\nTopic: ${topicLabel}\n\n${message}`,
+        subject: `Frame contact: ${topicConfig.label} | ${name}`,
+        text: `Name: ${name}\nEmail: ${email}\nTopic: ${topicConfig.label}\n\n${message}`,
         html: `<h2>New Frame website message</h2><p><strong>Name:</strong> ${safeName}<br><strong>Email:</strong> ${safeEmail}<br><strong>Topic:</strong> ${safeTopic}</p><p>${safeMessage}</p>`,
       }),
     });

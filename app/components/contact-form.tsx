@@ -3,17 +3,9 @@
 import { FormEvent, useEffect, useState } from "react";
 import Link from "next/link";
 import { SUPPORT_EMAIL } from "@/lib/company";
+import { CONTACT_TOPICS } from "@/lib/contact-topics";
 
 const MAX_MESSAGE_LENGTH = 3000;
-
-const CONTACT_TOPICS = [
-  ["general", "General question"],
-  ["preorder", "Pre-order support"],
-  ["research", "Research or engineering"],
-  ["partnerships", "Partnership or press"],
-  ["privacy", "Privacy or data request"],
-  ["other", "Something else"],
-] as const;
 
 type FieldName = "name" | "email" | "topic" | "message";
 type FieldErrors = Partial<Record<FieldName, string>>;
@@ -31,7 +23,7 @@ export function ContactForm() {
   useEffect(() => {
     const timer = window.setTimeout(() => {
       const requestedTopic = new URLSearchParams(window.location.search).get("topic");
-      if (CONTACT_TOPICS.some(([value]) => value === requestedTopic)) {
+      if (CONTACT_TOPICS.some(({ value }) => value === requestedTopic)) {
         setTopic(requestedTopic ?? "general");
       }
     }, 0);
@@ -64,7 +56,7 @@ export function ContactForm() {
     ) {
       nextErrors.email = "Enter a valid email address.";
     }
-    if (!CONTACT_TOPICS.some(([value]) => value === topic)) {
+    if (!CONTACT_TOPICS.some(({ value }) => value === topic)) {
       nextErrors.topic = "Choose what you’d like to discuss.";
     }
     if (!normalizedMessage) {
@@ -230,7 +222,7 @@ export function ContactForm() {
             aria-invalid={Boolean(errors.topic)}
             aria-describedby={errors.topic ? "contact-topic-error" : undefined}
           >
-            {CONTACT_TOPICS.map(([value, label]) => (
+            {CONTACT_TOPICS.map(({ value, label }) => (
               <option key={value} value={value}>
                 {label}
               </option>
