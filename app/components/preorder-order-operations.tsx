@@ -304,7 +304,7 @@ export function PreorderOrderOperations({
         <section className="preorder-owner-card preorder-owner-card--attention">
           <p className="eyebrow">Customer request</p>
           <h2>Cancellation requires a full refund.</h2>
-          <p>Issue the full remaining refund below as soon as possible and no later than seven working days after the request. The order is blocked from shipment while cancellation is pending.</p>
+          <p>Issue the full remaining refund below as soon as possible and no later than seven business days after the request. The order is blocked from shipment while cancellation is pending.</p>
         </section>
       ) : null}
 

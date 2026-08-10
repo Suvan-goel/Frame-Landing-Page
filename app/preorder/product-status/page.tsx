@@ -4,12 +4,9 @@ import { notFound } from "next/navigation";
 import { PreorderHeader } from "../../components/preorder-chrome";
 import { HistoryBackLink } from "../../components/history-back-link";
 import {
-  formatPreorderMoney,
-  PREORDER_DEFAULT_CURRENCY,
-  PREORDER_DEFAULT_PRICE_CENTS,
   PREORDER_ESTIMATED_SHIPPING,
   PREORDER_PRODUCT_STATUS_UPDATED,
-  PREORDER_SAVINGS_CENTS,
+  PREORDER_PRODUCT_STATUS_VERSION,
 } from "@/lib/preorder";
 import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
 import {
@@ -23,14 +20,6 @@ import {
 const PRODUCT_STATUS_TITLE = "Frame Product Progress and Pre-order Information";
 const PRODUCT_STATUS_DESCRIPTION =
   "Current product progress, intended use, shipping plan, and customer protections for Frame pre-orders.";
-const PREORDER_PRICE = formatPreorderMoney(
-  PREORDER_DEFAULT_PRICE_CENTS,
-  PREORDER_DEFAULT_CURRENCY,
-);
-const PREORDER_SAVING = formatPreorderMoney(
-  PREORDER_SAVINGS_CENTS,
-  PREORDER_DEFAULT_CURRENCY,
-);
 
 export const metadata: Metadata = {
   title: PRODUCT_STATUS_TITLE,
@@ -60,21 +49,25 @@ export default async function PreorderProductStatusPage() {
       <article className="legal-shell">
         <p className="eyebrow">Frame pre-order information</p>
         <h1>Product Progress and Pre-order Information</h1>
-        <p className="legal-updated">{`Last updated ${PREORDER_PRODUCT_STATUS_UPDATED}`}</p>
+        <p className="legal-updated">
+          {`Product status version ${PREORDER_PRODUCT_STATUS_VERSION} · ${PREORDER_PRODUCT_STATUS_UPDATED}`}
+        </p>
         <p className="legal-intro">
-          Frame is a new approach to continuous blood-pressure tracking. Here is what the product is designed
-          to do, where the programme stands today, and what you can expect when you pre-order.
+          Frame is being developed for continuous blood-pressure tracking. Here is where the product stands
+          today and what you can expect when you pre-order.
         </p>
 
         <section className="product-status-summary" aria-labelledby="product-status-summary-heading">
           <div className="product-status-summary__heading">
-            <p className="eyebrow">At a glance</p>
-            <h2 id="product-status-summary-heading">Frame at a glance.</h2>
+            <h2 id="product-status-summary-heading">Current status</h2>
           </div>
           <ol>
             <li>
               <span aria-hidden="true">01</span>
-              <p><strong>Initial proof of concept is complete.</strong> Frame has also completed its first measurement-validation phase.</p>
+              <p>
+                <strong>Early proof-of-concept work is complete.</strong> This includes an initial
+                measurement-validation phase.
+              </p>
             </li>
             <li>
               <span aria-hidden="true">02</span>
@@ -86,7 +79,11 @@ export default async function PreorderProductStatusPage() {
             </li>
             <li>
               <span aria-hidden="true">04</span>
-              <p><strong>Pre-order for {PREORDER_PRICE}.</strong> Save {PREORDER_SAVING} from the release price.</p>
+              <p>
+                <strong>Targeting dispatch in {PREORDER_ESTIMATED_SHIPPING}.</strong> If the timing changes,
+                or the product changes materially, we’ll explain the change and let you accept it or cancel
+                for a full refund.
+              </p>
             </li>
           </ol>
         </section>
@@ -94,33 +91,28 @@ export default async function PreorderProductStatusPage() {
         <section>
           <h2>Where Frame is now</h2>
           <p>
-            Frame combines non-invasive upper-arm ultrasound with personalised software to help people explore
-            blood-pressure patterns across sleep, stress, exercise, and recovery. Initial technical proof-of-concept
-            and measurement-validation phases are complete. Current work focuses on integrating sensing, electronics,
-            software, and data processing into a wearable system.
+            Frame combines non-invasive upper-arm ultrasound with personalised software designed to help people explore
+            blood-pressure patterns across sleep, stress, exercise, and recovery. Frame has completed early
+            proof-of-concept work, including an initial measurement-validation phase. We’re now integrating sensing,
+            electronics, software, and data processing into a wearable system.
           </p>
           <p>
-            Before shipping, Frame will complete the remaining performance, wearability, safety, manufacturing,
-            and quality work and confirm final specifications including accuracy, measurement availability, battery
-            life, fit, materials, connectivity, software features, and compatibility. Product images show the intended
-            design direction. If we propose a material change, we will explain it and let you accept it or cancel for
-            a full refund.
+            Before shipping, Frame will complete validation of the integrated product, along with the remaining
+            wearability, safety, manufacturing, and quality work. We’ll then confirm final specifications including
+            accuracy, measurement availability, battery life, fit, materials, connectivity, software features, and
+            compatibility. Product images show the intended design direction. If we propose a material change, we
+            will explain it and let you accept it or cancel for a full refund.
           </p>
         </section>
 
         <section>
           <h2>Not for medical decisions</h2>
           <p>
-            Frame is being developed solely for general-wellness use. It has not received FDA marketing
-            authorization as a blood-pressure monitor, and its performance has not been established for medical use.
-            It is not intended to diagnose, screen for, monitor, treat, or manage any disease or medical
-            condition, guide treatment or medication decisions, provide emergency alerts, or replace an
-            FDA-authorized blood-pressure monitor or professional medical care.
-          </p>
-          <p>
-            Do not use Frame to diagnose a condition, change medication or treatment, delay medical care, or decide
-            whether to seek emergency help. If your care depends on blood-pressure measurements, use an appropriate
-            FDA-authorized device and speak with a qualified healthcare professional.
+            Frame is being developed solely for general-wellness use. It is not an FDA-authorized medical
+            blood-pressure monitor, its performance has not been established for medical use, and it is not designed
+            to provide emergency alerts. Do not use Frame to diagnose or manage a condition, change medication or
+            treatment, decide whether to seek emergency care, or replace an appropriate FDA-authorized device or
+            professional medical care.
           </p>
         </section>
 
@@ -166,13 +158,13 @@ export default async function PreorderProductStatusPage() {
 
         <p className="legal-disclaimer">
           At checkout, you’ll confirm that you have reviewed this product status separately from accepting the
-          Pre-order Terms. The version you accept will be recorded with your order.
+          Pre-order Terms and Cancellation and Refund Policy. The version you accept will be recorded with your order.
         </p>
         <HistoryBackLink
           className="button button--secondary product-status-return"
           fallbackHref="/preorder/review"
         >
-          Back to pre-order
+          Exit
         </HistoryBackLink>
       </article>
     </main>

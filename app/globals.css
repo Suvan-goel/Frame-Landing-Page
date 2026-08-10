@@ -6184,25 +6184,19 @@ h2 {
 }
 
 .product-status-summary__heading {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 32px;
   padding: 25px 30px 24px;
   border-bottom: 1px solid var(--line);
 }
 
-.product-status-summary__heading > .eyebrow {
-  flex: 0 0 auto;
-}
-
 .product-status-page .product-status-summary h2 {
-  max-width: 620px;
   margin: 0;
-  font-size: clamp(1.75rem, 2.5vw, 2.25rem);
-  font-weight: 400;
-  line-height: 1;
-  text-align: right;
+  color: var(--burgundy);
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  font-weight: 640;
+  letter-spacing: 0.16em;
+  line-height: 1.2;
+  text-transform: uppercase;
 }
 
 .product-status-summary ol {
@@ -6302,16 +6296,7 @@ h2 {
   }
 
   .product-status-summary__heading {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 10px;
     padding: 24px 20px;
-  }
-
-  .product-status-page .product-status-summary h2 {
-    max-width: none;
-    font-size: 1.85rem;
-    text-align: left;
   }
 
   .product-status-summary ol {
@@ -6394,6 +6379,24 @@ h2 {
   font-weight: 400;
   line-height: 1;
   text-align: right;
+}
+
+.preorder-terms-page .preorder-terms-key-summary .preorder-terms-summary__heading,
+.preorder-refunds-page .preorder-refunds-summary .preorder-terms-summary__heading {
+  display: block;
+}
+
+.preorder-terms-page .preorder-terms-summary.preorder-terms-key-summary h2,
+.preorder-refunds-page .preorder-terms-summary.preorder-refunds-summary h2 {
+  max-width: none;
+  color: var(--burgundy);
+  font-family: var(--sans);
+  font-size: 0.78rem;
+  font-weight: 640;
+  letter-spacing: 0.16em;
+  line-height: 1.2;
+  text-align: left;
+  text-transform: uppercase;
 }
 
 .preorder-terms-summary dl {

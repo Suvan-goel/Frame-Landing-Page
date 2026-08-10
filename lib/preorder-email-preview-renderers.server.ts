@@ -198,7 +198,7 @@ export function renderPreorderOwnerActionEmail(
       ...(input.reason ? [`Reason: ${input.reason}`] : []),
       ...(requestedAddress.length ? ["", "Requested address:", ...requestedAddress] : []),
       ...(input.requestType === "cancellation"
-        ? ["", "Policy deadline: submit the full refund within seven working days of cancellation."]
+        ? ["", "Policy deadline: submit the full refund within seven business days of the cancellation request."]
         : []),
       "",
       `Review order: ${ownerUrl}`,
@@ -217,7 +217,7 @@ export function renderPreorderOwnerActionEmail(
         (input.requestType === "cancellation"
           ? renderTransactionalNotice({
               title: "Refund required.",
-              body: "Submit the full remaining refund within seven working days of cancellation.",
+              body: "Submit the full remaining refund within seven business days of the cancellation request.",
               tone: "warning",
             })
           : ""),

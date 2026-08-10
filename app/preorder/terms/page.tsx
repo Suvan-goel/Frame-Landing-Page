@@ -7,11 +7,8 @@ import {
   formatPreorderMoney,
   PREORDER_DEFAULT_CURRENCY,
   PREORDER_DEFAULT_PRICE_CENTS,
-  PREORDER_DISCOUNT_PERCENT,
   PREORDER_ESTIMATED_SHIPPING,
   PREORDER_LEGAL_PACK_UPDATED,
-  PREORDER_RELEASE_PRICE_CENTS,
-  PREORDER_SAVINGS_CENTS,
   PREORDER_TERMS_VERSION,
   isDraftPreorderVersion,
 } from "@/lib/preorder";
@@ -28,14 +25,6 @@ const TERMS_TITLE = "Frame Pre-order Terms";
 const TERMS_DESCRIPTION = "Terms for placing and managing a Frame device pre-order.";
 const PRODUCT_PRICE = formatPreorderMoney(
   PREORDER_DEFAULT_PRICE_CENTS,
-  PREORDER_DEFAULT_CURRENCY,
-);
-const RELEASE_PRICE = formatPreorderMoney(
-  PREORDER_RELEASE_PRICE_CENTS,
-  PREORDER_DEFAULT_CURRENCY,
-);
-const PREORDER_SAVING = formatPreorderMoney(
-  PREORDER_SAVINGS_CENTS,
   PREORDER_DEFAULT_CURRENCY,
 );
 const LEGAL_PACK_IS_DRAFT = isDraftPreorderVersion(PREORDER_TERMS_VERSION);
@@ -92,15 +81,14 @@ export default async function PreorderTermsPage() {
           the <Link href="/preorder/product-status">Product Status Disclosure</Link>, and the <Link href="/privacy">Privacy Notice</Link>.
         </p>
 
-        <section className="preorder-terms-summary" aria-labelledby="preorder-terms-summary-heading">
+        <section className="preorder-terms-summary preorder-terms-key-summary" aria-labelledby="preorder-terms-summary-heading">
           <div className="preorder-terms-summary__heading">
-            <p className="eyebrow">Key terms</p>
-            <h2 id="preorder-terms-summary-heading">Your pre-order at a glance.</h2>
+            <h2 id="preorder-terms-summary-heading">Key terms</h2>
           </div>
           <dl>
             <div>
-              <dt>Pre-order offer</dt>
-              <dd>{PRODUCT_PRICE}, saving {PREORDER_SAVING} ({PREORDER_DISCOUNT_PERCENT}%) from the {RELEASE_PRICE} release price</dd>
+              <dt>Pre-order price</dt>
+              <dd>{PRODUCT_PRICE}, plus applicable sales tax</dd>
             </div>
             <div>
               <dt>Estimated shipping</dt>
@@ -184,16 +172,15 @@ export default async function PreorderTermsPage() {
             <section id="purchase">
               <h2>3. What the pre-order purchases</h2>
               <p>
-                A pre-order purchases one future Frame device, subject to the development status and cancellation
-                rights described here. It is not a deposit, investment, membership, donation, or reservation without
-                payment. Your place in the controlled pre-order allocation is recorded after payment succeeds.
+                A pre-order purchases one Frame device to be supplied when it is ready. The full price is paid at
+                checkout, and your pre-order is recorded when payment succeeds. It is not an investment, subscription,
+                membership, donation, research participation, or payment for medical services.
               </p>
               <p>
-                Frame remains under development. Final design, components, software, specifications, performance,
-                regulatory status, manufacturing plan, and packaging may change. Frame will not substitute a materially
-                different product without explaining the change and asking you to accept it by a stated deadline or
-                cancel for a full refund. If you do not affirmatively accept a material change by that deadline, Frame
-                will cancel the unshipped order and refund it automatically. Read the
+                Frame remains under development, and final product details may change. If Frame proposes a material
+                change, it will explain the change and ask you to accept it by a stated deadline or cancel for a full
+                refund. If you do not accept by that deadline, Frame will cancel the unshipped order and refund it
+                automatically. Read the
                 <Link href="/preorder/product-status"> Product Status Disclosure</Link> before ordering.
               </p>
             </section>
@@ -201,15 +188,13 @@ export default async function PreorderTermsPage() {
             <section id="payment">
               <h2>4. Price, tax, shipping, and payment</h2>
               <p>
-                The pre-order product subtotal is {PRODUCT_PRICE}, which is {PREORDER_SAVING} ({PREORDER_DISCOUNT_PERCENT}%)
-                below Frame&apos;s {RELEASE_PRICE} release price. Standard US shipping is included at no additional charge.
-                Applicable sales tax is additional and is calculated from the supplied address. The complete total
-                is shown in Stripe Checkout before you pay.
+                The pre-order product subtotal is {PRODUCT_PRICE}. Standard US shipping is included at no additional
+                charge. Applicable sales tax is calculated from the supplied address, and the complete total is shown
+                in Stripe Checkout before you pay.
               </p>
               <p>
                 The complete amount is charged once at checkout. Payment is processed by Stripe, and Frame does not
-                receive or store your full card number. There are no recurring charges. Your card issuer may apply its
-                own currency-conversion or other fees.
+                receive or store your full card number. There are no recurring charges.
               </p>
             </section>
 
@@ -218,30 +203,24 @@ export default async function PreorderTermsPage() {
               <p>
                 Frame is currently estimated to ship in <strong>{PREORDER_ESTIMATED_SHIPPING}</strong>. This is the
                 estimate for when the order will leave the fulfillment facility, not a guaranteed delivery date.
-                Transit time begins after dispatch. The estimate is based on the development and supply plan available
-                when the order is accepted and may change.
+                Transit time begins after dispatch.
               </p>
               <p>
-                If Frame expects not to ship within the current estimate, it will email you no later than that estimate
-                with the reason, a definite revised date where there is a reasonable basis for one, or a statement that
-                a revised date cannot yet be provided. Every notice will give you a free way to accept the delay or cancel
-                for a full refund and will state exactly what happens if you do not respond.
-              </p>
-              <p>
-                For a first delay with a definite revised shipping date no more than 30 days later, the notice may state
-                that no response will be treated as consent to that short delay. For a delay longer than 30 days, an
-                unknown shipping date, or a second or later delay, Frame will ask you to accept by a stated deadline. If
-                affirmative consent is required and you do not accept by the deadline, Frame will automatically cancel
-                the unshipped order and issue a full refund. These delay rights apply even if ordinary fulfilment has
-                begun, provided the order has not shipped.
+                If Frame expects a delay, it will email you before the current estimate expires with a revised shipping
+                date where one can reasonably be given, a free way to accept the delay or cancel for a full refund, and
+                an explanation of what happens if you do not respond. For an eligible first delay of no more than 30
+                days, the notice may explain that no response will be treated as agreement to that short delay. A longer,
+                indefinite, or further delay requires your agreement; otherwise, Frame will automatically cancel and
+                refund the unshipped order. The <Link href="/preorder/refunds#shipping-delays">Cancellation and Refund
+                Policy</Link> explains these rights in full.
               </p>
             </section>
 
             <section id="delivery">
               <h2>6. Delivery and risk of loss</h2>
               <p>
-                Frame remains responsible for loss or damage until the carrier records delivery to the shipping address
-                provided for the order. If the package is lost in transit, arrives damaged, or contains the wrong item,
+                Frame remains responsible for loss or damage until the order is delivered to the shipping address you
+                provide. If the package is lost in transit, arrives damaged, or contains the wrong item,
                 contact <Link href="/contact?topic=preorder">pre-order support</Link> promptly so Frame can investigate and
                 provide a replacement or refund at no additional cost after reasonable verification. Frame will cover
                 authorised return shipping for a damaged or incorrect item. This section does not limit any mandatory
@@ -255,17 +234,15 @@ export default async function PreorderTermsPage() {
                 You may cancel for any reason until fulfilment begins, meaning before the order status changes to
                 processing, and receive a full refund of the product, standard shipping, and tax paid. Use the secure
                 management link in your order email or the
-                <Link href="/contact?topic=preorder"> Frame pre-order support form</Link>. After delivery, Frame offers
-                the return rights described in the <Link href="/preorder/refunds">Cancellation and Refund Policy</Link>.
+                <Link href="/contact?topic=preorder"> Frame pre-order support form</Link>.
               </p>
               <p>
                 Once fulfilment is processing, Frame may be unable to stop an ordinary cancellation before shipment.
-                Shipping-delay and material-change cancellation rights described in these terms continue to apply while
-                the order is unshipped. After shipment, use the return process instead.
-              </p>
-              <p>
-                Nothing in these terms limits rights or remedies that cannot lawfully be excluded, including rights for
-                goods that are faulty, unsafe, or not as described.
+                Shipping-delay and material-change cancellation rights continue while the order is unshipped. After
+                shipment, use the return process in the <Link href="/preorder/refunds">Cancellation and Refund
+                Policy</Link>, which also explains the 30-day voluntary return window and rights for faulty, unsafe,
+                damaged, or misdescribed goods. Nothing in these terms limits rights or remedies that cannot lawfully
+                be excluded.
               </p>
             </section>
 
@@ -280,17 +257,20 @@ export default async function PreorderTermsPage() {
                 workmanship under normal household, general-wellness use for one year from documented delivery.
               </p>
               <p>
-                For a valid warranty claim, Frame will, at no charge and within a reasonable time, repair the device or
-                replace it with an equivalent device. If neither remedy is reasonably available, Frame will refund the
-                purchase price. Frame pays authorised shipping costs for a covered claim. Coverage does not include
-                normal cosmetic wear, accidental damage, misuse, abuse, neglect, unauthorised modification or repair,
-                or use contrary to the supplied instructions.
+                For a valid warranty claim, Frame will, at no charge, complete the repair or dispatch an equivalent
+                replacement within 30 calendar days after receiving the device and the information reasonably needed
+                to assess the claim. If neither remedy can reasonably be completed within that time, Frame will offer
+                a refund of the purchase price. Frame pays authorised shipping costs for a covered claim. Coverage does
+                not include normal cosmetic wear, accidental damage, misuse, abuse, neglect, unauthorised modification
+                or repair, or use contrary to the supplied instructions.
               </p>
               <p>
                 To make a claim, use <Link href="/contact?topic=preorder">pre-order support</Link> with the order number,
                 a description of the problem, and reasonably requested photographs or diagnostic information. Do not
                 return the device until Frame provides instructions. This limited warranty does not replace or reduce
                 rights and remedies that apply under mandatory law to faulty, unsafe, damaged, or misdescribed goods.
+                This warranty gives you specific legal rights, and you may also have other rights that vary from state
+                to state.
               </p>
             </section>
 
@@ -320,11 +300,16 @@ export default async function PreorderTermsPage() {
               <h2>11. Changes to the legal pack</h2>
               <p>
                 The legal pack version accepted at checkout covers these Pre-order Terms and the Cancellation and Refund
-                Policy and is recorded with the order. The Product Status Disclosure is versioned and acknowledged
-                separately. Frame may make non-material administrative updates without reducing your rights. If a proposed
-                change materially affects the product, price, shipping commitment, or your rights, Frame will explain the
-                change and ask you to accept it by a stated deadline or cancel with a full refund. If you do not accept
-                by that deadline, Frame will cancel and refund the unshipped order.
+                Policy, is recorded with the order, and continues to apply to that order. The Product Status Disclosure
+                is versioned and acknowledged separately. New versions and non-material administrative corrections apply
+                only to future orders and do not change the rights in the version you accepted.
+              </p>
+              <p>
+                If Frame proposes a material change to the product or shipping commitment while your order is unshipped,
+                it will explain the change and ask you to accept it by a stated deadline or cancel for a full refund.
+                Frame will not increase the price already paid or otherwise reduce your rights without your express
+                agreement. If you do not accept a proposed material change by the deadline, Frame will cancel and refund
+                the unshipped order.
               </p>
             </section>
 

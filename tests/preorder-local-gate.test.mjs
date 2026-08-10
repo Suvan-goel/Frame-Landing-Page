@@ -266,31 +266,36 @@ test("keeps the funnel usable only on loopback during development", async () => 
 
   assert.equal(productStatusResponse.status, 200);
   const productStatus = await productStatusResponse.text();
-  assert.match(productStatus, /Initial proof of concept is complete/);
+  assert.match(productStatus, /Early proof-of-concept work is complete/);
+  assert.match(productStatus, /initial measurement-validation phase/);
+  assert.match(productStatus, /validation of the integrated product/);
   assert.match(productStatus, /Current shipping plan/);
-  assert.match(productStatus, /has not received FDA marketing/);
-  assert.match(productStatus, /Pre-order for\s*(?:<!-- -->)?\$299/);
-  assert.match(productStatus, /\$200/);
-  assert.match(productStatus, /from the release price/);
-  assert.match(productStatus, /Last updated August 9, 2026/);
+  assert.match(productStatus, /not an FDA-authorized medical/);
+  assert.match(productStatus, /Targeting dispatch in\s*(?:<!-- -->)?Q1 2027/);
+  assert.match(productStatus, /Product status version draft-2026-08-10-v9/);
+  assert.match(productStatus, /August 10, 2026/);
+  assert.match(productStatus, /Pre-order Terms and Cancellation and Refund Policy/);
 
   assert.equal(termsResponse.status, 200);
   const terms = await termsResponse.text();
-  assert.match(terms, /Your pre-order at a glance/);
+  assert.match(terms, /Key terms/);
   assert.match(terms, /Delivery and risk of loss/);
   assert.match(terms, /Warranty and product problems/);
   assert.match(terms, /has not received FDA marketing authorization/);
-  assert.match(terms, /Legal pack version draft-2026-08-09-v7/);
+  assert.match(terms, /Legal pack version draft-2026-08-10-v10/);
   assert.match(terms, /Standard US shipping is included at no additional charge/i);
-  assert.match(terms, /\$499\s*(?:<!-- -->)? release price/);
-  assert.match(terms, /saving\s*(?:<!-- -->)?\$200/);
+  assert.doesNotMatch(terms, /release price/i);
+  assert.doesNotMatch(terms, /saving\s*(?:<!-- -->)?\$200/i);
   assert.match(terms, /Frame One-Year Limited Warranty/);
+  assert.match(terms, /within 30 calendar days after receiving the device/);
+  assert.match(terms, /specific legal rights/);
 
   assert.equal(refundsResponse.status, 200);
   const refunds = await refundsResponse.text();
-  assert.match(refunds, /Legal pack version draft-2026-08-09-v7/);
+  assert.match(refunds, /Legal pack version draft-2026-08-10-v10/);
   assert.match(refunds, /Standard US shipping is free/i);
-  assert.match(refunds, /Policy at a glance/);
+  assert.match(refunds, /Key rights/);
+  assert.match(refunds, /Shipping or product changes/);
   assert.match(refunds, /Material product changes/);
   assert.match(refunds, /Frame One-Year Limited/);
   assert.match(refunds, /rel="canonical" href="https:\/\/framewearable\.com\/preorder\/refunds"/);
