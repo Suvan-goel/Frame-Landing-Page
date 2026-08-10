@@ -8,6 +8,8 @@ import {
 } from "./transactional-email-design";
 import { SUPPORT_EMAIL } from "./company";
 
+export const CONTRIBUTORS_EMAIL = "contributors@framewearable.com";
+
 export type ContributorWelcomeEmailInput = {
   origin: string;
   email: string;
@@ -92,7 +94,7 @@ export async function sendContributorWelcomeEmail(
 
   const from =
     (await getRuntimeValue("CONTRIBUTOR_FROM_EMAIL")) ??
-    "Frame Contributors <contributors@framewearable.com>";
+    `Frame Contributors <${CONTRIBUTORS_EMAIL}>`;
   const email = renderContributorWelcomeEmail(input);
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
@@ -103,7 +105,7 @@ export async function sendContributorWelcomeEmail(
     body: JSON.stringify({
       from,
       to: [input.email],
-      reply_to: SUPPORT_EMAIL,
+      reply_to: CONTRIBUTORS_EMAIL,
       subject: email.subject,
       text: email.text,
       html: email.html,

@@ -13,7 +13,7 @@ function readyInput() {
   return {
     apiKey: "re_live_transactional_1234567890",
     from: `${PREORDER_EMAIL_FROM_NAME} <${PREORDER_EMAIL_FROM_ADDRESS}>`,
-    operationsRecipient: PREORDER_EMAIL_REPLY_TO,
+    operationsRecipient: "support@framewearable.com",
     replyTo: PREORDER_EMAIL_REPLY_TO,
     dns: {
       rootMx: ["0 framewearable-com.mail.protection.outlook.com."],

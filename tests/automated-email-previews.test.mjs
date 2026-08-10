@@ -39,10 +39,11 @@ test("routes automated customer replies to the monitored support inbox", async (
   ]);
 
   assert.match(preorderSource, /reply_to: PREORDER_EMAIL_REPLY_TO/);
-  assert.match(contributorSource, /reply_to: SUPPORT_EMAIL/);
-  assert.match(catalogSource, /replyTo: SUPPORT_EMAIL/);
-  assert.match(catalogSource, /reply_to: SUPPORT_EMAIL/);
+  assert.match(contributorSource, /reply_to: CONTRIBUTORS_EMAIL/);
+  assert.match(catalogSource, /replyTo:[\s\S]+CONTRIBUTORS_EMAIL[\s\S]+PREORDER_EMAIL_REPLY_TO/);
+  assert.match(catalogSource, /reply_to: selected\.replyTo/);
   assert.match(environmentExample, /^PREORDER_OPERATIONS_EMAIL=support@framewearable\.com$/m);
+  assert.match(environmentExample, /^MAILING_REPLY_TO_EMAIL=updates@framewearable\.com$/m);
 });
 
 test("keeps automated email previews and test sending owner-only", async () => {

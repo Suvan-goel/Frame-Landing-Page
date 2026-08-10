@@ -1,11 +1,8 @@
 import { getRuntimeValue } from "./runtime-env.server";
-import {
-  COMPANY_DETAILS_COMPLETE,
-  formatCorrespondenceAddress,
-  SUPPORT_EMAIL,
-} from "./company";
+import { COMPANY_DETAILS_COMPLETE, formatCorrespondenceAddress } from "./company";
 
 export const RESEND_BATCH_SIZE = 100;
+export const UPDATES_EMAIL = "updates@framewearable.com";
 
 export type ResendEmailPayload = {
   from: string;
@@ -22,10 +19,10 @@ export async function getMailingRuntimeConfiguration() {
   const apiKey = (await getRuntimeValue("RESEND_API_KEY"))?.trim() ?? "";
   const from =
     (await getRuntimeValue("MAILING_FROM_EMAIL"))?.trim() ||
-    "Frame <updates@framewearable.com>";
+    `Frame Updates <${UPDATES_EMAIL}>`;
   const replyTo =
     (await getRuntimeValue("MAILING_REPLY_TO_EMAIL"))?.trim() ||
-    SUPPORT_EMAIL;
+    UPDATES_EMAIL;
   const postalAddress =
     (await getRuntimeValue("MAILING_POSTAL_ADDRESS"))?.trim() ||
     (COMPANY_DETAILS_COMPLETE ? formatCorrespondenceAddress() : "");

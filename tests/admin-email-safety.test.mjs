@@ -145,7 +145,8 @@ test("requires a server review and typed confirmation before any subscriber send
   assert.match(sender, /categorizeVisibleSignups\(eligibleRows\)/);
   assert.match(sender, /to: \[input\.recipient\.email\]/);
   assert.match(provider, /RESEND_BATCH_SIZE = 100/);
-  assert.match(provider, /Frame <updates@framewearable\.com>/);
+  assert.match(provider, /Frame Updates <\$\{UPDATES_EMAIL\}>/);
+  assert.match(provider, /\|\|\s*UPDATES_EMAIL/);
   assert.match(provider, /"Idempotency-Key": idempotencyKey/);
   assert.doesNotMatch(provider, /api\.resend\.com\/webhooks/);
   assert.match(webhookSetup, /RESEND_SIGNING_SECRET_PATTERN/);

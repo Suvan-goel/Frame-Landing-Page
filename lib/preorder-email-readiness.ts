@@ -4,7 +4,7 @@ import { SITE_URL } from "./site";
 export const PREORDER_EMAIL_DOMAIN = new URL(SITE_URL).hostname;
 export const PREORDER_EMAIL_FROM_ADDRESS = `preorders@${PREORDER_EMAIL_DOMAIN}`;
 export const PREORDER_EMAIL_FROM_NAME = "Frame Pre-orders";
-export const PREORDER_EMAIL_REPLY_TO = SUPPORT_EMAIL;
+export const PREORDER_EMAIL_REPLY_TO = PREORDER_EMAIL_FROM_ADDRESS;
 
 export type PreorderEmailDnsSnapshot = {
   rootMx: string[];
@@ -112,7 +112,7 @@ export function evaluatePreorderEmailReadiness(
   const routingReady =
     validEmail(input.operationsRecipient) &&
     input.operationsRecipient?.trim().toLowerCase() === SUPPORT_EMAIL.toLowerCase() &&
-    input.replyTo.trim().toLowerCase() === SUPPORT_EMAIL.toLowerCase();
+    input.replyTo.trim().toLowerCase() === PREORDER_EMAIL_REPLY_TO.toLowerCase();
 
   const checks: PreorderEmailReadinessCheck[] = [
     {
@@ -130,8 +130,8 @@ export function evaluatePreorderEmailReadiness(
     {
       name: "Pre-order reply and operations routing",
       ready: routingReady,
-      readyDetail: `Customer replies and operational alerts route to ${SUPPORT_EMAIL}.`,
-      blocker: `Route both customer replies and PREORDER_OPERATIONS_EMAIL to the monitored inbox (${SUPPORT_EMAIL}).`,
+      readyDetail: `Customer replies route through ${PREORDER_EMAIL_REPLY_TO}; operational alerts route to ${SUPPORT_EMAIL}.`,
+      blocker: `Route customer replies through ${PREORDER_EMAIL_REPLY_TO} and PREORDER_OPERATIONS_EMAIL to ${SUPPORT_EMAIL}.`,
     },
   ];
 

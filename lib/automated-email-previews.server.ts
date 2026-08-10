@@ -9,9 +9,12 @@ import {
   renderPreorderShippingEmail,
   type RenderedAutomatedEmail,
 } from "./preorder-email-preview-renderers.server";
-import { renderContributorWelcomeEmail } from "./contributor-email.server";
-import { SUPPORT_EMAIL } from "./company";
+import {
+  CONTRIBUTORS_EMAIL,
+  renderContributorWelcomeEmail,
+} from "./contributor-email.server";
 import { getRuntimeValue } from "./runtime-env.server";
+import { PREORDER_EMAIL_REPLY_TO } from "./preorder-email-readiness";
 import type {
   AutomatedEmailPreview,
   AutomatedEmailPreviewId,
@@ -68,7 +71,10 @@ function preview(input: {
     audience: input.audience,
     recipientExample: input.recipientExample,
     from: input.from,
-    replyTo: SUPPORT_EMAIL,
+    replyTo:
+      input.category === "contributors"
+        ? CONTRIBUTORS_EMAIL
+        : PREORDER_EMAIL_REPLY_TO,
     subject: input.email.subject,
     text: input.email.text,
     html: input.email.html,
@@ -329,7 +335,7 @@ export async function sendAutomatedEmailPreviewTest(input: {
     body: JSON.stringify({
       from: selected.from,
       to: [input.recipient],
-      reply_to: SUPPORT_EMAIL,
+      reply_to: selected.replyTo,
       subject: `[TEST PREVIEW] ${selected.subject}`,
       text: `ADMINISTRATOR PREVIEW: no customer event was created.\n\n${selected.text}`,
       html: `${banner}${selected.html}`,
