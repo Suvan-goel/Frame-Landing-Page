@@ -281,7 +281,7 @@ export function renderFrameCampaignEmail(input: {
             </tr>
             <tr>
               <td class="email-content" style="padding:48px 44px 54px">
-                <p style="margin:0 0 14px;color:#963f49;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;letter-spacing:.17em;line-height:1.4;text-transform:uppercase">A note from Frame</p>
+                <p style="margin:0 0 14px;color:#963f49;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;letter-spacing:.17em;line-height:1.4;text-transform:uppercase">A note from us</p>
                 <h1 class="email-heading" style="margin:0;color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:35px;font-weight:400;letter-spacing:-.7px;line-height:1.15">${escapeHtml(subject)}</h1>
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:24px 0 29px"><tr><td width="42" height="2" bgcolor="#963f49" style="width:42px;height:2px;background:#963f49;font-size:0;line-height:0">&nbsp;</td></tr></table>
                 ${bodyToHtml(body)}

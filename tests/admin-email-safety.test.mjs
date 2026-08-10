@@ -55,7 +55,7 @@ test("renders the exact personalised preview safely with unsubscribe controls", 
   assert.match(rendered.html, />Update<\/span>/i);
   assert.doesNotMatch(rendered.html, /Frame notes/i);
   assert.doesNotMatch(rendered.html, /\.email-header-note \{ display: none/i);
-  assert.match(rendered.html, /A note from Frame/i);
+  assert.match(rendered.html, /A note from us/i);
   assert.match(rendered.html, /class="email-header"/);
   assert.match(rendered.html, /class="email-content"/);
   assert.match(rendered.html, /class="email-cta-link"/);
