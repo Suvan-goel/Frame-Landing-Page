@@ -153,6 +153,12 @@ and requires no site-copy changes. Retain the underlying review record outside
 the repository and reassess it before any material claim, intended-use, output,
 alert or product-design change.
 
+The founder also confirmed on August 10, 2026 that the current Pre-order Terms,
+Cancellation and Refund Policy, and Privacy Notice require no copy changes. This
+copy approval does not release the live legal gates: the incorporated seller
+identity must still be inserted and the completed pack assigned an approved,
+non-draft version.
+
 Do not release the legal or tax approval locks until the remaining reviews and
 company-identity work are finished.
 

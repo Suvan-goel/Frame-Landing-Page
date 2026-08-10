@@ -76,5 +76,9 @@ test("keeps one canonical launch runbook with every approval gate", async () => 
     handoff,
     /Regulatory review: founder confirmed complete[\s\S]+no site-copy changes required/i,
   );
+  assert.match(
+    handoff,
+    /Legal-page copy review: founder confirmed[\s\S]+Pre-order Terms[\s\S]+Cancellation and Refund Policy[\s\S]+Privacy Notice[\s\S]+no copy changes/i,
+  );
   assert.doesNotMatch(handoff, /proceed without a separate medical-device regulatory/i);
 });

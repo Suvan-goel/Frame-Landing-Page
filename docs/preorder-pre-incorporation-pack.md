@@ -17,8 +17,12 @@ location.
 - Commercial offer: founder approved the price, expected release price,
   shipping, delivery window, per-checkout quantity, initial allocation, return
   period and warranty terms recorded below on August 10, 2026.
+- Legal-page copy review: founder confirmed on August 10, 2026 that the current
+  Pre-order Terms, Cancellation and Refund Policy, and Privacy Notice require
+  no copy changes.
 - Incorporated seller identity: awaiting Stripe Atlas confirmation.
-- Legal approval: pending recorded approval.
+- Final legal-pack release approval: pending insertion of the incorporated
+  seller identity and assignment of a non-draft version.
 - Cross-border tax approval: pending recorded approval.
 - Authorised correspondence address: pending provider approval for the
   incorporated recipient.
@@ -51,7 +55,8 @@ working from the same offer:
   price; free standard US shipping; Q1 2027 estimated shipping; one device per
   checkout; initial 100-unit release; 30-day voluntary returns; one-year
   limited hardware warranty.
-- Legal approval date and approver: —
+- Founder legal-page copy approval: August 10, 2026; no copy changes required.
+- Final legal-pack release approval date and approver: —
 - Tax approval date and approver: —
 - Approved legal-pack version: —
 - Approved Product Status Disclosure version: —
@@ -75,10 +80,15 @@ above. Record conclusions for:
 
 Review record:
 
-- Reviewer: —
-- Scope: —
-- Approval date: —
-- Required copy changes: —
+- Reviewer: founder
+- Scope: current Pre-order Terms, Cancellation and Refund Policy, and Privacy
+  Notice. The Product Status Disclosure is covered by the separately completed
+  regulatory review.
+- Approval date: August 10, 2026
+- Required copy changes: none to the reviewed copy. Incorporated seller name,
+  registration, registered-office, authorised correspondence-address,
+  privacy-controller and named-warrantor values remain to be inserted from the
+  issued and approved company records.
 - Secure evidence location: —
 
 ## Cross-border tax handoff
