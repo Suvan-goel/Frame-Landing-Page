@@ -65,7 +65,19 @@ type OrderDetail = {
 type OrderItem = { id: string; product_name: string; sku: string; quantity: number; unit_amount: number; currency: string };
 type Payment = { id: string; stripe_payment_intent_id: string | null; amount_total: number; amount_refunded: number; currency: string; payment_status: string; paid_at: string | null; refunded_at: string | null };
 type OrderEvent = { id: string; event_type: string; source: string; detail: Record<string, unknown>; created_at: string };
-type EmailDelivery = { id: string; email_type: string; recipient: string; status: string; error_message: string | null; sent_at: string | null; created_at: string };
+type EmailDelivery = {
+  id: string;
+  email_type: string;
+  recipient: string;
+  status: string;
+  provider_tracking_expected: boolean;
+  last_event: string | null;
+  last_event_at: string | null;
+  error_message: string | null;
+  sent_at: string | null;
+  delivered_at: string | null;
+  created_at: string;
+};
 
 function dateTime(value: string | null) {
   if (!value) return "N/A";
@@ -106,7 +118,7 @@ async function AuthenticatedOrderDetail({ id }: { id: string }) {
     supabase.from("preorder_order_items").select("id,product_name,sku,quantity,unit_amount,currency").eq("preorder_id", id).returns<OrderItem[]>(),
     supabase.from("preorder_payments").select("id,stripe_payment_intent_id,amount_total,amount_refunded,currency,payment_status,paid_at,refunded_at").eq("preorder_id", id).returns<Payment[]>(),
     supabase.from("preorder_events").select("id,event_type,source,detail,created_at").eq("preorder_id", id).order("created_at", { ascending: false }).limit(100).returns<OrderEvent[]>(),
-    supabase.from("preorder_email_deliveries").select("id,email_type,recipient,status,error_message,sent_at,created_at").eq("preorder_id", id).order("created_at", { ascending: false }).limit(50).returns<EmailDelivery[]>(),
+    supabase.from("preorder_email_deliveries").select("id,email_type,recipient,status,provider_tracking_expected,last_event,last_event_at,error_message,sent_at,delivered_at,created_at").eq("preorder_id", id).order("created_at", { ascending: false }).limit(50).returns<EmailDelivery[]>(),
   ]);
   if (orderResult.error) throw new Error("The pre-order is temporarily unavailable.");
   if (!orderResult.data) notFound();
@@ -119,6 +131,24 @@ async function AuthenticatedOrderDetail({ id }: { id: string }) {
     throw new Error("The pre-order history is temporarily unavailable.");
   }
   const order = orderResult.data;
+  const emailRows = emailsResult.data ?? [];
+  const confirmationDelivery = emailRows.find(
+    (email) => email.email_type === "order_confirmation",
+  );
+  const adverseConfirmation = confirmationDelivery &&
+    ["failed", "delayed", "bounced", "complained", "suppressed"].includes(
+      confirmationDelivery.status,
+    );
+  const confirmationHeading = confirmationDelivery?.status === "delivered"
+    ? "Confirmation delivered"
+    : adverseConfirmation
+      ? "Delivery needs attention"
+      : confirmationDelivery?.provider_tracking_expected &&
+          confirmationDelivery.status === "sent"
+        ? "Awaiting delivery confirmation"
+        : order.confirmation_email_sent_at
+          ? "Confirmation sent"
+          : "Needs attention";
   const payment = paymentsResult.data?.[0] ?? null;
   const amountRemaining = Math.max(order.amount_total - order.amount_refunded, 0);
   let managePath: string | null = null;
@@ -247,10 +277,10 @@ async function AuthenticatedOrderDetail({ id }: { id: string }) {
           <aside>
             <section className="preorder-owner-card">
               <p className="eyebrow">Email delivery</p>
-              <h2>{order.confirmation_email_sent_at ? "Confirmation sent" : "Needs attention"}</h2>
-              <p>{order.confirmation_email_sent_at ? dateTime(order.confirmation_email_sent_at) : "No successful confirmation is recorded."}</p>
+              <h2>{confirmationHeading}</h2>
+              <p>{confirmationDelivery?.status === "delivered" ? `Delivered to the recipient mail server ${dateTime(confirmationDelivery.delivered_at)}.` : order.confirmation_email_sent_at ? `Resend accepted the confirmation ${dateTime(order.confirmation_email_sent_at)}.` : "No successful confirmation is recorded."}</p>
               <ul className="preorder-owner-timeline">
-                {(emailsResult.data ?? []).map((email) => <li key={email.id}><strong>{email.email_type.replaceAll("_", " ")}</strong><span>{email.status} · {dateTime(email.sent_at ?? email.created_at)}</span>{email.error_message ? <small>{email.error_message}</small> : null}</li>)}
+                {emailRows.map((email) => <li key={email.id}><strong>{email.email_type.replaceAll("_", " ")}</strong><span>{email.status} · {email.last_event?.replace("email.", "").replaceAll("_", " ") ?? "local send"} · {dateTime(email.last_event_at ?? email.sent_at ?? email.created_at)}</span>{email.error_message ? <small>{email.error_message}</small> : null}</li>)}
               </ul>
             </section>
 

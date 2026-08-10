@@ -50,6 +50,13 @@ one bounded root SPF policy, Resend DKIM and return-path SPF/MX, and an enforced
 DMARC quarantine or reject policy. Keep the Resend API key restricted to sending;
 domain-administration permission is not required by this check.
 
+The same signature-verified Resend endpoint must remain subscribed to
+`email.sent`, `email.delivered`, `email.delivery_delayed`, `email.failed`,
+`email.bounced`, `email.complained` and `email.suppressed`. After the provider
+outcome migration is applied, every new pre-order email is linked by Resend
+message ID and updated in timestamp order; duplicate `svix-id` deliveries are
+ignored and an out-of-order success cannot erase a newer terminal failure.
+
 Run the sandbox payment comparison after any checkout, refund or webhook change:
 
 ```bash
@@ -64,6 +71,21 @@ references but no customer details, and cannot move money or update either syste
 The restricted Stripe key therefore needs read access to Checkout Sessions,
 PaymentIntents, Charges, Refunds and Disputes in addition to its existing runtime
 permissions.
+
+Run the sandbox operations gate after any webhook, email, cancellation, refund,
+delivery-deadline, fulfilment or inventory change:
+
+```bash
+npm run preorder:check:operations:test
+```
+
+The live form is `npm run preorder:check:operations`. It returns either
+`SAFE TO ACCEPT ORDERS` or `PAUSE SALES` after reading the selected environment's
+webhook recovery records, latest email streams, order workflows, delivery
+deadlines, order items, checkout reservations and sales-control snapshot. It
+does not retry, send, refund, pause or update anything. Reserved example-domain
+recipients are ignored only in the sandbox. Live delayed, failed, bounced,
+complained, suppressed, and ten-minute-unconfirmed sends always block.
 
 Run the sandbox concurrency and recovery checks before each hosted rehearsal and final cutover:
 
@@ -209,14 +231,14 @@ for five minutes appears in the owner recovery panel and can be safely retried.
 
 1. Configure live mode with `PREORDER_PUBLIC_LAUNCH_ENABLED=false`, an empty `PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID`, and a unique `PREORDER_LIVE_SMOKE_ACCESS_SECRET`. Public pre-order routes remain hidden.
 2. Keep the Supabase `live` allocation `paused` and set its released-unit ceiling to exactly `1`.
-3. Run `npm run preorder:check:email`, `npm run preorder:check:payments`, then `npm run preorder:check:live-smoke`; do not continue unless all report zero failures, including every email identity/authentication check, live payment/order comparison, and live Stripe Account activation, verification, payout, identity, customer-support, descriptor, agreement, and branding check.
+3. Run `npm run preorder:check:email`, `npm run preorder:check:payments`, `npm run preorder:check:operations`, then `npm run preorder:check:live-smoke`; do not continue unless all report zero failures, including every email identity/authentication check, live payment/order comparison, operations-health and inventory check, and live Stripe Account activation, verification, payout, identity, customer-support, descriptor, agreement, and branding check.
 4. Deploy the approved live configuration while the public-launch lock and paused allocation remain in place.
 5. Create the 15-minute invitation with `npm run preorder:live-smoke-link`. Do not share it; it opens the real card-payment path for two hours in that browser.
 6. From the authenticated owner view, open the one-unit live allocation. The control rejects any larger non-public live opening.
 7. Use the invitation to complete one real-card order. Immediately pause the live allocation after Stripe accepts the payment.
-8. Verify the charged subtotal, shipping and tax, signed webhook, live order record, confirmation email, management link and operational alert. Then issue a full refund and wait until the order shows `refunded` with the full amount reconciled.
+8. Verify the charged subtotal, shipping and tax, signed webhook, live order record, delivered confirmation outcome, management link and operational alert. Then issue a full refund and wait until the order shows `refunded` with the full amount reconciled.
 9. Copy that live pre-order UUID into `PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID`, restore the paused released-unit ceiling to `100`, and set `PREORDER_PUBLIC_LAUNCH_ENABLED=true` in the coordinated public-cutover configuration.
-10. Run `npm run preorder:check:payments` again, then `npm run preorder:check:launch`. They verify that the private live order reconciles exactly with Stripe, came from the private path, completed through the webhook, sent its confirmation, and was fully refunded.
+10. Run `npm run preorder:check:payments`, `npm run preorder:check:operations`, then `npm run preorder:check:launch`. They verify that the private live order reconciles exactly with Stripe, came from the private path, completed through the webhook, recorded a delivered confirmation outcome, was fully refunded, and left no failed or stalled operational work.
 11. Publish the public-cutover configuration and open the 100-unit live allocation from the authenticated owner view.
 12. Confirm the public homepage button reaches review and Stripe live Checkout, then monitor the first public order before allowing more traffic.
 
@@ -229,7 +251,7 @@ If checkout, email, webhook, fulfilment or policy behaviour is uncertain:
 1. Set the `live` allocation to `paused` in the owner view.
 2. Confirm new checkout reservations are rejected.
 3. Preserve Stripe, Supabase, email and webhook records for diagnosis.
-4. Reopen only after `npm run preorder:check:launch` passes again.
+4. Reopen only after `npm run preorder:check:operations` reports `SAFE TO ACCEPT ORDERS` and `npm run preorder:check:launch` passes again.
 
 Pausing allocation does not remove existing orders or customer-management links.
 It also does not block signed Stripe events or fulfilment for a customer who had

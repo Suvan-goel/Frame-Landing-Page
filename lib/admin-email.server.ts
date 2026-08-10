@@ -16,6 +16,7 @@ import {
   sendResendBatch,
   sendResendEmail,
 } from "./resend-mailing.server";
+import { applyPreorderEmailProviderEvent } from "./preorder-email-delivery-events.server";
 import { SITE_URL } from "./site";
 import { getSupabaseAdmin } from "./supabase-admin.server";
 import {
@@ -787,6 +788,11 @@ export async function processResendWebhookEvent(input: {
   if (!emailId) return { duplicate: false };
 
   try {
+    await applyPreorderEmailProviderEvent({
+      supabase,
+      event: input.event,
+      fallbackEventAt: verifiedAt,
+    });
     const recipientResult = await supabase
       .from("email_campaign_recipients")
       .select("campaign_id")

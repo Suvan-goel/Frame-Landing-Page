@@ -12,6 +12,12 @@ It validates the exact Frame pre-order sender, support routing, inbound MX, root
 SPF, Resend DKIM and return-path records, and the DMARC enforcement policy. It
 does not send an email or change DNS or Resend. A restricted sending-only Resend
 credential is preferred; the check does not require domain-administration access.
+The signed `/api/resend/webhook` endpoint also records `sent`, `delivered`,
+`delivery_delayed`, `failed`, `bounced`, `complained` and `suppressed` outcomes
+for each new pre-order email. Apply
+`20260810120000_track_preorder_email_delivery_outcomes.sql` before deploying the
+matching application source. Existing historical sends remain labelled as
+legacy; new tracked sends must reach a delivered outcome within ten minutes.
 
 Run `npm run preorder:check:payments:test` to reconcile every paid Stripe test
 pre-order against its stored checkout intent, order and payment record. The live
@@ -19,6 +25,16 @@ equivalent is `npm run preorder:check:payments`. Both commands are read-only:
 they compare identifiers, customer references, subtotal, shipping, tax, total,
 currency, captured amount, refunds and disputes, and detect paid Stripe sessions
 that never became orders. They never create or refund a payment or update a row.
+
+Run `npm run preorder:check:operations:test` for the sandbox operations-health
+gate. The live equivalent is `npm run preorder:check:operations`. It reports
+whether sales are safe to accept by checking failed or five-minute-stalled
+Stripe webhooks, failed, delayed, bounced, complained, suppressed or
+ten-minute-unconfirmed email delivery, missing order
+confirmations, unresolved cancellations/refunds/disputes/address changes,
+overdue delivery-consent actions, fulfilment state, and exact paid/reserved unit
+totals against both released and lifetime inventory ceilings. It is read-only:
+it does not retry work, send email, refund an order, pause sales, or change data.
 
 ## Fast UI preview
 
@@ -113,6 +129,7 @@ Public requests remain blocked unless all of the following are true:
 - a live Stripe secret and approved live Price are configured; and
 - the live Stripe Account passes the read-only activation, card capability, payout, KYC, legal identity, business/support profile, statement descriptor, agreement acceptance, and branding checks.
 - every paid live Stripe pre-order passes `npm run preorder:check:payments`, with no orphaned sessions, amount mismatches, stale refund state, or unrecorded dispute.
+- `npm run preorder:check:operations` reports `SAFE TO ACCEPT ORDERS`, with no failed or stalled operational work and exact inventory totals.
 
 The draft pages, prices, countries, tax setting, shipping treatment, product
 copy, cancellation process, and delivery wording must all be replaced or

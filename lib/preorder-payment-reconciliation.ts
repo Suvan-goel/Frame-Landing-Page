@@ -46,7 +46,6 @@ export type StripePreorderRefundSnapshot = {
   id: string;
   amount: number;
   currency: string;
-  livemode: boolean;
   paymentIntentId: string | null;
   status: string | null;
   created: number;
@@ -66,7 +65,7 @@ export type StripePreorderPaymentSnapshot = {
   livemode: boolean;
   sessionStatus: string | null;
   paymentStatus: string;
-  mode: string;
+  mode: string | null;
   checkoutIntentId: string | null;
   customerId: string | null;
   paymentIntentId: string | null;
@@ -308,12 +307,11 @@ export function evaluatePreorderPaymentReconciliation(
       stripe.sessionStatus !== "complete" ||
       stripe.paymentStatus !== "paid" ||
       stripe.mode !== "payment" ||
-      stripe.metadataFlow !== "frame_preorder" ||
-      stripe.metadataEnvironment !== input.environment
+      stripe.metadataFlow !== "frame_preorder"
     ) {
       addIssue(issues, {
         code: "stripe_session_state_mismatch",
-        message: "Stripe Checkout Session mode, environment, metadata, or paid state is invalid.",
+        message: "Stripe Checkout Session mode, live/test environment, Frame flow, or paid state is invalid.",
         ...orderContext,
       });
     }
@@ -370,12 +368,11 @@ export function evaluatePreorderPaymentReconciliation(
       }
       if (
         paymentIntent.metadataFlow !== "frame_preorder" ||
-        paymentIntent.metadataCheckoutIntentId !== order.checkoutIntentId ||
-        paymentIntent.metadataEnvironment !== input.environment
+        paymentIntent.metadataCheckoutIntentId !== order.checkoutIntentId
       ) {
         addIssue(issues, {
           code: "stripe_payment_metadata_mismatch",
-          message: "Stripe PaymentIntent metadata does not identify the stored pre-order.",
+          message: "Stripe PaymentIntent metadata does not identify the stored pre-order flow and checkout intent.",
           ...orderContext,
         });
       }
@@ -422,7 +419,6 @@ export function evaluatePreorderPaymentReconciliation(
     if (
       stripe.refunds.some(
         (refund) =>
-          refund.livemode !== (input.environment === "live") ||
           refund.currency !== order.currency ||
           refund.paymentIntentId !== payment.paymentIntentId ||
           refund.amount <= 0,
@@ -430,7 +426,17 @@ export function evaluatePreorderPaymentReconciliation(
     ) {
       addIssue(issues, {
         code: "stripe_refund_object_mismatch",
-        message: "At least one Stripe Refund has invalid environment, currency, amount, or PaymentIntent linkage.",
+        message: "At least one Stripe Refund has invalid currency, amount, or PaymentIntent linkage.",
+        ...orderContext,
+      });
+    }
+    const succeededRefundAmount = stripe.refunds
+      .filter((refund) => refund.status === "succeeded")
+      .reduce((total, refund) => total + refund.amount, 0);
+    if (charge && succeededRefundAmount !== charge.amountRefunded) {
+      addIssue(issues, {
+        code: "stripe_refund_ledger_mismatch",
+        message: "Succeeded Stripe Refund objects do not add up to the Charge refunded total.",
         ...orderContext,
       });
     }

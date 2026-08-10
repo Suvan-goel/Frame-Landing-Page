@@ -24,6 +24,7 @@ import {
   PREORDER_EMAIL_REPLY_TO,
 } from "../lib/preorder-email-readiness.ts";
 import { runPreorderPaymentReconciliation } from "../lib/preorder-payment-reconciliation.server.ts";
+import { runPreorderOperationsHealth } from "../lib/preorder-operations-health.server.ts";
 
 const target = process.argv.includes("--launch")
   ? "launch"
@@ -81,11 +82,6 @@ function isUuid(value) {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
     String(value ?? "").trim(),
   );
-}
-
-function isReservedTestRecipient(recipient) {
-  const domain = String(recipient ?? "").trim().toLowerCase().split("@").pop();
-  return domain === "example.com" || domain === "example.net" || domain === "example.org";
 }
 
 const mode = process.env.PREORDER_MODE ?? "off";
@@ -500,67 +496,33 @@ if (supabase) {
     fail("Endpoint throttling", first.error?.message ?? second.error?.message ?? "Unexpected rate-limit result.");
   }
 
-  const [webhookRecovery, pendingCancellations, emailDeliveries] = await Promise.all([
-    supabase
-      .from("stripe_webhook_events")
-      .select("event_id,status,last_attempted_at")
-      .in("status", ["failed", "processing"])
-      .limit(1_000),
-    supabase.from("preorders").select("id", { count: "exact", head: true }).in("cancellation_status", ["requested", "processing"]),
-    supabase
-      .from("preorder_email_deliveries")
-      .select("preorder_id,email_type,recipient,status,created_at")
-      .order("created_at", { ascending: false })
-      .limit(1_000),
-  ]);
-  if (webhookRecovery.error) {
-    fail("Webhook recovery", webhookRecovery.error.message);
-  } else {
-    const staleBefore = Date.now() - 5 * 60 * 1_000;
-    const unresolvedWebhooks = webhookRecovery.data.filter(
-      (event) =>
-        event.status === "failed" ||
-        (event.status === "processing" &&
-          (!event.last_attempted_at || Date.parse(event.last_attempted_at) <= staleBefore)),
-    ).length;
-    if (unresolvedWebhooks) {
-      warn(
-        "Webhook recovery",
-        `${unresolvedWebhooks} event${unresolvedWebhooks === 1 ? " needs" : "s need"} owner recovery.`,
+  try {
+    const operations = await runPreorderOperationsHealth({
+      supabase,
+      environment: targetEnvironment,
+    });
+    if (operations.healthy) {
+      pass(
+        "Operations health",
+        `${operations.summary.orders} order${operations.summary.orders === 1 ? "" : "s"}; no failed or stalled work; ${operations.summary.paidUnits} paid and ${operations.summary.reservedUnits} reserved units reconcile.`,
       );
     } else {
-      pass("Webhook recovery", "No failed or stalled events.");
+      const examples = operations.issues
+        .slice(0, 3)
+        .map((issue) => issue.code)
+        .join(", ");
+      fail(
+        "Operations health",
+        `${operations.issues.length} operational issue${operations.issues.length === 1 ? "" : "s"} found${examples ? ` (${examples})` : ""}; pause sales and run npm run preorder:check:operations for the read-only detail.`,
+      );
     }
-  }
-  if (pendingCancellations.error) {
-    fail("Pending cancellations", pendingCancellations.error.message);
-  } else if ((pendingCancellations.count ?? 0) > 0) {
-    warn(
-      "Pending cancellations",
-      `${pendingCancellations.count} record${pendingCancellations.count === 1 ? " needs" : "s need"} owner review.`,
+  } catch (error) {
+    fail(
+      "Operations health",
+      error instanceof Error
+        ? `The read-only operations check could not complete: ${error.message}`
+        : "The read-only operations check could not complete.",
     );
-  } else {
-    pass("Pending cancellations", "No outstanding records.");
-  }
-  if (emailDeliveries.error) {
-    fail("Failed email deliveries", emailDeliveries.error.message);
-  } else {
-    const latestByDeliveryStream = new Map();
-    for (const delivery of emailDeliveries.data) {
-      const key = `${delivery.preorder_id}:${delivery.email_type}:${delivery.recipient}`;
-      if (!latestByDeliveryStream.has(key)) latestByDeliveryStream.set(key, delivery);
-    }
-    const unresolvedFailures = [...latestByDeliveryStream.values()].filter(
-      (delivery) => delivery.status === "failed" && !isReservedTestRecipient(delivery.recipient),
-    ).length;
-    if (unresolvedFailures) {
-      warn(
-        "Failed email deliveries",
-        `${unresolvedFailures} latest delivery ${unresolvedFailures === 1 ? "state needs" : "states need"} owner review.`,
-      );
-    } else {
-      pass("Failed email deliveries", "No unresolved delivery failures.");
-    }
   }
 }
 

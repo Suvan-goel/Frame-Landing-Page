@@ -14,6 +14,7 @@ import {
 } from "./transactional-email-design";
 import { companyLegalIdentityLine, SUPPORT_EMAIL } from "./company";
 import { PREORDER_EMAIL_REPLY_TO } from "./preorder-email-readiness";
+import { replayStoredPreorderEmailProviderEvents } from "./preorder-email-delivery-events.server";
 
 const PREORDER_SUPPORT_LINE = `Support: ${SUPPORT_EMAIL}`;
 
@@ -68,6 +69,7 @@ async function sendPreorderEmail(input: {
       recipient: input.recipient,
       delivery_key: input.deliveryKey,
       status: "pending",
+      provider_tracking_expected: true,
       error_message: null,
       updated_at: now,
     })
@@ -83,13 +85,24 @@ async function sendPreorderEmail(input: {
       .eq("delivery_key", input.deliveryKey)
       .single();
     if (existing.error) throw existing.error;
-    if (existing.data.status === "sent") return existing.data.sent_at as string;
+    if (
+      ["sent", "delivered", "delayed", "bounced", "complained", "suppressed"].includes(
+        existing.data.status,
+      )
+    ) {
+      return existing.data.sent_at as string;
+    }
     if (existing.data.status === "pending") return existing.data.sent_at as string | null;
 
     const retryQueued = await supabase
       .from("preorder_email_deliveries")
       .update({
         status: "pending",
+        provider_message_id: null,
+        provider_tracking_expected: true,
+        last_event: null,
+        last_event_at: null,
+        delivered_at: null,
         error_message: null,
         updated_at: now,
       })
@@ -171,12 +184,25 @@ async function sendPreorderEmail(input: {
     .update({
       status: "sent",
       provider_message_id: result.id ?? null,
+      provider_tracking_expected: true,
+      last_event: "email.sent",
+      last_event_at: sentAt,
       sent_at: sentAt,
       error_message: null,
       updated_at: sentAt,
     })
     .eq("delivery_key", input.deliveryKey);
   if (delivered.error) throw delivered.error;
+  if (result.id) {
+    try {
+      await replayStoredPreorderEmailProviderEvents({
+        supabase,
+        providerMessageId: result.id,
+      });
+    } catch (error) {
+      console.error("Pre-order email outcome replay failed", error);
+    }
+  }
   return sentAt;
 }
 

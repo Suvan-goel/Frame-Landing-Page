@@ -81,7 +81,7 @@ export default async function PreorderAdminPage({
     supabase
       .from("preorder_email_deliveries")
       .select("id,preorders!inner(environment)", { count: "exact", head: true })
-      .eq("status", "failed")
+      .in("status", ["failed", "delayed", "bounced", "complained", "suppressed"])
       .eq("preorders.environment", environment),
     supabase
       .from("stripe_webhook_events")

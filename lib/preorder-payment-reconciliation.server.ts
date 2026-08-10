@@ -225,7 +225,6 @@ async function stripePaymentSnapshot(
       id: refund.id,
       amount: refund.amount,
       currency: refund.currency,
-      livemode: refund.livemode,
       paymentIntentId: stripeId(refund.payment_intent),
       status: refund.status,
       created: refund.created,
