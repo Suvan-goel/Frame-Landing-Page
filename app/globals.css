@@ -6528,10 +6528,6 @@ h2 {
   line-height: 1.6;
 }
 
-.privacy-page .legal-shell > .text-link {
-  margin-left: 308px;
-}
-
 .preorder-terms-return {
   min-width: 210px;
   margin-left: 308px;
@@ -6645,7 +6641,6 @@ h2 {
   }
 
   .preorder-terms-page .legal-disclaimer,
-  .privacy-page .legal-shell > .text-link,
   .preorder-terms-return {
     margin-left: 0;
   }

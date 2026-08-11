@@ -1,5 +1,5 @@
-/* eslint-disable @next/next/no-html-link-for-pages */
 import type { Metadata } from "next";
+import { HistoryBackLink } from "../components/history-back-link";
 import { SiteHeader } from "../components/site-header";
 import { isFoundingContributorSalesPageEnabled } from "@/lib/contributor-sales-page.server";
 import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
@@ -304,9 +304,12 @@ export default async function PrivacyPage() {
           </p>
         ) : null}
 
-        <a className="text-link" href="/">
-          <span aria-hidden="true">←</span> Back to home
-        </a>
+        <HistoryBackLink
+          className="button button--secondary preorder-terms-return"
+          fallbackHref="/"
+        >
+          Exit
+        </HistoryBackLink>
       </article>
     </main>
   );

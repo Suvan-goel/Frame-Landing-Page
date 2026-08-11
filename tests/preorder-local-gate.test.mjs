@@ -376,7 +376,10 @@ test("keeps the funnel usable only on loopback during development", async () => 
   assert.match(refunds, /rel="canonical" href="https:\/\/framewearable\.com\/preorder\/refunds"/);
 
   assert.equal(privacyResponse.status, 200);
-  assert.match(await privacyResponse.text(), /Device pre-orders/);
+  const privacy = await privacyResponse.text();
+  assert.match(privacy, /Device pre-orders/);
+  assert.match(privacy, /preorder-terms-return/);
+  assert.match(privacy, />Exit<\/a>/);
 });
 
 test("keeps the public homepage free of pre-order discovery and blocks webhook browsing", async () => {
