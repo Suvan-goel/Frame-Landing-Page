@@ -5,10 +5,15 @@ import { usePathname } from "next/navigation";
 import { useEffect, useState, useSyncExternalStore } from "react";
 import {
   effectiveTrackingConsent,
-  requestTrackingPolicyMode,
   type OptionalTrackingConsent,
   type TrackingPolicyMode,
 } from "../../lib/tracking-policy";
+import {
+  GEO_POLICY_UPDATED_EVENT,
+  readCachedTrackingPolicy,
+  requestTrackingPolicyAttestation,
+  type GeoPolicyResult,
+} from "../../lib/geo-attestation";
 import {
   META_PIXEL_ID,
   META_TRACKING_STATE_VERSION,
@@ -277,7 +282,10 @@ export function getMetaTrackingContext(): MetaTrackingClientState {
   };
 }
 
-async function notifyMetaLeadDelivery(eventId: string) {
+async function notifyMetaLeadDelivery(
+  eventId: string,
+  geoPolicy: GeoPolicyResult,
+) {
   try {
     const response = await fetch("/api/waitlist", {
       method: "POST",
@@ -290,6 +298,10 @@ async function notifyMetaLeadDelivery(eventId: string) {
         metaEventId: eventId,
         browserLeadAttempted: true,
         tracking: getMetaTrackingContext(),
+        geoAttestationToken: geoPolicy.token,
+        geoResolutionReason: geoPolicy.resolutionReason,
+        geoRetryAttempted: geoPolicy.retryAttempted,
+        geoRetrySucceeded: geoPolicy.retrySucceeded,
       }),
     });
     return response.ok;
@@ -302,6 +314,19 @@ async function deliverPendingMetaLead(lead: PendingMetaLead) {
   if (metaLeadDeliveriesInFlight.has(lead.eventId)) return;
   metaLeadDeliveriesInFlight.add(lead.eventId);
   try {
+    const geoPolicy = await requestTrackingPolicyAttestation();
+    const currentConsent = effectiveTrackingConsent({
+      storedConsent: readOptionalTrackingConsent(),
+      policyMode: geoPolicy.mode,
+      globalPrivacyControl: navigator.globalPrivacyControl === true,
+    });
+    inMemoryEffectiveTrackingConsent = currentConsent;
+    if (currentConsent !== "granted") {
+      removeMetaPixel();
+      clearMetaCookies();
+      if (currentConsent === "denied") clearPendingMetaLeads();
+      return;
+    }
     if (!metaLeadWasRecorded(lead.eventId)) {
       const fbq = window.fbq;
       if (typeof fbq !== "function") return;
@@ -315,7 +340,7 @@ async function deliverPendingMetaLead(lead: PendingMetaLead) {
       markMetaLeadRecorded(lead.eventId);
     }
 
-    if (await notifyMetaLeadDelivery(lead.eventId)) {
+    if (await notifyMetaLeadDelivery(lead.eventId, geoPolicy)) {
       writePendingMetaLeads(
         readPendingMetaLeads().filter(
           (candidate) => candidate.eventId !== lead.eventId,
@@ -376,9 +401,9 @@ export function MetaPixelRouteGuard({
     readServerOptionalTrackingConsent,
   );
   const [preferencesOpen, setPreferencesOpen] = useState(false);
-  const [policyMode, setPolicyMode] = useState<TrackingPolicyMode | "pending">(
-    "pending",
-  );
+  const [geoPolicy, setGeoPolicy] = useState<GeoPolicyResult | null>(null);
+  const policyMode: TrackingPolicyMode | "pending" =
+    geoPolicy?.mode ?? "pending";
   const globalPrivacyControl = useSyncExternalStore(
     subscribeToGlobalPrivacyControl,
     readGlobalPrivacyControl,
@@ -404,19 +429,43 @@ export function MetaPixelRouteGuard({
     !globalPrivacyControl;
 
   useEffect(() => {
-    if (!privacyChoicesAllowedOnRoute || policyMode !== "pending") return;
+    if (!privacyChoicesAllowedOnRoute) return;
 
-    const controller = new AbortController();
     let active = true;
-    void requestTrackingPolicyMode({ signal: controller.signal }).then((mode) => {
-      if (active) setPolicyMode(mode);
-    });
+    let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+    const applyPolicy = (result: GeoPolicyResult) => {
+      if (!active) return;
+      setGeoPolicy(result);
+      if (refreshTimer) clearTimeout(refreshTimer);
+      refreshTimer = null;
+      if (result.expiresAt !== null) {
+        const refreshIn = Math.max(
+          1_000,
+          (result.expiresAt - Math.floor(Date.now() / 1_000) - 15) * 1_000,
+        );
+        refreshTimer = setTimeout(() => void loadPolicy(true), refreshIn);
+      }
+    };
+    const loadPolicy = async (forceRefresh = false) => {
+      const result = await requestTrackingPolicyAttestation({ forceRefresh });
+      applyPolicy(result);
+    };
+    const useLatestSharedPolicy = () => {
+      const latest = readCachedTrackingPolicy();
+      if (latest) applyPolicy(latest);
+    };
+    window.addEventListener(GEO_POLICY_UPDATED_EVENT, useLatestSharedPolicy);
+    void loadPolicy();
 
     return () => {
       active = false;
-      controller.abort();
+      window.removeEventListener(
+        GEO_POLICY_UPDATED_EVENT,
+        useLatestSharedPolicy,
+      );
+      if (refreshTimer) clearTimeout(refreshTimer);
     };
-  }, [policyMode, privacyChoicesAllowedOnRoute]);
+  }, [privacyChoicesAllowedOnRoute]);
 
   useEffect(() => {
     inMemoryPixelAllowedOnRoute = pixelAllowedOnRoute;

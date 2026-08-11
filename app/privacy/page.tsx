@@ -174,7 +174,12 @@ export default async function PrivacyPage() {
             it off or enabled Global Privacy Control in their browser. Permitted
             Meta processes Pixel information under its own privacy policy. We do
             not send your name, email address, age, gender, survey selections,
-            health-related answers, or written responses through the Pixel. If
+            health-related answers, or written responses through the Pixel.
+            Frame uses Netlify’s platform-derived country and US state to select
+            this regional policy. Frame receives a short-lived signed result
+            containing only coarse country, state, resolution, and policy fields;
+            it does not send Netlify your form entries or Meta click identifier
+            for this check. If
             Frame enables the Meta Conversions API in the future, the same regional
             policy, privacy choice, and Global Privacy Control rules will apply,
             and this notice will describe the permitted data used for matching.
@@ -205,7 +210,8 @@ export default async function PrivacyPage() {
             providers that help us host, secure, operate the website, store
             submissions, and deliver messages, or when required by law. These
             providers currently include Supabase for data storage, Resend for
-            email delivery, and our website hosting provider.
+            email delivery, Netlify for the coarse regional policy check described
+            above, and our website hosting provider.
             {showContributorAreas
               ? " The local membership flow also uses Stripe for payments and Supabase for member authentication."
               : null}

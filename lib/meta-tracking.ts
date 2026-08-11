@@ -4,7 +4,6 @@ import type {
 } from "./tracking-policy";
 
 export const META_PIXEL_ID = "1068997465474786";
-export const META_TRACKING_POLICY_HEADER = "x-frame-tracking-policy";
 export const META_TRACKING_STATE_VERSION = 1;
 
 export type MetaTrackingClientState = {

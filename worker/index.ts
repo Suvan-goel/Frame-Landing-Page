@@ -34,11 +34,6 @@ import {
   verifyPreorderLiveSmokeAccessToken,
 } from "../lib/preorder-live-smoke-access";
 import { preorderReviewRedirectPath } from "../lib/attribution";
-import {
-  TRACKING_POLICY_ENDPOINT,
-  trackingPolicyForRequest,
-} from "../lib/tracking-policy";
-import { META_TRACKING_POLICY_HEADER } from "../lib/meta-tracking";
 
 interface Env {
   ASSETS: Fetcher;
@@ -134,6 +129,7 @@ function contentSecurityPolicy(url: URL, env: Env) {
     ...configuredConnectionOrigins(env),
     "https://connect.facebook.net",
     "https://www.facebook.com",
+    "https://frame-geo-attestation.netlify.app",
   ];
   const directives = [
     "default-src 'self'",
@@ -429,29 +425,6 @@ const worker = {
       }));
     }
 
-    if (url.pathname === TRACKING_POLICY_ENDPOINT) {
-      if (request.method !== "GET" && request.method !== "HEAD") {
-        return respond(new Response("Method not allowed", {
-          status: 405,
-          headers: {
-            Allow: "GET, HEAD",
-            "Cache-Control": "private, no-store",
-            "Content-Type": "text/plain; charset=utf-8",
-            "X-Content-Type-Options": "nosniff",
-          },
-        }));
-      }
-
-      const body = JSON.stringify({ mode: trackingPolicyForRequest(request) });
-      return respond(new Response(request.method === "HEAD" ? null : body, {
-        headers: {
-          "Cache-Control": "private, no-store",
-          "Content-Type": "application/json; charset=utf-8",
-          "X-Content-Type-Options": "nosniff",
-        },
-      }));
-    }
-
     if (
       url.pathname === "/preorder" &&
       (request.method === "GET" || request.method === "HEAD")
@@ -508,11 +481,6 @@ const worker = {
       "x-frame-preorder-live-smoke-request",
       liveSmokeRequestAllowed ? "1" : "0",
     );
-    appHeaders.set(
-      META_TRACKING_POLICY_HEADER,
-      trackingPolicyForRequest(request),
-    );
-
     let appRequest = new Request(request, { headers: appHeaders });
     if (appUrl !== url) {
       appRequest = new Request(appUrl, appRequest);

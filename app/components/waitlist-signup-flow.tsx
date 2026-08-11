@@ -26,6 +26,7 @@ import {
   trackMetaQualifiedLead,
   trackWaitlistEvent,
 } from "./meta-pixel";
+import { requestTrackingPolicyAttestation } from "@/lib/geo-attestation";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_LONG_TEXT_LENGTH = 750;
@@ -346,6 +347,7 @@ export function WaitlistSignupProvider({
         trackWaitlistEvent("waitlist_email_submitted", { placement });
 
         try {
+          const geoPolicy = await requestTrackingPolicyAttestation();
           const response = await fetch("/api/waitlist", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -355,6 +357,10 @@ export function WaitlistSignupProvider({
               website,
               placement,
               tracking: getMetaTrackingContext(),
+              geoAttestationToken: geoPolicy.token,
+              geoResolutionReason: geoPolicy.resolutionReason,
+              geoRetryAttempted: geoPolicy.retryAttempted,
+              geoRetrySucceeded: geoPolicy.retrySucceeded,
               ...attributionPayload(),
             }),
           });

@@ -168,26 +168,16 @@ test("gives Global Privacy Control precedence over regional and stored choices",
   );
 });
 
-test("returns the visitor-specific tracking policy without caching it", async () => {
-  const california = await render(
+test("retires the unavailable request.cf tracking-policy endpoint", async () => {
+  const response = await render(
     "/api/privacy/tracking-policy",
     undefined,
     "https://framewearable.com",
     {},
     { country: "US", regionCode: "CA" },
   );
-  const washington = await render(
-    "/api/privacy/tracking-policy",
-    undefined,
-    "https://framewearable.com",
-    {},
-    { country: "US", regionCode: "WA" },
-  );
 
-  assert.equal(california.status, 200);
-  assert.deepEqual(await california.json(), { mode: "us-opt-out" });
-  assert.match(california.headers.get("cache-control") ?? "", /no-store/);
-  assert.deepEqual(await washington.json(), { mode: "explicit-consent" });
+  assert.equal(response.status, 404);
 });
 
 test("permanently redirects www requests to the canonical host", async () => {
@@ -334,6 +324,7 @@ test("applies restrictive browser security headers without blocking configured i
   assert.match(policy, /frame-ancestors 'none'/);
   assert.match(policy, /https:\/\/connect\.facebook\.net/);
   assert.match(policy, /https:\/\/www\.facebook\.com/);
+  assert.match(policy, /https:\/\/frame-geo-attestation\.netlify\.app/);
   assert.match(policy, /https:\/\/frame-project\.supabase\.co/);
   assert.match(policy, /wss:\/\/frame-project\.supabase\.co/);
   assert.match(policy, /upgrade-insecure-requests/);
@@ -690,6 +681,32 @@ test("keeps Possibly aligned across waitlist writers and database storage", asyn
   );
 });
 
+test("adds only coarse nullable geo-attestation diagnostics", async () => {
+  const migration = await readFile(
+    new URL(
+      "../supabase/migrations/20260811150000_add_meta_geo_attestation_diagnostics.sql",
+      import.meta.url,
+    ),
+    "utf8",
+  );
+  for (const column of [
+    "meta_geo_source",
+    "meta_geo_country",
+    "meta_geo_region_code",
+    "meta_geo_resolution_reason",
+    "meta_geo_policy_version",
+    "meta_geo_retry_attempted",
+    "meta_geo_retry_succeeded",
+  ]) {
+    assert.match(migration, new RegExp(`add column if not exists ${column}`));
+  }
+  assert.doesNotMatch(
+    migration,
+    /add column[^;]*(ip|city|postal|postcode|latitude|longitude|token|header)/i,
+  );
+  assert.doesNotMatch(migration, /update public\.waitlist_signups/i);
+});
+
 test("uses generated raster visuals and keeps the page editable", async () => {
   const [
     page,
@@ -876,6 +893,16 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   );
   assert.match(metaPixel, /eventID: lead\.eventId/);
   assert.match(metaPixel, /frame-meta-pending-leads-v1/);
+  assert.match(metaPixel, /metaLeadDeliveriesInFlight\.has\(lead\.eventId\)/);
+  assert.match(metaPixel, /if \(!metaLeadWasRecorded\(lead\.eventId\)\)/);
+  assert.match(
+    metaPixel,
+    /markMetaLeadRecorded\(lead\.eventId\);[\s\S]*notifyMetaLeadDelivery\(lead\.eventId, geoPolicy\)/,
+  );
+  assert.match(
+    metaPixel,
+    /requestTrackingPolicyAttestation\(\);[\s\S]*currentConsent !== "granted"[\s\S]*"Lead"/,
+  );
   assert.match(metaPixel, /action: "deliver_meta_lead"/);
   assert.match(waitlistFlow, /tracking: getMetaTrackingContext\(\)/);
   assert.match(metaPixel, /frame-meta-lead-recorded-v1/);
@@ -887,7 +914,10 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(metaPixel, /preferencesOpen \|\| \(pixelAllowedOnRoute && requiresInitialChoice\)/);
   assert.match(metaPixel, /navigator\.globalPrivacyControl === true/);
   assert.match(metaPixel, /readServerGlobalPrivacyControl/);
-  assert.match(metaPixel, /requestTrackingPolicyMode/);
+  assert.match(metaPixel, /requestTrackingPolicyAttestation/);
+  assert.match(metaPixel, /GEO_POLICY_UPDATED_EVENT/);
+  assert.match(waitlistFlow, /geoAttestationToken: geoPolicy\.token/);
+  assert.match(metaPixel, /geoAttestationToken: geoPolicy\.token/);
   assert.doesNotMatch(metaPixel, /style=\{\{[^}]*position: "fixed"/);
   assert.match(
     css,
@@ -1089,7 +1119,7 @@ test("rejects an invalid email before creating a waitlist record", async () => {
   assert.match(await response.text(), /valid email address/i);
 });
 
-test("returns one stable Lead ID and applies trusted US and GPC policy to CAPI", async () => {
+test("returns one stable Lead ID and rejects unsigned request.cf or header policy", async () => {
   const tracking = {
     version: 1,
     storedConsent: null,
@@ -1139,15 +1169,18 @@ test("returns one stable Lead ID and applies trusted US and GPC policy to CAPI",
   assert.equal(captured.leadCreated, true);
   assert.match(captured.metaEventId, /^[0-9a-f-]{36}$/i);
 
-  const allowedReplay = await postWaitlist({
-    action: "deliver_meta_lead",
-    metaEventId: captured.metaEventId,
-    browserLeadAttempted: true,
-    tracking,
-  });
-  const allowedResult = await allowedReplay.json();
-  assert.equal(allowedResult.permitted, true);
-  assert.equal(allowedResult.capiStatus, "skipped_not_configured");
+  const unsignedReplay = await postWaitlist(
+    {
+      action: "deliver_meta_lead",
+      metaEventId: captured.metaEventId,
+      browserLeadAttempted: true,
+      tracking,
+    },
+    { "x-frame-tracking-policy": "us-opt-out" },
+  );
+  const unsignedResult = await unsignedReplay.json();
+  assert.equal(unsignedResult.permitted, false);
+  assert.equal(unsignedResult.capiStatus, "skipped_not_permitted");
 
   const gpcReplay = await postWaitlist(
     {

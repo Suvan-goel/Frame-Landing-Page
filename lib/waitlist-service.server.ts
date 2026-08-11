@@ -32,6 +32,13 @@ export type MetaTrackingDiagnosticsUpdate = {
   capiSentAt?: string | null;
   capiLastError?: string | null;
   recordedAt?: string;
+  geoSource?: "netlify_context_geo" | "unknown";
+  geoCountry?: string | null;
+  geoRegionCode?: string | null;
+  geoResolutionReason?: string;
+  geoPolicyVersion?: string | null;
+  geoRetryAttempted?: boolean;
+  geoRetrySucceeded?: boolean;
 };
 
 export type NewWaitlistRecord = {

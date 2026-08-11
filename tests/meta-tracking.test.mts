@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { createHash, generateKeyPairSync } from "node:crypto";
 import test from "node:test";
 import {
   buildMetaLeadPayload,
@@ -9,9 +10,98 @@ import {
   META_PIXEL_ID,
   resolveMetaTrackingDecision,
 } from "../lib/meta-tracking";
-import { requestTrackingPolicyMode } from "../lib/tracking-policy";
+import {
+  GEO_ATTESTATION_AUDIENCE,
+  GEO_ATTESTATION_ENDPOINT,
+  GEO_ATTESTATION_PUBLIC_KEY_SHA256_FINGERPRINT,
+  GEO_POLICY_VERSION,
+  requestTrackingPolicyAttestation,
+  submittedTrackingPolicy,
+  trackingPolicyForRegion,
+  verifyGeoAttestationToken,
+} from "../lib/geo-attestation";
 
 const eventId = "10000000-0000-4000-8000-000000000001";
+const NOW = 1_786_400_000;
+const testKeys = generateKeyPairSync("ed25519");
+const testPrivateKeyPkcs8Base64 = testKeys.privateKey
+  .export({ type: "pkcs8", format: "der" })
+  .toString("base64");
+const testPublicKeySpkiBase64 = testKeys.publicKey
+  .export({ type: "spki", format: "der" })
+  .toString("base64");
+
+function base64Url(value: string) {
+  return Buffer.from(value, "utf8").toString("base64url");
+}
+
+function attestationPayload(
+  country: string | null,
+  region: string | null,
+  overrides: Record<string, unknown> = {},
+) {
+  let resolutionOutcome = "resolved_non_us";
+  if (country === null) resolutionOutcome = "country_unresolved";
+  if (country === "US" && region === null) {
+    resolutionOutcome = "us_subdivision_missing";
+  }
+  if (country === "US" && region && ["WA", "NV"].includes(region)) {
+    resolutionOutcome = "resolved_explicit_consent_us_state";
+  }
+  if (country === "US" && region && !["WA", "NV"].includes(region)) {
+    resolutionOutcome = "resolved_us_state";
+  }
+  return {
+    effective_policy: trackingPolicyForRegion(country, region),
+    country_code: country,
+    subdivision_code: country === "US" ? region : null,
+    geo_source: "netlify_context_geo",
+    resolution_outcome: resolutionOutcome,
+    policy_version: GEO_POLICY_VERSION,
+    issued_at: NOW,
+    expires_at: NOW + 300,
+    ...overrides,
+  };
+}
+
+async function signTestToken(
+  payload: Record<string, unknown>,
+  audience = GEO_ATTESTATION_AUDIENCE,
+) {
+  const header = base64Url(
+    JSON.stringify({ alg: "EdDSA", aud: audience, typ: "JWT" }),
+  );
+  const body = base64Url(JSON.stringify(payload));
+  const signingInput = `${header}.${body}`;
+  const privateKey = await crypto.subtle.importKey(
+    "pkcs8",
+    Buffer.from(testPrivateKeyPkcs8Base64, "base64"),
+    { name: "Ed25519" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign(
+    "Ed25519",
+    privateKey,
+    new TextEncoder().encode(signingInput),
+  );
+  return `${signingInput}.${Buffer.from(signature).toString("base64url")}`;
+}
+
+async function responseFor(
+  country: string | null,
+  region: string | null,
+  overrides: Record<string, unknown> = {},
+) {
+  return Response.json({
+    token: await signTestToken(attestationPayload(country, region, overrides)),
+  });
+}
+
+const verifyOptions = {
+  nowSeconds: NOW,
+  publicKeySpkiBase64: testPublicKeySpkiBase64,
+};
 const conversionInput = {
   eventId,
   email: "Tracking.Test+Lead@Example.com",
@@ -61,46 +151,203 @@ test("Meta delivery permission fails closed and honors consent and GPC", () => {
     }),
     { permitted: false, reason: "denied_explicit_consent_required" },
   );
-  assert.equal(
+  assert.deepEqual(
     resolveMetaTrackingDecision({
       policyMode: "explicit-consent",
       storedConsent: "granted",
       globalPrivacyControl: false,
       clientStateValid: true,
-    }).permitted,
-    true,
+    }),
+    { permitted: true, reason: "allowed_explicit_consent" },
   );
-  assert.equal(
+  assert.deepEqual(
     resolveMetaTrackingDecision({
       policyMode: "us-opt-out",
       storedConsent: null,
       globalPrivacyControl: false,
       clientStateValid: true,
-    }).permitted,
-    true,
+    }),
+    { permitted: true, reason: "allowed_us_opt_out" },
   );
 });
 
-test("tracking policy request returns the regional mode and fails closed", async () => {
-  const usOptOut = await requestTrackingPolicyMode({
-    fetcher: (async () =>
-      Response.json({ mode: "us-opt-out" })) as typeof fetch,
-  });
-  assert.equal(usOptOut, "us-opt-out");
-
-  const malformed = await requestTrackingPolicyMode({
-    fetcher: (async () => Response.json({ mode: "unexpected" })) as typeof fetch,
-  });
-  assert.equal(malformed, "explicit-consent");
-
-  const unavailable = await requestTrackingPolicyMode({
-    fetcher: (async () =>
-      new Response("Unavailable", { status: 503 })) as typeof fetch,
-  });
-  assert.equal(unavailable, "explicit-consent");
+test("configured production public-key fingerprint is pinned", () => {
+  const fingerprint = createHash("sha256")
+    .update(
+      Buffer.from(
+        "MCowBQYDK2VwAyEAxEG74SlKrBlq8FVzZFgUd0u4Y5Jt7AjyNUyjoIzXZKA=",
+        "base64",
+      ),
+    )
+    .digest("hex")
+    .match(/.{2}/gu)
+    ?.join(":");
+  assert.equal(fingerprint, GEO_ATTESTATION_PUBLIC_KEY_SHA256_FINGERPRINT);
 });
 
-test("tracking policy request has a bounded fail-closed timeout", async () => {
+for (const [name, country, region, expectedMode] of [
+  ["California", "US", "CA", "us-opt-out"],
+  ["New York", "US", "NY", "us-opt-out"],
+  ["Washington", "US", "WA", "explicit-consent"],
+  ["Nevada", "US", "NV", "explicit-consent"],
+  ["UK", "GB", null, "explicit-consent"],
+  ["France", "FR", null, "explicit-consent"],
+  ["missing country", null, null, "explicit-consent"],
+] as const) {
+  test(`${name} signed attestation resolves to ${expectedMode}`, async () => {
+    const result = await requestTrackingPolicyAttestation({
+      ...verifyOptions,
+      fetcher: (async () => responseFor(country, region)) as typeof fetch,
+      wait: async () => undefined,
+    });
+    assert.equal(result.mode, expectedMode);
+    assert.equal(result.country, country);
+    assert.equal(result.regionCode, country === "US" ? region : null);
+  });
+}
+
+test("US missing state retries once and accepts a valid California result", async () => {
+  let requests = 0;
+  const responses = [
+    await responseFor("US", null),
+    await responseFor("US", "CA"),
+  ];
+  const result = await requestTrackingPolicyAttestation({
+    ...verifyOptions,
+    fetcher: (async () => responses[requests++]) as typeof fetch,
+    wait: async () => undefined,
+  });
+  assert.equal(requests, 2);
+  assert.equal(result.mode, "us-opt-out");
+  assert.equal(result.resolutionReason, "resolved_after_retry");
+  assert.equal(result.retryAttempted, true);
+  assert.equal(result.retrySucceeded, true);
+});
+
+for (const [name, outcome, expectedReason] of [
+  ["missing", "us_subdivision_missing", "missing_region"],
+  ["invalid", "us_subdivision_invalid", "invalid_region"],
+] as const) {
+  test(`US ${name} state twice fails closed after exactly one retry`, async () => {
+    let requests = 0;
+    const fetcher = (async () => {
+      requests += 1;
+      return responseFor("US", null, { resolution_outcome: outcome });
+    }) as typeof fetch;
+    const result = await requestTrackingPolicyAttestation({
+      ...verifyOptions,
+      fetcher,
+      wait: async () => undefined,
+    });
+    assert.equal(requests, 2);
+    assert.equal(result.mode, "explicit-consent");
+    assert.equal(result.resolutionReason, expectedReason);
+    assert.equal(result.retryAttempted, true);
+    assert.equal(result.retrySucceeded, false);
+  });
+}
+
+test("valid signed token is accepted by browser and server verification", async () => {
+  const token = await signTestToken(attestationPayload("US", "CA"));
+  const verified = await verifyGeoAttestationToken(token, verifyOptions);
+  const server = await submittedTrackingPolicy(token, {}, verifyOptions);
+  assert.equal(verified.subdivision_code, "CA");
+  assert.equal(server.mode, "us-opt-out");
+  assert.equal(server.token, token);
+});
+
+test("tampered token is rejected and fails closed", async () => {
+  const token = await signTestToken(attestationPayload("US", "CA"));
+  const [header, payload, signature] = token.split(".");
+  const tampered = `${header}.${payload.slice(0, -1)}${payload.endsWith("A") ? "B" : "A"}.${signature}`;
+  const result = await submittedTrackingPolicy(tampered, {}, verifyOptions);
+  assert.equal(result.mode, "explicit-consent");
+  assert.equal(result.resolutionReason, "invalid_signature");
+});
+
+test("expired token is rejected and fails closed", async () => {
+  const token = await signTestToken(
+    attestationPayload("US", "CA", {
+      issued_at: NOW - 600,
+      expires_at: NOW - 300,
+    }),
+  );
+  const result = await submittedTrackingPolicy(token, {}, verifyOptions);
+  assert.equal(result.mode, "explicit-consent");
+  assert.equal(result.resolutionReason, "expired_token");
+});
+
+test("wrong audience and policy version are rejected", async () => {
+  const wrongAudience = await signTestToken(
+    attestationPayload("US", "CA"),
+    "attacker.example",
+  );
+  const wrongVersion = await signTestToken(
+    attestationPayload("US", "CA", { policy_version: "wrong-version" }),
+  );
+  assert.equal(
+    (await submittedTrackingPolicy(wrongAudience, {}, verifyOptions))
+      .resolutionReason,
+    "wrong_audience",
+  );
+  assert.equal(
+    (await submittedTrackingPolicy(wrongVersion, {}, verifyOptions))
+      .resolutionReason,
+    "wrong_version",
+  );
+});
+
+test("unexpected claims and unsigned browser policy fail closed", async () => {
+  const extraClaim = await signTestToken({
+    ...attestationPayload("US", "CA"),
+    browser_policy: "us-opt-out",
+  });
+  assert.equal(
+    (await submittedTrackingPolicy(extraClaim, {}, verifyOptions)).mode,
+    "explicit-consent",
+  );
+  const unsigned = await submittedTrackingPolicy(
+    null,
+    { resolutionReason: "resolved_first_attempt" },
+    verifyOptions,
+  );
+  assert.equal(unsigned.mode, "explicit-consent");
+  assert.equal(unsigned.resolutionReason, "missing_token");
+});
+
+test("Netlify request is data-free and sends no credentials, referrer, query, or body", async () => {
+  let requestedUrl = "";
+  let requestedInit: RequestInit | undefined;
+  const result = await requestTrackingPolicyAttestation({
+    ...verifyOptions,
+    fetcher: (async (input, init) => {
+      requestedUrl = String(input);
+      requestedInit = init;
+      return responseFor("US", "CA");
+    }) as typeof fetch,
+  });
+  assert.equal(result.mode, "us-opt-out");
+  assert.equal(requestedUrl, GEO_ATTESTATION_ENDPOINT);
+  assert.equal(new URL(requestedUrl).search, "");
+  assert.equal(requestedInit?.method, "GET");
+  assert.equal(requestedInit?.credentials, "omit");
+  assert.equal(requestedInit?.referrerPolicy, "no-referrer");
+  assert.equal(requestedInit?.body, undefined);
+  const serialized = JSON.stringify(requestedInit).toLowerCase();
+  assert.doesNotMatch(
+    serialized,
+    /email|name|fbclid|meta_click|survey|blood|health|demographic|free.?text/u,
+  );
+});
+
+test("Netlify unavailability and timeout fail closed", async () => {
+  const unavailable = await requestTrackingPolicyAttestation({
+    ...verifyOptions,
+    fetcher: (async () => new Response(null, { status: 503 })) as typeof fetch,
+  });
+  assert.equal(unavailable.mode, "explicit-consent");
+  assert.equal(unavailable.resolutionReason, "attestation_fetch_failed");
+
   let requestAborted = false;
   const fetcher = ((_input: RequestInfo | URL, init?: RequestInit) =>
     new Promise<Response>((_resolve, reject) => {
@@ -113,10 +360,33 @@ test("tracking policy request has a bounded fail-closed timeout", async () => {
         { once: true },
       );
     })) as typeof fetch;
-
-  const result = await requestTrackingPolicyMode({ fetcher, timeoutMs: 10 });
-  assert.equal(result, "explicit-consent");
+  const result = await requestTrackingPolicyAttestation({
+    ...verifyOptions,
+    fetcher,
+    timeoutMs: 10,
+  });
+  assert.equal(result.mode, "explicit-consent");
+  assert.equal(result.resolutionReason, "attestation_timeout");
   assert.equal(requestAborted, true);
+});
+
+test("browser and server derive the same policy from the same signed decision", async () => {
+  const browser = await requestTrackingPolicyAttestation({
+    ...verifyOptions,
+    fetcher: (async () => responseFor("US", "NY")) as typeof fetch,
+  });
+  const server = await submittedTrackingPolicy(
+    browser.token,
+    {
+      resolutionReason: browser.resolutionReason,
+      retryAttempted: browser.retryAttempted,
+      retrySucceeded: browser.retrySucceeded,
+    },
+    verifyOptions,
+  );
+  assert.equal(browser.mode, server.mode);
+  assert.equal(browser.country, server.country);
+  assert.equal(browser.regionCode, server.regionCode);
 });
 
 test("CAPI Lead payload uses the stable event ID and contains no survey data", async () => {

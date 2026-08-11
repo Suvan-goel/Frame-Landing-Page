@@ -22,12 +22,14 @@ import { getWaitlistPreviewRepository } from "@/lib/waitlist-preview.server";
 import { submitLegacyWaitlist } from "@/lib/legacy-waitlist-submission.server";
 import { sendMetaLeadConversion } from "@/lib/meta-conversions.server";
 import {
-  META_TRACKING_POLICY_HEADER,
   META_TRACKING_STATE_VERSION,
   resolveMetaTrackingDecision,
   type MetaTrackingClientState,
 } from "@/lib/meta-tracking";
-import type { TrackingPolicyMode } from "@/lib/tracking-policy";
+import {
+  submittedTrackingPolicy,
+  type GeoPolicyResult,
+} from "@/lib/geo-attestation";
 
 export const dynamic = "force-dynamic";
 
@@ -241,6 +243,27 @@ function waitlistRepository(supabase: SupabaseClient): WaitlistRepository {
       if (update.recordedAt !== undefined) {
         values.meta_tracking_recorded_at = update.recordedAt;
       }
+      if (update.geoSource !== undefined) {
+        values.meta_geo_source = update.geoSource;
+      }
+      if (update.geoCountry !== undefined) {
+        values.meta_geo_country = update.geoCountry;
+      }
+      if (update.geoRegionCode !== undefined) {
+        values.meta_geo_region_code = update.geoRegionCode;
+      }
+      if (update.geoResolutionReason !== undefined) {
+        values.meta_geo_resolution_reason = update.geoResolutionReason;
+      }
+      if (update.geoPolicyVersion !== undefined) {
+        values.meta_geo_policy_version = update.geoPolicyVersion;
+      }
+      if (update.geoRetryAttempted !== undefined) {
+        values.meta_geo_retry_attempted = update.geoRetryAttempted;
+      }
+      if (update.geoRetrySucceeded !== undefined) {
+        values.meta_geo_retry_succeeded = update.geoRetrySucceeded;
+      }
       if (!Object.keys(values).length) return;
 
       const { error } = await supabase
@@ -340,12 +363,6 @@ function parseMetaTrackingState(value: unknown): ParsedMetaTrackingState {
   };
 }
 
-function trustedTrackingPolicy(request: Request): TrackingPolicyMode {
-  return request.headers.get(META_TRACKING_POLICY_HEADER) === "us-opt-out"
-    ? "us-opt-out"
-    : "explicit-consent";
-}
-
 function eventSourceUrl(value: string | null, request: Request) {
   const requestUrl = new URL(request.url);
   if (value) {
@@ -392,9 +409,10 @@ async function deliverMetaLead(
   trackingValue: unknown,
   request: Request,
   browserLeadAttempted: boolean,
+  geoPolicy: GeoPolicyResult,
 ) {
   const parsed = parseMetaTrackingState(trackingValue);
-  const policyMode = trustedTrackingPolicy(request);
+  const policyMode = geoPolicy.mode;
   const globalPrivacyControl =
     request.headers.get("sec-gpc") === "1" ||
     parsed.state.globalPrivacyControl;
@@ -416,6 +434,13 @@ async function deliverMetaLead(
       : {}),
     ...(browserLeadAttempted ? { browserLeadAttemptedAt: now } : {}),
     recordedAt: now,
+    geoSource: geoPolicy.geoSource,
+    geoCountry: geoPolicy.country,
+    geoRegionCode: geoPolicy.regionCode,
+    geoResolutionReason: geoPolicy.resolutionReason,
+    geoPolicyVersion: geoPolicy.policyVersion,
+    geoRetryAttempted: geoPolicy.retryAttempted,
+    geoRetrySucceeded: geoPolicy.retrySucceeded,
   } as const;
 
   if (!decision.permitted) {
@@ -476,12 +501,21 @@ async function deliverMetaLeadAction(
     if (!lead) {
       return jsonResponse({ error: "This conversion session is no longer valid." }, 404);
     }
+    const geoPolicy = await submittedTrackingPolicy(
+      payload.geoAttestationToken,
+      {
+        resolutionReason: payload.geoResolutionReason,
+        retryAttempted: payload.geoRetryAttempted,
+        retrySucceeded: payload.geoRetrySucceeded,
+      },
+    );
     const result = await deliverMetaLead(
       repository,
       lead,
       payload.tracking,
       request,
       payload.browserLeadAttempted === true,
+      geoPolicy,
     );
     return jsonResponse({ status: "recorded", ...result });
   } catch (error) {
@@ -525,7 +559,22 @@ async function captureEmail(payload: Record<string, unknown>, request: Request) 
       try {
         const lead = await repository.findMetaLeadByEventId(result.metaEventId);
         if (lead) {
-          await deliverMetaLead(repository, lead, payload.tracking, request, false);
+          const geoPolicy = await submittedTrackingPolicy(
+            payload.geoAttestationToken,
+            {
+              resolutionReason: payload.geoResolutionReason,
+              retryAttempted: payload.geoRetryAttempted,
+              retrySucceeded: payload.geoRetrySucceeded,
+            },
+          );
+          await deliverMetaLead(
+            repository,
+            lead,
+            payload.tracking,
+            request,
+            false,
+            geoPolicy,
+          );
         }
       } catch (error) {
         console.error("Initial Meta Lead delivery failed", error);
