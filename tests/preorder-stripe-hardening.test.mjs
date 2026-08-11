@@ -28,6 +28,30 @@ test("keeps webhook verification and paid fulfilment independent from the sales 
   );
 });
 
+test("uses dashboard-managed payment methods and identifies each Checkout flow", async () => {
+  const [preorderCheckout, contributorCheckout] = await Promise.all([
+    readFile(new URL("../app/api/preorders/checkout/route.ts", import.meta.url), "utf8"),
+    readFile(
+      new URL("../app/api/founding-contributors/checkout/route.ts", import.meta.url),
+      "utf8",
+    ),
+  ]);
+
+  assert.doesNotMatch(preorderCheckout, /payment_method_types:/);
+  assert.doesNotMatch(contributorCheckout, /payment_method_types:/);
+  assert.doesNotMatch(preorderCheckout, /billing_address_collection:/);
+  assert.match(
+    preorderCheckout,
+    /integration_identifier: STRIPE_CHECKOUT_INTEGRATION_IDENTIFIER/,
+  );
+  assert.match(preorderCheckout, /frame_preorder_[a-z]{8}/);
+  assert.match(
+    contributorCheckout,
+    /integration_identifier: STRIPE_CHECKOUT_INTEGRATION_IDENTIFIER/,
+  );
+  assert.match(contributorCheckout, /frame_contributor_[a-z]{8}/);
+});
+
 test("queues signed events after a durable claim and tracks modern refund events", async () => {
   const [webhook, processing, readiness] = await Promise.all([
     readFile(new URL("../app/api/stripe/webhook/route.ts", import.meta.url), "utf8"),

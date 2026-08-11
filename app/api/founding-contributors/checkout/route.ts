@@ -11,6 +11,7 @@ import { getStripe, getStripePriceId } from "@/lib/stripe.server";
 export const dynamic = "force-dynamic";
 
 const MAX_BODY_BYTES = 8_192;
+const STRIPE_CHECKOUT_INTEGRATION_IDENTIFIER = "frame_contributor_pzmdwqhs";
 
 function cleanAttribution(value: unknown) {
   if (typeof value !== "string") return null;
@@ -99,6 +100,7 @@ export async function POST(request: Request) {
     const priceId = await getStripePriceId();
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
+      integration_identifier: STRIPE_CHECKOUT_INTEGRATION_IDENTIFIER,
       line_items: [{ price: priceId, quantity: 1 }],
       client_reference_id: inserted.data.id,
       customer_creation: "always",

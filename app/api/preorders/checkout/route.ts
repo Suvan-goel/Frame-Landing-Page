@@ -34,6 +34,7 @@ import { cleanAttribution } from "@/lib/attribution";
 export const dynamic = "force-dynamic";
 
 const MAX_BODY_BYTES = 8_192;
+const STRIPE_CHECKOUT_INTEGRATION_IDENTIFIER = "frame_preorder_xkqvnjrt";
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return Response.json(body, {
@@ -326,7 +327,7 @@ export async function POST(request: Request) {
       {
         mode: "payment",
         adaptive_pricing: { enabled: false },
-        payment_method_types: ["card"],
+        integration_identifier: STRIPE_CHECKOUT_INTEGRATION_IDENTIFIER,
         branding_settings: {
           background_color: "#FAF8F2",
           border_style: "rectangular",
@@ -339,7 +340,6 @@ export async function POST(request: Request) {
         client_reference_id: reservedIntentId,
         customer: stripeCustomer.id,
         customer_update: { address: "auto" },
-        billing_address_collection: "required",
         shipping_options: [
           {
             shipping_rate_data: {
