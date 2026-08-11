@@ -14,7 +14,6 @@ import {
 import { isAllowedPreorderUsState } from "@/lib/preorder-shipping";
 import {
   isLocalPreorderPreview,
-  isPreorderSalesRequestEnabled,
 } from "@/lib/runtime-env.server";
 import { consumePreorderRateLimit } from "@/lib/preorder-rate-limit.server";
 
@@ -42,9 +41,6 @@ function response(body: Record<string, unknown>, status = 200) {
 }
 
 export async function GET(request: Request) {
-  if (!(await isPreorderSalesRequestEnabled(request))) {
-    return response({ error: "Not found." }, 404);
-  }
   const url = new URL(request.url);
   if (url.searchParams.get("preview") === "1" && (await isLocalPreorderPreview(request))) {
     return response({
@@ -90,9 +86,6 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  if (!(await isPreorderSalesRequestEnabled(request))) {
-    return response({ error: "Not found." }, 404);
-  }
   const origin = request.headers.get("origin");
   if (origin && origin !== new URL(request.url).origin) {
     return response({ error: "Request origin is not allowed." }, 403);

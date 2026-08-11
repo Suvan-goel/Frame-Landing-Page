@@ -184,14 +184,12 @@ test("keeps every remote public pre-order surface unavailable until the public l
     "/preorder",
     "/preorder/review",
     "/preorder/success",
-    "/preorder/manage",
     "/preorder/terms",
     "/preorder/refunds",
     "/preorder/product-status",
     "/preorders",
     "/api/preorders/checkout",
     "/api/preorders/status",
-    "/api/preorders/manage",
     "/preorder%2Freview",
     "/api%2Fpreorders%2Fstatus",
   ];
@@ -210,6 +208,29 @@ test("keeps every remote public pre-order surface unavailable until the public l
     assert.equal(responses[index].status, 404, paths[index]);
     assert.equal(responses[index].headers.get("x-robots-tag"), "noindex, nofollow");
   }
+});
+
+test("keeps signed customer order management available while new sales are closed", async () => {
+  const env = {
+    PREORDER_MODE: "live",
+    PREORDER_LEGAL_APPROVED_VERSION: PREORDER_TERMS_VERSION,
+    PREORDER_PRODUCT_STATUS_APPROVED_VERSION: PREORDER_PRODUCT_STATUS_VERSION,
+    PREORDER_PUBLIC_LAUNCH_ENABLED: "false",
+    PREORDER_ORDER_ACCESS_SECRET: "customer-management-test-secret-that-is-long-enough",
+  };
+  const page = await render("/preorder/manage", undefined, "https://framewearable.com", env);
+  assert.equal(page.status, 200);
+  assert.equal(page.headers.get("x-robots-tag"), "noindex, nofollow");
+
+  const [manageRoute, emailChangeRoute] = await Promise.all([
+    readFile(new URL("../app/api/preorders/manage/route.ts", import.meta.url), "utf8"),
+    readFile(
+      new URL("../app/api/preorders/manage/email-change/route.ts", import.meta.url),
+      "utf8",
+    ),
+  ]);
+  assert.doesNotMatch(manageRoute, /isPreorderSalesRequestEnabled/);
+  assert.doesNotMatch(emailChangeRoute, /isPreorderSalesRequestEnabled/);
 });
 
 test("publishes pre-order administration behind owner authentication only", async () => {
@@ -422,7 +443,10 @@ test("keeps the public homepage free of pre-order discovery and blocks webhook b
   assert.equal(webhookResponse.status, 404);
   assert.equal(webhookPostResponse.status, 400);
   assert.match(await webhookPostResponse.text(), /Stripe signature is required/i);
-  assert.match(worker, /isPublicPreorderRequest && !preorderRequestAllowed/);
+  assert.match(
+    worker,
+    /isPublicPreorderRequest &&[\s\S]*?!isPreorderCustomerServiceRequest &&[\s\S]*?!preorderRequestAllowed/,
+  );
   assert.match(worker, /x-frame-preorder-admin-request/);
   assert.match(worker, /isSharedStripeWebhook && request\.method !== "POST"/);
   assert.match(robots, /"\/preorder"/);

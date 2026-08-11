@@ -2,7 +2,6 @@ import {
   confirmPreorderContactEmailChange,
   sendConfirmedPreorderEmailChangeNotices,
 } from "@/lib/preorder-customer-management.server";
-import { isPreorderSalesRequestEnabled } from "@/lib/runtime-env.server";
 
 export const dynamic = "force-dynamic";
 
@@ -20,13 +19,6 @@ function redirect(location: string) {
 }
 
 export async function GET(request: Request) {
-  if (!(await isPreorderSalesRequestEnabled(request))) {
-    return new Response("Not found.", {
-      status: 404,
-      headers: { "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" },
-    });
-  }
-
   const url = new URL(request.url);
   const token = url.searchParams.get("token") ?? "";
   try {

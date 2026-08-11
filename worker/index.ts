@@ -9,6 +9,7 @@ import {
 } from "../lib/contributor-local-only";
 import {
   isPreorderAdminPath,
+  isPreorderCustomerServicePath,
   isPreorderLiveApproved,
   isPublicPreorderPath,
   isPreorderRequestAllowed,
@@ -272,6 +273,9 @@ function withPublicResponseHeaders(response: Response, url: URL, env: Env) {
     "Referrer-Policy",
     sensitiveDocument ? "no-referrer" : "strict-origin-when-cross-origin",
   );
+  if (sensitiveDocument) {
+    headers.set("X-Robots-Tag", "noindex, nofollow");
+  }
   headers.set("Permissions-Policy", PERMISSIONS_POLICY);
   headers.set("X-Content-Type-Options", "nosniff");
   headers.set("X-Frame-Options", "DENY");
@@ -494,6 +498,8 @@ const worker = {
           )
         : false);
     const isPreorderAdminRequest = isPreorderAdminPath(url.pathname);
+    const isPreorderCustomerServiceRequest =
+      isPreorderCustomerServicePath(url.pathname);
     const isPublicPreorderRequest = isPublicPreorderPath(url.pathname);
     const isSharedStripeWebhook = url.pathname === "/api/stripe/webhook";
     const preorderRequestAllowed =
@@ -509,7 +515,9 @@ const worker = {
     if (
       (isContributorFeatureRequest && !contributorFeatureEnabled) ||
       (isContributorRequest && !isLocalRequest) ||
-      (isPublicPreorderRequest && !preorderRequestAllowed) ||
+      (isPublicPreorderRequest &&
+        !isPreorderCustomerServiceRequest &&
+        !preorderRequestAllowed) ||
       (isSharedStripeWebhook && request.method !== "POST")
     ) {
       return respond(new Response("Not found", {
