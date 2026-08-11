@@ -69,6 +69,18 @@ test("accepts a fully activated live Stripe account without exposing bank detail
   assert.deepEqual(stripeAccountReadinessBlockers(readyAccount(), expectation), []);
 });
 
+test("accepts Stripe's current corporation business-type value", () => {
+  const account = readyAccount();
+  account.business_type = "corporation";
+
+  assert.equal(
+    evaluateStripeAccountReadiness(account, expectation).find(
+      (check) => check.name === "Stripe account identity",
+    )?.ready,
+    true,
+  );
+});
+
 test("blocks inactive payments, payouts, verification, identity, and customer-facing setup", () => {
   const account = readyAccount();
   account.charges_enabled = false;

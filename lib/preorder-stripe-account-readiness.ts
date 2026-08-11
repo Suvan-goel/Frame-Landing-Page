@@ -87,6 +87,8 @@ export function evaluateStripeAccountReadiness(
   const legalNameMatches =
     normalizeIdentity(expectation.legalName).length > 0 &&
     normalizeIdentity(account.company?.name) === normalizeIdentity(expectation.legalName);
+  const incorporatedBusinessType =
+    account.business_type === "company" || account.business_type === "corporation";
   const cardPaymentsActive =
     account.charges_enabled && account.capabilities?.card_payments === "active";
   const verificationClear =
@@ -129,7 +131,7 @@ export function evaluateStripeAccountReadiness(
     {
       name: "Stripe account identity",
       ready:
-        account.business_type === "company" &&
+        incorporatedBusinessType &&
         account.country === expectation.country &&
         account.default_currency === expectation.currency &&
         legalNameMatches,
