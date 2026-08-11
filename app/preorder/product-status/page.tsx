@@ -12,6 +12,7 @@ import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
 import {
   COMPANY_DETAILS,
   COMPANY_DETAILS_COMPLETE,
+  COMPANY_INCORPORATION_DETAILS_COMPLETE,
   formatCorrespondenceAddress,
   formatRegisteredOffice,
   SUPPORT_EMAIL,
@@ -127,11 +128,13 @@ export default async function PreorderProductStatusPage() {
 
         <section>
           <h2>Seller and support</h2>
-          {COMPANY_DETAILS_COMPLETE ? (
+          {COMPANY_INCORPORATION_DETAILS_COMPLETE ? (
             <p>
               The seller is {COMPANY_DETAILS.legalName}, registered in {COMPANY_DETAILS.jurisdiction}
               {` under registration number ${COMPANY_DETAILS.registrationNumber}`}, with its registered office at {formatRegisteredOffice()}.
-              {` Customer and order correspondence should be sent to ${formatCorrespondenceAddress()}.`}
+              {COMPANY_DETAILS_COMPLETE
+                ? ` Customer and order correspondence should be sent to ${formatCorrespondenceAddress()}.`
+                : " A separately authorised customer correspondence address will be published before public pre-orders open."}
               {` Questions can be sent to ${SUPPORT_EMAIL}.`}
             </p>
           ) : (

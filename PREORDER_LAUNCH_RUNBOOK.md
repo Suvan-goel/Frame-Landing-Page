@@ -154,10 +154,11 @@ the repository and reassess it before any material claim, intended-use, output,
 alert or product-design change.
 
 The founder also confirmed on August 10, 2026 that the current Pre-order Terms,
-Cancellation and Refund Policy, and Privacy Notice require no copy changes. This
-copy approval does not release the live legal gates: the incorporated seller
-identity must still be inserted and the completed pack assigned an approved,
-non-draft version.
+Cancellation and Refund Policy, and Privacy Notice require no substantive copy
+changes. Delaware records confirm that Frame Wearable, Inc. was incorporated on
+August 10, 2026 under file number 10728944. The verified incorporation identity,
+Stable-authorised correspondence address, and approved non-draft legal and
+product-status versions were inserted on August 11, 2026.
 
 The founder elected on August 10, 2026 to proceed without separate pre-launch
 US counsel or cross-border tax-adviser sign-off. This is a recorded owner
@@ -174,11 +175,11 @@ the Stripe Tax head-office country for this operating model and approved tax
 policy version `uk-remote-seller-2026-08-09-v1`. The tax lock may use only that
 exact version during the controlled incorporation-day launch sequence.
 
-Do not release the legal approval lock until the company-identity work is
-finished and the completed legal pack has a matching non-draft version. Do not
-release the tax lock outside the controlled incorporation-day sequence.
+The company-identity work, authorised correspondence address, and matching
+non-draft legal and product-status versions were completed on August 11, 2026.
+Do not release the tax lock outside the controlled launch sequence.
 
-- Insert the incorporated seller identity, the document-matched registered office, and the separately authorised customer correspondence address. Set `correspondenceAddressAuthorized` only after mail-provider approval, configure `MAILING_POSTAL_ADDRESS`, and replace every remaining draft marker or placeholder with approved wording.
+- Preserve the verified incorporated seller identity, document-matched registered office, and Stable-authorised customer correspondence address. Keep `correspondenceAddressAuthorized` and `MAILING_POSTAL_ADDRESS` aligned with the approved provider record.
 - Preserve the founder-approved one-year limited hardware warranty, shipping-delay consent matrix, material-change consent flow, and automatic deadline refund operation unless the founder reopens the legal-page review.
 - Preserve the founder-approved provisional fulfilment allowance of $40 per
   order ($30 outbound plus a $10 pooled exception allowance), or replace it with
@@ -195,9 +196,9 @@ release the tax lock outside the controlled incorporation-day sequence.
   replacement batteries out of the ordinary outbound workflow until the carrier
   has approved a compliant procedure.
 - Keep the founder-approved tangible-goods Stripe product tax code `txcd_99999999` unless the product classification changes.
-- Assign a new non-draft `PREORDER_TERMS_VERSION` and matching product-status version in the application.
-- Set `PREORDER_LEGAL_APPROVED_VERSION` to exactly the approved terms version.
-- Set `PREORDER_PRODUCT_STATUS_APPROVED_VERSION` to exactly the approved Product Status Disclosure version.
+- Keep `PREORDER_TERMS_VERSION` and the matching product-status version on the approved `2026-08-11-v1` launch versions until substantive copy changes require a new approval.
+- Keep `PREORDER_LEGAL_APPROVED_VERSION` set to exactly `2026-08-11-v1`.
+- Keep `PREORDER_PRODUCT_STATUS_APPROVED_VERSION` set to exactly `2026-08-11-v1`.
 - Re-run the full test suite after the version and copy change.
 
 The application rejects live checkout while the active version begins with `draft` or does not exactly match the configured approval value.
@@ -208,14 +209,19 @@ Create a separate Stripe live Product and one-time $299 USD Price. Never reuse t
 
 Before private live verification, the live Stripe Account must show the Stripe Services Agreement accepted and live charges and card payments active. By default, it must also show every onboarding detail submitted, payouts enabled with an automatic schedule, and no current, past-due, failed, or pending-verification requirements. If the company payout account alone is still missing or being verified, `PREORDER_ALLOW_BANK_PENDING_LAUNCH=true` may temporarily waive only the external-account, payout-enabled and automatic-schedule checks. Live charges must remain active and every non-bank verification requirement must still be clear; customer proceeds remain in Stripe until the payout account is connected. Its US company name must match `lib/company.ts`; configure the Frame public website, monitored support email and `/contact` URL, merchant category, product description, a 5–22 character statement descriptor containing `FRAME`, and an icon or logo plus primary brand colour. The pre-order Checkout session supplies its own Frame presentation and links the Pre-order Terms, Cancellation and Refund Policy, and Privacy Notice on Stripe's hosted page.
 
-The live objects were created on August 6, 2026:
+The US live-account objects were created on August 11, 2026:
 
 ```text
-Stripe live Product: prod_V1TpdgeLFHGdXr
-Stripe live Price: price_1U1Qrd2WBYpT3ouEs8Hbk5lk
+Stripe live Product: prod_V3V9vCQumIgCO9
+Stripe live Price: price_1U3OGqCayZz7QEuo8L4htBJr
 ```
 
-The Price is the Product's default price. Both are active in Stripe live mode and carry `frame_preorder`, live-environment and paused-launch metadata. Local development must continue using the separate test Price.
+The Price is the Product's active default price, is one-time $299 USD, and has
+exclusive tax behaviour. The Product is active in Stripe live mode, uses the
+explicit General - Tangible Goods tax code `txcd_99999999`, and carries the
+`preorder_batch=q1_2027` metadata. Local development must continue using the
+separate test Price. The superseded live Price
+`price_1U3O9SCayZz7QEuo2LpiEA7H` must not be configured or used for checkout.
 
 Required live values:
 

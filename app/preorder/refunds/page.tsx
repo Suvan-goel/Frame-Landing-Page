@@ -12,6 +12,7 @@ import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
 import {
   COMPANY_DETAILS,
   COMPANY_DETAILS_COMPLETE,
+  COMPANY_INCORPORATION_DETAILS_COMPLETE,
   formatCorrespondenceAddress,
   formatRegisteredOffice,
   SUPPORT_EMAIL,
@@ -223,12 +224,14 @@ export default async function PreorderRefundsPage() {
 
             <section id="contact">
               <h2>8. Contact</h2>
-              {COMPANY_DETAILS_COMPLETE ? (
+              {COMPANY_INCORPORATION_DETAILS_COMPLETE ? (
                 <p>
                   Use the <Link href="/contact?topic=preorder">Frame pre-order support form</Link> or email {SUPPORT_EMAIL}
                   {" "}and include the order number and purchase email. The seller is {COMPANY_DETAILS.legalName}, registration
                   {` ${COMPANY_DETAILS.registrationNumber}`}, with its registered office at {formatRegisteredOffice()}.
-                  {` Customer and order correspondence should be sent to ${formatCorrespondenceAddress()}.`}
+                  {COMPANY_DETAILS_COMPLETE
+                    ? ` Customer and order correspondence should be sent to ${formatCorrespondenceAddress()}.`
+                    : " A separately authorised customer correspondence address will be published before public pre-orders open."}
                 </p>
               ) : (
                 <p>
@@ -245,7 +248,9 @@ export default async function PreorderRefundsPage() {
           <p className="legal-disclaimer">
             {COMPANY_DETAILS_COMPLETE
               ? "This launch candidate is not active for public sales until final legal approval is activated."
-              : "This launch candidate is not active for public sales while the incorporated seller details are pending."}
+              : COMPANY_INCORPORATION_DETAILS_COMPLETE
+                ? "The incorporated seller identity is confirmed, but this launch candidate remains inactive until the customer correspondence address and final legal approval are complete."
+                : "This launch candidate is not active for public sales while the incorporated seller details are pending."}
           </p>
         ) : null}
         <nav className="preorder-refunds-actions" aria-label="Refund policy actions">

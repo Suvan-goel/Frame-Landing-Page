@@ -1,6 +1,6 @@
-# Frame pre-order pre-incorporation pack
+# Frame pre-order incorporation pack
 
-Use this document to collect launch decisions and evidence before incorporation.
+Use this document to collect launch decisions and evidence around incorporation.
 It supports the canonical [`PREORDER_LAUNCH_RUNBOOK.md`](../PREORDER_LAUNCH_RUNBOOK.md)
 but does not replace it.
 
@@ -24,9 +24,12 @@ location.
 - External-review decision: founder elected on August 10, 2026 to proceed
   without separate pre-launch US counsel or cross-border tax-adviser sign-off.
   No external professional approval is represented by this record.
-- Incorporated seller identity: awaiting Stripe Atlas confirmation.
-- Final legal-pack release approval: pending insertion of the incorporated
-  seller identity and assignment of a non-draft version.
+- Incorporated seller identity: Delaware records confirm Frame Wearable, Inc.
+  was incorporated on August 10, 2026 under file number 10728944. Stripe Atlas
+  marks incorporation complete; the EIN application remains in progress.
+- Final legal-pack release approval: founder approved the completed
+  incorporation identity, Stable correspondence address, and non-draft launch
+  versions on August 11, 2026.
 - US sales-tax launch posture: founder confirmed on August 10, 2026 that Frame
   will have no US office, employees, inventory, warehouse, 3PL, other physical
   operations or prior sales contributing to state thresholds when pre-orders
@@ -34,8 +37,8 @@ location.
 - Founder-approved tax posture: Great Britain as the current Stripe Tax head
   office, no initial US registrations, tangible-goods classification and live
   threshold monitoring. Reassessment triggers are recorded below.
-- Authorised correspondence address: pending provider approval for the
-  incorporated recipient.
+- Authorised correspondence address: Stable shows address authorisation
+  complete and Frame Wearable, Inc. as an active business mail recipient.
 - Q1 2027 delivery-basis record: founder waived the separate internal evidence
   record on August 10, 2026. The advertised estimate remains unchanged.
 - Provisional US fulfilment reserve: founder approved a $40 per-order planning
@@ -76,11 +79,11 @@ working from the same offer:
   checkout; initial 100-unit release; 30-day voluntary returns; one-year
   limited hardware warranty.
 - Founder legal-page copy approval: August 10, 2026; no copy changes required.
-- Final legal-pack release approval date and approver: pending incorporation
-  identity insertion; founder is the designated approver.
+- Final legal-pack release approval date and approver: August 11, 2026;
+  founder.
 - Tax approval date and approver: August 10, 2026; founder.
-- Approved legal-pack version: —
-- Approved Product Status Disclosure version: —
+- Approved legal-pack version: `2026-08-11-v1`
+- Approved Product Status Disclosure version: `2026-08-11-v1`
 - Approved tax-policy version: `uk-remote-seller-2026-08-09-v1`
 - Secure evidence location: separate location record waived by founder on
   August 10, 2026; not a launch prerequisite.
@@ -109,10 +112,10 @@ Review record:
 - Approval date: August 10, 2026
 - External US counsel: founder elected to proceed without separate pre-launch
   counsel review. This record does not represent advice or approval by counsel.
-- Required copy changes: none to the reviewed copy. Incorporated seller name,
-  registration, registered-office, authorised correspondence-address,
-  privacy-controller and named-warrantor values remain to be inserted from the
-  issued and approved company records.
+- Required copy changes: none to the reviewed substantive copy. The confirmed
+  incorporated seller name, Delaware file number, registered office,
+  privacy-controller, named-warrantor and Stable-authorised customer
+  correspondence-address values were inserted on August 11, 2026.
 - Secure evidence location: separate location record waived by founder on
   August 10, 2026; not a launch prerequisite.
 
@@ -246,24 +249,28 @@ evidence above is complete.
 
 Copy values from issued documents. Do not infer or abbreviate them.
 
-- Exact legal company name: —
-- Entity type: —
-- Delaware registration or file number: —
-- Jurisdiction wording: —
-- Registered office line 1: —
-- Registered office line 2: —
-- Registered office locality: —
-- Registered office region: —
-- Registered office postal code: —
-- Registered office country: —
-- Stable incorporated-recipient approval date: —
-- Authorised correspondence address: —
-- `MAILING_POSTAL_ADDRESS` confirmed to match: —
-- Stripe representative verification complete: —
-- Business bank account connected: —
+- Exact legal company name: Frame Wearable, Inc.
+- Entity type: Corporation; Delaware entity type General
+- Delaware incorporation date: August 10, 2026
+- Delaware registration or file number: 10728944
+- Jurisdiction wording: Delaware, United States
+- Registered office line 1: 131 Continental Dr
+- Registered office line 2: Suite 305
+- Registered office locality: Newark
+- Registered office region: Delaware
+- Registered office postal code: 19713
+- Registered office country: United States
+- Registered agent: Legalinc Corporate Services Inc.
+- Stable incorporated-recipient approval date: August 11, 2026
+- Authorised correspondence address: 2810 N Church St, STE 89620, Wilmington,
+  Delaware 19802, United States
+- `MAILING_POSTAL_ADDRESS` confirmed to match: August 11, 2026
+- Stripe representative verification complete: submitted; account status shows
+  no active non-bank verification task
+- Business bank account connected: no; Mercury application under review
 
-After verification, enter the identity once in `lib/company.ts`. The warranty
-provider and privacy controller derive from the legal name. Set
+The verified incorporation identity is entered once in `lib/company.ts`. The
+warranty provider and privacy controller derive from the legal name. Set
 `correspondenceAddressAuthorized` to `true` only after the mail provider has
 approved the incorporated entity.
 
@@ -271,12 +278,14 @@ approved the incorporated entity.
 
 Record state, not credentials:
 
-- All onboarding details submitted: —
-- Services Agreement accepted: —
-- Live charges enabled: —
-- Card capability active: —
-- Payouts enabled with automatic schedule: —
-- No current, past-due or pending-verification requirements: —
+- All onboarding details submitted: yes, confirmed August 11, 2026
+- Services Agreement accepted: pending live readiness verification
+- Live charges enabled: yes; Payments capability active
+- Card capability active: yes
+- Payouts enabled with automatic schedule: no; external account remains the
+  only active task while Mercury is under review
+- No current, past-due or pending-verification requirements: no non-bank active
+  tasks; the external-account task impacts payouts only
 - Legal identity matches `lib/company.ts`: —
 - Website, merchant category and product description complete: —
 - Support email and `/contact` URL complete: —

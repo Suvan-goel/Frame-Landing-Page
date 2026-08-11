@@ -5,11 +5,13 @@ import {
   COMPANY_DETAILS,
   COMPANY_DETAILS_CHECK,
   COMPANY_DETAILS_COMPLETE,
+  COMPANY_INCORPORATION_DETAILS_CHECK,
+  COMPANY_INCORPORATION_DETAILS_COMPLETE,
   ORGANIZATION_DISPLAY_NAME,
-  PUBLIC_BRAND_NAME,
   SUPPORT_EMAIL,
   companyLegalIdentityLine,
   evaluateCompanyDetails,
+  evaluateCompanyIncorporationDetails,
   formatCorrespondenceAddress,
   formatRegisteredOffice,
 } from "../lib/company.ts";
@@ -42,19 +44,36 @@ const completeCompany = {
   privacyControllerName: "Frame Health Technologies, Inc.",
 };
 
-test("keeps the incorporated company identity closed until every issued detail is present", () => {
-  assert.equal(COMPANY_DETAILS_COMPLETE, false);
-  assert.equal(PREORDER_SELLER_DETAILS_COMPLETE, false);
-  assert.equal(COMPANY_DETAILS_CHECK.complete, false);
+test("records the confirmed incorporation and authorised Stable correspondence address", () => {
+  assert.equal(COMPANY_INCORPORATION_DETAILS_COMPLETE, true);
+  assert.equal(COMPANY_INCORPORATION_DETAILS_CHECK.complete, true);
+  assert.equal(COMPANY_DETAILS_COMPLETE, true);
+  assert.equal(PREORDER_SELLER_DETAILS_COMPLETE, true);
+  assert.equal(COMPANY_DETAILS_CHECK.complete, true);
+  assert.deepEqual(COMPANY_DETAILS_CHECK.missingOrInvalid, []);
   assert.equal(COMPANY_DETAILS_CHECK.missingOrInvalid.includes("supportEmail"), false);
-  assert.equal(COMPANY_DETAILS_CHECK.missingOrInvalid.includes("legalName"), true);
-  assert.equal(COMPANY_DETAILS_CHECK.missingOrInvalid.includes("registrationNumber"), true);
-  assert.equal(COMPANY_DETAILS_CHECK.missingOrInvalid.includes("registeredOffice.line1"), true);
-  assert.equal(COMPANY_DETAILS_CHECK.missingOrInvalid.includes("correspondenceAddress.line1"), true);
-  assert.equal(COMPANY_DETAILS_CHECK.missingOrInvalid.includes("correspondenceAddressAuthorized"), true);
-  assert.equal(COMPANY_DETAILS_CHECK.missingOrInvalid.includes("jurisdiction"), true);
-  assert.equal(companyLegalIdentityLine(), null);
-  assert.equal(ORGANIZATION_DISPLAY_NAME, PUBLIC_BRAND_NAME);
+  assert.equal(COMPANY_DETAILS_CHECK.missingOrInvalid.includes("legalName"), false);
+  assert.equal(COMPANY_DETAILS_CHECK.missingOrInvalid.includes("registrationNumber"), false);
+  assert.equal(COMPANY_DETAILS_CHECK.missingOrInvalid.includes("registeredOffice.line1"), false);
+  assert.equal(COMPANY_DETAILS_CHECK.missingOrInvalid.includes("correspondenceAddress.line1"), false);
+  assert.equal(COMPANY_DETAILS_CHECK.missingOrInvalid.includes("correspondenceAddressAuthorized"), false);
+  assert.equal(COMPANY_DETAILS_CHECK.missingOrInvalid.includes("jurisdiction"), false);
+  assert.equal(COMPANY_DETAILS.legalName, "Frame Wearable, Inc.");
+  assert.equal(COMPANY_DETAILS.registrationNumber, "10728944");
+  assert.equal(COMPANY_DETAILS.jurisdiction, "Delaware, United States");
+  assert.equal(
+    formatRegisteredOffice(),
+    "131 Continental Dr, Suite 305, Newark, Delaware, 19713, United States",
+  );
+  assert.equal(
+    formatCorrespondenceAddress(),
+    "2810 N Church St, STE 89620, Wilmington, Delaware, 19802, United States",
+  );
+  assert.equal(
+    companyLegalIdentityLine(),
+    "Frame Wearable, Inc. · Registration 10728944 · Registered in Delaware, United States · Registered office: 131 Continental Dr, Suite 305, Newark, Delaware, 19713, United States · Customer correspondence: 2810 N Church St, STE 89620, Wilmington, Delaware, 19802, United States",
+  );
+  assert.equal(ORGANIZATION_DISPLAY_NAME, COMPANY_DETAILS.legalName);
   assert.equal(SUPPORT_EMAIL, COMPANY_DETAILS.supportEmail);
 });
 
@@ -73,6 +92,10 @@ test("routes each contact-form topic to the intended support alias", () => {
 });
 
 test("accepts one complete identity and formats it consistently", () => {
+  assert.deepEqual(evaluateCompanyIncorporationDetails(completeCompany), {
+    complete: true,
+    missingOrInvalid: [],
+  });
   const result = evaluateCompanyDetails(completeCompany);
   assert.deepEqual(result, { complete: true, missingOrInvalid: [] });
   assert.equal(

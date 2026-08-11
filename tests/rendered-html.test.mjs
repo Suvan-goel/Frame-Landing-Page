@@ -393,7 +393,7 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /frame-sensing-concept-realistic-v3-transparent-960w\.webp/);
   assert.match(html, /frame-app-studio-v5-640w\.webp/);
   assert.match(html, /<script type="application\/ld\+json">/);
-  assert.match(html, /Frame Health Technologies/);
+  assert.match(html, /Frame Wearable, Inc\./);
   assert.doesNotMatch(html, /facebook\.com\/tr\?id=/);
   assert.equal(html.match(/name="email"/g)?.length, 2);
   assert.match(html, /Pre-order now/);

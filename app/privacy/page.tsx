@@ -6,6 +6,7 @@ import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
 import {
   COMPANY_DETAILS,
   COMPANY_DETAILS_COMPLETE,
+  COMPANY_INCORPORATION_DETAILS_COMPLETE,
   formatCorrespondenceAddress,
   formatRegisteredOffice,
   SUPPORT_EMAIL,
@@ -36,7 +37,7 @@ export default async function PrivacyPage() {
       <article className="legal-shell">
         <p className="eyebrow">Privacy</p>
         <h1>Privacy notice</h1>
-        <p className="legal-updated">Effective August 10, 2026</p>
+        <p className="legal-updated">Effective August 11, 2026</p>
 
         <p className="legal-intro">
           This notice explains how {ORGANIZATION_NAME} handles information
@@ -50,14 +51,16 @@ export default async function PrivacyPage() {
             : null}
         </p>
 
-        {COMPANY_DETAILS_COMPLETE ? (
+        {COMPANY_INCORPORATION_DETAILS_COMPLETE ? (
           <section>
             <h2>Who is responsible for your information</h2>
             <p>
               {COMPANY_DETAILS.privacyControllerName} is the controller responsible for the processing described in
               this notice. It is registered in {COMPANY_DETAILS.jurisdiction}
               {` under registration number ${COMPANY_DETAILS.registrationNumber}`}, with its registered office at {formatRegisteredOffice()}.
-              {` Its customer and privacy correspondence address is ${formatCorrespondenceAddress()}.`}
+              {COMPANY_DETAILS_COMPLETE
+                ? ` Its customer and privacy correspondence address is ${formatCorrespondenceAddress()}.`
+                : " A separately authorised postal correspondence address will be published before public pre-orders open."}
               {` Privacy questions can be sent to ${SUPPORT_EMAIL} or submitted through the privacy contact form.`}
             </p>
           </section>

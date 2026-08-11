@@ -16,6 +16,7 @@ import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
 import {
   COMPANY_DETAILS,
   COMPANY_DETAILS_COMPLETE,
+  COMPANY_INCORPORATION_DETAILS_COMPLETE,
   formatCorrespondenceAddress,
   formatRegisteredOffice,
   SUPPORT_EMAIL,
@@ -133,15 +134,17 @@ export default async function PreorderTermsPage() {
           <div className="preorder-terms-content">
             <section id="seller">
               <h2>1. Seller and contact details</h2>
-              {COMPANY_DETAILS_COMPLETE ? (
+              {COMPANY_INCORPORATION_DETAILS_COMPLETE ? (
                 <p>
                   The seller is <strong>{COMPANY_DETAILS.legalName}</strong>, registered in {COMPANY_DETAILS.jurisdiction}
                   {` under registration number ${COMPANY_DETAILS.registrationNumber}`}. Its registered office is {formatRegisteredOffice()}.
-                  {` Customer and order correspondence should be sent to ${formatCorrespondenceAddress()}.`}
+                  {COMPANY_DETAILS_COMPLETE
+                    ? ` Customer and order correspondence should be sent to ${formatCorrespondenceAddress()}.`
+                    : " A separately authorised customer correspondence address will be published before public pre-orders open."}
                 </p>
               ) : (
                 <p>
-                  The seller will be the company being incorporated for Frame. Its exact legal name,
+                  The seller will be the incorporated company for Frame. Its exact legal name,
                   registration number, registered office, authorised correspondence address, jurisdiction of registration, and customer-support details
                   will be inserted here before pre-orders open. Until those details are present, these terms remain
                   a launch candidate and no public order may be accepted.
@@ -250,7 +253,7 @@ export default async function PreorderTermsPage() {
               <h2>8. Warranty and product problems</h2>
               <p>
                 <strong>Frame One-Year Limited Warranty.</strong>{" "}
-                {COMPANY_DETAILS_COMPLETE
+                {COMPANY_INCORPORATION_DETAILS_COMPLETE
                   ? COMPANY_DETAILS.warrantyProviderName
                   : "The incorporated Frame seller identified in section 1"}{" "}
                 warrants to the original purchaser that the Frame device will be free from defects in materials and
@@ -328,7 +331,9 @@ export default async function PreorderTermsPage() {
           <p className="legal-disclaimer">
             {COMPANY_DETAILS_COMPLETE
               ? "Launch safeguard: this legal pack remains marked as a draft, and public sales remain blocked until final legal approval is activated."
-              : "Launch safeguard: this legal pack remains marked as a draft, and public sales remain blocked while the incorporated seller identity and final legal approval are pending."}
+              : COMPANY_INCORPORATION_DETAILS_COMPLETE
+                ? "Launch safeguard: the incorporated seller identity is confirmed, but this legal pack remains a draft and public sales stay blocked until the customer correspondence address and final legal approval are complete."
+                : "Launch safeguard: this legal pack remains marked as a draft, and public sales remain blocked while the incorporated seller identity and final legal approval are pending."}
           </p>
         ) : null}
         <HistoryBackLink

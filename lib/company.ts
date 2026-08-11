@@ -23,34 +23,36 @@ export type CompanyDetails = {
 
 export const PUBLIC_BRAND_NAME = "Frame Health Technologies";
 
-// Complete the incorporation values from the issued documents, and add the
+// The incorporation values below match the Delaware formation record dated
+// August 10, 2026 and the signed Certificate of Incorporation. Add the
 // separately authorised public correspondence address only after the mail
-// provider has approved the incorporated company as a recipient. The warranty
-// provider and privacy controller deliberately derive from the legal name so
-// they cannot drift.
-const incorporatedLegalName = "";
+// provider has approved the incorporated company as a recipient. Stable shows
+// the address-authorisation task complete and Frame Wearable, Inc. as an active
+// business recipient. The warranty provider and privacy controller deliberately
+// derive from the legal name so they cannot drift.
+const incorporatedLegalName = "Frame Wearable, Inc.";
 
 export const COMPANY_DETAILS: Readonly<CompanyDetails> = Object.freeze({
   legalName: incorporatedLegalName,
-  registrationNumber: "",
+  registrationNumber: "10728944",
   registeredOffice: Object.freeze({
-    line1: "",
-    line2: "",
-    locality: "",
-    region: "",
-    postalCode: "",
-    country: "",
+    line1: "131 Continental Dr",
+    line2: "Suite 305",
+    locality: "Newark",
+    region: "Delaware",
+    postalCode: "19713",
+    country: "United States",
   }),
   correspondenceAddress: Object.freeze({
-    line1: "",
-    line2: "",
-    locality: "",
-    region: "",
-    postalCode: "",
-    country: "",
+    line1: "2810 N Church St",
+    line2: "STE 89620",
+    locality: "Wilmington",
+    region: "Delaware",
+    postalCode: "19802",
+    country: "United States",
   }),
-  correspondenceAddressAuthorized: false,
-  jurisdiction: "",
+  correspondenceAddressAuthorized: true,
+  jurisdiction: "Delaware, United States",
   supportEmail: "support@framewearable.com",
   warrantyProviderName: incorporatedLegalName,
   privacyControllerName: incorporatedLegalName,
@@ -77,7 +79,7 @@ export type CompanyDetailsCheck = {
   missingOrInvalid: string[];
 };
 
-export function evaluateCompanyDetails(
+export function evaluateCompanyIncorporationDetails(
   details: CompanyDetails = COMPANY_DETAILS,
 ): CompanyDetailsCheck {
   const missingOrInvalid: string[] = [];
@@ -89,11 +91,6 @@ export function evaluateCompanyDetails(
     ["registeredOffice.region", details.registeredOffice.region],
     ["registeredOffice.postalCode", details.registeredOffice.postalCode],
     ["registeredOffice.country", details.registeredOffice.country],
-    ["correspondenceAddress.line1", details.correspondenceAddress.line1],
-    ["correspondenceAddress.locality", details.correspondenceAddress.locality],
-    ["correspondenceAddress.region", details.correspondenceAddress.region],
-    ["correspondenceAddress.postalCode", details.correspondenceAddress.postalCode],
-    ["correspondenceAddress.country", details.correspondenceAddress.country],
     ["jurisdiction", details.jurisdiction],
     ["warrantyProviderName", details.warrantyProviderName],
     ["privacyControllerName", details.privacyControllerName],
@@ -104,9 +101,6 @@ export function evaluateCompanyDetails(
   }
   if (!isSupportEmail(details.supportEmail)) {
     missingOrInvalid.push("supportEmail");
-  }
-  if (!details.correspondenceAddressAuthorized) {
-    missingOrInvalid.push("correspondenceAddressAuthorized");
   }
   if (
     details.legalName.trim() &&
@@ -127,6 +121,36 @@ export function evaluateCompanyDetails(
   };
 }
 
+export function evaluateCompanyDetails(
+  details: CompanyDetails = COMPANY_DETAILS,
+): CompanyDetailsCheck {
+  const incorporationCheck = evaluateCompanyIncorporationDetails(details);
+  const missingOrInvalid = [...incorporationCheck.missingOrInvalid];
+  const requiredCorrespondenceText: Array<[string, string]> = [
+    ["correspondenceAddress.line1", details.correspondenceAddress.line1],
+    ["correspondenceAddress.locality", details.correspondenceAddress.locality],
+    ["correspondenceAddress.region", details.correspondenceAddress.region],
+    ["correspondenceAddress.postalCode", details.correspondenceAddress.postalCode],
+    ["correspondenceAddress.country", details.correspondenceAddress.country],
+  ];
+
+  for (const [field, value] of requiredCorrespondenceText) {
+    if (!isCompleteText(value)) missingOrInvalid.push(field);
+  }
+  if (!details.correspondenceAddressAuthorized) {
+    missingOrInvalid.push("correspondenceAddressAuthorized");
+  }
+
+  return {
+    complete: missingOrInvalid.length === 0,
+    missingOrInvalid: [...new Set(missingOrInvalid)],
+  };
+}
+
+export const COMPANY_INCORPORATION_DETAILS_CHECK =
+  evaluateCompanyIncorporationDetails();
+export const COMPANY_INCORPORATION_DETAILS_COMPLETE =
+  COMPANY_INCORPORATION_DETAILS_CHECK.complete;
 export const COMPANY_DETAILS_CHECK = evaluateCompanyDetails();
 export const COMPANY_DETAILS_COMPLETE = COMPANY_DETAILS_CHECK.complete;
 export const SUPPORT_EMAIL = COMPANY_DETAILS.supportEmail;

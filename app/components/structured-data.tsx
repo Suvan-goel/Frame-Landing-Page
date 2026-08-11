@@ -7,6 +7,7 @@ import {
 import {
   COMPANY_DETAILS,
   COMPANY_DETAILS_COMPLETE,
+  COMPANY_INCORPORATION_DETAILS_COMPLETE,
   SUPPORT_EMAIL,
 } from "@/lib/company";
 
@@ -20,26 +21,13 @@ function structuredData(description: string) {
       name: ORGANIZATION_NAME,
       alternateName: SITE_NAME,
       url: SITE_URL,
-      ...(COMPANY_DETAILS_COMPLETE
+      ...(COMPANY_INCORPORATION_DETAILS_COMPLETE
         ? {
             legalName: COMPANY_DETAILS.legalName,
             identifier: {
               "@type": "PropertyValue",
               propertyID: "Registration number",
               value: COMPANY_DETAILS.registrationNumber,
-            },
-            address: {
-              "@type": "PostalAddress",
-              streetAddress: [
-                COMPANY_DETAILS.correspondenceAddress.line1,
-                COMPANY_DETAILS.correspondenceAddress.line2,
-              ]
-                .filter(Boolean)
-                .join(", "),
-              addressLocality: COMPANY_DETAILS.correspondenceAddress.locality,
-              addressRegion: COMPANY_DETAILS.correspondenceAddress.region,
-              postalCode: COMPANY_DETAILS.correspondenceAddress.postalCode,
-              addressCountry: COMPANY_DETAILS.correspondenceAddress.country,
             },
             location: {
               "@type": "Place",
@@ -57,6 +45,23 @@ function structuredData(description: string) {
                 postalCode: COMPANY_DETAILS.registeredOffice.postalCode,
                 addressCountry: COMPANY_DETAILS.registeredOffice.country,
               },
+            },
+          }
+        : {}),
+      ...(COMPANY_DETAILS_COMPLETE
+        ? {
+            address: {
+              "@type": "PostalAddress",
+              streetAddress: [
+                COMPANY_DETAILS.correspondenceAddress.line1,
+                COMPANY_DETAILS.correspondenceAddress.line2,
+              ]
+                .filter(Boolean)
+                .join(", "),
+              addressLocality: COMPANY_DETAILS.correspondenceAddress.locality,
+              addressRegion: COMPANY_DETAILS.correspondenceAddress.region,
+              postalCode: COMPANY_DETAILS.correspondenceAddress.postalCode,
+              addressCountry: COMPANY_DETAILS.correspondenceAddress.country,
             },
           }
         : {}),

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import {
   COMPANY_DETAILS,
   COMPANY_DETAILS_COMPLETE,
+  COMPANY_INCORPORATION_DETAILS_COMPLETE,
   formatCorrespondenceAddress,
   formatRegisteredOffice,
   SUPPORT_EMAIL,
@@ -28,16 +29,16 @@ export default function ContributorTermsPage() {
         <h1>Membership Terms</h1>
         <p className="legal-updated">Version {CONTRIBUTOR_TERMS_VERSION}</p>
         <p className="legal-intro">
-          These draft terms are provided to test the membership flow. The legal entity name, registered address, governing law, and final consumer terms must be completed and reviewed before live payments are enabled.
+          These draft terms are provided to test the membership flow. The customer correspondence address, governing law, and final consumer terms must be completed and reviewed before live payments are enabled.
         </p>
 
         <section>
           <h2>1. Who provides the membership</h2>
           <p>
             The membership will be provided by{" "}
-            <strong>{COMPANY_DETAILS_COMPLETE ? COMPANY_DETAILS.legalName : "[LEGAL BUSINESS NAME TO BE CONFIRMED]"}</strong>,
+            <strong>{COMPANY_INCORPORATION_DETAILS_COMPLETE ? COMPANY_DETAILS.legalName : "[LEGAL BUSINESS NAME TO BE CONFIRMED]"}</strong>,
             of{" "}
-            <strong>{COMPANY_DETAILS_COMPLETE ? formatRegisteredOffice() : "[REGISTERED BUSINESS ADDRESS TO BE CONFIRMED]"}</strong>.
+            <strong>{COMPANY_INCORPORATION_DETAILS_COMPLETE ? formatRegisteredOffice() : "[REGISTERED BUSINESS ADDRESS TO BE CONFIRMED]"}</strong>.
             {" "}Customer correspondence should be sent to{" "}
             <strong>{COMPANY_DETAILS_COMPLETE ? formatCorrespondenceAddress() : "[CORRESPONDENCE ADDRESS TO BE CONFIRMED]"}</strong>.
             {` Questions may be sent to ${SUPPORT_EMAIL}.`}
