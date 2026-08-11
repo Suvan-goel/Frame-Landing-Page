@@ -34,6 +34,23 @@ import {
   verifyPreorderLiveSmokeAccessToken,
 } from "../lib/preorder-live-smoke-access";
 import { preorderReviewRedirectPath } from "../lib/attribution";
+import {
+  landingDiagnosticBootstrapScript,
+  metaLandingAttribution,
+  type LandingDiagnosticAttribution,
+} from "../lib/landing-diagnostics";
+
+declare class HTMLRewriter {
+  on(
+    selector: string,
+    handlers: {
+      element(element: {
+        append(content: string, options?: { html?: boolean }): void;
+      }): void;
+    },
+  ): HTMLRewriter;
+  transform(response: Response): Response;
+}
 
 interface Env {
   ASSETS: Fetcher;
@@ -55,6 +72,7 @@ interface Env {
   PREORDER_MAINTENANCE_SECRET?: string;
   CONTRIBUTOR_FEATURE_ENABLED?: string;
   SUPABASE_URL?: string;
+  SUPABASE_SECRET_KEY?: string;
   NEXT_PUBLIC_SUPABASE_URL?: string;
 }
 
@@ -98,6 +116,69 @@ const PERMISSIONS_POLICY = [
   "usb=()",
   "xr-spatial-tracking=()",
 ].join(", ");
+
+type LandingDiagnosticRequest = {
+  id: string;
+  attribution: LandingDiagnosticAttribution;
+  arrivedAt: string;
+};
+
+async function callLandingDiagnosticRpc(
+  env: Env,
+  functionName:
+    | "record_landing_diagnostic_arrival"
+    | "purge_expired_landing_diagnostics",
+  payload: Record<string, unknown> = {},
+) {
+  if (!env.SUPABASE_URL || !env.SUPABASE_SECRET_KEY) return;
+
+  const response = await fetch(
+    new URL(`/rest/v1/rpc/${functionName}`, env.SUPABASE_URL),
+    {
+      method: "POST",
+      headers: {
+        apikey: env.SUPABASE_SECRET_KEY,
+        Authorization: `Bearer ${env.SUPABASE_SECRET_KEY}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    },
+  );
+  if (!response.ok) throw new Error("landing_diagnostic_storage_failed");
+}
+
+function queueLandingDiagnosticArrival(
+  diagnostic: LandingDiagnosticRequest,
+  env: Env,
+  ctx: ExecutionContext,
+  response?: Response,
+) {
+  ctx.waitUntil(
+    callLandingDiagnosticRpc(env, "record_landing_diagnostic_arrival", {
+      p_id: diagnostic.id,
+      p_campaign_id: diagnostic.attribution.campaignId,
+      p_server_arrived_at: diagnostic.arrivedAt,
+      p_server_responded_at: response ? new Date().toISOString() : null,
+      p_document_status: response?.status ?? null,
+    }).catch(() => {
+      console.error("Landing diagnostic storage failed", "arrival_write");
+    }),
+  );
+}
+
+function injectLandingDiagnostic(response: Response, id: string) {
+  if (!response.headers.get("content-type")?.startsWith("text/html")) {
+    return response;
+  }
+  const script = landingDiagnosticBootstrapScript(id);
+  return new HTMLRewriter()
+    .on("head", {
+      element(element) {
+        element.append(`<script>${script}</script>`, { html: true });
+      },
+    })
+    .transform(response);
+}
 
 function configuredConnectionOrigins(env: Env) {
   const origins = new Set<string>();
@@ -233,6 +314,23 @@ const worker = {
         `https://framewearable.com${url.pathname}${url.search}`,
         308,
       ));
+    }
+
+    const diagnosticAttribution =
+      request.method === "GET" &&
+      url.hostname.toLowerCase() === "framewearable.com"
+        ? metaLandingAttribution(url, request.headers.get("user-agent"))
+        : null;
+    const landingDiagnostic: LandingDiagnosticRequest | null =
+      diagnosticAttribution
+        ? {
+            id: crypto.randomUUID(),
+            attribution: diagnosticAttribution,
+            arrivedAt: new Date().toISOString(),
+          }
+        : null;
+    if (landingDiagnostic) {
+      queueLandingDiagnosticArrival(landingDiagnostic, env, ctx);
     }
 
     const isLocalRequest = isLoopbackHost(url.host);
@@ -490,11 +588,38 @@ const worker = {
       }
     }
 
-    const response = await handler.fetch(appRequest, env, ctx);
+    let response: Response;
+    try {
+      response = await handler.fetch(appRequest, env, ctx);
+    } catch (error) {
+      if (landingDiagnostic) {
+        queueLandingDiagnosticArrival(
+          landingDiagnostic,
+          env,
+          ctx,
+          new Response(null, { status: 500 }),
+        );
+      }
+      throw error;
+    }
+
+    if (landingDiagnostic) {
+      queueLandingDiagnosticArrival(landingDiagnostic, env, ctx, response);
+      response = injectLandingDiagnostic(response, landingDiagnostic.id);
+    }
 
     return respond(response);
   },
   async scheduled(_event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
+    ctx.waitUntil(
+      callLandingDiagnosticRpc(
+        env,
+        "purge_expired_landing_diagnostics",
+      ).catch(() => {
+        console.error("Landing diagnostic storage failed", "expiration_purge");
+      }),
+    );
+
     if (!env.PREORDER_MAINTENANCE_SECRET) {
       console.error("PREORDER_MAINTENANCE_SECRET is not configured; delivery deadlines were not processed.");
       return;

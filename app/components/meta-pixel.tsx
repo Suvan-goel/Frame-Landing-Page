@@ -19,6 +19,12 @@ import {
   META_TRACKING_STATE_VERSION,
   type MetaTrackingClientState,
 } from "../../lib/meta-tracking";
+import {
+  recordLandingDiagnostic,
+  recordLandingDiagnosticGeo,
+  recordLandingDiagnosticPixelFailure,
+  startLandingDiagnosticResourceObserver,
+} from "./landing-diagnostics.client";
 
 const META_LEAD_RECORDED_STORAGE_KEY = "frame-meta-lead-recorded-v1";
 const META_PENDING_LEADS_STORAGE_KEY = "frame-meta-pending-leads-v1";
@@ -38,6 +44,7 @@ let inMemoryPixelAllowedOnRoute = false;
 let inMemoryPendingMetaLeads: PendingMetaLead[] = [];
 const metaLeadDeliveriesInFlight = new Set<string>();
 const metaLeadsRecordedInMemory = new Set<string>();
+const observedMetaPixelScripts = new WeakSet<HTMLScriptElement>();
 
 type PendingMetaLead = {
   eventId: string;
@@ -147,6 +154,27 @@ function removeMetaPixel() {
     .forEach((script) => script.remove());
   window.fbq = undefined;
   (window as Window & { _fbq?: unknown })._fbq = undefined;
+}
+
+function observeMetaPixelScript(script: HTMLScriptElement) {
+  if (observedMetaPixelScripts.has(script)) return;
+  observedMetaPixelScripts.add(script);
+
+  let settled = false;
+  const settle = (outcome: "loaded" | "error" | "timeout") => {
+    if (settled) return;
+    settled = true;
+    if (outcome === "loaded") {
+      recordLandingDiagnostic("pixel_script_loaded");
+    } else {
+      recordLandingDiagnosticPixelFailure(
+        outcome === "error" ? "script_error" : "script_timeout",
+      );
+    }
+  };
+  script.addEventListener("load", () => settle("loaded"), { once: true });
+  script.addEventListener("error", () => settle("error"), { once: true });
+  window.setTimeout(() => settle("timeout"), 5_000);
 }
 
 function clearMetaCookies() {
@@ -429,12 +457,18 @@ export function MetaPixelRouteGuard({
     !globalPrivacyControl;
 
   useEffect(() => {
+    recordLandingDiagnostic("hydrated");
+    return startLandingDiagnosticResourceObserver();
+  }, []);
+
+  useEffect(() => {
     if (!privacyChoicesAllowedOnRoute) return;
 
     let active = true;
     let refreshTimer: ReturnType<typeof setTimeout> | null = null;
     const applyPolicy = (result: GeoPolicyResult) => {
       if (!active) return;
+      recordLandingDiagnosticGeo(result);
       setGeoPolicy(result);
       if (refreshTimer) clearTimeout(refreshTimer);
       refreshTimer = null;
@@ -488,6 +522,8 @@ export function MetaPixelRouteGuard({
     }
 
     if (typeof window.fbq === "function") {
+      recordLandingDiagnostic("pixel_initialized");
+      recordLandingDiagnostic("pageview_attempted");
       window.fbq("trackSingle", META_PIXEL_ID, "PageView");
       replayPendingMetaLeads();
       return;
@@ -497,7 +533,22 @@ export function MetaPixelRouteGuard({
     const script = document.createElement("script");
     script.id = "meta-pixel";
     script.text = META_PIXEL_BOOTSTRAP;
-    document.head.appendChild(script);
+    try {
+      document.head.appendChild(script);
+    } catch {
+      recordLandingDiagnosticPixelFailure("bootstrap_error");
+      return;
+    }
+    if (typeof window.fbq !== "function") {
+      recordLandingDiagnosticPixelFailure("fbq_unavailable");
+      return;
+    }
+    recordLandingDiagnostic("pixel_initialized");
+    recordLandingDiagnostic("pageview_attempted");
+    const externalScript = document.querySelector<HTMLScriptElement>(
+      'script[src*="connect.facebook.net/en_US/fbevents.js"]',
+    );
+    if (externalScript) observeMetaPixelScript(externalScript);
     replayPendingMetaLeads();
   }, [consentReady, effectiveConsent, pathname, pixelAllowedOnRoute]);
 

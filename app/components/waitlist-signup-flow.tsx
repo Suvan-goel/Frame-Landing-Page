@@ -26,6 +26,7 @@ import {
   trackMetaQualifiedLead,
   trackWaitlistEvent,
 } from "./meta-pixel";
+import { recordLandingDiagnostic } from "./landing-diagnostics.client";
 import { requestTrackingPolicyAttestation } from "@/lib/geo-attestation";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -345,6 +346,7 @@ export function WaitlistSignupProvider({
         setSubmissionError("");
         setEmailStatus("submitting");
         trackWaitlistEvent("waitlist_email_submitted", { placement });
+        recordLandingDiagnostic("lead_attempted");
 
         try {
           const geoPolicy = await requestTrackingPolicyAttestation();
@@ -391,6 +393,7 @@ export function WaitlistSignupProvider({
           if (result.leadCreated === true && metaEventId) {
             trackMetaLead(metaEventId);
           }
+          recordLandingDiagnostic("lead_completed");
           router.push("/early-access/questions");
         } catch (error) {
           const message =
