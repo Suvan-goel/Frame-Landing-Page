@@ -4,11 +4,11 @@ export const PREORDER_SKU = "frame-device-preorder-v1";
 export const PREORDER_PRODUCT_NAME = "Frame device pre-order";
 // The Pre-order Terms and Cancellation and Refund Policy are accepted together
 // and versioned as one legal pack. The database retains `terms_version` for compatibility.
-export const PREORDER_LEGAL_PACK_VERSION = "2026-08-11-v1";
+export const PREORDER_LEGAL_PACK_VERSION = "2026-08-12-v1";
 export const PREORDER_TERMS_VERSION = PREORDER_LEGAL_PACK_VERSION;
-export const PREORDER_LEGAL_PACK_UPDATED = "August 11, 2026";
-export const PREORDER_PRODUCT_STATUS_VERSION = "2026-08-11-v1";
-export const PREORDER_PRODUCT_STATUS_UPDATED = "August 11, 2026";
+export const PREORDER_LEGAL_PACK_UPDATED = "August 12, 2026";
+export const PREORDER_PRODUCT_STATUS_VERSION = "2026-08-12-v1";
+export const PREORDER_PRODUCT_STATUS_UPDATED = "August 12, 2026";
 // This remains false until the single incorporated-company configuration has
 // a valid legal name, registration number, registered office, separately
 // authorised correspondence address, jurisdiction, support contact, privacy

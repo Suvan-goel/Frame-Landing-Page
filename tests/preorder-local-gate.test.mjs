@@ -174,9 +174,9 @@ async function render(path = "/", init, origin = "https://framewearable.com", en
 }
 
 test("keeps every remote public pre-order surface unavailable until the public launch switch opens", async () => {
-  assert.equal(PREORDER_TERMS_VERSION, "2026-08-11-v1");
+  assert.equal(PREORDER_TERMS_VERSION, "2026-08-12-v1");
   assert.equal(PREORDER_TERMS_VERSION, PREORDER_LEGAL_PACK_VERSION);
-  assert.equal(PREORDER_PRODUCT_STATUS_VERSION, "2026-08-11-v1");
+  assert.equal(PREORDER_PRODUCT_STATUS_VERSION, "2026-08-12-v1");
   assert.equal(PREORDER_SELLER_DETAILS_COMPLETE, true);
   assert.equal(PREORDER_WARRANTY_DETAILS_COMPLETE, true);
 
@@ -327,6 +327,7 @@ test("keeps the funnel usable only on loopback during development", async () => 
   assert.match(html, /has not received FDA marketing authorization/);
   assert.match(html, /Continue to secure checkout/);
   assert.match(html, /Cancellation and Refund Policy/);
+  assert.doesNotMatch(html, /FCC equipment authorization/i);
   assert.match(html, /rel="canonical" href="https:\/\/framewearable\.com\/preorder\/review"/);
   assert.match(html, /name="email"/);
   assert.match(html, /name="postalCode"/);
@@ -340,8 +341,10 @@ test("keeps the funnel usable only on loopback during development", async () => 
   assert.match(productStatus, /Current shipping plan/);
   assert.match(productStatus, /not an FDA-authorized medical/);
   assert.match(productStatus, /Targeting dispatch in\s*(?:<!-- -->)?Q1 2027/);
-  assert.match(productStatus, /Product status version 2026-08-11-v1/);
-  assert.match(productStatus, /August 11, 2026/);
+  assert.match(productStatus, /Product status version 2026-08-12-v1/);
+  assert.match(productStatus, /August 12, 2026/);
+  assert.match(productStatus, /FCC equipment authorization and delivery/);
+  assert.match(productStatus, /conditional upon successful completion of the applicable FCC equipment/);
   assert.match(productStatus, /Pre-order Terms and Cancellation and Refund Policy/);
 
   assert.equal(termsResponse.status, 200);
@@ -350,7 +353,9 @@ test("keeps the funnel usable only on loopback during development", async () => 
   assert.match(terms, /Delivery and risk of loss/);
   assert.match(terms, /Warranty and product problems/);
   assert.match(terms, /has not received FDA marketing authorization/);
-  assert.match(terms, /Legal pack version 2026-08-11-v1/);
+  assert.match(terms, /Legal pack version 2026-08-12-v1/);
+  assert.match(terms, /FCC equipment authorization and conditional delivery/);
+  assert.match(terms, /FCC rules governing conditional sales do not determine/);
   assert.match(terms, /Standard US shipping is included at no additional charge/i);
   assert.doesNotMatch(terms, /release price/i);
   assert.doesNotMatch(terms, /saving\s*(?:<!-- -->)?\$200/i);
@@ -360,7 +365,9 @@ test("keeps the funnel usable only on loopback during development", async () => 
 
   assert.equal(refundsResponse.status, 200);
   const refunds = await refundsResponse.text();
-  assert.match(refunds, /Legal pack version 2026-08-11-v1/);
+  assert.match(refunds, /Legal pack version 2026-08-12-v1/);
+  assert.match(refunds, /If FCC equipment authorization is not completed/);
+  assert.match(refunds, /automatically cancel the unshipped pre-order/);
   assert.match(refunds, /Standard US shipping is free/i);
   assert.match(refunds, /Key rights/);
   assert.match(refunds, /Shipping or product changes/);

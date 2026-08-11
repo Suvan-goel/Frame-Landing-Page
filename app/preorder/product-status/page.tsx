@@ -159,6 +159,21 @@ export default async function PreorderProductStatusPage() {
           </p>
         </section>
 
+        <section>
+          <h2>FCC equipment authorization and delivery</h2>
+          <p>
+            Frame is subject to Federal Communications Commission rules. This pre-order is a conditional sale,
+            and delivery to the end user is conditional upon successful completion of the applicable FCC equipment
+            authorization process. Frame will not deliver the device before that process is successfully completed.
+          </p>
+          <p>
+            FCC rules governing conditional sales do not determine the applicability of consumer-protection,
+            contractual, or other provisions of federal or state law. If the applicable authorization process is not
+            successfully completed, Frame will cancel your unshipped pre-order and issue a full refund under the
+            <Link href="/preorder/refunds#fcc-authorization"> Cancellation and Refund Policy</Link>.
+          </p>
+        </section>
+
         <p className="legal-disclaimer">
           At checkout, you’ll confirm that you have reviewed this product status separately from accepting the
           Pre-order Terms and Cancellation and Refund Policy. The version you accept will be recorded with your order.

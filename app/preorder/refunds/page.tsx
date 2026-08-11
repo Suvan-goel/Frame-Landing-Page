@@ -26,6 +26,7 @@ const REFUND_SECTIONS = [
   ["cancelling", "Cancel before fulfilment"],
   ["shipping-delays", "Shipping estimate changes"],
   ["product-changes", "Material product changes"],
+  ["fcc-authorization", "FCC authorization"],
   ["refund-timing", "Refund timing"],
   ["returns", "Change-of-mind returns"],
   ["product-problems", "Delivery and product problems"],
@@ -166,8 +167,20 @@ export default async function PreorderRefundsPage() {
               </p>
             </section>
 
+            <section id="fcc-authorization">
+              <h2>4. If FCC equipment authorization is not completed</h2>
+              <p>
+                Delivery of Frame is conditional upon successful completion of the applicable FCC equipment
+                authorization process. Frame will not deliver the device before that process is successfully completed.
+                If authorization is not successfully completed, we will automatically cancel the unshipped pre-order
+                and refund every amount paid to the original payment method. FCC rules governing conditional sales do
+                not determine any other consumer-protection, contractual, or legal rights you may have under federal or
+                state law.
+              </p>
+            </section>
+
             <section id="refund-timing">
-              <h2>4. Refund timing</h2>
+              <h2>5. Refund timing</h2>
               <p>
                 We will initiate a full pre-dispatch refund as soon as possible and no later than seven business days
                 after you request cancellation or an automatic cancellation takes effect. The refund goes to your
@@ -177,7 +190,7 @@ export default async function PreorderRefundsPage() {
             </section>
 
             <section id="returns">
-              <h2>5. Change-of-mind returns after delivery</h2>
+              <h2>6. Change-of-mind returns after delivery</h2>
               <p>
                 Request a return through <Link href="/contact?topic=preorder">pre-order support</Link> within 30 calendar
                 days after delivery, using your order number and purchase email. After receiving return instructions,
@@ -193,12 +206,12 @@ export default async function PreorderRefundsPage() {
               <p>
                 You are responsible for change-of-mind return shipping. We will initiate a refund of the product price
                 and related tax to your original payment method within 14 calendar days after receiving the returned
-                device. The issuer timing described in section 4 then applies.
+                device. The issuer timing described in section 5 then applies.
               </p>
             </section>
 
             <section id="product-problems">
-              <h2>6. Delivery and product problems</h2>
+              <h2>7. Delivery and product problems</h2>
               <p>
                 If the package is lost in transit, the device arrives faulty or damaged, or the wrong item is supplied,
                 contact <Link href="/contact?topic=preorder">pre-order support</Link>. We may ask for photographs or
@@ -214,7 +227,7 @@ export default async function PreorderRefundsPage() {
             </section>
 
             <section id="failed-refunds">
-              <h2>7. Failed refunds and disputes</h2>
+              <h2>8. Failed refunds and disputes</h2>
               <p>
                 If a refund fails, Frame will investigate and contact you. If it has not appeared 10 business days after
                 we initiate it, use the support form below with your order number and purchase email. Nothing in this
@@ -223,7 +236,7 @@ export default async function PreorderRefundsPage() {
             </section>
 
             <section id="contact">
-              <h2>8. Contact</h2>
+              <h2>9. Contact</h2>
               {COMPANY_INCORPORATION_DETAILS_COMPLETE ? (
                 <p>
                   Use the <Link href="/contact?topic=preorder">Frame pre-order support form</Link> or email {SUPPORT_EMAIL}

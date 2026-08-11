@@ -40,6 +40,7 @@ const TERMS_SECTIONS = [
   ["cancellations", "Cancellation, refunds, and returns"],
   ["warranty", "Warranty and product problems"],
   ["product-use", "Product use and medical decisions"],
+  ["fcc-authorization", "FCC equipment authorization"],
   ["information", "Order information and communications"],
   ["changes", "Changes to the legal pack"],
   ["law", "Governing law and consumer rights"],
@@ -289,8 +290,25 @@ export default async function PreorderTermsPage() {
               </p>
             </section>
 
+            <section id="fcc-authorization">
+              <h2>10. FCC equipment authorization and conditional delivery</h2>
+              <p>
+                Frame is subject to Federal Communications Commission rules. This pre-order is a conditional sale,
+                and delivery to the end user is conditional upon successful completion of the applicable FCC equipment
+                authorization process. Frame will not deliver the device to you before that process is successfully
+                completed.
+              </p>
+              <p>
+                FCC rules governing conditional sales do not determine the applicability of consumer-protection,
+                contractual, or other provisions of federal or state law. If the applicable equipment authorization
+                process is not successfully completed, Frame will cancel the unshipped pre-order and refund every
+                amount paid to the original payment method under the <Link href="/preorder/refunds#fcc-authorization">Cancellation
+                and Refund Policy</Link>. This section does not limit any other rights or remedies available to you.
+              </p>
+            </section>
+
             <section id="information">
-              <h2>10. Order information and communications</h2>
+              <h2>11. Order information and communications</h2>
               <p>
                 Frame uses the name, email, delivery address, payment status, accepted document versions, and order
                 history to process and support the pre-order. Essential order, delay, cancellation, refund, and shipping
@@ -300,7 +318,7 @@ export default async function PreorderTermsPage() {
             </section>
 
             <section id="changes">
-              <h2>11. Changes to the legal pack</h2>
+              <h2>12. Changes to the legal pack</h2>
               <p>
                 The legal pack version accepted at checkout covers these Pre-order Terms and the Cancellation and Refund
                 Policy, is recorded with the order, and continues to apply to that order. The Product Status Disclosure
@@ -317,7 +335,7 @@ export default async function PreorderTermsPage() {
             </section>
 
             <section id="law">
-              <h2>12. Governing law and consumer rights</h2>
+              <h2>13. Governing law and consumer rights</h2>
               <p>
                 To the extent permitted by law, these terms are governed by the laws of England and Wales. This choice
                 does not deprive you of mandatory consumer protections available where you live. Nothing here requires
