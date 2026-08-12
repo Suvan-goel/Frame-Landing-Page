@@ -50,7 +50,8 @@ location.
   lithium-polymer battery, installed in the wearable, with an expected total
   rating below 20 Wh. Production-battery evidence and carrier acceptance remain
   required before transport.
-- Public pre-orders: disabled.
+- Public pre-orders: enabled on August 12, 2026 after the verified live-smoke
+  order was fully refunded and the 100-unit live allocation was opened.
 
 Reopen the regulatory review before any material change to product claims,
 intended use, outputs, alerts, customer instructions or product design.
@@ -82,8 +83,8 @@ working from the same offer:
 - Final legal-pack release approval date and approver: August 11, 2026;
   founder.
 - Tax approval date and approver: August 10, 2026; founder.
-- Approved legal-pack version: `2026-08-11-v1`
-- Approved Product Status Disclosure version: `2026-08-11-v1`
+- Approved legal-pack version: `2026-08-12-v1`
+- Approved Product Status Disclosure version: `2026-08-12-v1`
 - Approved tax-policy version: `uk-remote-seller-2026-08-09-v1`
 - Secure evidence location: separate location record waived by founder on
   August 10, 2026; not a launch prerequisite.

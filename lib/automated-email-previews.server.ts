@@ -37,7 +37,10 @@ function extractLinks(html: string) {
   return [...new Set(links)];
 }
 
-function operationsRecipient(value: string | null, admins: string | null) {
+function operationsRecipient(
+  value: string | null | undefined,
+  admins: string | null | undefined,
+) {
   if (value?.trim()) return value.trim().toLowerCase();
   return (
     admins

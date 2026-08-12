@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState, useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   effectiveTrackingConsent,
   type OptionalTrackingConsent,
@@ -430,6 +430,7 @@ export function MetaPixelRouteGuard({
   );
   const [preferencesOpen, setPreferencesOpen] = useState(false);
   const [geoPolicy, setGeoPolicy] = useState<GeoPolicyResult | null>(null);
+  const preferencesRef = useRef<HTMLElement>(null);
   const policyMode: TrackingPolicyMode | "pending" =
     geoPolicy?.mode ?? "pending";
   const globalPrivacyControl = useSyncExternalStore(
@@ -455,6 +456,10 @@ export function MetaPixelRouteGuard({
     policyMode === "explicit-consent" &&
     consent === null &&
     !globalPrivacyControl;
+
+  useEffect(() => {
+    if (preferencesOpen) preferencesRef.current?.focus();
+  }, [preferencesOpen]);
 
   useEffect(() => {
     recordLandingDiagnostic("hydrated");
@@ -581,6 +586,8 @@ export function MetaPixelRouteGuard({
     <>
       {showBanner ? (
         <section
+          ref={preferencesRef}
+          tabIndex={-1}
           className={
             useRedesignedConsent
               ? "tracking-consent tracking-consent--redesigned"

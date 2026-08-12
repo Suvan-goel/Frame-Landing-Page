@@ -18,6 +18,7 @@ export function InterestFlow({
       <main className="interest-flow" aria-label="Frame updates">
         <SiteHeader />
         <div className="interest-flow__shell">
+          <h1 className="sr-only">Get Frame updates</h1>
           <WaitlistSignupFlow
             placement="interest_page"
             showFoundingContributorOffer={showFoundingContributorOffer}

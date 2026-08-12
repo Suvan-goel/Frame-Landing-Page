@@ -4,43 +4,49 @@ This is the canonical launch runbook. The supporting evidence and handoff templa
 is [`docs/preorder-pre-incorporation-pack.md`](docs/preorder-pre-incorporation-pack.md).
 Do not duplicate launch instructions elsewhere.
 
-This runbook keeps the public checkout closed until every commercial,
-operational and legal dependency is ready. The database `live` allocation must
-remain `paused` until the final cutover step.
+This runbook records the completed public cutover and the safeguards that must
+remain in place while checkout is open. Use the final-cutover procedure again
+only for a full relaunch after sales have been intentionally paused.
 
-## 0. Current public launch hold
+## 0. Current public launch state
 
-Pre-order source may be deployed while the launch locks below remain intact.
-The public homepage must remain waitlist-only, and remote pre-order pages,
-checkout APIs and public status routes must return `404`. Owner routes must
-remain authenticated and launch-gated. Local loopback requests remain available
-for development and Stripe test-mode checks.
+The controlled public cutover completed on August 12, 2026. Production is in
+live mode, the public pre-order flow is enabled, and the initial 100-unit
+allocation is open within the 1,000-unit lifetime ceiling. Owner routes remain
+authenticated and launch-gated.
 
-Keep every safeguard in place:
+Keep these production invariants aligned:
 
-- `PREORDER_MODE` stays `test` or `off` until private live verification;
-- `PREORDER_LEGAL_APPROVED_VERSION` stays empty;
-- `PREORDER_PRODUCT_STATUS_APPROVED_VERSION` stays empty;
-- `PREORDER_TAX_REVIEW_APPROVED_VERSION` stays empty;
-- both source legal versions continue to begin with `draft`;
-- `PREORDER_PUBLIC_LAUNCH_ENABLED` stays `false` and
-  `PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID` stays empty; and
-- the Supabase `live` allocation stays `paused`.
+- `PREORDER_MODE=live`;
+- `PREORDER_LEGAL_APPROVED_VERSION=2026-08-12-v1`;
+- `PREORDER_PRODUCT_STATUS_APPROVED_VERSION=2026-08-12-v1`;
+- `PREORDER_TAX_REVIEW_APPROVED_VERSION=uk-remote-seller-2026-08-09-v1`;
+- `PREORDER_PUBLIC_LAUNCH_ENABLED=true`;
+- `PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID` contains the verified, fully refunded
+  private live-smoke order UUID;
+- `PREORDER_PREVIEW_MODE=false` and
+  `PREORDER_ALLOW_BANK_PENDING_LAUNCH=false`; and
+- the Supabase `live` allocation remains open with a released-unit ceiling of
+  `100`, unless an emergency pause is required.
 
 Run `npm run preorder:test:visibility` after any routing, homepage, Worker or
-environment change. It verifies that the public homepage has no pre-order link
-and every remote pre-order surface remains unavailable.
+environment change. It verifies the source-level visibility gates that prevent
+public pre-order surfaces from being exposed without all required live launch
+safeguards.
 
-## 1. Current local state
+## 1. Current verified state
 
-- Stripe test mode is connected at $299 USD for one device.
+- Stripe live and test modes are connected to separate one-time $299 USD Prices
+  for one device.
 - Orders are limited to all 50 United States and Washington, DC; US territories and international destinations are excluded.
 - The recorded estimated shipping window is Q1 2027.
 - The offer is $299 USD plus applicable sales tax, with free standard US shipping.
 - Customer confirmation, management, address, delivery, cancellation, shipping and refund emails are connected.
 - Test and live commerce records are separated.
 - The lifetime inventory ceiling is 1,000 units, with an approved initial cumulative release allocation of 100 units.
-- Live allocation is paused.
+- The live allocation is open at 100 released units. At the August 12, 2026
+  verification snapshot, there were no paid or reserved live units and all 100
+  released units remained available.
 
 Run the local preflight at any time:
 
@@ -107,9 +113,8 @@ This command requires Stripe test mode and a paused live allocation. It temporar
 
 ## 2. Private staging rehearsal
 
-This is an optional later phase and is not part of the current local-only hold.
-Do not create or distribute a staging invitation until a private rehearsal is
-explicitly approved.
+This remains available for future private rehearsals. Do not create or
+distribute a staging invitation unless a new rehearsal is explicitly approved.
 
 Private staging must use Stripe test mode and must not contain a legal approval value.
 
@@ -146,7 +151,7 @@ npm run preorder:staging-link -- https://staging.example.com
 
 The invitation grants a signed, secure, 12-hour browser session. Rotating `PREORDER_STAGING_ACCESS_SECRET` revokes outstanding access.
 
-## 3. Company, legal, tax and fulfilment hold
+## 3. Company, legal, tax and fulfilment controls
 
 The founder confirmed on August 10, 2026 that the regulatory review is complete
 and requires no site-copy changes. Retain the underlying review record outside
@@ -175,9 +180,10 @@ the Stripe Tax head-office country for this operating model and approved tax
 policy version `uk-remote-seller-2026-08-09-v1`. The tax lock may use only that
 exact version during the controlled incorporation-day launch sequence.
 
-The company-identity work, authorised correspondence address, and matching
-non-draft legal and product-status versions were completed on August 11, 2026.
-Do not release the tax lock outside the controlled launch sequence.
+The company-identity work and authorised correspondence address were completed
+on August 11, 2026. The matching approved production legal and product-status
+versions are `2026-08-12-v1`. Keep the approved tax lock aligned with the
+production value above.
 
 - Preserve the verified incorporated seller identity, document-matched registered office, and Stable-authorised customer correspondence address. Keep `correspondenceAddressAuthorized` and `MAILING_POSTAL_ADDRESS` aligned with the approved provider record.
 - Preserve the founder-approved one-year limited hardware warranty, shipping-delay consent matrix, material-change consent flow, and automatic deadline refund operation unless the founder reopens the legal-page review.
@@ -196,9 +202,9 @@ Do not release the tax lock outside the controlled launch sequence.
   replacement batteries out of the ordinary outbound workflow until the carrier
   has approved a compliant procedure.
 - Keep the founder-approved tangible-goods Stripe product tax code `txcd_99999999` unless the product classification changes.
-- Keep `PREORDER_TERMS_VERSION` and the matching product-status version on the approved `2026-08-11-v1` launch versions until substantive copy changes require a new approval.
-- Keep `PREORDER_LEGAL_APPROVED_VERSION` set to exactly `2026-08-11-v1`.
-- Keep `PREORDER_PRODUCT_STATUS_APPROVED_VERSION` set to exactly `2026-08-11-v1`.
+- Keep `PREORDER_TERMS_VERSION` and the matching product-status version on the approved `2026-08-12-v1` launch versions until substantive copy changes require a new approval.
+- Keep `PREORDER_LEGAL_APPROVED_VERSION` set to exactly `2026-08-12-v1`.
+- Keep `PREORDER_PRODUCT_STATUS_APPROVED_VERSION` set to exactly `2026-08-12-v1`.
 - Re-run the full test suite after the version and copy change.
 
 The application rejects live checkout while the active version begins with `draft` or does not exactly match the configured approval value.
@@ -223,17 +229,17 @@ explicit General - Tangible Goods tax code `txcd_99999999`, and carries the
 separate test Price. The superseded live Price
 `price_1U3O9SCayZz7QEuo2LpiEA7H` must not be configured or used for checkout.
 
-Required live values:
+Current live invariants:
 
 ```text
 PREORDER_MODE=live
-PREORDER_LEGAL_APPROVED_VERSION=<exact approved non-draft version>
-PREORDER_PRODUCT_STATUS_APPROVED_VERSION=<exact approved non-draft version>
-PREORDER_TAX_REVIEW_APPROVED_VERSION=<exact approved tax-policy version>
+PREORDER_LEGAL_APPROVED_VERSION=2026-08-12-v1
+PREORDER_PRODUCT_STATUS_APPROVED_VERSION=2026-08-12-v1
+PREORDER_TAX_REVIEW_APPROVED_VERSION=uk-remote-seller-2026-08-09-v1
 PREORDER_PREVIEW_MODE=false
 PREORDER_LIVE_SMOKE_ACCESS_SECRET=<fourth unique secret of at least 32 characters>
-PREORDER_PUBLIC_LAUNCH_ENABLED=false
-PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID=
+PREORDER_PUBLIC_LAUNCH_ENABLED=true
+PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID=<verified fully refunded live-smoke order UUID>
 PREORDER_ALLOW_BANK_PENDING_LAUNCH=false
 PREORDER_FROM_EMAIL=Frame Pre-orders <preorders@framewearable.com>
 PREORDER_OPERATIONS_EMAIL=support@framewearable.com
@@ -296,11 +302,15 @@ verified event is claimed in Supabase before Stripe is acknowledged, then
 processed in the Worker background. Failed work and processing that has stalled
 for five minutes appears in the owner recovery panel and can be safely retried.
 
-## 5. Final cutover
+## 5. Completed cutover and future releases
 
 Before each Sites publish, commit the exact validated source on `main`, push
 `main`, and run `npm run release:check`. Package and publish only that exact
 commit.
+
+The initial live-smoke and public-cutover sequence below completed on August 12,
+2026. Repeat it only for a full relaunch after an intentional launch reset; an
+ordinary source release must preserve the current live invariants in section 0.
 
 1. Configure live mode with `PREORDER_PUBLIC_LAUNCH_ENABLED=false`, an empty `PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID`, and a unique `PREORDER_LIVE_SMOKE_ACCESS_SECRET`. Public pre-order routes remain hidden.
 2. Keep the Supabase `live` allocation `paused` and set its released-unit ceiling to exactly `1`.

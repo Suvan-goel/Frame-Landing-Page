@@ -36,7 +36,7 @@ async function loadAllEnvironmentRows(
       .order("id", { ascending: true })
       .range(offset, offset + DATABASE_PAGE_SIZE - 1);
     if (result.error) throw result.error;
-    const page = (result.data ?? []) as Record<string, unknown>[];
+    const page = (result.data ?? []) as unknown as Record<string, unknown>[];
     rows.push(...page);
     if (page.length < DATABASE_PAGE_SIZE) return rows;
   }

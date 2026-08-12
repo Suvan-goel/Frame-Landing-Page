@@ -67,7 +67,7 @@ test("keeps one canonical launch runbook with every approval gate", async () => 
   assert.match(runbook, /This is the canonical launch runbook/);
   assert.match(
     runbook,
-    /PREORDER_TAX_REVIEW_APPROVED_VERSION=<exact approved tax-policy version>/,
+    /PREORDER_TAX_REVIEW_APPROVED_VERSION=uk-remote-seller-2026-08-09-v1/,
   );
   assert.match(runbook, /MAILING_POSTAL_ADDRESS=<authorised public correspondence address>/);
   assert.match(pointer, /\.\.\/PREORDER_LAUNCH_RUNBOOK\.md/);

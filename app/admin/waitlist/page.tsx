@@ -143,7 +143,6 @@ export default async function WaitlistAdminPage({
 
         <AdminTimeZoneForm
           activeTab={activeTab}
-          initialDateTime={new Date().toISOString()}
           selectedTimeZone={selectedTimeZone}
         />
 

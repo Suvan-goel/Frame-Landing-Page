@@ -436,12 +436,25 @@ test("server-renders the dedicated interest page", async () => {
   assert.equal(response.status, 200);
   const html = await response.text();
 
+  assert.match(html, /<h1 class="sr-only">Get Frame updates<\/h1>/);
   assert.match(html, /Get updates/);
   assert.match(html, /Product milestones, launch news, and opportunities to shape what comes next/);
   assert.match(html, /Sign up/);
   assert.match(html, /name="email"/);
   assert.match(html, /aria-label="Back to home"/);
   assert.doesNotMatch(html, /<dialog/i);
+});
+
+test("redirects conventional favicon requests to the declared icon", async () => {
+  const response = await render("/favicon.ico", {
+    headers: { accept: "image/*" },
+  });
+
+  assert.equal(response.status, 308);
+  assert.equal(
+    new URL(response.headers.get("location")).pathname,
+    "/favicon-transparent.png",
+  );
 });
 
 test("server-renders the contact page", async () => {
@@ -813,6 +826,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.doesNotMatch(page, /<svg|ProductDiagram|CrossSection|PatternTimeline/);
   assert.match(waitlistFlow, /fetch\("\/api\/waitlist"/);
   assert.doesNotMatch(interestFlow, /<dialog|showModal\(|OPEN_INTEREST_FLOW_EVENT/);
+  assert.match(interestFlow, /<h1 className="sr-only">Get Frame updates<\/h1>/);
   assert.match(interestPage, /showFoundingContributorOffer=/);
   assert.match(interestPage, /isFoundingContributorSalesPageEnabled\(\)/);
   assert.match(interestPage, /canonical: "\/interest"/);
@@ -912,6 +926,8 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(metaPixel, />\s*Allow\s*</);
   assert.match(metaPixel, /Privacy choices/);
   assert.match(metaPixel, /preferencesOpen \|\| \(pixelAllowedOnRoute && requiresInitialChoice\)/);
+  assert.match(metaPixel, /preferencesRef\.current\?\.focus\(\)/);
+  assert.match(metaPixel, /ref=\{preferencesRef\}[\s\S]*?tabIndex=\{-1\}/);
   assert.match(metaPixel, /navigator\.globalPrivacyControl === true/);
   assert.match(metaPixel, /readServerGlobalPrivacyControl/);
   assert.match(metaPixel, /requestTrackingPolicyAttestation/);

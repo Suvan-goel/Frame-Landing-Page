@@ -52,7 +52,7 @@ export function AdminAutomatedEmailPreviews({
     }
   }
 
-  function choosePreview(id: string) {
+  function choosePreview(id: AutomatedEmailPreview["id"]) {
     setSelectedId(id);
     setTestStatus("idle");
     setTestMessage("");
