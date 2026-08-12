@@ -53,7 +53,7 @@ export default async function PrivacyPage() {
 
   return (
     <main className="legal-page privacy-page preorder-terms-page">
-      <SiteHeader />
+      <SiteHeader backHref="/" backLabel="Back" historyBack />
       <article className="legal-shell">
         <p className="eyebrow">Privacy</p>
         <h1>Privacy notice</h1>

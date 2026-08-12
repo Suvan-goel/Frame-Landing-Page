@@ -378,6 +378,7 @@ test("keeps the funnel usable only on loopback during development", async () => 
   assert.equal(privacyResponse.status, 200);
   const privacy = await privacyResponse.text();
   assert.match(privacy, /Device pre-orders/);
+  assert.match(privacy, /aria-label="Back"/);
   assert.match(privacy, /preorder-terms-return/);
   assert.match(privacy, />Exit<\/a>/);
 });
