@@ -189,15 +189,12 @@ export default async function Home() {
                 <figure className="home-preorder-hero__mobile-product">
                   <img
                     src="/frame-product-concept-realistic-v3-transparent-480w.webp"
-                    alt="Frame upper-arm wearable product concept"
+                    alt="Frame upper-arm wearable preview"
                     width={480}
                     height={480}
                     loading="eager"
                     decoding="async"
                   />
-                  <figcaption>
-                    <strong>Product concept</strong>
-                  </figcaption>
                 </figure>
                 <p className="home-preorder-hero__offer-line">
                   <span className="home-preorder-hero__offer-tag">Pre order offer</span>
@@ -269,11 +266,7 @@ export default async function Home() {
                 decoding="async"
               />
             </div>
-            <figcaption>
-              {showPreorderAreas
-                ? "Design preview"
-                : "Product concept. Final design in development."}
-            </figcaption>
+            {showPreorderAreas ? <figcaption>Design preview</figcaption> : null}
           </figure>
         </div>
       </section>
@@ -321,11 +314,11 @@ export default async function Home() {
                   decoding="async"
                 />
               </div>
-              <figcaption>
-                {showPreorderAreas
-                  ? "Adjustable knit band · integrated ultrasound sensor"
-                  : "Product concept · final design in development"}
-              </figcaption>
+              {showPreorderAreas ? (
+                <figcaption>
+                  Adjustable knit band · integrated ultrasound sensor
+                </figcaption>
+              ) : null}
             </figure>
             <div className="insight-list" aria-label="Response and confidence">
               {content.insights.slice(2).map(([title, description], index) => (
@@ -635,9 +628,6 @@ export default async function Home() {
                   loading="lazy"
                   decoding="async"
                 />
-                <figcaption>
-                  <span>Product concept</span>
-                </figcaption>
               </figure>
             </div>
 

@@ -152,13 +152,12 @@ export function PreorderCheckoutReview({
           <div className="preorder-order-summary__media">
             <Image
               src="/frame-product-concept-realistic-v3-transparent.webp"
-              alt="Frame upper-arm wearable product concept"
+              alt="Frame upper-arm wearable preview"
               width={720}
               height={720}
               priority
               unoptimized
             />
-            <span>Product concept</span>
           </div>
 
           <div className="preorder-order-summary__body">

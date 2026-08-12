@@ -156,7 +156,7 @@ export function PreorderSuccess() {
           <div className="preorder-confirmation__product-media">
             <Image
               src="/frame-product-concept-realistic-v3-transparent.webp"
-              alt="Frame upper-arm wearable product concept"
+              alt="Frame upper-arm wearable preview"
               width={720}
               height={720}
               unoptimized
