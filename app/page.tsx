@@ -503,7 +503,6 @@ export default async function Home() {
               <span>Pattern to explore</span>
               “On three similar nights, later meals were associated with higher
               overnight readings.”
-              <small>An association, not a conclusion.</small>
             </blockquote>
           </div>
         </div>
