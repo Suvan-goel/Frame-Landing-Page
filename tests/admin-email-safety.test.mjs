@@ -14,6 +14,7 @@ const validContent = {
   body: "Hi {{first_name}},\n\nHere is our latest update.",
   ctaLabel: "Read more",
   ctaUrl: "https://framewearable.com/updates",
+  ctaPosition: "end",
 };
 
 test("validates mailing-list content before delivery", () => {
@@ -79,6 +80,27 @@ test("renders administrator tests without a subscriber unsubscribe action", () =
   assert.doesNotMatch(rendered.html, />Unsubscribe</);
 });
 
+test("places the campaign CTA after the selected paragraph in HTML and text", () => {
+  const rendered = renderFrameCampaignEmail({
+    content: {
+      ...validContent,
+      body: "Opening paragraph.\n\nOffer paragraph.\n\nClosing paragraph.",
+      ctaPosition: "after:2",
+    },
+    firstName: "Ada",
+    unsubscribeUrl: "https://framewearable.com/unsubscribe?token=example",
+    siteUrl: "https://framewearable.com",
+    postalAddress: "Frame, 123 Example Street, London, EC1A 1AA, United Kingdom",
+  });
+
+  const htmlCta = rendered.html.indexOf("class=\"email-cta-link\"");
+  assert.ok(rendered.html.indexOf("Offer paragraph.") < htmlCta);
+  assert.ok(htmlCta < rendered.html.indexOf("Closing paragraph."));
+  const textCta = rendered.text.indexOf("Read more: https://framewearable.com/updates");
+  assert.ok(rendered.text.indexOf("Offer paragraph.") < textCta);
+  assert.ok(textCta < rendered.text.indexOf("Closing paragraph."));
+});
+
 test("ships the page-specific campaign and automated-email layouts", async () => {
   const [layout, styles] = await Promise.all([
     readFile(new URL("../app/layout.tsx", import.meta.url), "utf8"),
@@ -96,13 +118,14 @@ test("ships the page-specific campaign and automated-email layouts", async () =>
 });
 
 test("requires a server review and typed confirmation before any subscriber send", async () => {
-  const [api, review, auth, sender, composer, styles, provider, webhookSetup, migration, hardening] = await Promise.all([
+  const [api, review, auth, sender, composer, styles, pageStyles, provider, webhookSetup, migration, hardening, ctaPositionMigration] = await Promise.all([
     readFile(new URL("../app/api/admin/email/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/api/admin/email/review/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/admin-email-api.server.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/admin-email.server.ts", import.meta.url), "utf8"),
     readFile(new URL("../app/components/admin-email-composer.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/admin-workspace.css", import.meta.url), "utf8"),
+    readFile(new URL("../app/admin-email-pages.css", import.meta.url), "utf8"),
     readFile(new URL("../lib/resend-mailing.server.ts", import.meta.url), "utf8"),
     readFile(
       new URL("../app/api/admin/email/webhook-protection/route.ts", import.meta.url),
@@ -118,6 +141,13 @@ test("requires a server review and typed confirmation before any subscriber send
     readFile(
       new URL(
         "../supabase/migrations/20260808130000_harden_waitlist_email_operations.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+    readFile(
+      new URL(
+        "../supabase/migrations/20260812120000_add_email_cta_position.sql",
         import.meta.url,
       ),
       "utf8",
@@ -140,6 +170,9 @@ test("requires a server review and typed confirmation before any subscriber send
   assert.match(styles, /\.email-send-actions__test[^{]*\{[^}]*color: var\(--ink\) !important;[^}]*-webkit-text-fill-color: var\(--ink\);/s);
   assert.match(composer, /Type <strong>\{review\.confirmationText\}/);
   assert.match(composer, /renderFrameCampaignEmail/);
+  assert.match(composer, /Button position/);
+  assert.match(composer, /Scrollable email body preview/);
+  assert.doesNotMatch(pageStyles, /\.email-preview-window iframe\s*\{[^}]*pointer-events:\s*none/s);
   assert.match(sender, /!row\.email_unsubscribed_at/);
   assert.match(sender, /!row\.email_delivery_suppressed_at/);
   assert.match(sender, /categorizeVisibleSignups\(eligibleRows\)/);
@@ -164,6 +197,9 @@ test("requires a server review and typed confirmation before any subscriber send
   assert.match(hardening, /email_send_confirmations/);
   assert.match(hardening, /email_webhook_events/);
   assert.match(hardening, /email_delivery_suppressed_at/);
+  assert.match(ctaPositionMigration, /cta_position/);
+  assert.match(ctaPositionMigration, /email_campaign_drafts/);
+  assert.match(ctaPositionMigration, /email_campaigns/);
 });
 
 test("makes campaign failures inspectable and retries only failed recipients", async () => {

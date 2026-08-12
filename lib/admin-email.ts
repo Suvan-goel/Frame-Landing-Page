@@ -6,6 +6,9 @@ export const EMAIL_BODY_MAX_LENGTH = 20_000;
 export const EMAIL_CTA_LABEL_MAX_LENGTH = 80;
 export const EMAIL_MAX_RECIPIENTS = 5_000;
 export const EMAIL_CONFIRMATION_MINUTES = 10;
+export const DEFAULT_EMAIL_CTA_POSITION = "end";
+
+export type EmailCtaPosition = "end" | `after:${number}`;
 
 export type MailingListRecipient = {
   id: number;
@@ -39,6 +42,7 @@ export type EmailCampaignDetail = EmailCampaignSummary & {
   body: string;
   ctaLabel: string;
   ctaUrl: string;
+  ctaPosition: EmailCtaPosition;
   recipients: EmailCampaignRecipientSummary[];
 };
 
@@ -82,6 +86,7 @@ export type EmailCampaignContent = {
   body: string;
   ctaLabel: string;
   ctaUrl: string;
+  ctaPosition: EmailCtaPosition;
 };
 
 export type EmailCampaignValidationResult =
@@ -98,6 +103,24 @@ function cleanBody(value: unknown) {
     : "";
 }
 
+function cleanCtaPosition(value: unknown): EmailCtaPosition {
+  if (value === DEFAULT_EMAIL_CTA_POSITION) return DEFAULT_EMAIL_CTA_POSITION;
+  if (typeof value === "string" && /^after:[1-9]\d*$/.test(value)) {
+    return value as EmailCtaPosition;
+  }
+  return DEFAULT_EMAIL_CTA_POSITION;
+}
+
+export function emailBodyParagraphs(value: string) {
+  return value
+    .replaceAll("\r\n", "\n")
+    .replaceAll("\r", "\n")
+    .trim()
+    .split(/\n{2,}/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+}
+
 export function validateEmailCampaignContent(
   value: Partial<Record<keyof EmailCampaignContent, unknown>>,
 ): EmailCampaignValidationResult {
@@ -107,6 +130,7 @@ export function validateEmailCampaignContent(
     body: cleanBody(value.body),
     ctaLabel: cleanSingleLine(value.ctaLabel),
     ctaUrl: cleanSingleLine(value.ctaUrl),
+    ctaPosition: cleanCtaPosition(value.ctaPosition),
   };
 
   if (!content.subject) return { ok: false, error: "Add a subject line." };
@@ -174,17 +198,67 @@ function textLineToHtml(value: string) {
   return result + escapeHtml(value.slice(cursor));
 }
 
-function bodyToHtml(value: string) {
-  const paragraphs = value.split(/\n{2,}/);
-  return paragraphs
-    .map(
-      (paragraph, index) =>
-        `<p style="margin:0 0 ${index === paragraphs.length - 1 ? "0" : "24px"};color:#3f403c;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.75">${paragraph
-          .split("\n")
-          .map(textLineToHtml)
-          .join("<br>")}</p>`,
-    )
-    .join("");
+function ctaInsertionIndex(position: EmailCtaPosition, paragraphCount: number) {
+  if (position === DEFAULT_EMAIL_CTA_POSITION) return paragraphCount;
+  const requested = Number(position.slice("after:".length));
+  return Number.isSafeInteger(requested) && requested > 0
+    ? Math.min(requested, paragraphCount)
+    : paragraphCount;
+}
+
+function campaignCtaHtml(label: string, url: string, atEnd: boolean) {
+  return `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:${atEnd ? "34px 0 0" : "10px 0 28px"}"><tr><td bgcolor="#963f49" style="background:#963f49;border-radius:2px"><a class="email-cta-link" href="${escapeHtml(url)}" style="display:inline-block;padding:14px 22px;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;letter-spacing:.01em;line-height:1.4;text-decoration:none">${escapeHtml(label)}&nbsp;&nbsp;&rarr;</a></td></tr></table>`;
+}
+
+function bodyToHtml(
+  value: string,
+  ctaLabel: string,
+  ctaUrl: string,
+  ctaPosition: EmailCtaPosition,
+) {
+  const paragraphs = emailBodyParagraphs(value);
+  const insertionIndex = ctaLabel
+    ? ctaInsertionIndex(ctaPosition, paragraphs.length)
+    : paragraphs.length;
+  const rendered: string[] = [];
+
+  for (const [index, paragraph] of paragraphs.entries()) {
+    rendered.push(
+      `<p style="margin:0 0 ${index === paragraphs.length - 1 ? "0" : "24px"};color:#3f403c;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.75">${paragraph
+        .split("\n")
+        .map(textLineToHtml)
+        .join("<br>")}</p>`,
+    );
+    if (ctaLabel && insertionIndex === index + 1) {
+      rendered.push(
+        campaignCtaHtml(ctaLabel, ctaUrl, insertionIndex === paragraphs.length),
+      );
+    }
+  }
+
+  return rendered.join("");
+}
+
+function bodyToText(
+  value: string,
+  ctaLabel: string,
+  ctaUrl: string,
+  ctaPosition: EmailCtaPosition,
+) {
+  const paragraphs = emailBodyParagraphs(value);
+  const insertionIndex = ctaLabel
+    ? ctaInsertionIndex(ctaPosition, paragraphs.length)
+    : paragraphs.length;
+  const rendered: string[] = [];
+
+  for (const [index, paragraph] of paragraphs.entries()) {
+    rendered.push(paragraph);
+    if (ctaLabel && insertionIndex === index + 1) {
+      rendered.push(`${ctaLabel}: ${ctaUrl}`);
+    }
+  }
+
+  return rendered.join("\n\n");
 }
 
 export function renderFrameCampaignEmail(input: {
@@ -205,14 +279,18 @@ export function renderFrameCampaignEmail(input: {
     input.content.ctaLabel,
     input.firstName,
   );
+  const ctaPosition = cleanCtaPosition(input.content.ctaPosition);
   const inboxPreview = previewText || "A new update from Frame.";
   const safeUnsubscribeUrl = escapeHtml(input.unsubscribeUrl);
   const safeSiteUrl = escapeHtml(input.siteUrl);
   const safePostalAddress = escapeHtml(input.postalAddress);
   const year = new Date().getFullYear();
-  const cta = ctaLabel
-    ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:34px 0 0"><tr><td bgcolor="#963f49" style="background:#963f49;border-radius:2px"><a class="email-cta-link" href="${escapeHtml(input.content.ctaUrl)}" style="display:inline-block;padding:14px 22px;color:#ffffff;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;letter-spacing:.01em;line-height:1.4;text-decoration:none">${escapeHtml(ctaLabel)}&nbsp;&nbsp;&rarr;</a></td></tr></table>`
-    : "";
+  const renderedBody = bodyToHtml(
+    body,
+    ctaLabel,
+    input.content.ctaUrl,
+    ctaPosition,
+  );
   const footerLinks = input.testMode
     ? `<a href="${safeSiteUrl}" style="color:#5f605b;text-decoration:underline">framewearable.com</a>
                   &nbsp;&nbsp;·&nbsp;&nbsp;
@@ -284,8 +362,7 @@ export function renderFrameCampaignEmail(input: {
                 <p style="margin:0 0 14px;color:#963f49;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;letter-spacing:.17em;line-height:1.4;text-transform:uppercase">A note from us</p>
                 <h1 class="email-heading" style="margin:0;color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:35px;font-weight:400;letter-spacing:-.7px;line-height:1.15">${escapeHtml(subject)}</h1>
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:24px 0 29px"><tr><td width="42" height="2" bgcolor="#963f49" style="width:42px;height:2px;background:#963f49;font-size:0;line-height:0">&nbsp;</td></tr></table>
-                ${bodyToHtml(body)}
-                ${cta}
+                ${renderedBody}
               </td>
             </tr>
             <tr>
@@ -304,8 +381,7 @@ export function renderFrameCampaignEmail(input: {
 </html>`;
 
   const text = [
-    body,
-    ...(ctaLabel ? ["", `${ctaLabel}: ${input.content.ctaUrl}`] : []),
+    bodyToText(body, ctaLabel, input.content.ctaUrl, ctaPosition),
     "",
     input.testMode
       ? "This is a test email sent only to the Frame administrator."

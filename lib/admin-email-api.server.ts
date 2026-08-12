@@ -66,6 +66,7 @@ export function parseEmailContent(payload: Record<string, unknown>): EmailCampai
     body: payload.body,
     ctaLabel: payload.ctaLabel,
     ctaUrl: payload.ctaUrl,
+    ctaPosition: payload.ctaPosition,
   });
   return result.ok ? result.content : null;
 }

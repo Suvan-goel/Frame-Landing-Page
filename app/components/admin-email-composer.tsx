@@ -7,8 +7,10 @@ import {
   EMAIL_CTA_LABEL_MAX_LENGTH,
   EMAIL_PREVIEW_MAX_LENGTH,
   EMAIL_SUBJECT_MAX_LENGTH,
+  DEFAULT_EMAIL_CTA_POSITION,
   RESEND_WEBHOOK_ENDPOINT,
   RESEND_WEBHOOK_EVENTS,
+  emailBodyParagraphs,
   extractHttpUrls,
   renderFrameCampaignEmail,
   validateEmailCampaignContent,
@@ -30,6 +32,7 @@ const EMPTY_CONTENT: EmailCampaignContent = {
   body: "",
   ctaLabel: "",
   ctaUrl: "",
+  ctaPosition: DEFAULT_EMAIL_CTA_POSITION,
 };
 
 const PREVIEW_SAMPLE_CONTENT: EmailCampaignContent = {
@@ -42,6 +45,7 @@ We’ve been making thoughtful progress on Frame, refining both the wearable and
 Thank you for being part of the journey. We’ll share more as the next stage takes shape.`,
   ctaLabel: "Discover Frame",
   ctaUrl: "https://framewearable.com",
+  ctaPosition: DEFAULT_EMAIL_CTA_POSITION,
 };
 
 function recipientName(recipient: MailingListRecipient) {
@@ -171,7 +175,23 @@ export function AdminEmailComposer({
     visibleRecipients.every((recipient) => selectedIds.has(recipient.id));
   const previewRecipient =
     recipients.find((recipient) => recipient.id === previewRecipientId) ?? recipients[0] ?? null;
-  const isEmptyDraft = Object.values(content).every((value) => !value.trim());
+  const isEmptyDraft = [
+    content.subject,
+    content.previewText,
+    content.body,
+    content.ctaLabel,
+    content.ctaUrl,
+  ].every((value) => !value.trim());
+  const ctaPositionOptions = useMemo(
+    () =>
+      emailBodyParagraphs(content.body)
+        .slice(0, -1)
+        .map((paragraph, index) => ({
+          value: `after:${index + 1}` as const,
+          label: `After paragraph ${index + 1} — ${paragraph.replace(/\s+/g, " ").slice(0, 48)}${paragraph.length > 48 ? "…" : ""}`,
+        })),
+    [content.body],
+  );
   const previewContent: EmailCampaignContent = isEmptyDraft
     ? PREVIEW_SAMPLE_CONTENT
     : {
@@ -180,6 +200,7 @@ export function AdminEmailComposer({
         body: content.body || "Your message will appear here.",
         ctaLabel: content.ctaLabel && content.ctaUrl ? content.ctaLabel : "",
         ctaUrl: content.ctaLabel && content.ctaUrl ? content.ctaUrl : "",
+        ctaPosition: content.ctaPosition,
       };
   const preview = renderFrameCampaignEmail({
     content: previewContent,
@@ -188,8 +209,7 @@ export function AdminEmailComposer({
     siteUrl: "https://framewearable.com",
     postalAddress: readiness.postalAddress,
   });
-  const draftHasContent =
-    Object.values(content).some((value) => value.trim()) || selectedIds.size > 0;
+  const draftHasContent = !isEmptyDraft || selectedIds.size > 0;
   const selectedRecipients = recipients.filter((recipient) => selectedIds.has(recipient.id));
   const selectedQualifiedCount = selectedRecipients.filter(
     (recipient) => recipient.qualificationStatus === "completed",
@@ -249,7 +269,16 @@ export function AdminEmailComposer({
   }, [draftStatus]);
 
   function updateContent(field: keyof EmailCampaignContent, value: string) {
-    setContent((current) => ({ ...current, [field]: value }));
+    setContent((current) => {
+      const next = { ...current, [field]: value } as EmailCampaignContent;
+      if (field === "body" && next.ctaPosition !== DEFAULT_EMAIL_CTA_POSITION) {
+        const requestedParagraph = Number(next.ctaPosition.slice("after:".length));
+        if (requestedParagraph >= emailBodyParagraphs(value).length) {
+          next.ctaPosition = DEFAULT_EMAIL_CTA_POSITION;
+        }
+      }
+      return next;
+    });
     setTestStatus("idle");
     setTestMessage("");
     setSendStatus("idle");
@@ -637,10 +666,11 @@ export function AdminEmailComposer({
                       </label>
                       <fieldset className="email-cta">
                         <legend>Optional button</legend>
-                        <p>Add both fields to include a call-to-action button.</p>
+                        <p>Add both fields, then choose where the button appears in the message.</p>
                         <div>
                           <label className="email-field"><span>Button label</span><input type="text" value={content.ctaLabel} onChange={(event) => updateContent("ctaLabel", event.target.value)} maxLength={EMAIL_CTA_LABEL_MAX_LENGTH} placeholder="Read the update" /></label>
                           <label className="email-field"><span>Destination URL</span><input type="url" value={content.ctaUrl} onChange={(event) => updateContent("ctaUrl", event.target.value)} placeholder="https://framewearable.com/…" /></label>
+                          <label className="email-field email-cta__position"><span>Button position</span><select value={content.ctaPosition} onChange={(event) => updateContent("ctaPosition", event.target.value)}><option value={DEFAULT_EMAIL_CTA_POSITION}>End of message</option>{ctaPositionOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label>
                         </div>
                       </fieldset>
                     </div>
@@ -658,7 +688,7 @@ export function AdminEmailComposer({
                     <div className="email-preview-window">
                       <div className="email-preview-window__bar"><span></span><span></span><span></span><strong>Email preview</strong></div>
                       <dl><div><dt>From</dt><dd>{senderDisplayName(readiness.from)}</dd></div><div><dt>To</dt><dd>{previewRecipient?.email ?? "selected@recipient.com"}</dd></div><div><dt>Subject</dt><dd>{preview.subject}</dd></div></dl>
-                      <iframe title="Email body preview" srcDoc={preview.html} sandbox="" tabIndex={-1} />
+                      <iframe title="Scrollable email body preview" srcDoc={preview.html} sandbox="" tabIndex={0} scrolling="yes" />
                     </div>
                     <div className="email-link-check"><strong>Links</strong>{emailLinks.length ? <ul>{emailLinks.map((url) => <li key={url}><a href={url} target="_blank" rel="noreferrer">{url}</a></li>)}</ul> : <span>No links in this draft.</span>}</div>
                   </aside>

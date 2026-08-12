@@ -374,6 +374,7 @@
 
 .email-field input,
 .email-field textarea,
+.email-field select,
 .email-preview-controls input,
 .email-preview-controls select,
 .email-search input {
@@ -389,6 +390,7 @@
 }
 
 .email-field input,
+.email-field select,
 .email-preview-controls input,
 .email-preview-controls select,
 .email-search input {
@@ -405,6 +407,7 @@
 
 .email-field input:focus,
 .email-field textarea:focus,
+.email-field select:focus,
 .email-preview-controls input:focus,
 .email-preview-controls select:focus,
 .email-search input:focus {
@@ -460,6 +463,10 @@
   display: grid;
   grid-template-columns: minmax(120px, 0.7fr) minmax(0, 1.3fr);
   gap: 10px;
+}
+
+.email-cta__position {
+  grid-column: 1 / -1;
 }
 
 .email-preview-card {
@@ -548,7 +555,8 @@
   height: 510px;
   border: 0;
   background: #ebe6dc;
-  pointer-events: none;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
 }
 
 .email-link-check {

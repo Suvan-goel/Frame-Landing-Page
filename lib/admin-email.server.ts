@@ -1,6 +1,7 @@
 import {
   EMAIL_CONFIRMATION_MINUTES,
   EMAIL_MAX_RECIPIENTS,
+  DEFAULT_EMAIL_CTA_POSITION,
   RESEND_WEBHOOK_ENDPOINT,
   RESEND_WEBHOOK_EVENTS,
   renderFrameCampaignEmail,
@@ -8,6 +9,7 @@ import {
   type EmailCampaignDetail,
   type EmailCampaignDraft,
   type EmailCampaignSummary,
+  type EmailCtaPosition,
   type MailingListRecipient,
 } from "./admin-email";
 import {
@@ -43,6 +45,7 @@ type CampaignRow = {
   body_text?: string;
   cta_label?: string | null;
   cta_url?: string | null;
+  cta_position?: EmailCtaPosition | null;
   status: string;
   recipient_count: number;
   sent_count: number;
@@ -72,6 +75,7 @@ type DraftRow = {
   body_text: string;
   cta_label: string;
   cta_url: string;
+  cta_position: EmailCtaPosition;
   recipient_ids: number[];
   preview_recipient_id: number | null;
   updated_at: string;
@@ -157,7 +161,7 @@ export async function getMailingListAdminData(createdBy: string) {
       supabase
         .from("email_campaign_drafts")
         .select(
-          "subject,preview_text,body_text,cta_label,cta_url,recipient_ids,preview_recipient_id,updated_at",
+          "subject,preview_text,body_text,cta_label,cta_url,cta_position,recipient_ids,preview_recipient_id,updated_at",
         )
         .eq("created_by", normalizedEmail)
         .maybeSingle<DraftRow>(),
@@ -187,6 +191,7 @@ export async function getMailingListAdminData(createdBy: string) {
           body: draftResult.data.body_text,
           ctaLabel: draftResult.data.cta_label,
           ctaUrl: draftResult.data.cta_url,
+          ctaPosition: draftResult.data.cta_position ?? DEFAULT_EMAIL_CTA_POSITION,
         },
         recipientIds: draftResult.data.recipient_ids
           .map(Number)
@@ -229,6 +234,7 @@ export async function saveEmailCampaignDraft(input: {
       body_text: input.content.body.slice(0, 20_000),
       cta_label: input.content.ctaLabel.slice(0, 80),
       cta_url: input.content.ctaUrl.slice(0, 2_000),
+      cta_position: input.content.ctaPosition,
       recipient_ids: [...new Set(input.recipientIds)].slice(0, EMAIL_MAX_RECIPIENTS),
       preview_recipient_id: input.previewRecipientId,
       updated_at: new Date().toISOString(),
@@ -450,6 +456,7 @@ export async function sendWaitlistEmailCampaign(input: {
       body_text: input.content.body,
       cta_label: input.content.ctaLabel || null,
       cta_url: input.content.ctaUrl || null,
+      cta_position: input.content.ctaPosition,
       status: "preparing",
       recipient_count: eligibleRows.length,
       sent_count: 0,
@@ -560,7 +567,7 @@ export async function getEmailCampaignDetail(campaignId: string): Promise<EmailC
     supabase
       .from("email_campaigns")
       .select(
-        "id,subject,preview_text,body_text,cta_label,cta_url,status,recipient_count,sent_count,failed_count,created_by,created_at,completed_at",
+        "id,subject,preview_text,body_text,cta_label,cta_url,cta_position,status,recipient_count,sent_count,failed_count,created_by,created_at,completed_at",
       )
       .eq("id", campaignId)
       .single<CampaignRow>(),
@@ -584,6 +591,7 @@ export async function getEmailCampaignDetail(campaignId: string): Promise<EmailC
     body: campaign.body_text ?? "",
     ctaLabel: campaign.cta_label ?? "",
     ctaUrl: campaign.cta_url ?? "",
+    ctaPosition: campaign.cta_position ?? DEFAULT_EMAIL_CTA_POSITION,
     recipients: (recipientsResult.data ?? []).map((recipient) => ({
       id: recipient.id,
       email: recipient.recipient_email,
@@ -665,6 +673,7 @@ export async function retryFailedEmailCampaign(input: {
               body: detail.body,
               ctaLabel: detail.ctaLabel,
               ctaUrl: detail.ctaUrl,
+              ctaPosition: detail.ctaPosition,
             },
             campaignId: input.campaignId,
             from: runtime.from,

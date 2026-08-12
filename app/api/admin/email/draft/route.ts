@@ -18,7 +18,8 @@ function draftContent(payload: Record<string, unknown>): EmailCampaignContent | 
     typeof value.previewText !== "string" ||
     typeof value.body !== "string" ||
     typeof value.ctaLabel !== "string" ||
-    typeof value.ctaUrl !== "string"
+    typeof value.ctaUrl !== "string" ||
+    (value.ctaPosition !== undefined && typeof value.ctaPosition !== "string")
   ) return null;
   return {
     subject: value.subject,
@@ -26,6 +27,8 @@ function draftContent(payload: Record<string, unknown>): EmailCampaignContent | 
     body: value.body,
     ctaLabel: value.ctaLabel,
     ctaUrl: value.ctaUrl,
+    ctaPosition:
+      typeof value.ctaPosition === "string" ? value.ctaPosition as EmailCampaignContent["ctaPosition"] : "end",
   };
 }
 
