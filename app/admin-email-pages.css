@@ -1104,6 +1104,161 @@
   padding: 28px;
 }
 
+.admin-email-modal--wide > .admin-email-modal__close {
+  float: right;
+}
+
+.admin-email-modal--wide > .eyebrow {
+  margin: 6px 0 8px;
+  color: var(--burgundy);
+}
+
+.admin-email-modal--wide > h2 {
+  margin: 0 0 22px;
+  font-family: var(--serif);
+  font-size: clamp(1.9rem, 4vw, 2.7rem);
+  font-weight: 400;
+  letter-spacing: -0.045em;
+  line-height: 1;
+}
+
+.admin-email-detail-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 18px 0;
+}
+
+.admin-email-detail-summary span {
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: var(--studio-muted);
+  color: var(--ink-soft);
+  font-size: 0.6rem;
+  font-weight: 700;
+}
+
+.admin-email-delivery-cause {
+  display: grid;
+  gap: 5px;
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border: 1px solid rgba(141, 62, 70, 0.2);
+  border-radius: 11px;
+  background: rgba(141, 62, 70, 0.065);
+  color: var(--ink-soft);
+  font-size: 0.64rem;
+  line-height: 1.5;
+}
+
+.admin-email-delivery-cause strong {
+  color: var(--burgundy);
+}
+
+.admin-email-detail-list {
+  max-height: 360px;
+  border: 1px solid var(--studio-border);
+  border-radius: 12px;
+  background: var(--studio-surface-bright);
+  overflow-y: auto;
+}
+
+.admin-email-detail-list article {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 7px 16px;
+  align-items: center;
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--studio-border);
+  font-size: 0.62rem;
+}
+
+.admin-email-detail-list article:last-child {
+  border-bottom: 0;
+}
+
+.admin-email-detail-list article > div {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+}
+
+.admin-email-detail-list article > div span,
+.admin-email-detail-list article > p {
+  color: var(--ink-soft);
+}
+
+.admin-email-detail-list article > div span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-email-detail-list article > p {
+  grid-column: 1 / -1;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.admin-email-delivery-status {
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: var(--studio-muted);
+  color: var(--ink-soft);
+  font-size: 0.54rem;
+  text-transform: capitalize;
+}
+
+.admin-email-delivery-status.is-delivered,
+.admin-email-delivery-status.is-sent {
+  background: var(--studio-success-soft);
+  color: var(--studio-success);
+}
+
+.admin-email-delivery-status.is-failed,
+.admin-email-delivery-status.is-bounced,
+.admin-email-delivery-status.is-complained {
+  background: rgba(141, 62, 70, 0.1);
+  color: var(--burgundy);
+}
+
+.admin-email-retry-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(180px, 0.55fr) auto;
+  gap: 16px;
+  align-items: end;
+  margin-top: 18px;
+  padding: 17px;
+  border: 1px solid var(--studio-border);
+  border-radius: 12px;
+  background: var(--studio-muted);
+}
+
+.admin-email-retry-panel > p {
+  align-self: center;
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 0.61rem;
+  line-height: 1.5;
+}
+
+.admin-email-retry-panel label {
+  display: grid;
+  gap: 6px;
+  color: var(--ink-soft);
+  font-size: 0.57rem;
+}
+
+.admin-email-retry-panel input {
+  min-height: 42px;
+  border: 1px solid var(--studio-border-strong);
+  border-radius: 8px;
+  background: var(--studio-surface-bright);
+  color: var(--ink);
+  font: inherit;
+  padding: 0 11px;
+}
+
 .admin-email-modal__header {
   display: flex;
   align-items: flex-start;
@@ -1571,6 +1726,19 @@
   .admin-email-modal {
     max-height: calc(100dvh - 24px);
     border-radius: 18px;
+  }
+
+  .admin-email-modal--wide {
+    padding: 22px 18px;
+  }
+
+  .admin-email-retry-panel {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .admin-email-retry-panel .button {
+    width: 100%;
   }
 
   .admin-email-modal__header,

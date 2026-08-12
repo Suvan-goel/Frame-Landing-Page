@@ -6,6 +6,11 @@ import {
   renderFrameCampaignEmail,
   validateEmailCampaignContent,
 } from "../lib/admin-email.ts";
+import {
+  ResendMailingError,
+  isResendQuotaFailure,
+  resendMailingFailureMessage,
+} from "../lib/resend-mailing-errors.ts";
 import { verifyResendWebhook } from "../lib/resend-webhook-signature.ts";
 
 const validContent = {
@@ -16,6 +21,25 @@ const validContent = {
   ctaUrl: "https://framewearable.com/updates",
   ctaPosition: "end",
 };
+
+test("turns Resend quota responses into actionable campaign guidance", () => {
+  const raw = JSON.stringify({
+    statusCode: 429,
+    name: "daily_quota_exceeded",
+    message: "You have exceeded your daily email sending quota.",
+  });
+  assert.equal(isResendQuotaFailure(raw), true);
+  assert.equal(
+    resendMailingFailureMessage(raw),
+    "Resend’s daily email quota has been reached. Upgrade the Resend sending plan or retry the failed recipients after the quota resets.",
+  );
+
+  const error = new ResendMailingError("friendly provider error", {
+    code: "monthly_quota_exceeded",
+  });
+  assert.equal(isResendQuotaFailure(error), true);
+  assert.match(resendMailingFailureMessage(error), /monthly email quota/);
+});
 
 test("validates mailing-list content before delivery", () => {
   assert.equal(validateEmailCampaignContent(validContent).ok, true);

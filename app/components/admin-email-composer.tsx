@@ -404,10 +404,12 @@ export function AdminEmailComposer({
       if (!response.ok) throw new Error(String(result.error ?? "The email could not be sent."));
       const sentCount = Number(result.sentCount ?? 0);
       const failedCount = Number(result.failedCount ?? 0);
-      setSendStatus("success");
+      const failureMessage =
+        typeof result.failureMessage === "string" ? result.failureMessage : "";
+      setSendStatus(failedCount ? "error" : "success");
       setSendMessage(
         failedCount
-          ? `${sentCount} sent; ${failedCount} failed. Open the delivery record to review or retry.`
+          ? `${sentCount} sent; ${failedCount} not delivered. ${failureMessage || "Open the delivery record to review or retry."}`
           : `${sentCount} ${sentCount === 1 ? "email" : "emails"} sent successfully.`,
       );
       setReview(null);
@@ -537,9 +539,17 @@ export function AdminEmailComposer({
       );
       const result = await responseJson(response);
       if (!response.ok) throw new Error(String(result.error ?? "The retry could not be started."));
-      setRetryStatus("success");
-      setDetailMessage(`${Number(result.sentCount ?? 0)} failed deliveries retried successfully.`);
+      const sentCount = Number(result.sentCount ?? 0);
+      const failedCount = Number(result.failedCount ?? 0);
+      const failureMessage =
+        typeof result.failureMessage === "string" ? result.failureMessage : "";
       await openCampaignDetail(campaignDetail.id);
+      setRetryStatus(failedCount ? "error" : "success");
+      setDetailMessage(
+        failedCount
+          ? `${sentCount} sent; ${failedCount} still not delivered. ${failureMessage || "Try again later."}`
+          : `${sentCount} failed ${sentCount === 1 ? "delivery was" : "deliveries were"} retried successfully.`,
+      );
       router.refresh();
     } catch (error) {
       setRetryStatus("error");
@@ -577,6 +587,12 @@ export function AdminEmailComposer({
       status: reviewStepStatus,
     },
   ];
+  const retryableFailureCount =
+    campaignDetail?.recipients.filter((recipient) => recipient.status === "failed").length ?? 0;
+  const bouncedCount =
+    campaignDetail?.recipients.filter((recipient) => recipient.status === "bounced").length ?? 0;
+  const campaignFailureMessage =
+    campaignDetail?.recipients.find((recipient) => recipient.errorMessage)?.errorMessage ?? null;
 
   return (
     <>
@@ -820,7 +836,7 @@ export function AdminEmailComposer({
           <span>{campaigns.length} {campaigns.length === 1 ? "campaign" : "campaigns"} <i aria-hidden="true">+</i></span>
         </summary>
         <div className="email-history__body">
-          {campaigns.length ? <div className="admin-table-shell"><table className="admin-table"><thead><tr><th>Subject</th><th>Status</th><th>Recipients</th><th>Sent by</th><th>Created</th><th>Details</th></tr></thead><tbody>{campaigns.map((campaign) => <tr key={campaign.id}><td className="admin-email-history__subject"><strong>{campaign.subject}</strong></td><td><span className={`admin-email-history__status admin-email-history__status--${campaign.status}`}>{campaignStatusLabel(campaign.status)}</span>{campaign.failedCount ? <small>{campaign.failedCount} failed</small> : null}</td><td>{campaign.sentCount} / {campaign.recipientCount}</td><td>{campaign.createdBy}</td><td><time dateTime={campaign.createdAt}>{formatDateTime(campaign.createdAt)} UTC</time></td><td><button className="admin-email-detail-button" type="button" onClick={() => openCampaignDetail(campaign.id)}>View details</button></td></tr>)}</tbody></table></div> : <div className="admin-email-history__empty">No mailing-list emails have been sent yet.</div>}
+          {campaigns.length ? <div className="admin-table-shell"><table className="admin-table"><thead><tr><th>Subject</th><th>Status</th><th>Recipients</th><th>Sent by</th><th>Created</th><th>Details</th></tr></thead><tbody>{campaigns.map((campaign) => <tr key={campaign.id}><td className="admin-email-history__subject"><strong>{campaign.subject}</strong></td><td><span className={`admin-email-history__status admin-email-history__status--${campaign.status}`}>{campaignStatusLabel(campaign.status)}</span>{campaign.failedCount ? <small>{campaign.failedCount} not delivered</small> : null}</td><td>{campaign.sentCount} / {campaign.recipientCount}</td><td>{campaign.createdBy}</td><td><time dateTime={campaign.createdAt}>{formatDateTime(campaign.createdAt)} UTC</time></td><td><button className="admin-email-detail-button" type="button" onClick={() => openCampaignDetail(campaign.id)}>View details</button></td></tr>)}</tbody></table></div> : <div className="admin-email-history__empty">No mailing-list emails have been sent yet.</div>}
         </div>
       </details>
 
@@ -884,7 +900,7 @@ export function AdminEmailComposer({
         </div>
       ) : null}
 
-      {(detailStatus === "working" || detailStatus === "error" || campaignDetail) ? <div className="admin-email-modal-backdrop" role="presentation"><section className="admin-email-modal admin-email-modal--wide" role="dialog" aria-modal="true" aria-labelledby="campaign-detail-title"><button className="admin-email-modal__close" type="button" onClick={() => { setCampaignDetail(null); setDetailStatus("idle"); setDetailMessage(""); }}>Close</button><p className="eyebrow">Campaign delivery record</p><h2 id="campaign-detail-title">{campaignDetail?.subject ?? "Loading campaign…"}</h2>{detailMessage ? <p className={`admin-email-inline-message is-${detailStatus === "error" || retryStatus === "error" ? "error" : "success"}`} role={detailStatus === "error" || retryStatus === "error" ? "alert" : "status"}>{detailMessage}</p> : null}{campaignDetail ? <><div className="admin-email-detail-summary"><span>{campaignDetail.sentCount} sent</span><span>{campaignDetail.failedCount} failed</span><span>{campaignDetail.recipientCount} total</span></div><div className="admin-email-detail-list">{campaignDetail.recipients.map((recipient) => <article key={recipient.id}><div><strong>{recipient.name}</strong><span>{recipient.email}</span></div><span className={`admin-email-delivery-status is-${recipient.status}`}>{recipient.status}</span>{recipient.errorMessage ? <p>{recipient.errorMessage}</p> : null}</article>)}</div>{campaignDetail.recipients.some((recipient) => recipient.status === "failed") ? <div className="admin-email-retry-panel"><p>Only failed recipients will be retried. Already-sent recipients are excluded.</p><label><span>Type <strong>RETRY {campaignDetail.recipients.filter((recipient) => recipient.status === "failed").length}</strong></span><input value={retryInput} onChange={(event) => setRetryInput(event.target.value)} /></label><button className="button button--dark" type="button" onClick={retryFailures} disabled={retryStatus === "working" || retryInput !== `RETRY ${campaignDetail.recipients.filter((recipient) => recipient.status === "failed").length}`}>{retryStatus === "working" ? "Retrying…" : "Retry failed recipients"}</button></div> : null}</> : null}</section></div> : null}
+      {(detailStatus === "working" || detailStatus === "error" || campaignDetail) ? <div className="admin-email-modal-backdrop" role="presentation"><section className="admin-email-modal admin-email-modal--wide" role="dialog" aria-modal="true" aria-labelledby="campaign-detail-title"><button className="admin-email-modal__close" type="button" onClick={() => { setCampaignDetail(null); setDetailStatus("idle"); setDetailMessage(""); }}>Close</button><p className="eyebrow">Campaign delivery record</p><h2 id="campaign-detail-title">{campaignDetail?.subject ?? "Loading campaign…"}</h2>{detailMessage ? <p className={`admin-email-inline-message is-${detailStatus === "error" || retryStatus === "error" ? "error" : "success"}`} role={detailStatus === "error" || retryStatus === "error" ? "alert" : "status"}>{detailMessage}</p> : null}{campaignDetail ? <><div className="admin-email-detail-summary"><span>{campaignDetail.sentCount} sent</span><span>{retryableFailureCount} failed</span>{bouncedCount ? <span>{bouncedCount} bounced</span> : null}<span>{campaignDetail.recipientCount} total</span></div>{campaignFailureMessage ? <p className="admin-email-delivery-cause" role="alert"><strong>Why delivery stopped</strong>{campaignFailureMessage}</p> : null}<div className="admin-email-detail-list">{campaignDetail.recipients.map((recipient) => <article key={recipient.id}><div><strong>{recipient.name}</strong><span>{recipient.email}</span></div><span className={`admin-email-delivery-status is-${recipient.status}`}>{recipient.status}</span>{recipient.errorMessage && recipient.errorMessage !== campaignFailureMessage ? <p>{recipient.errorMessage}</p> : null}</article>)}</div>{retryableFailureCount ? <div className="admin-email-retry-panel"><p>Only provider-rejected recipients will be retried. Already-sent and bounced recipients are excluded.</p><label><span>Type <strong>RETRY {retryableFailureCount}</strong></span><input value={retryInput} onChange={(event) => setRetryInput(event.target.value)} /></label><button className="button button--dark" type="button" onClick={retryFailures} disabled={retryStatus === "working" || retryInput !== `RETRY ${retryableFailureCount}`}>{retryStatus === "working" ? "Retrying…" : "Retry failed recipients"}</button></div> : null}</> : null}</section></div> : null}
     </>
   );
 }

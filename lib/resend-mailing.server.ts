@@ -1,5 +1,6 @@
 import { getRuntimeValue } from "./runtime-env.server";
 import { COMPANY_DETAILS_COMPLETE, formatCorrespondenceAddress } from "./company";
+import { resendResponseError } from "./resend-mailing-errors";
 
 export const RESEND_BATCH_SIZE = 100;
 export const UPDATES_EMAIL = "updates@framewearable.com";
@@ -55,7 +56,7 @@ export async function sendResendBatch(
   }
 
   if (!response.ok) {
-    throw new Error((await response.text()).slice(0, 500) || "Email provider request failed.");
+    throw await resendResponseError(response, "Email provider request failed.");
   }
 
   return (await response.json().catch(() => ({}))) as {
@@ -80,7 +81,7 @@ export async function sendResendEmail(
     body: JSON.stringify(payload),
   });
   if (!response.ok) {
-    throw new Error((await response.text()).slice(0, 500) || "Test email could not be sent.");
+    throw await resendResponseError(response, "Test email could not be sent.");
   }
   return (await response.json().catch(() => ({}))) as { id?: string };
 }

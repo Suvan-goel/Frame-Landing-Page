@@ -18,6 +18,7 @@ import {
   sendResendBatch,
   sendResendEmail,
 } from "./resend-mailing.server";
+import { resendMailingFailureMessage } from "./resend-mailing-errors";
 import { applyPreorderEmailProviderEvent } from "./preorder-email-delivery-events.server";
 import { SITE_URL } from "./site";
 import { getSupabaseAdmin } from "./supabase-admin.server";
@@ -533,9 +534,9 @@ export async function sendWaitlistEmailCampaign(input: {
       if (delivered.error) console.error("Campaign delivery audit update failed", delivered.error);
       sentCount += recipientBatch.length;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Email provider request failed.";
+      const message = resendMailingFailureMessage(error);
       failedCount += recipientBatch.length;
-      failures.push(message);
+      if (!failures.includes(message)) failures.push(message);
       const failed = await supabase
         .from("email_campaign_recipients")
         .update({ status: "failed", error_message: message.slice(0, 500) })
@@ -558,7 +559,13 @@ export async function sendWaitlistEmailCampaign(input: {
     .eq("id", campaignId);
   if (completed.error) throw completed.error;
   await deleteEmailCampaignDraft(input.createdBy);
-  return { campaignId, status, sentCount, failedCount };
+  return {
+    campaignId,
+    status,
+    sentCount,
+    failedCount,
+    failureMessage: failures[0] ?? null,
+  };
 }
 
 export async function getEmailCampaignDetail(campaignId: string): Promise<EmailCampaignDetail> {
@@ -600,7 +607,9 @@ export async function getEmailCampaignDetail(campaignId: string): Promise<EmailC
           .filter(Boolean)
           .join(" ") || "Name not provided",
       status: recipient.status,
-      errorMessage: recipient.error_message,
+      errorMessage: recipient.error_message
+        ? resendMailingFailureMessage(recipient.error_message)
+        : null,
       sentAt: recipient.sent_at,
       lastEvent: recipient.last_event,
       lastEventAt: recipient.last_event_at,
@@ -658,6 +667,7 @@ export async function retryFailedEmailCampaign(input: {
   const attemptId = crypto.randomUUID();
   let sentCount = 0;
   let failedCount = 0;
+  const failures: string[] = [];
   for (const [batchIndex, batch] of chunks(claimed.data, RESEND_BATCH_SIZE).entries()) {
     const recipients = batch
       .map((item) => eligibleById.get(item.waitlist_signup_id))
@@ -699,7 +709,8 @@ export async function retryFailedEmailCampaign(input: {
       }
       sentCount += recipients.length;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Retry failed.";
+      const message = resendMailingFailureMessage(error);
+      if (!failures.includes(message)) failures.push(message);
       await supabase
         .from("email_campaign_recipients")
         .update({ status: "failed", error_message: message.slice(0, 500) })
@@ -714,9 +725,19 @@ export async function retryFailedEmailCampaign(input: {
   const status = newFailedCount === 0 ? "sent" : newSentCount === 0 ? "failed" : "partial";
   await supabase
     .from("email_campaigns")
-    .update({ status, sent_count: newSentCount, failed_count: newFailedCount })
+    .update({
+      status,
+      sent_count: newSentCount,
+      failed_count: newFailedCount,
+      error_message: failures.join(" | ").slice(0, 500) || null,
+    })
     .eq("id", input.campaignId);
-  return { sentCount, failedCount, status };
+  return {
+    sentCount,
+    failedCount,
+    status,
+    failureMessage: failures[0] ?? null,
+  };
 }
 
 export async function getResendWebhookProtectionStatus() {
