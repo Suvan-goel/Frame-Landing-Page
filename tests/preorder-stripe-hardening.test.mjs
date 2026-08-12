@@ -161,13 +161,22 @@ test("keeps the reviewed subtotal, free shipping, tax and inventory controls exp
   assert.match(offer, /PREORDER_SHIPPING_RATE_CENTS = 0/);
   assert.match(offer, /PREORDER_ESTIMATED_SHIPPING = "Q1 2027"/);
   assert.match(offer, /PREORDER_MAX_INVENTORY_UNITS = 1_000/);
+  assert.match(offer, /PREORDER_STRIPE_PRODUCT_NAME = "Frame pre-order"/);
+  assert.match(
+    offer,
+    /PREORDER_REVIEWED_PRODUCT_IMAGE_PATH[\s\S]*frame-product-concept-realistic-v3-transparent\.png/,
+  );
+  assert.match(offer, /PREORDER_STRIPE_PRODUCT_IMAGE_URL[\s\S]*https:\/\/files\.stripe\.com\/links\//);
+  assert.match(offer, /Frame upper-arm wearable pre-order/);
   assert.match(checkout, /shipping_options:/);
-  assert.match(checkout, /stripe\.customers\.create/);
-  assert.match(checkout, /customer: stripeCustomer\.id/);
-  assert.doesNotMatch(checkout, /shipping_address_collection:/);
+  assert.doesNotMatch(checkout, /stripe\.customers\.create/);
+  assert.match(checkout, /customer_creation: "always"/);
+  assert.match(checkout, /shipping_address_collection: \{ allowed_countries: \["US"\] \}/);
+  assert.doesNotMatch(checkout, /customer_update:/);
   assert.match(checkout, /amount: config\.shippingRateCents/);
   assert.match(checkout, /config\.shippingRateCents !== PREORDER_SHIPPING_RATE_CENTS/);
   assert.match(checkout, /automatic_tax: \{ enabled: true \}/);
+  assert.match(checkout, /consent_collection: \{ terms_of_service: "required" \}/);
   assert.match(checkout, /adaptive_pricing: \{ enabled: false \}/);
   assert.match(checkout, /price\.tax_behavior !== "exclusive"/);
   assert.match(checkout, /PREORDER_CHECKOUT_SESSION_TTL_SECONDS/);
@@ -180,11 +189,15 @@ test("keeps the reviewed subtotal, free shipping, tax and inventory controls exp
   assert.match(checkout, /legalBaseUrl = mode === "test" \? requestOrigin : SITE_URL/);
   assert.match(
     checkout,
-    /\[Frame Pre-order Terms\]\(\$\{legalBaseUrl\}\/preorder\/terms\)/,
+    /\[Pre-order Terms\]\(\$\{legalBaseUrl\}\/preorder\/terms\)/,
   );
   assert.match(
     checkout,
-    /\[Cancellation and Refund Policy\]\(\$\{legalBaseUrl\}\/preorder\/refunds\)/,
+    /\[Refund Policy\]\(\$\{legalBaseUrl\}\/preorder\/refunds\)/,
+  );
+  assert.match(
+    checkout,
+    /\[Product Status\]\(\$\{legalBaseUrl\}\/preorder\/product-status\)/,
   );
   assert.match(
     checkout,
@@ -195,6 +208,8 @@ test("keeps the reviewed subtotal, free shipping, tax and inventory controls exp
   assert.match(initialRelease, /sales_status = 'paused'/);
   assert.match(initialRelease, /unit_limit = 100/);
   assert.match(readiness, /reviewed free standard US shipping rate/i);
+  assert.match(readiness, /product\?\.name !== PREORDER_STRIPE_PRODUCT_NAME/);
+  assert.match(readiness, /product\?\.images\[0\] !== PREORDER_STRIPE_PRODUCT_IMAGE_URL/);
 });
 
 test("allows only the 50 states and Washington DC for launch shipping", async () => {
@@ -210,7 +225,7 @@ test("allows only the 50 states and Washington DC for launch shipping", async ()
   }
 });
 
-test("keeps checkout review recovery, consent feedback, and proxy origins safe", async () => {
+test("keeps checkout review recovery, disclosure, and proxy origins safe", async () => {
   const [review, success, draft, route, draftHelpers] = await Promise.all([
     readFile(new URL("../app/components/preorder-checkout-review.tsx", import.meta.url), "utf8"),
     readFile(new URL("../app/components/preorder-success.tsx", import.meta.url), "utf8"),
@@ -223,19 +238,19 @@ test("keeps checkout review recovery, consent feedback, and proxy origins safe",
   assert.match(draft, /frame-preorder-request-v1/);
   assert.match(review, /sessionStorage\.setItem/);
   assert.match(review, /sessionStorage\.getItem/);
-  assert.match(review, /saveDeliveryDraft\(nextDelivery\)/);
-  assert.match(review, /clearCheckoutRequestKey\(\)/);
+  assert.match(review, /saveCheckoutRequestKey\(checkoutRequestKey\)/);
   assert.match(
     review,
-    /const restored = parsePreorderDeliveryDraft[\s\S]+if \(restored && !deliveryChangedSinceMount\.current\)/,
+    /if \(checkoutWasCancelled\)[\s\S]+parsePreorderCheckoutRequestKey/,
   );
-  assert.match(review, /deliveryRef\.current = restored[\s\S]+setDelivery\(restored\)/);
-  assert.match(review, /const nextDelivery = \{ \.\.\.deliveryRef\.current, \[field\]: value \}/);
-  assert.match(review, /requestKey\.current = null/);
+  assert.doesNotMatch(review, /parsePreorderDeliveryDraft/);
+  assert.doesNotMatch(review, /preorder-delivery-email/);
   assert.match(success, /sessionStorage\.removeItem/);
-  assert.match(review, /productStatusCheckbox\.current\?\.focus/);
-  assert.match(review, /termsCheckbox\.current\?\.focus/);
-  assert.match(review, /aria-invalid/);
+  assert.match(review, /Frame is still in development\./);
+  assert.match(review, /Review Product Status/);
+  assert.doesNotMatch(review, /productStatusAcknowledged/);
+  assert.doesNotMatch(review, /termsAcknowledged/);
+  assert.doesNotMatch(review, /type="checkbox"/);
 
   const proxied = new Request("http://localhost:3000/api/preorders/checkout", {
     headers: { host: "localhost:3002", origin: "http://localhost:3002" },
@@ -282,6 +297,34 @@ test("keeps checkout review recovery, consent feedback, and proxy origins safe",
     ),
     null,
   );
+});
+
+test("records the single required consent only after Stripe Checkout accepts it", async () => {
+  const [checkout, operations, payments, migration] = await Promise.all([
+    readFile(new URL("../app/api/preorders/checkout/route.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/preorder-operations.server.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/preorder-payments.server.ts", import.meta.url), "utf8"),
+    readFile(
+      new URL(
+        "../supabase/migrations/20260812130000_record_preorder_consent_at_stripe_checkout.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
+  ]);
+
+  assert.doesNotMatch(checkout, /payload\.termsAcknowledged/);
+  assert.doesNotMatch(checkout, /payload\.productStatusAcknowledged/);
+  assert.match(checkout, /termsAcceptedAt: null/);
+  assert.match(checkout, /productStatusAcknowledgedAt: null/);
+  assert.match(operations, /termsAcceptedAt: string \| null/);
+  assert.match(operations, /productStatusAcknowledgedAt: string \| null/);
+  assert.match(payments, /session\.consent\?\.terms_of_service !== "accepted"/);
+  assert.match(payments, /record_preorder_checkout_consent/);
+  assert.match(payments, /recordedConsent\.terms_accepted_at/);
+  assert.match(migration, /alter column terms_accepted_at drop not null/);
+  assert.match(migration, /alter column product_status_acknowledged_at drop not null/);
+  assert.match(migration, /coalesce\(intent\.terms_accepted_at, p_accepted_at\)/);
 });
 
 test("preserves only clean scalar attribution through the pre-order entry redirect", async () => {
@@ -582,6 +625,14 @@ test("wires the production confirmation page to the reviewed metadata and access
   assert.match(component, /topic=preorder/);
   assert.doesNotMatch(component, /topic=general/);
   assert.match(component, /Shipping to/);
+  assert.match(component, /Thanks - your payment is complete/);
+  assert.match(component, /Watch your inbox/);
+  assert.match(component, /Receipt and secure link/);
+  assert.match(component, /Delivery updates/);
+  assert.match(component, /Shipping and tracking/);
+  assert.match(component, /preorder-confirmation__mobile-manage/);
+  assert.match(component, /preorder-confirmation__return-arrow/);
+  assert.doesNotMatch(component, /Keep an eye on your inbox/);
   assert.match(component, /href="\/preorder\/product-status">Product status/);
   assert.doesNotMatch(component, /Important product status|Frame remains under development/);
   assert.match(statusRoute, /status: "invalid"/);

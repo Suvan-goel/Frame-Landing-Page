@@ -6,6 +6,8 @@ import {
   preorderStripeProductDescription,
   PREORDER_PRODUCT_STATUS_VERSION,
   PREORDER_SELLER_DETAILS_COMPLETE,
+  PREORDER_STRIPE_PRODUCT_IMAGE_URL,
+  PREORDER_STRIPE_PRODUCT_NAME,
   PREORDER_STRIPE_PRODUCT_TAX_CODE,
   PREORDER_TERMS_VERSION,
   PREORDER_WARRANTY_DETAILS_COMPLETE,
@@ -540,6 +542,16 @@ if (secretKey && priceId) {
       fail("Stripe product tax code", "Assign the adviser-approved tax code to the live Stripe Product.");
     } else {
       warn("Stripe product tax code", "Assign the approved product tax code before launch; test Checkout can use the account preset.");
+    }
+    if (product?.name === PREORDER_STRIPE_PRODUCT_NAME) {
+      pass("Stripe product name", `Checkout displays “${PREORDER_STRIPE_PRODUCT_NAME}”.`);
+    } else {
+      fail("Stripe product name", `Rename the Stripe Product to “${PREORDER_STRIPE_PRODUCT_NAME}”.`);
+    }
+    if (product?.images[0] === PREORDER_STRIPE_PRODUCT_IMAGE_URL) {
+      pass("Stripe product image", "Checkout displays the reviewed Frame product render.");
+    } else {
+      fail("Stripe product image", "Add the reviewed Frame product render to the Stripe Product.");
     }
     const expectedDescription = preorderStripeProductDescription({
       estimatedShipping,

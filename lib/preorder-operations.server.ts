@@ -129,8 +129,8 @@ export async function reservePreorderCheckout(input: {
   utmCampaign: string | null;
   termsVersion: string;
   productStatusVersion: string;
-  termsAcceptedAt: string;
-  productStatusAcknowledgedAt: string;
+  termsAcceptedAt: string | null;
+  productStatusAcknowledgedAt: string | null;
   marketingOptIn: boolean;
   marketingConsentAt: string | null;
 }) {

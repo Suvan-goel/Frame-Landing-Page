@@ -7,19 +7,27 @@ import {
 
 export const metadata: Metadata = {
   title: "Help shape Frame",
-  description: "Answer three optional questions to help shape Frame.",
+  description: "Answer five short questions to help shape Frame.",
   robots: {
     index: false,
     follow: false,
   },
 };
 
-export default async function EarlyAccessQuestionsPage() {
+export default async function EarlyAccessQuestionsPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ preview?: string | string[] }>;
+}) {
+  const query = await searchParams;
+  const previewSurvey = query?.preview === "1";
+
   return (
     <main className="interest-flow">
-      <SiteHeader backLabel="Skip survey" arrowDirection="right" />
+      <SiteHeader backLabel="Skip" arrowDirection="right" />
       <div className="interest-flow__shell">
         <WaitlistSignupProvider
+          previewSurvey={previewSurvey}
           resumeSurvey
           resumePlacement="qualification_page"
         >

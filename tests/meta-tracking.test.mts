@@ -106,7 +106,7 @@ const conversionInput = {
   eventId,
   email: "Tracking.Test+Lead@Example.com",
   eventTime: 1_786_363_200,
-  eventSourceUrl: "https://framewearable.com/interest",
+  eventSourceUrl: "https://framewearable.com/",
   clientIpAddress: "203.0.113.10",
   clientUserAgent: "Frame tracking test browser",
   metaClickId: "test-meta-click-id",

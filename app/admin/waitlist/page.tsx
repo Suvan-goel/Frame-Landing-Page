@@ -174,7 +174,7 @@ export default async function WaitlistAdminPage({
             ? "Insights are calculated from qualified leads only."
             : activeTab === "unqualified"
               ? "Unqualified leads joined with their email but have not completed and submitted the full survey."
-              : "Qualified leads completed and submitted the full optional survey."}
+              : "Qualified leads completed and submitted the full survey."}
         </p>
       </section>
 
@@ -320,7 +320,7 @@ export default async function WaitlistAdminPage({
             <h2>No {activeTab} leads.</h2>
             <p>
               {activeTab === "qualified"
-                ? "Completed optional surveys will appear here."
+                ? "Completed surveys will appear here."
                 : "Email-only, skipped, or legacy incomplete signups will appear here."}
             </p>
           </div>

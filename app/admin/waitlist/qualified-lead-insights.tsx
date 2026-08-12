@@ -294,7 +294,7 @@ export function QualifiedLeadInsights({ leads }: { leads: QualifiedLead[] }) {
           <h2 id="qualified-insights-title">Qualified lead insights</h2>
           <p>
             A clear view of who the qualified leads are and how they answered
-            the optional survey.
+            the survey.
           </p>
         </div>
         <span>{leads.length} qualified leads</span>

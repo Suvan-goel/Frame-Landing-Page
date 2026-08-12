@@ -2,6 +2,8 @@
 import Link from "next/link";
 import { BrandWordmark } from "./components/brand-wordmark";
 import { MobileNavigation } from "./components/mobile-navigation";
+import { MobilePersistentPreorder } from "./components/mobile-persistent-preorder";
+import { MobileWaitlistDisclosure } from "./components/mobile-waitlist-disclosure";
 import {
   WaitlistSignupFlow,
   WaitlistSignupProvider,
@@ -121,12 +123,23 @@ export default async function Home() {
               ? `Pre-order now - ${preorderPriceLabel}`
               : "Get updates"}
           </a>
+          {preorderOffer ? (
+            <MobilePersistentPreorder
+              href="/preorder/review?source=homepage_mobile_header"
+              priceLabel={preorderPriceLabel!}
+            />
+          ) : null}
           <MobileNavigation
             items={mobileNavigation}
+            offerLabel={
+              preorderOffer && preorderSavingsLabel
+                ? `Pre-order offer · Save ${preorderSavingsLabel}`
+                : undefined
+            }
             primaryItem={
               preorderOffer
                 ? {
-                    label: `Pre-order now - ${preorderPriceLabel}`,
+                    label: "Pre-order now",
                     href: "/preorder/review?source=homepage_mobile",
                   }
                 : undefined
@@ -139,43 +152,98 @@ export default async function Home() {
         <div className="hero-grid container">
           <div className="hero-copy">
             <p className="eyebrow hero-email-first__eyebrow">
-              <span>MEASURE YOUR BLOOD PRESSURE CONTINUOUSLY</span>
+              <span className="hero-eyebrow__desktop">
+                MEASURE YOUR BLOOD PRESSURE CONTINUOUSLY
+              </span>
               {preorderOffer ? (
-                <span className="hero-email-first__shipping-pill">
+                <span className="hero-email-first__shipping-pill hero-eyebrow__desktop">
                   Shipping est. {preorderOffer.estimatedShipping}
                 </span>
               ) : null}
+              <span className="hero-eyebrow__mobile">
+                {preorderOffer
+                  ? `SHIPPING EST. ${preorderOffer.estimatedShipping}`
+                  : "MEASURE YOUR BLOOD PRESSURE CONTINUOUSLY"}
+              </span>
             </p>
-            <h1>See how your cardiovascular system responds to daily life.</h1>
+            <h1>
+              <span className="hero-heading__desktop">
+                See how your cardiovascular system responds to daily life.
+              </span>
+              <span className="hero-heading__mobile">
+                See how your blood pressure changes through daily life.
+              </span>
+            </h1>
             <p className="hero-intro">
-              Frame is a non-invasive wearable designed for continuous blood
-              pressure tracking.
+              <span className="hero-intro__desktop">
+                Frame is a non-invasive wearable designed for continuous blood
+                pressure tracking.
+              </span>
+              <span className="hero-intro__mobile">
+                A screenless upper-arm wearable that reveals blood-pressure
+                patterns.
+              </span>
             </p>
             {preorderOffer ? (
               <div className="home-preorder-hero">
+                <figure className="home-preorder-hero__mobile-product">
+                  <img
+                    src="/frame-product-concept-realistic-v3-transparent-480w.webp"
+                    alt="Frame upper-arm wearable product concept"
+                    width={480}
+                    height={480}
+                    loading="eager"
+                    decoding="async"
+                  />
+                  <figcaption>
+                    <strong>Product concept</strong>
+                  </figcaption>
+                </figure>
                 <p className="home-preorder-hero__offer-line">
                   <span className="home-preorder-hero__offer-tag">Pre order offer</span>
                   <span className="home-preorder-hero__offer-message">
                     Pre-order today and save {PREORDER_DISCOUNT_PERCENT}%
                   </span>
                 </p>
+                <div
+                  className="home-preorder-hero__mobile-offer"
+                  aria-label={`Pre-order offer; save ${preorderSavingsLabel}`}
+                >
+                  <span className="home-preorder-hero__offer-tag">
+                    Pre-order offer
+                  </span>
+                  <span
+                    className="home-preorder-hero__mobile-offer-separator"
+                    aria-hidden="true"
+                  >
+                    ·
+                  </span>
+                  <span className="home-preorder-hero__mobile-offer-saving">
+                    Save <strong>{preorderSavingsLabel}</strong>
+                  </span>
+                </div>
                 <div className="home-preorder-hero__actions">
                   <a
                     className="button home-preorder-hero__preorder-button"
                     href="/preorder/review?source=homepage_hero"
                   >
-                    Pre-order now
+                    <span className="home-preorder-hero__cta-desktop">Pre-order now</span>
+                    <span className="home-preorder-hero__cta-mobile">
+                      Pre-order for {preorderPriceLabel}
+                    </span>
                   </a>
                   <a className="home-preorder-hero__details-button" href="#preorder">
                     <span className="home-preorder-hero__details-label">See details</span>
                     <span aria-hidden="true">↓</span>
                   </a>
                 </div>
-                <WaitlistSignupFlow
-                  placement="homepage_hero_preorder_waitlist"
-                  compact
-                  usePreorderLaunchCopy={showPreorderAreas}
-                />
+                <MobileWaitlistDisclosure>
+                  <WaitlistSignupFlow
+                    placement="homepage_hero_preorder_waitlist"
+                    compact
+                    usePreorderLaunchCopy={showPreorderAreas}
+                  />
+                </MobileWaitlistDisclosure>
               </div>
             ) : (
               <WaitlistSignupFlow
@@ -216,9 +284,16 @@ export default async function Home() {
             <p className="eyebrow">Why context matters</p>
             <h2>A single reading cannot show a pattern.</h2>
             <p>
-              {showPreorderAreas
-                ? "Blood pressure changes with sleep, movement, stress, exercise, food, posture, and recovery. Most people only see an occasional snapshot. Frame is built to connect what happens in between, helping you see how personal patterns relate to everyday life."
-                : "Blood pressure changes with sleep, movement, stress, exercise, food, posture, and recovery. Most people only see an occasional snapshot. Frame aims to connect what happens in between, helping you see how personal patterns relate to everyday life."}
+              <span className="context-intro__desktop">
+                {showPreorderAreas
+                  ? "Blood pressure changes with sleep, movement, stress, exercise, food, posture, and recovery. Most people only see an occasional snapshot. Frame is built to connect what happens in between, helping you see how personal patterns relate to everyday life."
+                  : "Blood pressure changes with sleep, movement, stress, exercise, food, posture, and recovery. Most people only see an occasional snapshot. Frame aims to connect what happens in between, helping you see how personal patterns relate to everyday life."}
+              </span>
+              <span className="context-intro__mobile">
+                Blood pressure changes with sleep, stress, movement, and
+                recovery. Frame is designed to connect those moments, helping
+                reveal patterns an occasional reading may miss.
+              </span>
             </p>
           </div>
           <div className="context-content">
@@ -263,6 +338,25 @@ export default async function Home() {
                 </article>
               ))}
             </div>
+            <div
+              className="context-mobile-insight-list"
+              aria-label="How Frame creates context"
+            >
+              {[
+                ["Baseline", "What is typical for you during comparable periods."],
+                ["Response", "How your blood pressure changes around meaningful events."],
+                ["Recovery", "How quickly you return toward your usual pattern."],
+                ["Confidence", "Which periods were measured reliably—and which were not."],
+              ].map(([title, description], index) => (
+                <article key={title}>
+                  <span>0{index + 1}</span>
+                  <div>
+                    <h3>{title}</h3>
+                    <p>{description}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -273,9 +367,15 @@ export default async function Home() {
             <p className="eyebrow">How it works</p>
             <h2>Ultrasound, made wearable.</h2>
             <p>
-              {showPreorderAreas
-                ? "Ultrasound can observe arterial motion beneath the skin. Frame combines wearable ultrasound, contextual sensing, and personalised analysis to show how those signals change over time."
-                : "Ultrasound can observe arterial motion beneath the skin. Frame is exploring how to make that signal dependable, comfortable, and useful over time."}
+              <span className="method-intro__desktop">
+                {showPreorderAreas
+                  ? "Ultrasound can observe arterial motion beneath the skin. Frame combines wearable ultrasound, contextual sensing, and personalised analysis to show how those signals change over time."
+                  : "Ultrasound can observe arterial motion beneath the skin. Frame is exploring how to make that signal dependable, comfortable, and useful over time."}
+              </span>
+              <span className="method-intro__mobile">
+                Frame combines wearable ultrasound with movement, contact,
+                sleep, and activity to reveal patterns over time.
+              </span>
             </p>
           </div>
           <div className="method-layout">
@@ -294,12 +394,17 @@ export default async function Home() {
                 />
               </div>
               <figcaption>
-                {showPreorderAreas
-                  ? "How Frame observes the artery beneath the skin · simplified illustration"
-                  : "Simplified sensing concept · anatomy and final sensor configuration are illustrative"}
+                <span className="method-caption__desktop">
+                  {showPreorderAreas
+                    ? "How Frame observes the artery beneath the skin · simplified illustration"
+                    : "Simplified sensing concept · anatomy and final sensor configuration are illustrative"}
+                </span>
+                <span className="method-caption__mobile">
+                  Simplified sensing concept
+                </span>
               </figcaption>
             </figure>
-            <ol className="method-steps">
+            <ol className="method-steps method-steps--desktop">
               <li>
                 <span>01</span>
                 <div>
@@ -332,6 +437,35 @@ export default async function Home() {
                 </div>
               </li>
             </ol>
+            <ol className="method-steps method-steps--mobile">
+              <li>
+                <span>01</span>
+                <div>
+                  <h3>Observe</h3>
+                  <p>Wearable ultrasound observes arterial motion beneath the skin.</p>
+                </div>
+              </li>
+              <li>
+                <span>02</span>
+                <div>
+                  <h3>Add context</h3>
+                  <p>
+                    Movement, contact, sleep, and activity help explain how the
+                    signal changes.
+                  </p>
+                </div>
+              </li>
+              <li>
+                <span>03</span>
+                <div>
+                  <h3>Reveal patterns</h3>
+                  <p>
+                    Personalised analysis shows change over time and clearly
+                    marks uncertain periods.
+                  </p>
+                </div>
+              </li>
+            </ol>
           </div>
         </div>
       </section>
@@ -353,11 +487,24 @@ export default async function Home() {
           </figure>
           <div className="software-copy">
             <p className="eyebrow">The experience</p>
-            <h2>From measurements to personal experiments.</h2>
+            <h2>
+              <span className="software-heading__desktop">
+                From measurements to personal experiments.
+              </span>
+              <span className="software-heading__mobile">
+                See the patterns behind your readings.
+              </span>
+            </h2>
             <p>
-              Frame is designed to explain patterns relative to your baseline,
-              show how long a response lasts, and make confidence part of every
-              result.
+              <span className="software-intro__desktop">
+                Frame is designed to explain patterns relative to your baseline,
+                show how long a response lasts, and make confidence part of every
+                result.
+              </span>
+              <span className="software-intro__mobile">
+                See what is typical for you, how long changes last, and how
+                confident each result is.
+              </span>
             </p>
             <blockquote>
               <span>Pattern to explore</span>
@@ -374,10 +521,31 @@ export default async function Home() {
           <div className="container home-preorder-container" id="preorder">
             <div className="home-preorder-layout">
               <div className="home-preorder-copy">
-                <p className="eyebrow">Frame pre-order</p>
-                <h2>Coming Q1 2027.</h2>
+                <p className="eyebrow">
+                  <span className="home-preorder-copy__eyebrow-desktop">
+                    Frame pre-order
+                  </span>
+                  <span className="home-preorder-copy__eyebrow-mobile">
+                    Pre-order offer
+                  </span>
+                </p>
+                <h2>
+                  <span className="home-preorder-copy__heading-desktop">
+                    Coming Q1 2027.
+                  </span>
+                  <span className="home-preorder-copy__heading-mobile">
+                    Reserve your Frame.
+                  </span>
+                </h2>
                 <p className="home-preorder-copy__intro">
-                  A new kind of wearable - designed to measure what matters most.
+                  <span className="home-preorder-copy__intro-desktop">
+                    A {preorderPriceLabel} pre-order reserves one Frame upper-arm
+                    wearable at {PREORDER_DISCOUNT_PERCENT}% below the planned{" "}
+                    {preorderReleasePriceLabel} release price.
+                  </span>
+                  <span className="home-preorder-copy__intro-mobile">
+                    Shipping is estimated for Q1 2027.
+                  </span>
                 </p>
 
                 <dl
@@ -403,17 +571,52 @@ export default async function Home() {
                   </div>
                 </dl>
 
-                <p className="home-preorder-price-note">
+                <div
+                  className="home-preorder-mobile-price-card"
+                  aria-label={`${preorderPriceLabel} pre-order price. Save ${preorderSavingsLabel}, ${PREORDER_DISCOUNT_PERCENT}% off the planned ${preorderReleasePriceLabel} release price.`}
+                >
+                  <span>Pre-order price</span>
+                  <div className="home-preorder-mobile-price-card__price-row">
+                    <strong>{preorderPriceLabel}</strong>
+                    <span>Save {preorderSavingsLabel}</span>
+                  </div>
+                  <p>
+                    <span>
+                      {PREORDER_DISCOUNT_PERCENT}% off the planned{" "}
+                      <del>{preorderReleasePriceLabel}</del> release price
+                    </span>
+                  </p>
+                </div>
+
+                <p className="home-preorder-price-note home-preorder-price-note--desktop">
                   Applicable sales tax is added at checkout. Standard US shipping is free.
                   Cancel any time before fulfilment for a full refund.
                 </p>
 
                 <div className="home-preorder-actions">
                   <a className="button button--dark" href={preorderHref}>
-                    Pre-order now <Arrow />
+                    <span className="home-preorder-actions__label-desktop">
+                      Pre-order now
+                    </span>
+                    <span className="home-preorder-actions__label-mobile">
+                      Pre-order now
+                    </span>
+                    <Arrow />
                   </a>
+                  <ul
+                    className="home-preorder-price-note home-preorder-price-note--mobile"
+                    aria-label="Pre-order reassurance"
+                  >
+                    <li>US shipping included · Refundable before fulfilment</li>
+                  </ul>
                   <a className="text-link" href="/preorder/product-status">
-                    Product progress and shipping plan <Arrow />
+                    <span className="home-preorder-progress-label__desktop">
+                      Product progress and shipping plan
+                    </span>
+                    <span className="home-preorder-progress-label__mobile">
+                      Product and shipping details
+                    </span>
+                    <Arrow />
                   </a>
                 </div>
 
@@ -443,14 +646,19 @@ export default async function Home() {
       ) : null}
 
       <section className="principles-section section">
-        <div className="container principles-grid" id="research">
+        <div className="container principles-grid">
           <div className="principles-copy">
             <p className="eyebrow">Product principles</p>
             <h2>
-              Continuous monitoring should create context, not continuous
-              conclusions.
+              <span className="principles-heading__desktop">
+                Continuous monitoring should create context, not continuous
+                conclusions.
+              </span>
+              <span className="principles-heading__mobile">
+                Designed to show context, not conclusions.
+              </span>
             </h2>
-            <div className="principle-list">
+            <div className="principle-list principle-list--desktop">
               {content.principles.map(([title, description]) => (
                 <article key={title}>
                   <h3>{title}</h3>
@@ -458,15 +666,46 @@ export default async function Home() {
                 </article>
               ))}
             </div>
+            <div className="principle-list principle-list--mobile">
+              {[
+                ["Personal to you", "Your baseline provides the reference."],
+                ["Made for daily life", "An upper-arm form designed for everyday wear."],
+                ["Confidence stays visible", "Uncertain periods remain clearly marked."],
+              ].map(([title, description], index) => (
+                <article key={title}>
+                  <span className="principle-list__number">0{index + 1}</span>
+                  <div>
+                    <h3>{title}</h3>
+                    <p>{description}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
           </div>
-          <aside className="research-panel">
+          <aside className="research-panel" id="research">
             <div className="research-panel__body">
               <span className="status-label">Research evidence</span>
-              <h3>Wearable ultrasound, validated in clinical research.</h3>
+              <h3>
+                <span className="research-heading__desktop">
+                  Wearable ultrasound, supported by clinical research.
+                </span>
+                <span className="research-heading__mobile">
+                  Wearable ultrasound has been evaluated in peer-reviewed human
+                  studies.
+                </span>
+              </h3>
               <p>
-                Peer-reviewed human studies show that wearable ultrasound can capture continuous arterial waveforms and support non-invasive blood-pressure estimation.
+                <span className="research-intro__desktop">
+                  Peer-reviewed human studies of wearable-ultrasound technology—not
+                  Frame itself—show that continuous arterial waveforms can support
+                  non-invasive blood-pressure estimation. Frame remains in development.
+                </span>
+                <span className="research-intro__mobile">
+                  Frame combines wearable ultrasound with everyday context to
+                  reveal personal blood-pressure patterns over time.
+                </span>
               </p>
-              <div className="research-standards" aria-label="Published evidence for wearable ultrasound">
+              <div className="research-standards research-standards--desktop" aria-label="Published evidence for wearable ultrasound">
                 {content.researchStandards.map((standard) => (
                   <article key={standard.title}>
                     <h4 className={standard.metric ? "research-standard-title--metric" : undefined}>
@@ -480,6 +719,17 @@ export default async function Home() {
                     <p>{standard.description}</p>
                   </article>
                 ))}
+              </div>
+              <div className="research-standards research-standards--mobile" aria-label="Published evidence for wearable ultrasound">
+                <article>
+                  <h4 className="research-standard-title--metric">
+                    <span className="research-standard-metric">118</span>
+                    <span>adults studied</span>
+                  </h4>
+                </article>
+                <article>
+                  <h4>Compared with clinical references</h4>
+                </article>
               </div>
             </div>
             <a
@@ -523,6 +773,9 @@ export default async function Home() {
             <h2>Follow Frame from prototype to launch.</h2>
           </div>
           <div className="final-cta__form final-cta__action">
+            <p className="final-cta__mobile-intro">
+              Get product milestones and launch updates.
+            </p>
             <WaitlistSignupFlow
               placement="homepage_final"
               tone="light"
@@ -561,7 +814,7 @@ export default async function Home() {
             >
               Instagram <Arrow />
             </a>
-            <a href="/privacy">Privacy</a>
+            <a className="footer-links__privacy" href="/privacy">Privacy</a>
             <a href="/contact">Contact</a>
           </div>
         </div>
@@ -570,14 +823,23 @@ export default async function Home() {
             <p>
               {showPreorderAreas ? (
                 <>
-                  Frame is a general-wellness wearable in development. Product visuals
-                  show the intended experience
-                  {preorderOffer
-                    ? `; specifications and estimated ${preorderOffer.estimatedShipping} shipping may change.`
-                    : "."}
-                  {" "}
-                  Frame is not intended to guide medical decisions or replace an
-                  FDA-authorized blood-pressure monitor.
+                  <span className="footer-disclosure__desktop">
+                    Frame is a general-wellness wearable in development. Product visuals
+                    show the intended experience
+                    {preorderOffer
+                      ? `; specifications and estimated ${preorderOffer.estimatedShipping} shipping may change.`
+                      : "."}
+                    {" "}
+                    Frame is not intended to guide medical decisions or replace an
+                    FDA-authorized blood-pressure monitor.
+                  </span>
+                  <span className="footer-disclosure__mobile">
+                    Frame is a general-wellness wearable in development. Product
+                    visuals, specifications and estimated{" "}
+                    {preorderOffer?.estimatedShipping ?? "Q1 2027"} shipping may
+                    change. It is not intended for medical decisions or to replace
+                    an FDA-authorized blood-pressure monitor.
+                  </span>
                 </>
               ) : (
                 <>
@@ -591,7 +853,10 @@ export default async function Home() {
             </p>
             {legalIdentityLine ? <p className="footer-bottom__legal">{legalIdentityLine}</p> : null}
           </div>
-          <p>© {new Date().getFullYear()} {ORGANIZATION_NAME}</p>
+          <div className="footer-bottom__meta">
+            <p>© {new Date().getFullYear()} {ORGANIZATION_NAME}</p>
+            <a className="footer-bottom__privacy" href="/privacy">Privacy</a>
+          </div>
         </div>
       </footer>
     </main>

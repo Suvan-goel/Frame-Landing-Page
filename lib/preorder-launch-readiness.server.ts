@@ -11,6 +11,8 @@ import {
   PREORDER_PRODUCT_STATUS_VERSION,
   PREORDER_SELLER_DETAILS_COMPLETE,
   PREORDER_SHIPPING_RATE_CENTS,
+  PREORDER_STRIPE_PRODUCT_IMAGE_URL,
+  PREORDER_STRIPE_PRODUCT_NAME,
   PREORDER_STRIPE_PRODUCT_TAX_CODE,
   PREORDER_WARRANTY_DETAILS_COMPLETE,
 } from "./preorder";
@@ -236,6 +238,12 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
       }
       if (product?.tax_code !== PREORDER_STRIPE_PRODUCT_TAX_CODE) {
         blockers.push("The live Stripe product is not classified as General - Tangible Goods.");
+      }
+      if (product?.name !== PREORDER_STRIPE_PRODUCT_NAME) {
+        blockers.push("The live Stripe product name does not match the reviewed checkout copy.");
+      }
+      if (product?.images[0] !== PREORDER_STRIPE_PRODUCT_IMAGE_URL) {
+        blockers.push("The live Stripe product does not use the reviewed checkout image.");
       }
       if (
         product?.description !==

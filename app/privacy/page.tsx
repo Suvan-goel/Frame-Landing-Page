@@ -71,6 +71,36 @@ export default async function PrivacyPage() {
             : null}
         </p>
 
+        <section className="privacy-summary" aria-labelledby="privacy-summary-title">
+          <div className="privacy-summary__heading">
+            <p className="eyebrow">Key privacy points</p>
+            <h2 id="privacy-summary-title">How your information is handled</h2>
+          </div>
+          <dl>
+            <div>
+              <dt>What we collect</dt>
+              <dd>
+                Information you provide through updates signups, contact messages
+                {showPreorderAreas ? ", and pre-orders" : ""}.
+              </dd>
+            </div>
+            <div>
+              <dt>Why we use it</dt>
+              <dd>
+                To respond, provide updates, operate the site
+                {showPreorderAreas ? ", and manage your order" : ""}.
+              </dd>
+            </div>
+            <div>
+              <dt>Your choices</dt>
+              <dd>
+                Unsubscribe, manage advertising measurement, or ask us to exercise
+                your privacy rights.
+              </dd>
+            </div>
+          </dl>
+        </section>
+
         <div className="preorder-terms-layout">
           <nav className="preorder-terms-toc preorder-terms-toc--desktop" aria-label="Privacy Notice sections">
             <p className="eyebrow">On this page</p>
@@ -166,13 +196,18 @@ export default async function PrivacyPage() {
             <section id="information-collected">
               <h2>{sectionHeading("information-collected", "Information we collect")}</h2>
               <p>
-                If you sign up for updates, we first collect your email address. If
-                you complete the optional survey, we also collect your first and
+                If you sign up for updates, we first collect your email address.
+              </p>
+              <p>
+                If you complete the survey, we also collect your first and
                 last name, age, gender, your main reason for wanting Frame, what you
                 want Frame to help you understand or do, how you currently monitor
                 your blood pressure, and whether you would be open to a 20-minute
                 conversation with us. Please do not include private medical
-                information in your written response. We also collect the time and
+                information in your written response.
+              </p>
+              <p>
+                We also collect the time and
                 location of signup within the site, referral information, and
                 campaign labels or click identifiers included in the link you used.
                 Our hosting providers may process limited technical information,
@@ -189,12 +224,19 @@ export default async function PrivacyPage() {
                 suitability for early product access or future testing, understand
                 which launch efforts are useful, and protect the updates list from
                 abuse and respond to messages sent through the contact form.
+              </p>
+              <p>
                 Signing up for updates does not enroll you in a study or make you
                 a research participant.
-                {showPreorderAreas
-                  ? " Pre-order information is also used to take payment, calculate tax, reserve inventory, confirm and support orders, communicate delays, process cancellations and refunds, prevent fraud and abuse, meet accounting and legal duties, and arrange fulfilment."
-                  : null}
               </p>
+              {showPreorderAreas ? (
+                <p>
+                  Pre-order information is also used to take payment, calculate tax,
+                  reserve inventory, confirm and support orders, communicate delays,
+                  process cancellations and refunds, prevent fraud and abuse, meet
+                  accounting and legal duties, and arrange fulfilment.
+                </p>
+              ) : null}
             </section>
 
             <section id="legal-bases">
@@ -214,16 +256,21 @@ export default async function PrivacyPage() {
               <h2>{sectionHeading("advertising-measurement", "Advertising measurement")}</h2>
               <p>
                 We use the Meta Pixel on eligible public pages to understand whether
-                a visit, updates signup, or optional survey completion came from a
+                a visit, updates signup, or survey completion came from a
                 Meta ad and to measure and improve our campaigns. For visitors outside
                 the United States, visitors in US states where Frame applies an
                 explicit-consent policy, and visitors whose location cannot be
                 determined, Meta measurement stays off unless they choose “Allow.” For other
                 US visitors, it may start automatically unless they previously turned
-                it off or enabled Global Privacy Control in their browser. Permitted
+                it off or enabled Global Privacy Control in their browser.
+              </p>
+              <p>
+                Permitted
                 Meta processes Pixel information under its own privacy policy. We do
                 not send your name, email address, age, gender, survey selections,
                 health-related answers, or written responses through the Pixel.
+              </p>
+              <p>
                 Frame uses Netlify’s platform-derived country and US state to select
                 this regional policy. Frame receives a short-lived signed result
                 containing only coarse country, state, resolution, and policy fields;
@@ -232,13 +279,18 @@ export default async function PrivacyPage() {
                 Frame enables the Meta Conversions API in the future, the same regional
                 policy, privacy choice, and Global Privacy Control rules will apply,
                 and this notice will describe the permitted data used for matching.
-                {showContributorAreas
-                  ? " The Pixel is not initialized on checkout review, payment-success, member sign-in, contributor-profile, private contributor-hub, or administration routes."
-                  : null}
-                {showPreorderAreas
-                  ? " The Pixel is not initialized on pre-order review, payment confirmation, customer order-management, or pre-order administration routes."
-                  : null}
               </p>
+              {showContributorAreas || showPreorderAreas ? (
+                <p>
+                  {showContributorAreas
+                    ? "The Pixel is not initialized on checkout review, payment-success, member sign-in, contributor-profile, private contributor-hub, or administration routes."
+                    : null}
+                  {showContributorAreas && showPreorderAreas ? " " : null}
+                  {showPreorderAreas
+                    ? "The Pixel is not initialized on pre-order review, payment confirmation, customer order-management, or pre-order administration routes."
+                    : null}
+                </p>
+              ) : null}
               <p>
                 We store your choice in your browser. You can change or withdraw it
                 at any time using the “Privacy choices” control displayed on pages
@@ -257,7 +309,10 @@ export default async function PrivacyPage() {
                 Privacy Control provide a way to opt out. We otherwise share
                 information only with service
                 providers that help us host, secure, operate the website, store
-                submissions, and deliver messages, or when required by law. These
+                submissions, and deliver messages, or when required by law.
+              </p>
+              <p>
+                These
                 providers currently include Supabase for data storage, Resend for
                 email delivery, Netlify for the coarse regional policy check described
                 above, and our website hosting provider.
@@ -267,7 +322,9 @@ export default async function PrivacyPage() {
                 {showPreorderAreas
                   ? " The pre-order flow also uses Stripe for payment and tax calculation, Supabase for order storage, and Resend for transactional email."
                   : null}
-                {" "}Some providers may process information outside the UK. Where
+              </p>
+              <p>
+                Some providers may process information outside the UK. Where
                 restricted transfers apply, we use an applicable adequacy mechanism
                 or contractual safeguards provided for that service.
               </p>

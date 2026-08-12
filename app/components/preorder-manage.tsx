@@ -377,6 +377,19 @@ export function PreorderManage() {
     }
   }
 
+  function toggleAddressEditor(scrollToEditor = false) {
+    const opening = !showAddressForm;
+    setFeedback(null);
+    setShowAddressForm(opening);
+    if (opening && scrollToEditor) {
+      window.setTimeout(() => {
+        document
+          .getElementById("preorder-address-section")
+          ?.scrollIntoView({ behavior: "smooth", block: "start" });
+      }, 0);
+    }
+  }
+
   async function respondToDeliveryUpdate(response: "accept" | "request_cancellation") {
     const order = result.order;
     if (!order) return;
@@ -467,12 +480,18 @@ export function PreorderManage() {
       <header className="preorder-manage-card__header">
         <div className="preorder-manage-card__kicker">
           <span className="preorder-confirmation__mark" aria-hidden="true">{cancelled ? "×" : "✓"}</span>
-          <p className="eyebrow">Order {order.orderNumber}</p>
+          <p className="eyebrow">
+            <span className="preorder-manage-copy--desktop">Order {order.orderNumber}</span>
+            <span className="preorder-manage-copy--mobile">{statusLabel}</span>
+          </p>
         </div>
         <div className="preorder-manage-card__heading">
           <div>
             <h1>Manage your<br />pre-order.</h1>
-            <p>Review your order, delivery details, and available changes.</p>
+            <p>
+              <span className="preorder-manage-copy--desktop">Review your order, delivery details, and available changes.</span>
+              <span className="preorder-manage-copy--mobile">Review your order and make changes.</span>
+            </p>
           </div>
           <span className={`preorder-manage-status${cancelled ? " preorder-manage-status--cancelled" : ""}`}>
             {statusLabel}
@@ -492,17 +511,18 @@ export function PreorderManage() {
             />
           </div>
           <div className="preorder-manage-summary__copy">
-            <p className="eyebrow">Your order</p>
+            <p className="eyebrow preorder-manage-summary__order-label">Your order</p>
             <h2 id="managed-order-heading">Frame</h2>
-            <p>One device</p>
+            <p className="preorder-manage-copy--desktop">One device</p>
           </div>
           <div className="preorder-manage-summary__total">
             <span>Total paid</span>
             <strong>{order.amountPaid}</strong>
             {order.refundStatus !== "none" ? (
               <small>{order.amountRefunded} refunded</small>
-            ) : null}
+            ) : <small className="preorder-manage-summary__paid">Paid</small>}
           </div>
+          <p className="preorder-manage-summary__quantity-mobile">Qty 1</p>
         </div>
 
         <dl className="preorder-manage-summary__facts">
@@ -511,18 +531,54 @@ export function PreorderManage() {
           <div><dt>Estimated shipping</dt><dd>{order.estimatedShipping}</dd></div>
         </dl>
 
+        <div className="preorder-manage-summary__section-heading">
+          <p className="eyebrow">Delivery &amp; contact</p>
+        </div>
+
         <div className="preorder-manage-summary__delivery">
           <div>
-            <p className="eyebrow">Shipping to</p>
+            <div className="preorder-manage-info-heading">
+              <p className="eyebrow">
+                <span className="preorder-manage-copy--desktop">Shipping to</span>
+                <span className="preorder-manage-copy--mobile">Delivery address</span>
+              </p>
+              {order.canRequestAddressChange ? (
+                <button
+                  className="preorder-manage-info-action"
+                  type="button"
+                  aria-expanded={showAddressForm}
+                  aria-controls="preorder-address-form"
+                  onClick={() => toggleAddressEditor(true)}
+                >
+                  {showAddressForm ? "Close" : <>Change <span aria-hidden="true">→</span></>}
+                </button>
+              ) : null}
+            </div>
             <h3>{order.fullName}</h3>
             <address>{shipping.map((line) => <span key={line}>{line}<br /></span>)}</address>
           </div>
           <div>
-            <p className="eyebrow">Order updates</p>
-            <p>We’ll send important product, timing, and delivery updates to:</p>
+            <div className="preorder-manage-info-heading">
+              <p className="eyebrow">Order email</p>
+              <button
+                className="preorder-manage-email-toggle preorder-manage-email-toggle--mobile"
+                type="button"
+                aria-expanded={showEmailForm}
+                aria-controls="preorder-email-form"
+                onClick={() => {
+                  setFeedback(null);
+                  setEmail("");
+                  setEmailConfirmation("");
+                  setShowEmailForm((current) => !current);
+                }}
+              >
+                {showEmailForm ? "Close" : <>Change <span aria-hidden="true">→</span></>}
+              </button>
+            </div>
+            <p className="preorder-manage-summary__updates-copy">We’ll send important product, timing, and delivery updates to:</p>
             <a href={`mailto:${order.email}`}>{order.email}</a>
             <button
-              className="preorder-manage-email-toggle"
+              className="preorder-manage-email-toggle preorder-manage-email-toggle--desktop"
               type="button"
               aria-expanded={showEmailForm}
               aria-controls="preorder-email-form"
@@ -623,14 +679,20 @@ export function PreorderManage() {
           <InlineFeedback feedback={feedback} target="address" />
         </section>
       ) : order.canRequestAddressChange ? (
-        <section className="preorder-manage-option preorder-manage-delivery-details">
+        <section
+          className={`preorder-manage-option preorder-manage-delivery-details${showAddressForm ? " is-open" : ""}`}
+          id="preorder-address-section"
+        >
           <div className="preorder-manage-delivery-details__header">
             <div>
               <p className="eyebrow">Delivery details</p>
               <h2>Change your shipping address.</h2>
-              <p>Request an address change while the order is still unshipped. We’ll review it before applying it.</p>
+              <p>
+                <span className="preorder-manage-copy--desktop">Request an address change while the order is still unshipped. We’ll review it before applying it.</span>
+                <span className="preorder-manage-copy--mobile">Request a change before fulfilment.</span>
+              </p>
             </div>
-            <button className="button button--secondary" type="button" aria-expanded={showAddressForm} aria-controls="preorder-address-form" onClick={() => { setFeedback(null); setShowAddressForm((current) => !current); }}>
+            <button className="button button--secondary" type="button" aria-expanded={showAddressForm} aria-controls="preorder-address-form" onClick={() => toggleAddressEditor()}>
               {showAddressForm ? "Close form" : "Change address"}
             </button>
           </div>
@@ -678,10 +740,13 @@ export function PreorderManage() {
             <div>
               <p className="eyebrow">Cancellation</p>
               <h2>Need to cancel?</h2>
-              <p>You can cancel until fulfilment begins, before the order moves to processing. We’ll refund the full remaining amount to your original payment method.</p>
+              <p>
+                <span className="preorder-manage-copy--desktop">You can cancel until fulfilment begins, before the order moves to processing. We’ll refund the full remaining amount to your original payment method.</span>
+                <span className="preorder-manage-copy--mobile">Cancel before fulfilment for a full refund.</span>
+              </p>
             </div>
-            <button className="button button--secondary" type="button" aria-expanded={showCancellationForm} aria-controls="preorder-cancellation-form" onClick={() => { setFeedback(null); setShowCancellationForm((current) => !current); }}>
-              {showCancellationForm ? "Close" : "Start cancellation"}
+            <button className="button button--secondary preorder-manage-cancel-toggle" type="button" aria-expanded={showCancellationForm} aria-controls="preorder-cancellation-form" onClick={() => { setFeedback(null); setShowCancellationForm((current) => !current); }}>
+              {showCancellationForm ? "Close" : <>Start cancellation <span aria-hidden="true">→</span></>}
             </button>
           </div>
           <InlineFeedback feedback={feedback} target="cancellation" />
@@ -716,6 +781,7 @@ export function PreorderManage() {
       ) : null}
 
       <nav className="preorder-manage-policies" aria-label="Order policies">
+        <span className="preorder-manage-policies__label">Order policies</span>
         <Link href="/preorder/product-status">Product status</Link>
         <Link href="/preorder/terms">Pre-order terms</Link>
         <Link href="/preorder/refunds">Cancellation and refunds</Link>

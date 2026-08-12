@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { SUPPORT_EMAIL } from "@/lib/company";
 import { CONTACT_TOPICS } from "@/lib/contact-topics";
@@ -11,24 +11,48 @@ type FieldName = "name" | "email" | "topic" | "message";
 type FieldErrors = Partial<Record<FieldName, string>>;
 type ContactStatus = "idle" | "submitting" | "sent" | "error";
 
-export function ContactForm() {
+export function ContactForm({
+  initialTopic = "general",
+  previewSuccess = false,
+  preorderSupport = false,
+}: {
+  initialTopic?: string;
+  previewSuccess?: boolean;
+  preorderSupport?: boolean;
+}) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
-  const [topic, setTopic] = useState("general");
+  const [topic, setTopic] = useState(initialTopic);
   const [message, setMessage] = useState("");
   const [errors, setErrors] = useState<FieldErrors>({});
   const [status, setStatus] = useState<ContactStatus>("idle");
   const [submissionError, setSubmissionError] = useState("");
+  const successRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!previewSuccess || status !== "idle") return;
+
+    const hostname = window.location.hostname.toLowerCase();
+    if (!["localhost", "127.0.0.1", "::1"].includes(hostname)) return;
+
     const timer = window.setTimeout(() => {
-      const requestedTopic = new URLSearchParams(window.location.search).get("topic");
-      if (CONTACT_TOPICS.some(({ value }) => value === requestedTopic)) {
-        setTopic(requestedTopic ?? "general");
-      }
+      setEmail("test@example.com");
+      setStatus("sent");
     }, 0);
+
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [previewSuccess, status]);
+
+  useEffect(() => {
+    if (status !== "sent") return;
+
+    const frame = window.requestAnimationFrame(() => {
+      successRef.current?.scrollIntoView({ behavior: "smooth", block: "start" });
+      successRef.current?.focus({ preventScroll: true });
+    });
+
+    return () => window.cancelAnimationFrame(frame);
+  }, [status]);
 
   function clearError(field: FieldName) {
     setErrors((current) => {
@@ -109,7 +133,7 @@ export function ContactForm() {
   function resetForm() {
     setName("");
     setEmail("");
-    setTopic("general");
+    setTopic(initialTopic);
     setMessage("");
     setErrors({});
     setSubmissionError("");
@@ -118,14 +142,17 @@ export function ContactForm() {
 
   if (status === "sent") {
     return (
-      <div className="contact-form__success" role="status" aria-live="polite">
+      <div
+        className="contact-form__success"
+        ref={successRef}
+        role="status"
+        aria-live="polite"
+        tabIndex={-1}
+      >
         <span className="contact-form__success-mark" aria-hidden="true">✓</span>
         <p className="eyebrow">Message sent</p>
-        <h2>Thank you for reaching out.</h2>
-        <p>
-          Your message is with the Frame team. We’ll reply to {email.trim()} as
-          soon as we can.
-        </p>
+        <h2>We’ve received your message.</h2>
+        <p>We’ll reply to {email.trim()} as soon as we can.</p>
         <div className="contact-form__success-actions">
           <Link className="button button--dark" href="/">
             <span aria-hidden="true">←</span> Back to home
@@ -152,11 +179,20 @@ export function ContactForm() {
       </div>
 
       <div className="contact-form__heading">
-        <div>
+        <div className="contact-form__heading-copy contact-form__heading-copy--default">
           <p className="eyebrow">Send a message</p>
           <h2>How can we help?</h2>
           <p>Share a few details and we’ll make sure your message reaches the right person.</p>
         </div>
+        {preorderSupport ? (
+          <div className="contact-form__heading-copy contact-form__heading-copy--preorder">
+            <p className="eyebrow">Pre-order support</p>
+            <h2>How can we help?</h2>
+            <p>
+              Tell us what you need help with and we’ll respond by email.
+            </p>
+          </div>
+        ) : null}
       </div>
 
       <div className="contact-form__fields">
@@ -252,7 +288,11 @@ export function ContactForm() {
                 ? "contact-message-hint contact-message-error"
                 : "contact-message-hint"
             }
-            placeholder="Tell us what you’d like to discuss, and include any context that will help us respond."
+            placeholder={
+              preorderSupport
+                ? "Tell us what you need help with. Include your order number or checkout email if relevant."
+                : "Tell us what you’d like to discuss, and include any context that will help us respond."
+            }
           />
           <div className="field-hint" id="contact-message-hint">
             <span>Up to {MAX_MESSAGE_LENGTH} characters</span>
@@ -274,8 +314,14 @@ export function ContactForm() {
 
       <div className="contact-form__footer">
         <p className="contact-form__note">
-          Please don’t include private medical information. Your message is sent
-          to {SUPPORT_EMAIL}.
+          <span>Please don’t include private medical information.</span>
+          {preorderSupport ? (
+            <span>
+              Prefer email? <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
+            </span>
+          ) : (
+            <span>Your message is sent to {SUPPORT_EMAIL}.</span>
+          )}
         </p>
         <button
           className="button button--dark contact-form__submit"

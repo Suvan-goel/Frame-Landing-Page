@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   preorderConfirmationRecovery,
-  preorderItemDescription,
   preorderShippingAddressLines,
   type PreorderShippingAddress,
 } from "@/lib/preorder-confirmation";
@@ -144,14 +143,11 @@ export function PreorderSuccess() {
       <header className="preorder-confirmation__hero">
         <div className="preorder-confirmation__status">
           <span className="preorder-confirmation__mark" aria-hidden="true">✓</span>
-          <p className="eyebrow">Payment received · {order.orderNumber}</p>
+          <p className="eyebrow">Payment received</p>
         </div>
         <h1>Your pre-order is confirmed.</h1>
-        <p>
-          Thank you. We’ve received your order for {preorderItemDescription(order.quantity)} and your payment is complete.
-        </p>
         <p className="preorder-confirmation__email">
-          Important order and delivery updates will be sent to <a href={`mailto:${order.email}`}>{order.email}</a>.
+          Thanks - your payment is complete. Order updates will be sent to <a href={`mailto:${order.email}`}>{order.email}</a>.
         </p>
       </header>
 
@@ -221,8 +217,8 @@ export function PreorderSuccess() {
               </div>
             ) : null}
             <p>
-              We’re currently targeting this window for dispatch. We’ll send progress, timing, and tracking updates
-              to your order email. You can request an address change from your secure management page.
+              We’re targeting this window for dispatch. You can request an address change from your secure
+              management page.
             </p>
           </div>
         </div>
@@ -231,19 +227,53 @@ export function PreorderSuccess() {
       <section className="preorder-confirmation__follow-up" aria-labelledby="next-heading">
         <div>
           <p className="eyebrow">What happens next</p>
-          <h2 id="next-heading">Keep an eye on your inbox.</h2>
+          <h2 id="next-heading">Watch your inbox.</h2>
         </div>
         <p>
-          Your confirmation and secure management link are on their way. We’ll email important
-          product, timing, and tracking updates before dispatch.
+          Your receipt and secure management link are on their way. We’ll send shipping and tracking updates
+          before dispatch.
         </p>
+        <ol className="preorder-confirmation__steps">
+          <li>
+            <span>01</span>
+            <div>
+              <strong>Receipt and secure link</strong>
+              <small>Sent to your order email.</small>
+            </div>
+          </li>
+          <li>
+            <span>02</span>
+            <div>
+              <strong>Delivery updates</strong>
+              <small>Timing changes shared before dispatch.</small>
+            </div>
+          </li>
+          <li>
+            <span>03</span>
+            <div>
+              <strong>Shipping and tracking</strong>
+              <small>Sent when your order dispatches.</small>
+            </div>
+          </li>
+        </ol>
+        {order.managePath ? (
+          <a className="button button--dark preorder-confirmation__mobile-manage" href={order.managePath}>
+            Manage your pre-order
+          </a>
+        ) : null}
       </section>
 
       <div className="preorder-confirmation__actions">
         {order.managePath ? (
-          <a className="button button--dark" href={order.managePath}>Manage your pre-order</a>
+          <a className="button button--dark preorder-confirmation__desktop-manage" href={order.managePath}>
+            Manage your pre-order
+          </a>
         ) : null}
-        <Link className={order.managePath ? "text-link" : "button button--dark"} href="/">
+        <Link
+          className={`${order.managePath ? "text-link" : "button button--dark"} preorder-confirmation__return-link`}
+          href="/"
+        >
+          <span className="preorder-confirmation__return-arrow" aria-hidden="true">←</span>
           Return to Frame
         </Link>
       </div>

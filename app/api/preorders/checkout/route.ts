@@ -8,6 +8,8 @@ import {
   PREORDER_PRODUCT_STATUS_VERSION,
   PREORDER_RELEASE_PRICE_CENTS,
   PREORDER_SHIPPING_RATE_CENTS,
+  PREORDER_STRIPE_PRODUCT_IMAGE_URL,
+  PREORDER_STRIPE_PRODUCT_NAME,
   PREORDER_STRIPE_PRODUCT_TAX_CODE,
   PREORDER_TERMS_VERSION,
 } from "@/lib/preorder";
@@ -26,7 +28,6 @@ import {
 import { consumePreorderRateLimit } from "@/lib/preorder-rate-limit.server";
 import { getStripe, getStripePreorderPriceId } from "@/lib/stripe.server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin.server";
-import { isAllowedPreorderUsState } from "@/lib/preorder-shipping";
 import { SITE_URL } from "@/lib/site";
 import { verifiedRequestOrigin } from "@/lib/request-origin.server";
 import { cleanAttribution } from "@/lib/attribution";
@@ -44,54 +45,6 @@ function jsonResponse(body: Record<string, unknown>, status = 200) {
       "X-Content-Type-Options": "nosniff",
     },
   });
-}
-
-function cleanCustomerField(value: unknown, maximumLength: number) {
-  if (typeof value !== "string") return "";
-  return value.trim().replace(/\s+/g, " ").slice(0, maximumLength);
-}
-
-function reviewedCustomer(value: unknown) {
-  if (!value || typeof value !== "object" || Array.isArray(value)) return null;
-  const customer = value as Record<string, unknown>;
-  const addressValue = customer.shippingAddress;
-  if (!addressValue || typeof addressValue !== "object" || Array.isArray(addressValue)) {
-    return null;
-  }
-  const address = addressValue as Record<string, unknown>;
-  const email = cleanCustomerField(customer.email, 254).toLowerCase();
-  const fullName = cleanCustomerField(customer.fullName, 120);
-  const line1 = cleanCustomerField(address.line1, 200);
-  const line2 = cleanCustomerField(address.line2, 200);
-  const city = cleanCustomerField(address.city, 100);
-  const state = cleanCustomerField(address.state, 2).toUpperCase();
-  const postalCode = cleanCustomerField(address.postalCode, 10).toUpperCase();
-  const country = cleanCustomerField(address.country, 2).toUpperCase();
-
-  if (
-    !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) ||
-    fullName.length < 2 ||
-    line1.length < 3 ||
-    city.length < 2 ||
-    country !== "US" ||
-    !isAllowedPreorderUsState(state) ||
-    !/^\d{5}(?:-\d{4})?$/.test(postalCode)
-  ) {
-    return null;
-  }
-
-  return {
-    email,
-    fullName,
-    shippingAddress: {
-      line1,
-      ...(line2 ? { line2 } : {}),
-      city,
-      state,
-      postal_code: postalCode,
-      country: "US" as const,
-    },
-  };
 }
 
 export async function POST(request: Request) {
@@ -112,8 +65,6 @@ export async function POST(request: Request) {
   }
 
   let payload: {
-    termsAcknowledged?: unknown;
-    productStatusAcknowledged?: unknown;
     marketingOptIn?: unknown;
     quantity?: unknown;
     source?: unknown;
@@ -121,30 +72,11 @@ export async function POST(request: Request) {
     utmMedium?: unknown;
     utmCampaign?: unknown;
     requestKey?: unknown;
-    customer?: unknown;
   };
   try {
     payload = (await request.json()) as typeof payload;
   } catch {
-    return jsonResponse({ error: "Review and acknowledge the pre-order details." }, 400);
-  }
-
-  if (payload.productStatusAcknowledged !== true) {
-    return jsonResponse(
-      { error: "Review and confirm Frame’s current product status." },
-      400,
-    );
-  }
-  if (payload.termsAcknowledged !== true) {
-    return jsonResponse({ error: "Accept the Pre-order Terms to continue." }, 400);
-  }
-
-  const customer = reviewedCustomer(payload.customer);
-  if (!customer) {
-    return jsonResponse(
-      { error: "Enter a valid delivery address in one of the 50 states or Washington, DC." },
-      400,
-    );
+    return jsonResponse({ error: "Review your pre-order details and try again." }, 400);
   }
 
   const quantity = typeof payload.quantity === "number" ? payload.quantity : 1;
@@ -218,7 +150,6 @@ export async function POST(request: Request) {
     if (config.shippingRateCents !== PREORDER_SHIPPING_RATE_CENTS) {
       throw new Error("Pre-order shipping does not match the reviewed offer.");
     }
-    const releasePriceLabel = formatPreorderMoney(PREORDER_RELEASE_PRICE_CENTS, config.currency);
     const preorderSavingsLabel = formatPreorderMoney(
       PREORDER_RELEASE_PRICE_CENTS - config.priceCents,
       config.currency,
@@ -247,6 +178,8 @@ export async function POST(request: Request) {
       price.currency !== config.currency ||
       price.tax_behavior !== "exclusive" ||
       !product?.active ||
+      product.name !== PREORDER_STRIPE_PRODUCT_NAME ||
+      product.images[0] !== PREORDER_STRIPE_PRODUCT_IMAGE_URL ||
       product.description !== expectedProductDescription ||
       product.tax_code !== PREORDER_STRIPE_PRODUCT_TAX_CODE
     ) {
@@ -271,8 +204,8 @@ export async function POST(request: Request) {
       utmCampaign: cleanAttribution(payload.utmCampaign),
       termsVersion: PREORDER_TERMS_VERSION,
       productStatusVersion: PREORDER_PRODUCT_STATUS_VERSION,
-      termsAcceptedAt: now.toISOString(),
-      productStatusAcknowledgedAt: now.toISOString(),
+      termsAcceptedAt: null,
+      productStatusAcknowledgedAt: null,
       marketingOptIn,
       marketingConsentAt: marketingOptIn ? now.toISOString() : null,
     });
@@ -305,24 +238,6 @@ export async function POST(request: Request) {
           1_000,
       ) + PREORDER_CHECKOUT_SESSION_TTL_SECONDS;
 
-    const stripeCustomer = await stripe.customers.create(
-      {
-        email: customer.email,
-        name: customer.fullName,
-        shipping: {
-          name: customer.fullName,
-          address: customer.shippingAddress,
-        },
-        metadata: {
-          flow: "frame_preorder",
-          checkout_intent_id: reservedIntentId,
-          environment,
-          ...(liveSmokeRequest ? { verification_mode: "live_smoke" } : {}),
-        },
-      },
-      { idempotencyKey: `frame-preorder-customer-${reservedIntentId}` },
-    );
-
     const session = await stripe.checkout.sessions.create(
       {
         mode: "payment",
@@ -338,8 +253,8 @@ export async function POST(request: Request) {
         },
         line_items: [{ price: priceId, quantity }],
         client_reference_id: reservedIntentId,
-        customer: stripeCustomer.id,
-        customer_update: { address: "auto" },
+        customer_creation: "always",
+        shipping_address_collection: { allowed_countries: ["US"] },
         shipping_options: [
           {
             shipping_rate_data: {
@@ -361,11 +276,11 @@ export async function POST(request: Request) {
               liveSmokeRequest
                 ? `Private live verification: your card will be charged ${totalBeforeTaxLabel} plus applicable tax. Refund the order immediately after verifying the order record, confirmation email, and management link. Free standard US shipping is included.`
                 : mode === "test"
-                ? `Sandbox payment only. Your ${totalBeforeTaxLabel} total before tax includes free standard US shipping; applicable sales tax is calculated at checkout. You save ${preorderSavingsLabel} from the planned ${releasePriceLabel} release price. Estimated shipping: ${config.estimatedShipping}.`
-                : `Your ${totalBeforeTaxLabel} total before tax includes free standard US shipping; applicable sales tax is calculated at checkout. You save ${preorderSavingsLabel} from the planned ${releasePriceLabel} release price. Estimated shipping: ${config.estimatedShipping}.`,
+                ? `Sandbox payment only. ${totalBeforeTaxLabel} before tax · Free US shipping · Save ${preorderSavingsLabel} · Estimated shipping ${config.estimatedShipping}.`
+                : `${totalBeforeTaxLabel} before tax · Free US shipping · Save ${preorderSavingsLabel} · Estimated shipping ${config.estimatedShipping}.`,
           },
           terms_of_service_acceptance: {
-            message: `I agree to the [Frame Pre-order Terms](${legalBaseUrl}/preorder/terms) and [Cancellation and Refund Policy](${legalBaseUrl}/preorder/refunds), and acknowledge the [Privacy Notice](${legalBaseUrl}/privacy).`,
+            message: `I agree to the [Pre-order Terms](${legalBaseUrl}/preorder/terms) and [Refund Policy](${legalBaseUrl}/preorder/refunds), and acknowledge Frame’s [Product Status](${legalBaseUrl}/preorder/product-status) and [Privacy Notice](${legalBaseUrl}/privacy).`,
           },
         },
         submit_type: "pay",
@@ -381,8 +296,8 @@ export async function POST(request: Request) {
         payment_intent_data: {
           description:
             mode === "test"
-              ? "Frame device pre-order (sandbox)"
-              : "Frame device pre-order",
+              ? `${PREORDER_STRIPE_PRODUCT_NAME} (sandbox)`
+              : PREORDER_STRIPE_PRODUCT_NAME,
           metadata: {
             flow: "frame_preorder",
             checkout_intent_id: reservedIntentId,
@@ -406,7 +321,6 @@ export async function POST(request: Request) {
       .update({
         status: "checkout_open",
         stripe_checkout_session_id: session.id,
-        stripe_customer_id: stripeCustomer.id,
         expires_at: new Date(session.expires_at * 1000).toISOString(),
         updated_at: new Date().toISOString(),
       })

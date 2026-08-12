@@ -628,8 +628,10 @@ async function submitQualification(payload: Record<string, unknown>, request: Re
   const researchCall = normalizeResearchCallValue(submittedResearchCall);
   const firstName = cleanName(payload.firstName);
   const lastName = cleanName(payload.lastName);
-  const age = typeof payload.age === "number" ? payload.age : Number.NaN;
-  const gender = typeof payload.gender === "string" ? payload.gender : "";
+  const age = typeof payload.age === "number" ? payload.age : null;
+  const gender = typeof payload.gender === "string" && payload.gender
+    ? payload.gender
+    : null;
   const frustration = cleanLongText(payload.frustration);
 
   if (!UUID_PATTERN.test(signupToken)) {
@@ -653,23 +655,23 @@ async function submitQualification(payload: Record<string, unknown>, request: Re
       400,
     );
   }
+  if (!researchCall || !researchCallValues.has(researchCall)) {
+    return jsonResponse({ error: "Choose a valid research-call response." }, 400);
+  }
   if (!firstName) {
     return jsonResponse({ error: "Enter your first name." }, 400);
   }
   if (!lastName) {
     return jsonResponse({ error: "Enter your last name." }, 400);
   }
-  if (!Number.isInteger(age) || age < MIN_AGE || age > MAX_AGE) {
+  if (age === null || !Number.isInteger(age) || age < MIN_AGE || age > MAX_AGE) {
     return jsonResponse(
       { error: `Enter an age between ${MIN_AGE} and ${MAX_AGE}.` },
       400,
     );
   }
-  if (!genderValues.has(gender)) {
+  if (!gender || !genderValues.has(gender)) {
     return jsonResponse({ error: "Select a gender option." }, 400);
-  }
-  if (submittedResearchCall && (!researchCall || !researchCallValues.has(researchCall))) {
-    return jsonResponse({ error: "Choose a valid research-call response." }, 400);
   }
   try {
     const result = await completeWaitlistQualification(

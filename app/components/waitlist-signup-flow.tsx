@@ -19,6 +19,7 @@ import {
   PRIMARY_INTEREST_OPTIONS,
   RESEARCH_CALL_OPTIONS,
   genderValues,
+  researchCallValues,
 } from "@/lib/waitlist-options";
 import {
   getMetaTrackingContext,
@@ -35,6 +36,10 @@ const MIN_FRUSTRATION_LENGTH = 20;
 const MIN_AGE = 18;
 const MAX_AGE = 120;
 const WAITLIST_SURVEY_SESSION_KEY = "frame_waitlist_survey";
+const SURVEY_STEPS = 5;
+const RESEARCH_SURVEY_STEP = 3;
+const PROFILE_SURVEY_STEP = 4;
+const LOCAL_PREVIEW_SIGNUP_TOKEN = "local-survey-preview";
 
 type FlowStage =
   | "email"
@@ -50,6 +55,7 @@ type FieldErrors = Partial<
     | "primaryInterest"
     | "monitoringMethod"
     | "frustration"
+    | "researchCall"
     | "firstName"
     | "lastName"
     | "age"
@@ -109,7 +115,7 @@ function cleanName(value: string) {
   return value.trim().replace(/\s+/g, " ");
 }
 
-function profileErrors(
+function requiredProfileErrors(
   firstName: string,
   lastName: string,
   age: string,
@@ -119,21 +125,26 @@ function profileErrors(
   const normalizedAge = age.trim();
   const parsedAge = Number(normalizedAge);
 
-  if (!cleanName(firstName) || cleanName(firstName).length > 60) {
+  if (!firstName.trim()) {
     nextErrors.firstName = "Enter your first name.";
+  } else if (cleanName(firstName).length > 60) {
+    nextErrors.firstName = "Keep your first name to 60 characters or fewer.";
   }
-  if (!cleanName(lastName) || cleanName(lastName).length > 60) {
+  if (!lastName.trim()) {
     nextErrors.lastName = "Enter your last name.";
+  } else if (cleanName(lastName).length > 60) {
+    nextErrors.lastName = "Keep your last name to 60 characters or fewer.";
   }
   if (
+    !normalizedAge ||
     !/^\d{1,3}$/.test(normalizedAge) ||
-    !Number.isInteger(parsedAge) ||
-    parsedAge < MIN_AGE ||
-    parsedAge > MAX_AGE
+      !Number.isInteger(parsedAge) ||
+      parsedAge < MIN_AGE ||
+      parsedAge > MAX_AGE
   ) {
     nextErrors.age = `Enter an age between ${MIN_AGE} and ${MAX_AGE}.`;
   }
-  if (!genderValues.has(gender)) {
+  if (!gender || !genderValues.has(gender)) {
     nextErrors.gender = "Select a gender option.";
   }
   return nextErrors;
@@ -178,10 +189,12 @@ async function responsePayload(response: Response) {
 
 export function WaitlistSignupProvider({
   children,
+  previewSurvey = false,
   resumeSurvey = false,
   resumePlacement = "qualification_page",
 }: {
   children: ReactNode;
+  previewSurvey?: boolean;
   resumeSurvey?: boolean;
   resumePlacement?: string;
 }) {
@@ -215,6 +228,21 @@ export function WaitlistSignupProvider({
     if (!resumeSurvey) return;
 
     const restoreSurvey = window.setTimeout(() => {
+      const localPreviewRequested =
+        previewSurvey &&
+        ["localhost", "127.0.0.1", "::1"].includes(
+          window.location.hostname.toLowerCase(),
+        );
+
+      if (localPreviewRequested) {
+        setEmailState("preview@framewearable.com");
+        setSignupToken(LOCAL_PREVIEW_SIGNUP_TOKEN);
+        setActivePlacement(resumePlacement);
+        setStage("survey");
+        setSurveyResumeStatus("ready");
+        return;
+      }
+
       let stored: StoredWaitlistSurvey | null = null;
       try {
         stored = JSON.parse(
@@ -242,7 +270,7 @@ export function WaitlistSignupProvider({
     }, 0);
 
     return () => window.clearTimeout(restoreSurvey);
-  }, [resumePlacement, resumeSurvey]);
+  }, [previewSurvey, resumePlacement, resumeSurvey]);
 
   const clearFieldError = useCallback((field: keyof FieldErrors) => {
     setErrors((current) => {
@@ -290,8 +318,9 @@ export function WaitlistSignupProvider({
   const setResearchCall = useCallback(
     (value: string) => {
       setResearchCallState(value);
+      clearFieldError("researchCall");
     },
-    [],
+    [clearFieldError],
   );
 
   const setFirstName = useCallback(
@@ -429,10 +458,17 @@ export function WaitlistSignupProvider({
       setErrors({ frustration: "Write at least 20 characters before continuing." });
       return;
     }
+    if (
+      surveyStep === RESEARCH_SURVEY_STEP &&
+      (!researchCall || !researchCallValues.has(researchCall))
+    ) {
+      setErrors({ researchCall: "Choose a research-call response." });
+      return;
+    }
     setErrors({});
     setSubmissionError("");
-    setSurveyStep((current) => Math.min(current + 1, 4));
-  }, [frustration, monitoringMethod, primaryInterest, surveyStep]);
+    setSurveyStep((current) => Math.min(current + 1, PROFILE_SURVEY_STEP));
+  }, [frustration, monitoringMethod, primaryInterest, researchCall, surveyStep]);
 
   const backSurvey = useCallback(() => {
     setErrors({});
@@ -445,7 +481,11 @@ export function WaitlistSignupProvider({
       setStage("skipped");
       setActivePlacement(placement);
       clearWaitlistSurveySession();
-      if (signupToken && !skippedTokens.current.has(signupToken)) {
+      if (
+        signupToken &&
+        signupToken !== LOCAL_PREVIEW_SIGNUP_TOKEN &&
+        !skippedTokens.current.has(signupToken)
+      ) {
         skippedTokens.current.add(signupToken);
         trackWaitlistEvent("qualification_skipped", { placement });
         void fetch("/api/waitlist", {
@@ -464,9 +504,14 @@ export function WaitlistSignupProvider({
   const submitSurvey = useCallback(
     async (placement: string) => {
       if (surveyRequest.current) return surveyRequest.current;
-      if (surveyStep < 4) return;
+      if (surveyStep < PROFILE_SURVEY_STEP) return;
 
-      const nextErrors = profileErrors(firstName, lastName, age, gender);
+      const nextErrors = requiredProfileErrors(
+        firstName,
+        lastName,
+        age,
+        gender,
+      );
       if (!primaryInterest) {
         nextErrors.primaryInterest = "Choose the one main reason that matters most to you.";
       }
@@ -476,8 +521,21 @@ export function WaitlistSignupProvider({
       if (frustration.trim().length < MIN_FRUSTRATION_LENGTH) {
         nextErrors.frustration = "Write at least 20 characters before submitting.";
       }
+      if (!researchCall || !researchCallValues.has(researchCall)) {
+        nextErrors.researchCall = "Choose a research-call response.";
+      }
       if (Object.keys(nextErrors).length) {
         setErrors(nextErrors);
+        if (nextErrors.researchCall) setSurveyStep(RESEARCH_SURVEY_STEP);
+        return;
+      }
+
+      if (signupToken === LOCAL_PREVIEW_SIGNUP_TOKEN) {
+        setErrors({});
+        setSubmissionError("");
+        setSurveyStatus("idle");
+        setStage("completed");
+        setActivePlacement(placement);
         return;
       }
 
@@ -498,7 +556,7 @@ export function WaitlistSignupProvider({
               monitoringMethod,
               monitoringMethodOther: monitoringMethodOther.trim(),
               frustration: frustration.trim(),
-              researchCall: researchCall || null,
+              researchCall,
               firstName: cleanName(firstName),
               lastName: cleanName(lastName),
               age: Number(age.trim()),
@@ -764,7 +822,7 @@ export function WaitlistSignupFlow({
 
   function handleSurveySubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (flow.surveyStep < 4) {
+    if (flow.surveyStep < PROFILE_SURVEY_STEP) {
       flow.continueSurvey();
       return;
     }
@@ -774,23 +832,18 @@ export function WaitlistSignupFlow({
   const title = [
     "What is the main reason you want Frame?",
     "How do you currently monitor your blood pressure?",
-    "What would you want Frame to help you understand or do that you can’t easily today?",
-    "Would you be willing to speak with us for 20 minutes?",
+    "What do you hope Frame will help you understand that current devices can’t?",
+    "Open to a 20-minute conversation?",
     "A little about you.",
   ][flow.surveyStep];
 
-  const profileIsComplete =
-    Boolean(cleanName(flow.firstName)) &&
-    Boolean(cleanName(flow.lastName)) &&
-    Number.isInteger(Number(flow.age)) &&
-    Number(flow.age) >= MIN_AGE &&
-    Number(flow.age) <= MAX_AGE &&
-    genderValues.has(flow.gender);
+  const isResearchStep = flow.surveyStep === RESEARCH_SURVEY_STEP;
+  const isProfileStep = flow.surveyStep === PROFILE_SURVEY_STEP;
   const canContinue =
     (flow.surveyStep === 0 && Boolean(flow.primaryInterest)) ||
     (flow.surveyStep === 1 && Boolean(flow.monitoringMethod)) ||
     (flow.surveyStep === 2 && flow.frustration.trim().length >= MIN_FRUSTRATION_LENGTH) ||
-    (flow.surveyStep === 3 && Boolean(flow.researchCall));
+    (flow.surveyStep === RESEARCH_SURVEY_STEP && Boolean(flow.researchCall));
 
   return (
     <div
@@ -885,44 +938,64 @@ export function WaitlistSignupFlow({
 
       {flow.stage === "survey" ? (
         <form className="interest-flow__form" onSubmit={handleSurveySubmit} noValidate>
-          <div className="interest-flow__progress" aria-label={`Step ${flow.surveyStep + 1} of 5`}>
-            <span>0{flow.surveyStep + 1}</span>
-            <div><i style={{ width: `${((flow.surveyStep + 1) / 5) * 100}%` }} /></div>
-            <span>05</span>
+          <div
+            className="interest-flow__progress"
+            aria-label={`Step ${flow.surveyStep + 1} of ${SURVEY_STEPS}`}
+          >
+            <span>{`0${flow.surveyStep + 1}`}</span>
+            <div><i style={{ width: `${((flow.surveyStep + 1) / SURVEY_STEPS) * 100}%` }} /></div>
+            <span>{`0${SURVEY_STEPS}`}</span>
           </div>
           <div className="interest-flow__content">
-            <p className="eyebrow">You’re subscribed. The following questions are optional.</p>
+            <p className="eyebrow">
+              {isProfileStep ? "Final step" : "You’re subscribed. These questions are optional."}
+            </p>
             <h2 id={`${idPrefix}-survey-title`} ref={headingRef} tabIndex={-1}>{title}</h2>
 
-            {flow.surveyStep === 4 ? (
-              <div className="interest-flow__details">
-                <p>These details help us understand who we’re hearing from.</p>
+            {isResearchStep ? (
+              <ChoiceList
+                idPrefix={idPrefix}
+                name="research-call"
+                options={RESEARCH_CALL_OPTIONS}
+                value={flow.researchCall}
+                error={flow.errors.researchCall}
+                onChange={flow.setResearchCall}
+              />
+            ) : null}
+
+            {isProfileStep ? (
+              <div className="interest-flow__optional-details">
+                <p>
+                  These details help us understand who we’re hearing from.
+                </p>
+                <div className="interest-flow__details">
                 <div className="form-name-fields">
                   <div className="form-field">
                     <label htmlFor={`${idPrefix}-first-name`}>First name</label>
-                    <input id={`${idPrefix}-first-name`} name="firstName" type="text" autoComplete="given-name" value={flow.firstName} onChange={(event) => flow.setFirstName(event.target.value)} maxLength={60} required aria-invalid={Boolean(flow.errors.firstName)} aria-describedby={flow.errors.firstName ? `${idPrefix}-first-name-error` : undefined} />
+                    <input id={`${idPrefix}-first-name`} name="firstName" type="text" autoComplete="given-name" required value={flow.firstName} onChange={(event) => flow.setFirstName(event.target.value)} maxLength={60} aria-invalid={Boolean(flow.errors.firstName)} aria-describedby={flow.errors.firstName ? `${idPrefix}-first-name-error` : undefined} />
                     {flow.errors.firstName ? <p className="form-error" id={`${idPrefix}-first-name-error`} role="alert">{flow.errors.firstName}</p> : null}
                   </div>
                   <div className="form-field">
                     <label htmlFor={`${idPrefix}-last-name`}>Last name</label>
-                    <input id={`${idPrefix}-last-name`} name="lastName" type="text" autoComplete="family-name" value={flow.lastName} onChange={(event) => flow.setLastName(event.target.value)} maxLength={60} required aria-invalid={Boolean(flow.errors.lastName)} aria-describedby={flow.errors.lastName ? `${idPrefix}-last-name-error` : undefined} />
+                    <input id={`${idPrefix}-last-name`} name="lastName" type="text" autoComplete="family-name" required value={flow.lastName} onChange={(event) => flow.setLastName(event.target.value)} maxLength={60} aria-invalid={Boolean(flow.errors.lastName)} aria-describedby={flow.errors.lastName ? `${idPrefix}-last-name-error` : undefined} />
                     {flow.errors.lastName ? <p className="form-error" id={`${idPrefix}-last-name-error`} role="alert">{flow.errors.lastName}</p> : null}
                   </div>
                 </div>
                 <div className="form-demographic-fields">
                   <div className="form-field">
                     <label htmlFor={`${idPrefix}-age`}>Age</label>
-                    <input id={`${idPrefix}-age`} name="age" type="number" inputMode="numeric" min={MIN_AGE} max={MAX_AGE} step={1} value={flow.age} onChange={(event) => flow.setAge(event.target.value)} required aria-invalid={Boolean(flow.errors.age)} aria-describedby={flow.errors.age ? `${idPrefix}-age-error` : undefined} />
+                    <input id={`${idPrefix}-age`} name="age" type="number" inputMode="numeric" min={MIN_AGE} max={MAX_AGE} step={1} required value={flow.age} onChange={(event) => flow.setAge(event.target.value)} aria-invalid={Boolean(flow.errors.age)} aria-describedby={flow.errors.age ? `${idPrefix}-age-error` : undefined} />
                     {flow.errors.age ? <p className="form-error" id={`${idPrefix}-age-error`} role="alert">{flow.errors.age}</p> : null}
                   </div>
                   <div className="form-field">
                     <label htmlFor={`${idPrefix}-gender`}>Gender</label>
-                    <select id={`${idPrefix}-gender`} name="gender" value={flow.gender} onChange={(event) => flow.setGender(event.target.value)} required aria-invalid={Boolean(flow.errors.gender)} aria-describedby={flow.errors.gender ? `${idPrefix}-gender-error` : undefined}>
-                      <option value="" disabled>Select an option</option>
+                    <select id={`${idPrefix}-gender`} name="gender" required value={flow.gender} onChange={(event) => flow.setGender(event.target.value)} aria-invalid={Boolean(flow.errors.gender)} aria-describedby={flow.errors.gender ? `${idPrefix}-gender-error` : undefined}>
+                      <option value="">Select an option</option>
                       {GENDER_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
                     </select>
                     {flow.errors.gender ? <p className="form-error" id={`${idPrefix}-gender-error`} role="alert">{flow.errors.gender}</p> : null}
                   </div>
+                </div>
                 </div>
               </div>
             ) : null}
@@ -948,20 +1021,17 @@ export function WaitlistSignupFlow({
               <ChoiceList idPrefix={idPrefix} name="monitoring-method" options={MONITORING_METHOD_OPTIONS} value={flow.monitoringMethod} error={flow.errors.monitoringMethod} onChange={flow.setMonitoringMethod} />
             ) : null}
 
-            {flow.surveyStep === 3 ? (
-              <ChoiceList idPrefix={idPrefix} name="research-call" options={RESEARCH_CALL_OPTIONS} value={flow.researchCall} onChange={flow.setResearchCall} />
-            ) : null}
           </div>
 
           {flow.submissionError ? <p className="form-error form-error--submission" role="alert">{flow.submissionError}</p> : null}
-          <footer className="interest-flow__actions">
+          <footer className={`interest-flow__actions${flow.surveyStep > 0 ? " interest-flow__actions--split" : ""}`}>
             {flow.surveyStep > 0 ? (
-              <button className="interest-flow__back" type="button" onClick={flow.backSurvey} disabled={flow.surveyStatus === "submitting"}>Back</button>
+              <button className="button button--secondary interest-flow__back" type="button" onClick={flow.backSurvey} disabled={flow.surveyStatus === "submitting"}>Back</button>
             ) : null}
-            {flow.surveyStep < 4 ? (
+            {flow.surveyStep < PROFILE_SURVEY_STEP ? (
               <button className="button button--dark" type="submit" disabled={!canContinue}>Continue</button>
             ) : (
-              <button className="button button--dark" type="submit" disabled={!profileIsComplete || flow.surveyStatus === "submitting"}>
+              <button className="button button--dark" type="submit" disabled={flow.surveyStatus === "submitting"}>
                 {flow.surveyStatus === "submitting" ? "Submitting…" : "Submit answers"}
               </button>
             )}
@@ -971,15 +1041,15 @@ export function WaitlistSignupFlow({
 
       {flow.stage === "completed" ? (
         <div className="interest-flow__success" aria-live={isActivePlacement ? "polite" : "off"}>
-          <p className="eyebrow">Thank you</p>
-          <h2 ref={headingRef} tabIndex={-1}>Your answers have been saved.</h2>
+          <p className="eyebrow">Answers submitted</p>
+          <h2 ref={headingRef} tabIndex={-1}>Thanks for helping shape Frame.</h2>
           <p>
             {usePreorderLaunchCopy
-              ? "We read every response. Your input will help shape the Frame experience."
-              : "We read every response. Your input will help shape Frame’s development."}
+              ? "We read every response. Yours will help shape the Frame experience."
+              : "We read every response. Yours will help guide Frame’s development."}
           </p>
           <div className="interest-flow__success-actions">
-            <Link className="button button--dark" href={finishHref}><span aria-hidden="true">←</span> Back to home</Link>
+            <Link className="button button--dark" href={finishHref}><span aria-hidden="true">←</span> Return to Frame</Link>
           </div>
           {showFoundingContributorOffer ? (
             <aside className="interest-flow__membership-offer">
@@ -996,7 +1066,7 @@ export function WaitlistSignupFlow({
         <div className="interest-flow__success" aria-live={isActivePlacement ? "polite" : "off"}>
           <p className="eyebrow">Updates confirmed</p>
           <h2 ref={headingRef} tabIndex={-1}>You’re subscribed.</h2>
-          <p>{flow.stage === "finished" ? "Thank you for helping shape Frame." : "No problem. You can answer the optional questions another time."}</p>
+          <p>{flow.stage === "finished" ? "Thank you for helping shape Frame." : "No problem. You can return to the survey another time."}</p>
           <div className="interest-flow__success-actions">
             <Link className="button button--dark" href={finishHref}><span aria-hidden="true">←</span> Back to home</Link>
           </div>
@@ -1026,11 +1096,14 @@ export function WaitlistQualificationFlow({
   if (flow.surveyResumeStatus === "missing") {
     return (
       <div className="qualification-page__message">
-        <p className="eyebrow">Optional research survey</p>
-        <h1>Start with your email.</h1>
-        <p>Sign up for Frame updates first, then you can answer the optional questions.</p>
+        <p className="eyebrow">Survey link expired</p>
+        <h1>Return to Frame to begin.</h1>
+        <p>
+          Join the updates list first and we’ll bring you straight back to these
+          five short questions.
+        </p>
         <Link className="button button--dark" href="/#homepage-hero-waitlist">
-          Return to Frame
+          Join the updates list
         </Link>
       </div>
     );

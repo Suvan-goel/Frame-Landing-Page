@@ -100,6 +100,25 @@ export async function fulfillPreorderCheckout(
     throw new Error("Pre-order legal versions do not match the reviewed offer.");
   }
 
+  const consentRecordedAt = new Date().toISOString();
+  const recordedConsentResult = await supabase.rpc(
+    "record_preorder_checkout_consent",
+    {
+      p_intent_id: intent.id,
+      p_accepted_at: consentRecordedAt,
+    },
+  );
+  if (recordedConsentResult.error) throw recordedConsentResult.error;
+  const recordedConsent = Array.isArray(recordedConsentResult.data)
+    ? recordedConsentResult.data[0]
+    : recordedConsentResult.data;
+  if (
+    !recordedConsent?.terms_accepted_at ||
+    !recordedConsent.product_status_acknowledged_at
+  ) {
+    throw new Error("Stripe Checkout consent could not be recorded.");
+  }
+
   const expectedSubtotal = intent.unit_amount * intent.quantity;
   if (
     session.amount_subtotal !== expectedSubtotal ||
@@ -195,8 +214,9 @@ export async function fulfillPreorderCheckout(
         current_estimated_delivery: intent.estimated_delivery,
         terms_version: intent.terms_version,
         product_status_version: intent.product_status_version,
-        terms_accepted_at: intent.terms_accepted_at,
-        product_status_acknowledged_at: intent.product_status_acknowledged_at,
+        terms_accepted_at: recordedConsent.terms_accepted_at,
+        product_status_acknowledged_at:
+          recordedConsent.product_status_acknowledged_at,
         marketing_opt_in: intent.marketing_opt_in,
         marketing_consent_at: intent.marketing_consent_at,
         placed_at: placedAt,

@@ -9,12 +9,18 @@ type MobileNavigationItem = {
 
 export function MobileNavigation({
   items,
-  primaryItem = { label: "Register your interest", href: "/interest" },
+  primaryItem = {
+    label: "Register your interest",
+    href: "/#homepage-hero-waitlist",
+  },
+  offerLabel,
 }: {
   items: readonly MobileNavigationItem[];
   primaryItem?: MobileNavigationItem;
+  offerLabel?: string;
 }) {
   const [open, setOpen] = useState(false);
+  const [activeHref, setActiveHref] = useState("");
   const toggleRef = useRef<HTMLButtonElement>(null);
   const firstLinkRef = useRef<HTMLAnchorElement>(null);
 
@@ -23,6 +29,10 @@ export function MobileNavigation({
 
     firstLinkRef.current?.focus();
 
+    const previousBodyOverflow = document.body.style.overflow;
+    document.documentElement.classList.add("mobile-navigation-open");
+    document.body.style.overflow = "hidden";
+
     function handleKeyDown(event: KeyboardEvent) {
       if (event.key !== "Escape") return;
       setOpen(false);
@@ -30,7 +40,11 @@ export function MobileNavigation({
     }
 
     document.addEventListener("keydown", handleKeyDown);
-    return () => document.removeEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.documentElement.classList.remove("mobile-navigation-open");
+      document.body.style.overflow = previousBodyOverflow;
+    };
   }, [open]);
 
   return (
@@ -41,30 +55,51 @@ export function MobileNavigation({
         type="button"
         aria-expanded={open}
         aria-controls="mobile-navigation-panel"
-        onClick={() => setOpen((current) => !current)}
+        onClick={() => {
+          if (!open) setActiveHref(window.location.hash);
+          setOpen((current) => !current);
+        }}
       >
         {open ? "Close" : "Menu"}
       </button>
       {open ? (
         <div className="mobile-nav__panel" id="mobile-navigation-panel">
           <div className="container mobile-nav__panel-inner">
-            {items.map((item, index) => (
+            <p className="mobile-nav__eyebrow">Explore Frame</p>
+            <div className="mobile-nav__links">
+              {items.map((item, index) => {
+                const active = item.href === activeHref;
+
+                return (
+                  <a
+                    key={item.href}
+                    ref={index === 0 ? firstLinkRef : undefined}
+                    className={active ? "is-active" : undefined}
+                    href={item.href}
+                    aria-current={active ? "location" : undefined}
+                    onClick={() => setOpen(false)}
+                  >
+                    <span className="mobile-nav__index" aria-hidden="true">
+                      {String(index + 1).padStart(2, "0")}
+                    </span>
+                    <span className="mobile-nav__label">{item.label}</span>
+                    <span className="mobile-nav__current" aria-hidden="true" />
+                  </a>
+                );
+              })}
+            </div>
+            <div className="mobile-nav__offer">
+              {offerLabel ? (
+                <p className="mobile-nav__offer-label">{offerLabel}</p>
+              ) : null}
               <a
-                key={item.href}
-                ref={index === 0 ? firstLinkRef : undefined}
-                href={item.href}
+                className="mobile-nav__primary"
+                href={primaryItem.href}
                 onClick={() => setOpen(false)}
               >
-                {item.label}
+                {primaryItem.label}
               </a>
-            ))}
-            <a
-              className="mobile-nav__primary"
-              href={primaryItem.href}
-              onClick={() => setOpen(false)}
-            >
-              {primaryItem.label}
-            </a>
+            </div>
           </div>
         </div>
       ) : null}

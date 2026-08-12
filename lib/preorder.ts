@@ -2,6 +2,13 @@ import { COMPANY_DETAILS_COMPLETE } from "./company.ts";
 
 export const PREORDER_SKU = "frame-device-preorder-v1";
 export const PREORDER_PRODUCT_NAME = "Frame device pre-order";
+export const PREORDER_STRIPE_PRODUCT_NAME = "Frame pre-order";
+export const PREORDER_REVIEWED_PRODUCT_IMAGE_PATH =
+  "/frame-product-concept-realistic-v3-transparent.png";
+// Stripe hosts the reviewed asset after it is uploaded through the Dashboard.
+// Keep this exact URL aligned with the live Product so checkout drift is rejected.
+export const PREORDER_STRIPE_PRODUCT_IMAGE_URL =
+  "https://files.stripe.com/links/MDB8YWNjdF8xVTJVMUJDYXlaejdRRXVvfGZsX2xpdmVfQU0wQjVUdW9VZ0V2YnBReFBwSmFZZGg000RyAxAU5t";
 // The Pre-order Terms and Cancellation and Refund Policy are accepted together
 // and versioned as one legal pack. The database retains `terms_version` for compatibility.
 export const PREORDER_LEGAL_PACK_VERSION = "2026-08-12-v1";
@@ -39,7 +46,7 @@ export function preorderStripeProductDescription(input: {
   estimatedShipping: string;
   sandbox: boolean;
 }) {
-  return `One Frame wearable device pre-order. ${input.sandbox ? "Sandbox only. " : ""}Free standard US shipping; applicable sales tax is calculated at checkout. Estimated shipping: ${input.estimatedShipping}.`;
+  return `${input.sandbox ? "Sandbox only. " : ""}Frame upper-arm wearable pre-order · Free US shipping · Estimated shipping ${input.estimatedShipping}.`;
 }
 
 export function formatPreorderNumber(value: number | string) {

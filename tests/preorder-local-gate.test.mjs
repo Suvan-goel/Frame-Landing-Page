@@ -321,7 +321,11 @@ test("keeps the funnel usable only on loopback during development", async () => 
   assert.doesNotMatch(html, /\$19/);
   assert.match(html, /Standard US shipping[\s\S]*?Free/i);
   assert.match(html, /Applicable sales tax is calculated at Stripe Checkout/i);
-  assert.match(html, /all 50 states and Washington, DC/);
+  assert.match(html, /Frame is still in development/);
+  assert.match(html, /Review Product Status/);
+  assert.doesNotMatch(html, /Two quick confirmations/);
+  assert.match(html, /Secure Stripe checkout/);
+  assert.match(html, /Tax shown before payment/);
   assert.match(html, /Estimated shipping/);
   assert.match(html, /Q1 2027/);
   assert.match(html, /has not received FDA marketing authorization/);
@@ -329,8 +333,8 @@ test("keeps the funnel usable only on loopback during development", async () => 
   assert.match(html, /Cancellation and Refund Policy/);
   assert.doesNotMatch(html, /FCC equipment authorization/i);
   assert.match(html, /rel="canonical" href="https:\/\/framewearable\.com\/preorder\/review"/);
-  assert.match(html, /name="email"/);
-  assert.match(html, /name="postalCode"/);
+  assert.doesNotMatch(html, /name="email"/);
+  assert.doesNotMatch(html, /name="postalCode"/);
   assert.match(html, /frame-product-concept-realistic-v3-transparent/);
 
   assert.equal(productStatusResponse.status, 200);
@@ -428,17 +432,13 @@ test("keeps the public homepage free of pre-order discovery and blocks webhook b
   const home = await homeResponse.text();
   assert.doesNotMatch(home, /href=["']\/preorder/i);
   assert.match(home, /Product concept\. Final design in development\./);
-  assert.match(home, /Wearable ultrasound, validated in clinical research\./);
+  assert.match(home, /Wearable ultrasound, supported by clinical research\./);
   assert.match(home, /Frame is under development and is not currently available for sale\./);
   assert.match(home, /Frame is developing a non-invasive upper-arm ultrasound wearable/);
   assert.doesNotMatch(home, /Evidence-driven by design\./);
   assert.doesNotMatch(home, /Frame is a general-wellness wearable in development\./);
 
-  assert.equal(interestResponse.status, 200);
-  const interest = await interestResponse.text();
-  assert.match(interest, /Receive Frame development news and help shape what comes next\./);
-  assert.match(interest, /Development updates only\./);
-  assert.doesNotMatch(interest, /Get product milestones, launch news/);
+  assert.equal(interestResponse.status, 404);
 
   assert.equal(privacyResponse.status, 200);
   assert.match(

@@ -376,7 +376,7 @@ test("server-renders the Frame landing page", async () => {
     /Continuous monitoring should create context, not continuous\s*(?:<!-- -->)?conclusions\./,
   );
   assert.match(html, /Research evidence/);
-  assert.match(html, /Wearable ultrasound, validated in clinical research\./);
+  assert.match(html, /Wearable ultrasound, supported by clinical research\./);
   assert.match(html, />118</);
   assert.match(html, /adults recruited/);
   assert.doesNotMatch(html, /Read the clinical validation study/);
@@ -416,7 +416,7 @@ test("server-renders the Frame landing page", async () => {
   assert.doesNotMatch(html, /home-preorder-hero__shipping/);
   assert.match(html, /home-preorder-price-comparison/);
   assert.match(html, /id="homepage-hero-preorder-waitlist-email"/);
-  assert.doesNotMatch(html, /Not ready to pre-order\?/);
+  assert.match(html, /Prefer updates\?/);
   assert.doesNotMatch(html, /home-preorder-saving--hero/);
   assert.match(html, /\$499/);
   assert.match(html, /Q1 2027/);
@@ -431,18 +431,9 @@ test("server-renders the Frame landing page", async () => {
   assert.doesNotMatch(html, /codex-preview|react-loading-skeleton/i);
 });
 
-test("server-renders the dedicated interest page", async () => {
+test("does not expose a dedicated interest page", async () => {
   const response = await render("/interest");
-  assert.equal(response.status, 200);
-  const html = await response.text();
-
-  assert.match(html, /<h1 class="sr-only">Get Frame updates<\/h1>/);
-  assert.match(html, /Get updates/);
-  assert.match(html, /Product milestones, launch news, and opportunities to shape what comes next/);
-  assert.match(html, /Sign up/);
-  assert.match(html, /name="email"/);
-  assert.match(html, /aria-label="Back to home"/);
-  assert.doesNotMatch(html, /<dialog/i);
+  assert.equal(response.status, 404);
 });
 
 test("redirects conventional favicon requests to the declared icon", async () => {
@@ -458,12 +449,18 @@ test("redirects conventional favicon requests to the declared icon", async () =>
 });
 
 test("server-renders the contact page", async () => {
-  const response = await render("/contact");
+  const [response, preorderResponse, previewResponse, remotePreviewResponse] = await Promise.all([
+    render("/contact"),
+    render("/contact?topic=preorder"),
+    render("/contact?preview=success"),
+    render("/contact?preview=success", undefined, "https://framewearable.com"),
+  ]);
   assert.equal(response.status, 200);
   const html = await response.text();
 
   assert.match(html, /<title>Contact Frame<\/title>/i);
   assert.match(html, /Start a conversation\./);
+  assert.match(html, /Choose a topic below and your message will go directly to our team\./);
   assert.match(html, /How can we help\?/);
   assert.doesNotMatch(html, /Replies by email/i);
   assert.match(html, /name="name"/);
@@ -474,6 +471,25 @@ test("server-renders the contact page", async () => {
   assert.match(html, /name="message"/);
   assert.match(html, /support@framewearable\.com/);
   assert.match(html, /aria-label="Frame home"/);
+
+  assert.equal(preorderResponse.status, 200);
+  const preorderHtml = await preorderResponse.text();
+  assert.match(preorderHtml, /contact-page contact-page--preorder/);
+  assert.match(preorderHtml, /Tell us what you need help with/);
+  assert.match(preorderHtml, /Include your order number or checkout email if relevant/);
+  assert.match(preorderHtml, /Prefer email\?/);
+  assert.match(preorderHtml, /mailto:support@framewearable\.com/);
+  assert.match(preorderHtml, /<option value="preorder" selected="">/);
+
+  assert.equal(previewResponse.status, 200);
+  const previewHtml = await previewResponse.text();
+  assert.match(previewHtml, /How can we help\?/);
+  assert.doesNotMatch(previewHtml, /We’ve received your message\./);
+
+  assert.equal(remotePreviewResponse.status, 200);
+  const remotePreviewHtml = await remotePreviewResponse.text();
+  assert.doesNotMatch(remotePreviewHtml, /We’ve received your message\./);
+  assert.match(remotePreviewHtml, /How can we help\?/);
 });
 
 test("server-renders the Founding Contributor funnel locally", async () => {
@@ -555,10 +571,9 @@ test("gates every contributor surface and link by default", async () => {
     "/contributors%2Fterms",
     "/_vinext/image?url=%2Fog-founding-contributors.png&w=1200&q=75",
   ];
-  const [homeResponse, interestResponse, privacyResponse, ...restrictedResponses] =
+  const [homeResponse, privacyResponse, ...restrictedResponses] =
     await Promise.all([
       render("/"),
-      render("/interest"),
       render("/privacy"),
       ...restrictedPaths.map((path) => render(path)),
     ]);
@@ -568,7 +583,7 @@ test("gates every contributor surface and link by default", async () => {
     assert.equal(response.headers.get("x-robots-tag"), "noindex, nofollow");
   }
 
-  for (const response of [homeResponse, interestResponse, privacyResponse]) {
+  for (const response of [homeResponse, privacyResponse]) {
     assert.equal(response.status, 200);
     const html = await response.text();
     assert.doesNotMatch(html, /Founding Contributor|contributor hub|membership/i);
@@ -729,11 +744,9 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     supabase,
     privacy,
     demographicsMigration,
-    interestFlow,
     waitlistFlow,
     qualificationPage,
     waitlistOptions,
-    interestPage,
     metaPixel,
     metaTracking,
     contributorMigration,
@@ -760,10 +773,6 @@ test("uses generated raster visuals and keeps the page editable", async () => {
       "utf8",
     ),
     readFile(
-      new URL("../app/components/interest-flow.tsx", import.meta.url),
-      "utf8",
-    ),
-    readFile(
       new URL("../app/components/waitlist-signup-flow.tsx", import.meta.url),
       "utf8",
     ),
@@ -772,7 +781,6 @@ test("uses generated raster visuals and keeps the page editable", async () => {
       "utf8",
     ),
     readFile(new URL("../lib/waitlist-options.ts", import.meta.url), "utf8"),
-    readFile(new URL("../app/interest/page.tsx", import.meta.url), "utf8"),
     readFile(
       new URL("../app/components/meta-pixel.tsx", import.meta.url),
       "utf8",
@@ -825,15 +833,10 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(page, /src="\/frame-app-studio-v5-640w\.webp"/);
   assert.doesNotMatch(page, /<svg|ProductDiagram|CrossSection|PatternTimeline/);
   assert.match(waitlistFlow, /fetch\("\/api\/waitlist"/);
-  assert.doesNotMatch(interestFlow, /<dialog|showModal\(|OPEN_INTEREST_FLOW_EVENT/);
-  assert.match(interestFlow, /<h1 className="sr-only">Get Frame updates<\/h1>/);
-  assert.match(interestPage, /showFoundingContributorOffer=/);
-  assert.match(interestPage, /isFoundingContributorSalesPageEnabled\(\)/);
-  assert.match(interestPage, /canonical: "\/interest"/);
   assert.match(waitlistFlow, /MIN_FRUSTRATION_LENGTH = 20/);
   assert.match(
     waitlistFlow,
-    /What would you want Frame to help you understand or do that you can’t easily today\?/,
+    /What do you hope Frame will help you understand that current devices can’t\?/,
   );
   assert.match(waitlistFlow, /MAX_LONG_TEXT_LENGTH = 750/);
   assert.match(waitlistFlow, /type="radio"/);
@@ -850,15 +853,16 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(qualificationPage, /WaitlistQualificationFlow/);
   assert.match(
     qualificationPage,
-    /<SiteHeader backLabel="Skip survey" arrowDirection="right" \/>/,
+    /<SiteHeader backLabel="Skip" arrowDirection="right" \/>/,
   );
+  assert.match(qualificationPage, /previewSurvey=\{previewSurvey\}/);
   assert.match(waitlistOptions, /See my blood pressure patterns over time/);
   assert.match(waitlistOptions, /Understand my blood pressure while sleeping/);
-  assert.match(waitlistFlow, /Your answers have been saved\./);
+  assert.match(waitlistFlow, /Thanks for helping shape Frame\./);
   assert.match(waitlistFlow, /You’re subscribed\./);
   assert.match(
     waitlistFlow,
-    /We read every response\. Your input will help shape the Frame experience\./,
+    /We read every response\. Yours will help shape the Frame experience\./,
   );
   assert.doesNotMatch(waitlistFlow, /formatName\(flow\.firstName\)|Thanks, \{/);
   assert.match(api, /formatName\(value\)\.slice/);
@@ -873,15 +877,24 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.doesNotMatch(waitlistFlow, /className="interest-flow__back" href=\{finishHref\}>Back<\/Link>/);
   assert.match(
     waitlistFlow,
-    /flow\.surveyStep > 0 \? \([\s\S]*?className="interest-flow__back"[\s\S]*?>Back<\/button>[\s\S]*?\) : null/,
+    /flow\.surveyStep > 0 \? \([\s\S]*?className="button button--secondary interest-flow__back"[\s\S]*?>Back<\/button>[\s\S]*?\) : null/,
+  );
+  assert.match(css, /\.interest-flow__actions--split > \.interest-flow__back\s*\{[^}]*flex: 0 1 140px;/);
+  assert.match(css, /\.interest-flow__actions--split > \.button:not\(\.interest-flow__back\)\s*\{[^}]*flex: 1 1 auto;[^}]*white-space: nowrap;/);
+  assert.match(css, /\.interest-flow__actions--split\s*\{[^}]*gap: 12px;/);
+  assert.match(css, /\.interest-flow__actions--split \.button\s*\{[^}]*min-width: 0;/);
+  assert.match(css, /\.interest-flow__actions \.interest-flow__back\s*\{[^}]*border: 1px solid var\(--ink\);[^}]*background: transparent;/);
+  assert.match(
+    waitlistFlow,
+    /const title = \[\s*"What is the main reason you want Frame\?",\s*"How do you currently monitor your blood pressure\?",\s*"What do you hope Frame will help you understand that current devices can’t\?",\s*"Open to a 20-minute conversation\?",\s*"A little about you\."/,
   );
   assert.match(
     waitlistFlow,
-    /const title = \[\s*"What is the main reason you want Frame\?",\s*"How do you currently monitor your blood pressure\?",\s*"What would you want Frame to help you understand or do that you can’t easily today\?",[\s\S]*?"A little about you\."/,
+    /isResearchStep \? \([\s\S]*?<ChoiceList[\s\S]*?name="research-call"/,
   );
   assert.match(
     waitlistFlow,
-    /flow\.surveyStep === 4 \? \([\s\S]*?className="interest-flow__details"/,
+    /isProfileStep \? \([\s\S]*?className="interest-flow__optional-details"/,
   );
   assert.match(
     waitlistFlow,
@@ -895,8 +908,16 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     waitlistFlow,
     /flow\.surveyStep === 2 \? \([\s\S]*?name="frustration"/,
   );
-  assert.match(waitlistFlow, /flow\.surveyStep === 3 && Boolean\(flow\.researchCall\)/);
-  assert.match(waitlistFlow, /disabled=\{!profileIsComplete \|\| flow\.surveyStatus === "submitting"\}/);
+  assert.match(waitlistFlow, /SURVEY_STEPS = 5/);
+  assert.match(waitlistFlow, /You’re subscribed\. These questions are optional\./);
+  assert.match(css, /padding: 28px 0 34px;/);
+  assert.match(waitlistFlow, /LOCAL_PREVIEW_SIGNUP_TOKEN = "local-survey-preview"/);
+  assert.match(waitlistFlow, /requiredProfileErrors/);
+  assert.match(waitlistFlow, /nextErrors\.researchCall = "Choose a research-call response\."/);
+  assert.match(waitlistFlow, /nextErrors\.firstName = "Enter your first name\."/);
+  assert.match(waitlistFlow, /nextErrors\.lastName = "Enter your last name\."/);
+  assert.match(waitlistFlow, /!gender \|\| !genderValues\.has\(gender\)/);
+  assert.match(waitlistFlow, /disabled=\{flow\.surveyStatus === "submitting"\}/);
   assert.match(
     css,
     /\.interest-flow__actions > \.button:only-child\s*\{[^}]*margin-left: auto;/,
@@ -941,7 +962,11 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   );
   assert.match(
     css,
-    /\.privacy-page ~ \.tracking-consent-trigger\s*\{[^}]*position: static !important;/,
+    /\.privacy-page ~ \.tracking-consent-trigger\s*\{[^}]*position: fixed !important;[^}]*width: 42px;[^}]*height: 42px;/,
+  );
+  assert.match(
+    css,
+    /\.interest-flow ~ \.tracking-consent-trigger\s*\{[^}]*position: relative !important;[^}]*width: 42px;[^}]*height: 42px;/,
   );
   assert.match(
     css,
@@ -1135,13 +1160,78 @@ test("rejects an invalid email before creating a waitlist record", async () => {
   assert.match(await response.text(), /valid email address/i);
 });
 
+test("requires every final-step survey field before completion", async () => {
+  const workerUrl = new URL("../dist/server/index.js", import.meta.url);
+  workerUrl.searchParams.set("required-profile-test", `${process.pid}-${Date.now()}`);
+  const { default: worker } = await import(workerUrl.href);
+  const fetchFromWorker = (init) => worker.fetch(
+    new Request("http://localhost/api/waitlist", init),
+    {
+      ASSETS: {
+        fetch: async () => new Response("Not found", { status: 404 }),
+      },
+    },
+    {
+      waitUntil() {},
+      passThroughOnException() {},
+    },
+  );
+  const email = `required-profile-${Date.now()}@example.com`;
+  const captureResponse = await fetchFromWorker({
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      action: "capture_email",
+      email,
+      placement: "qualification_page",
+    }),
+  });
+  assert.equal(captureResponse.status, 201);
+  const capture = await captureResponse.json();
+
+  const incompleteResponse = await fetchFromWorker({
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      action: "submit_qualification",
+      signupToken: capture.signupToken,
+      primaryInterest: "understand_daily_factors",
+      monitoringMethod: "upper_arm_occasionally",
+      frustration: "I want clearer context around changes during everyday life.",
+    }),
+  });
+
+  assert.equal(incompleteResponse.status, 400);
+  assert.match(await incompleteResponse.text(), /research-call response/i);
+
+  const completeResponse = await fetchFromWorker({
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      action: "submit_qualification",
+      signupToken: capture.signupToken,
+      primaryInterest: "understand_daily_factors",
+      monitoringMethod: "upper_arm_occasionally",
+      frustration: "I want clearer context around changes during everyday life.",
+      researchCall: "no",
+      firstName: "Ada",
+      lastName: "Lovelace",
+      age: 36,
+      gender: "prefer_not_to_say",
+    }),
+  });
+
+  assert.equal(completeResponse.status, 200);
+  assert.match(await completeResponse.text(), /"status":"completed"/);
+});
+
 test("returns one stable Lead ID and rejects unsigned request.cf or header policy", async () => {
   const tracking = {
     version: 1,
     storedConsent: null,
     globalPrivacyControl: false,
     pixelReady: false,
-    eventSourceUrl: "http://localhost/interest?fbclid=must-not-reach-meta-url",
+    eventSourceUrl: "http://localhost/?fbclid=must-not-reach-meta-url",
     fbp: null,
     fbc: null,
   };
