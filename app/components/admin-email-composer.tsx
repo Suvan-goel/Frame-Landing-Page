@@ -824,7 +824,65 @@ export function AdminEmailComposer({
         </div>
       </details>
 
-      {review ? <div className="admin-email-modal-backdrop" role="presentation"><section className="admin-email-modal" role="dialog" aria-modal="true" aria-labelledby="campaign-review-title"><button className="admin-email-modal__close" type="button" onClick={() => { setReview(null); setConfirmationInput(""); }}>Close</button><p className="eyebrow">Final campaign review</p><h2 id="campaign-review-title">This will send a real email</h2><p className="admin-email-modal__warning">Review every detail. Once confirmed, email delivery cannot be recalled.</p><dl className="admin-email-review-summary"><div><dt>Subject</dt><dd>{preview.subject}</dd></div><div><dt>From</dt><dd>{readiness.from}</dd></div><div><dt>Audience</dt><dd>{selectedIds.size} people · {selectedQualifiedCount} survey complete · {selectedIds.size - selectedQualifiedCount} incomplete</dd></div><div><dt>Test status</dt><dd>{testStatus === "success" ? "Test email sent during this session" : "No successful test recorded during this session"}</dd></div></dl><div className="admin-email-review-sample"><strong>Recipient sample</strong><ul>{selectedRecipients.slice(0, 6).map((recipient) => <li key={recipient.id}>{recipientName(recipient)} <span>{recipient.email}</span></li>)}</ul>{selectedRecipients.length > 6 ? <p>Plus {selectedRecipients.length - 6} more selected recipients.</p> : null}</div><label className="admin-email-confirmation-field"><span>Type <strong>{review.confirmationText}</strong> exactly</span><input autoFocus type="text" value={confirmationInput} onChange={(event) => setConfirmationInput(event.target.value)} autoComplete="off" spellCheck={false} /></label><p>This single-use approval expires at {formatDateTime(review.expiresAt)} UTC.</p><button className="button button--dark" type="button" disabled={confirmationInput !== review.confirmationText || sendStatus === "working"} onClick={sendCampaign}>{sendStatus === "working" ? "Sending…" : `Send real campaign to ${selectedIds.size}`}</button></section></div> : null}
+      {review ? (
+        <div className="admin-email-modal-backdrop" role="presentation">
+          <section
+            className="admin-email-modal admin-email-confirmation-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="campaign-review-title"
+            aria-describedby="campaign-review-description"
+          >
+            <header className="admin-email-modal__header">
+              <div>
+                <p className="eyebrow">Final campaign review</p>
+                <h2 id="campaign-review-title">Ready to send?</h2>
+                <p id="campaign-review-description">Check the delivery details one final time before approving this campaign.</p>
+              </div>
+              <button className="admin-email-modal__close" type="button" onClick={() => { setReview(null); setConfirmationInput(""); }} aria-label="Close final campaign review">
+                <span>Close</span><i aria-hidden="true">×</i>
+              </button>
+            </header>
+
+            <div className="admin-email-modal__body">
+              <div className="admin-email-modal__warning" role="note">
+                <span aria-hidden="true">!</span>
+                <div><strong>This sends a real email</strong><p>Once confirmed, delivery begins immediately and cannot be recalled.</p></div>
+              </div>
+
+              <dl className="admin-email-review-summary">
+                <div><dt>Subject</dt><dd>{preview.subject}</dd></div>
+                <div><dt>From</dt><dd>{readiness.from}</dd></div>
+                <div><dt>Audience</dt><dd><strong>{selectedIds.size}</strong> {selectedIds.size === 1 ? "recipient" : "recipients"}<small>{selectedQualifiedCount} survey complete · {selectedIds.size - selectedQualifiedCount} email only</small></dd></div>
+                <div><dt>Test status</dt><dd><span className={`admin-email-review-status ${testStatus === "success" ? "is-ready" : "is-pending"}`}><i aria-hidden="true"></i>{testStatus === "success" ? "Test sent this session" : "No test sent this session"}</span></dd></div>
+              </dl>
+
+              <section className="admin-email-review-sample" aria-labelledby="campaign-recipient-sample-title">
+                <div><strong id="campaign-recipient-sample-title">Recipient sample</strong><span>Showing {Math.min(selectedRecipients.length, 6)} of {selectedRecipients.length}</span></div>
+                <ul>{selectedRecipients.slice(0, 6).map((recipient) => <li key={recipient.id}><span>{recipientName(recipient)}</span><small>{recipient.email}</small></li>)}</ul>
+                {selectedRecipients.length > 6 ? <p>Plus {selectedRecipients.length - 6} more selected recipients.</p> : null}
+              </section>
+
+              <div className="admin-email-confirmation-panel">
+                <div><p className="eyebrow">Required confirmation</p><h3>Approve this one-time send</h3><p>Type the phrase below exactly to unlock the send button.</p></div>
+                <label className="admin-email-confirmation-field">
+                  <span>Confirmation phrase</span>
+                  <strong>{review.confirmationText}</strong>
+                  <input autoFocus type="text" value={confirmationInput} onChange={(event) => setConfirmationInput(event.target.value)} autoComplete="off" spellCheck={false} placeholder={review.confirmationText} />
+                </label>
+              </div>
+            </div>
+
+            <footer className="admin-email-modal__footer">
+              <p><span aria-hidden="true">◷</span>This approval expires at {formatDateTime(review.expiresAt)} UTC.</p>
+              <div>
+                <button className="button button--light" type="button" onClick={() => { setReview(null); setConfirmationInput(""); }}>Cancel</button>
+                <button className="button button--dark" type="button" disabled={confirmationInput !== review.confirmationText || sendStatus === "working"} onClick={sendCampaign}>{sendStatus === "working" ? "Sending…" : `Send campaign to ${selectedIds.size}`}</button>
+              </div>
+            </footer>
+          </section>
+        </div>
+      ) : null}
 
       {(detailStatus === "working" || detailStatus === "error" || campaignDetail) ? <div className="admin-email-modal-backdrop" role="presentation"><section className="admin-email-modal admin-email-modal--wide" role="dialog" aria-modal="true" aria-labelledby="campaign-detail-title"><button className="admin-email-modal__close" type="button" onClick={() => { setCampaignDetail(null); setDetailStatus("idle"); setDetailMessage(""); }}>Close</button><p className="eyebrow">Campaign delivery record</p><h2 id="campaign-detail-title">{campaignDetail?.subject ?? "Loading campaign…"}</h2>{detailMessage ? <p className={`admin-email-inline-message is-${detailStatus === "error" || retryStatus === "error" ? "error" : "success"}`} role={detailStatus === "error" || retryStatus === "error" ? "alert" : "status"}>{detailMessage}</p> : null}{campaignDetail ? <><div className="admin-email-detail-summary"><span>{campaignDetail.sentCount} sent</span><span>{campaignDetail.failedCount} failed</span><span>{campaignDetail.recipientCount} total</span></div><div className="admin-email-detail-list">{campaignDetail.recipients.map((recipient) => <article key={recipient.id}><div><strong>{recipient.name}</strong><span>{recipient.email}</span></div><span className={`admin-email-delivery-status is-${recipient.status}`}>{recipient.status}</span>{recipient.errorMessage ? <p>{recipient.errorMessage}</p> : null}</article>)}</div>{campaignDetail.recipients.some((recipient) => recipient.status === "failed") ? <div className="admin-email-retry-panel"><p>Only failed recipients will be retried. Already-sent recipients are excluded.</p><label><span>Type <strong>RETRY {campaignDetail.recipients.filter((recipient) => recipient.status === "failed").length}</strong></span><input value={retryInput} onChange={(event) => setRetryInput(event.target.value)} /></label><button className="button button--dark" type="button" onClick={retryFailures} disabled={retryStatus === "working" || retryInput !== `RETRY ${campaignDetail.recipients.filter((recipient) => recipient.status === "failed").length}`}>{retryStatus === "working" ? "Retrying…" : "Retry failed recipients"}</button></div> : null}</> : null}</section></div> : null}
     </>

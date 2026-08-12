@@ -111,6 +111,11 @@ test("ships the page-specific campaign and automated-email layouts", async () =>
   assert.match(styles, /\.email-studio\s*\{/);
   assert.match(styles, /\.email-compose-grid\s*,/);
   assert.match(styles, /\.email-card\s*\{/);
+  assert.match(styles, /\.admin-email-modal-backdrop\s*\{[^}]*position:\s*fixed/s);
+  assert.match(styles, /\.admin-email-modal\s*\{[^}]*max-height:\s*calc\(100dvh - 48px\)/s);
+  assert.match(styles, /\.admin-email-review-summary\s*\{/);
+  assert.match(styles, /\.admin-email-confirmation-panel\s*\{/);
+  assert.match(styles, /\.admin-email-modal__footer\s*\{/);
   assert.match(styles, /\.automated-email-library\s*\{/);
   assert.match(styles, /\.automated-email-catalog\s*\{/);
   assert.match(styles, /\.automated-email-detail\s*\{/);
@@ -168,7 +173,10 @@ test("requires a server review and typed confirmation before any subscriber send
   assert.match(composer, /senderDisplayName\(readiness\.from\)/);
   assert.match(styles, /\.admin-email-send-panel \.button--light[^{]*\{[^}]*color: var\(--ink\) !important;[^}]*-webkit-text-fill-color: var\(--ink\);/s);
   assert.match(styles, /\.email-send-actions__test[^{]*\{[^}]*color: var\(--ink\) !important;[^}]*-webkit-text-fill-color: var\(--ink\);/s);
-  assert.match(composer, /Type <strong>\{review\.confirmationText\}/);
+  assert.match(composer, /<strong>\{review\.confirmationText\}<\/strong>/);
+  assert.match(composer, /admin-email-confirmation-modal/);
+  assert.match(composer, /This sends a real email/);
+  assert.match(composer, /Approve this one-time send/);
   assert.match(composer, /renderFrameCampaignEmail/);
   assert.match(composer, /Button position/);
   assert.match(composer, /Scrollable email body preview/);
