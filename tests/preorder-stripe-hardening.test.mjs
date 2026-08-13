@@ -246,8 +246,8 @@ test("keeps checkout review recovery, disclosure, and proxy origins safe", async
   assert.doesNotMatch(review, /parsePreorderDeliveryDraft/);
   assert.doesNotMatch(review, /preorder-delivery-email/);
   assert.match(success, /sessionStorage\.removeItem/);
-  assert.match(review, /Frame is still in development\./);
-  assert.match(review, /Review Product Status/);
+  assert.match(review, /Preparing for launch\./);
+  assert.match(review, /View product and shipping details/);
   assert.doesNotMatch(review, /productStatusAcknowledged/);
   assert.doesNotMatch(review, /termsAcknowledged/);
   assert.doesNotMatch(review, /type="checkbox"/);
@@ -392,13 +392,12 @@ test("keeps launch-candidate policies aligned with cancellation operations", asy
   assert.match(refunds, /replacement or refund at no\s+additional cost/);
   assert.match(refunds, /Frame One-Year Limited/);
   assert.doesNotMatch(refunds, /submit a required pre-dispatch refund to Stripe/);
-  assert.match(productStatus, /Early proof-of-concept work is complete/);
-  assert.match(productStatus, /initial measurement-validation phase/);
-  assert.match(productStatus, /validation of the integrated product/);
-  assert.match(productStatus, /Current shipping plan/);
+  assert.match(productStatus, /sensing technology has completed measurement validation/);
+  assert.match(productStatus, /Complete system integration/);
+  assert.match(productStatus, /Q1 2027 dispatch/);
   assert.match(productStatus, /not an FDA-authorized medical/);
   assert.match(productStatus, /Product status version \$\{PREORDER_PRODUCT_STATUS_VERSION\}/);
-  assert.match(productStatus, /version you accept will be recorded/);
+  assert.match(terms, /completing final engineering and production preparation for Q1 2027 dispatch/);
   assert.doesNotMatch(ownerOperations, /decline_cancellation/);
   assert.doesNotMatch(ownerInterface, /declineCancellation|decline_cancellation/);
   assert.match(ownerInterface, /no later than seven business days/);

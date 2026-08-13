@@ -181,10 +181,10 @@ export default async function PreorderTermsPage() {
                 membership, donation, research participation, or payment for medical services.
               </p>
               <p>
-                Frame remains under development, and final product details may change. If Frame proposes a material
-                change, it will explain the change and ask you to accept it by a stated deadline or cancel for a full
-                refund. If you do not accept by that deadline, Frame will cancel the unshipped order and refund it
-                automatically. Read the
+                Frame is completing final engineering and production preparation for Q1 2027 dispatch. Final
+                specifications may change. If Frame proposes a material change, it will explain the change and ask
+                you to accept it by a stated deadline or cancel for a full refund. If you do not accept by that
+                deadline, Frame will cancel the unshipped order and refund it automatically. Read the
                 <Link href="/preorder/product-status"> Product Status Disclosure</Link> before ordering.
               </p>
             </section>

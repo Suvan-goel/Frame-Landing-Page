@@ -32,13 +32,22 @@ const content = {
     ["Confidence", "What was measured reliably, and what was not."],
   ],
   principles: [
-    ["Personal by design", "Your baseline provides the reference for how patterns are shown."],
     [
-      "Made for everyday wear",
-      "Frame’s upper-arm form is designed to fit into daily life.",
+      "Screenless by design",
+      "No glowing display or constant alerts. Frame keeps your attention on life, not the device.",
     ],
-    ["Context built in", "Motion, contact, sleep, and activity help explain what was happening."],
-    ["Confidence stays visible", "Uncertain and interrupted periods remain clearly marked."],
+    [
+      "Built around comfort",
+      "A soft, adjustable upper-arm form designed for comfortable everyday wear.",
+    ],
+    [
+      "Quietly continuous",
+      "Frame works in the background while you sleep, move, work, and recover.",
+    ],
+    [
+      "Complex technology, clear experience",
+      "Wearable ultrasound and machine learning do the complex work; the app brings meaningful patterns into view.",
+    ],
   ],
   researchStandards: [
     {
@@ -168,20 +177,20 @@ export default async function Home() {
             </p>
             <h1>
               <span className="hero-heading__desktop">
-                See how your cardiovascular system responds to daily life.
+                See how your blood pressure responds to daily life
               </span>
               <span className="hero-heading__mobile">
-                See how your blood pressure changes through daily life.
+                See how your blood pressure responds to daily life
               </span>
             </h1>
             <p className="hero-intro">
               <span className="hero-intro__desktop">
-                Frame is a non-invasive wearable designed for continuous blood
-                pressure tracking.
+                The first wearable to continuously track blood pressure
+                accurately and reliably
               </span>
               <span className="hero-intro__mobile">
-                A screenless upper-arm wearable that reveals blood-pressure
-                patterns.
+                The first wearable to continuously track blood pressure
+                accurately and reliably
               </span>
             </p>
             {preorderOffer ? (
@@ -251,22 +260,21 @@ export default async function Home() {
             )}
           </div>
           <figure
-            className={`hero-visuals${showPreorderAreas ? " hero-visuals--preorder" : ""}`}
+            className={`hero-visuals hero-visuals--product${showPreorderAreas ? " hero-visuals--preorder" : ""}`}
           >
-            <div className="hero-lifestyle">
+            <div className="hero-lifestyle hero-lifestyle--product">
               <img
-                src="/frame-hero-man-transparent-v3-720w.webp"
-                srcSet="/frame-hero-man-transparent-v3-480w.webp 480w, /frame-hero-man-transparent-v3-720w.webp 720w, /frame-hero-man-transparent-v3-960w.webp 960w"
-                alt="Man wearing the Frame wearable concept on his upper arm"
-                width={1089}
-                height={1444}
-                sizes="(max-width: 680px) 100vw, (max-width: 980px) 56vw, 34vw"
+                src="/frame-product-concept-realistic-v3-transparent-720w.webp"
+                srcSet="/frame-product-concept-realistic-v3-transparent-480w.webp 480w, /frame-product-concept-realistic-v3-transparent-720w.webp 720w, /frame-product-concept-realistic-v3-transparent-960w.webp 960w"
+                alt="Frame upper-arm wearable preview"
+                width={1254}
+                height={1254}
+                sizes="(max-width: 680px) 84vw, (max-width: 1279px) 620px, 38vw"
                 loading="eager"
                 fetchPriority="high"
                 decoding="async"
               />
             </div>
-            {showPreorderAreas ? <figcaption>Design preview</figcaption> : null}
           </figure>
         </div>
       </section>
@@ -276,7 +284,7 @@ export default async function Home() {
           <div className="context-intro">
             <p className="eyebrow">Why context matters</p>
             <h2>A single reading cannot show a pattern.</h2>
-            <p>
+            <p className="context-intro__description">
               <span className="context-intro__desktop">
                 {showPreorderAreas
                   ? "Blood pressure changes with sleep, movement, stress, exercise, food, posture, and recovery. Most people only see an occasional snapshot. Frame is built to connect what happens in between, helping you see how personal patterns relate to everyday life."
@@ -289,7 +297,9 @@ export default async function Home() {
               </span>
             </p>
           </div>
-          <div className="context-content">
+          <div
+            className={`context-content${showPreorderAreas ? " context-content--without-product" : ""}`}
+          >
             <div className="insight-list" aria-label="Baseline and recovery">
               {content.insights.slice(0, 2).map(([title, description], index) => (
                 <article key={title}>
@@ -301,25 +311,22 @@ export default async function Home() {
                 </article>
               ))}
             </div>
-            <figure className="product-concept-showcase">
-              <div className="product-concept-showcase__media">
-                <img
-                  src="/frame-product-concept-realistic-v3-transparent-720w.webp"
-                  srcSet="/frame-product-concept-realistic-v3-transparent-480w.webp 480w, /frame-product-concept-realistic-v3-transparent-720w.webp 720w, /frame-product-concept-realistic-v3-transparent-960w.webp 960w"
-                  alt="Refined Frame upper-arm wearable concept with an adjustable charcoal knit band, burgundy clasp, and integrated ultrasound sensor"
-                  width={1254}
-                  height={1254}
-                  sizes="(max-width: 680px) 84vw, (max-width: 980px) 480px, 42vw"
-                  loading="lazy"
-                  decoding="async"
-                />
-              </div>
-              {showPreorderAreas ? (
-                <figcaption>
-                  Adjustable knit band · integrated ultrasound sensor
-                </figcaption>
-              ) : null}
-            </figure>
+            {!showPreorderAreas ? (
+              <figure className="product-concept-showcase">
+                <div className="product-concept-showcase__media">
+                  <img
+                    src="/frame-product-concept-realistic-v3-transparent-720w.webp"
+                    srcSet="/frame-product-concept-realistic-v3-transparent-480w.webp 480w, /frame-product-concept-realistic-v3-transparent-720w.webp 720w, /frame-product-concept-realistic-v3-transparent-960w.webp 960w"
+                    alt="Refined Frame upper-arm wearable concept with an adjustable charcoal knit band, burgundy clasp, and integrated ultrasound sensor"
+                    width={1254}
+                    height={1254}
+                    sizes="(max-width: 680px) 84vw, (max-width: 980px) 480px, 42vw"
+                    loading="lazy"
+                    decoding="async"
+                  />
+                </div>
+              </figure>
+            ) : null}
             <div className="insight-list" aria-label="Response and confidence">
               {content.insights.slice(2).map(([title, description], index) => (
                 <article key={title}>
@@ -339,7 +346,7 @@ export default async function Home() {
                 ["Baseline", "What is typical for you during comparable periods."],
                 ["Response", "How your blood pressure changes around meaningful events."],
                 ["Recovery", "How quickly you return toward your usual pattern."],
-                ["Confidence", "Which periods were measured reliably—and which were not."],
+                ["Confidence", "How intelligent signal analysis keeps your patterns clear."],
               ].map(([title, description], index) => (
                 <article key={title}>
                   <span>0{index + 1}</span>
@@ -362,12 +369,13 @@ export default async function Home() {
             <p>
               <span className="method-intro__desktop">
                 {showPreorderAreas
-                  ? "Ultrasound can observe arterial motion beneath the skin. Frame combines wearable ultrasound, contextual sensing, and personalised analysis to show how those signals change over time."
+                  ? "Ultrasound can observe arterial motion beneath the skin. Frame combines cutting-edge wearable ultrasound technology, contextual sensing, and personalised analysis to show how those signals change over time."
                   : "Ultrasound can observe arterial motion beneath the skin. Frame is exploring how to make that signal dependable, comfortable, and useful over time."}
               </span>
               <span className="method-intro__mobile">
-                Frame combines wearable ultrasound with movement, contact,
-                sleep, and activity to reveal patterns over time.
+                Frame combines cutting-edge wearable ultrasound technology with
+                movement, contact, sleep, and activity sensing to reveal patterns
+                over time.
               </span>
             </p>
           </div>
@@ -393,7 +401,7 @@ export default async function Home() {
                     : "Simplified sensing concept · anatomy and final sensor configuration are illustrative"}
                 </span>
                 <span className="method-caption__mobile">
-                  Simplified sensing concept
+                  Illustrative view
                 </span>
               </figcaption>
             </figure>
@@ -402,14 +410,20 @@ export default async function Home() {
                 <span>01</span>
                 <div>
                   <h3>Observe</h3>
-                  <p>A specialised sensor observes the artery beneath the skin.</p>
+                  <p>
+                    A specialised sensor sends and receives high-frequency
+                    ultrasound waves to observe the artery beneath the skin.
+                  </p>
                 </div>
               </li>
               <li>
                 <span>02</span>
                 <div>
                   <h3>Interpret</h3>
-                  <p>Arterial features are analysed using a personalised model.</p>
+                  <p>
+                    Arterial features are analysed using a personalised
+                    machine-learning model.
+                  </p>
                 </div>
               </li>
               <li>
@@ -417,8 +431,8 @@ export default async function Home() {
                 <div>
                   <h3>Add context</h3>
                   <p>
-                    Motion, contact, temperature, sleep, and activity add
-                    meaning.
+                    Motion, contact, temperature, sleep, and activity data help
+                    the model understand changes in the ultrasound signal.
                   </p>
                 </div>
               </li>
@@ -426,7 +440,7 @@ export default async function Home() {
                 <span>04</span>
                 <div>
                   <h3>Show what is trusted</h3>
-                  <p>Uncertain or interrupted periods remain clearly marked.</p>
+                  <p>Lower-confidence or interrupted periods remain clearly marked.</p>
                 </div>
               </li>
             </ol>
@@ -435,7 +449,10 @@ export default async function Home() {
                 <span>01</span>
                 <div>
                   <h3>Observe</h3>
-                  <p>Wearable ultrasound observes arterial motion beneath the skin.</p>
+                  <p>
+                    Wearable ultrasound uses high-frequency sound waves to
+                    observe arterial motion beneath the skin.
+                  </p>
                 </div>
               </li>
               <li>
@@ -443,8 +460,8 @@ export default async function Home() {
                 <div>
                   <h3>Add context</h3>
                   <p>
-                    Movement, contact, sleep, and activity help explain how the
-                    signal changes.
+                    Movement, contact, sleep, and activity data help explain
+                    changes in the ultrasound signal.
                   </p>
                 </div>
               </li>
@@ -453,8 +470,8 @@ export default async function Home() {
                 <div>
                   <h3>Reveal patterns</h3>
                   <p>
-                    Personalised analysis shows change over time and clearly
-                    marks uncertain periods.
+                    Personalised machine-learning analysis combines ultrasound
+                    signals with daily context to reveal clear patterns over time.
                   </p>
                 </div>
               </li>
@@ -467,12 +484,12 @@ export default async function Home() {
         <div className="container software-grid">
           <figure className="software-image image-frame">
             <img
-              src="/frame-app-studio-v5-640w.webp"
-              srcSet="/frame-app-studio-v5-480w.webp 480w, /frame-app-studio-v5-640w.webp 640w, /frame-app-studio-v5-896w.webp 896w"
-              alt="Refined Frame companion app in an accurately proportioned iPhone 17 mockup, showing 82 percent reliable overnight coverage, a motion interruption, and a late meal timing pattern"
+              src="/frame-app-studio-v6-640w.webp"
+              srcSet="/frame-app-studio-v6-480w.webp 480w, /frame-app-studio-v6-640w.webp 640w, /frame-app-studio-v6-896w.webp 896w"
+              alt="Frame companion app showing 8 hours 12 minutes of overnight coverage, a continuous overnight waveform, and a late meal timing pattern"
               className="cover-image"
-              width={897}
-              height={1752}
+              width={896}
+              height={1717}
               sizes="(max-width: 980px) calc(100vw - 64px), 58vw"
               loading="lazy"
               decoding="async"
@@ -495,8 +512,8 @@ export default async function Home() {
                 result.
               </span>
               <span className="software-intro__mobile">
-                See what is typical for you, how long changes last, and how
-                confident each result is.
+                See what is typical for you, how your body responds, and how
+                long changes last.
               </span>
             </p>
             <blockquote>
@@ -640,11 +657,10 @@ export default async function Home() {
             <p className="eyebrow">Product principles</p>
             <h2>
               <span className="principles-heading__desktop">
-                Continuous monitoring should create context, not continuous
-                conclusions.
+                Advanced technology, effortless to live with.
               </span>
               <span className="principles-heading__mobile">
-                Designed to show context, not conclusions.
+                Advanced technology. Effortless to live with.
               </span>
             </h2>
             <div className="principle-list principle-list--desktop">
@@ -657,9 +673,18 @@ export default async function Home() {
             </div>
             <div className="principle-list principle-list--mobile">
               {[
-                ["Personal to you", "Your baseline provides the reference."],
-                ["Made for daily life", "An upper-arm form designed for everyday wear."],
-                ["Confidence stays visible", "Uncertain periods remain clearly marked."],
+                [
+                  "Screenless by design",
+                  "No glowing screen or constant alerts. Frame works quietly in the background.",
+                ],
+                [
+                  "Made to live in",
+                  "A soft, adjustable upper-arm form designed for comfortable everyday wear.",
+                ],
+                [
+                  "Advanced made simple",
+                  "Ultrasound and machine learning do the complex work; you see the patterns that matter.",
+                ],
               ].map(([title, description], index) => (
                 <article key={title}>
                   <span className="principle-list__number">0{index + 1}</span>
@@ -690,8 +715,8 @@ export default async function Home() {
                   non-invasive blood-pressure estimation. Frame remains in development.
                 </span>
                 <span className="research-intro__mobile">
-                  Frame combines wearable ultrasound with everyday context to
-                  reveal personal blood-pressure patterns over time.
+                  Validated for accuracy and reliability, the tech behind Frame is
+                  perfect for continuous blood-pressure monitoring.
                 </span>
               </p>
               <div className="research-standards research-standards--desktop" aria-label="Published evidence for wearable ultrasound">
@@ -758,8 +783,8 @@ export default async function Home() {
       <section className="final-cta" id="early-access">
         <div className="container final-grid">
           <div className="final-cta__copy">
-            <p className="eyebrow">Development progress</p>
-            <h2>Follow Frame from prototype to launch.</h2>
+            <p className="eyebrow">Frame updates</p>
+            <h2>Follow Frame through launch and beyond.</h2>
           </div>
           <div className="final-cta__form final-cta__action">
             <p className="final-cta__mobile-intro">

@@ -359,7 +359,7 @@ test("server-renders the Frame landing page", async () => {
   );
   assert.match(
     html,
-    /See how your cardiovascular system responds to daily life\./,
+    /See how your blood pressure responds to daily life/,
   );
   assert.doesNotMatch(html, /Currently in development/);
   assert.match(html, /hero--email-first/);
@@ -369,11 +369,23 @@ test("server-renders the Frame landing page", async () => {
   );
   assert.match(
     html,
-    /Frame is a non-invasive wearable designed for continuous blood pressure tracking\./,
+    /The first wearable to continuously track blood pressure accurately and reliably/,
   );
   assert.match(
     html,
-    /Continuous monitoring should create context, not continuous\s*(?:<!-- -->)?conclusions\./,
+    /Advanced technology, effortless to live with\./,
+  );
+  assert.match(
+    html,
+    /Personalised machine-learning analysis combines ultrasound\s*(?:<!-- -->)?signals with daily context to reveal clear patterns over time\./,
+  );
+  assert.match(
+    html,
+    /How intelligent signal analysis keeps your patterns clear\./,
+  );
+  assert.match(
+    html,
+    /See what is typical for you, how your body responds, and how\s*(?:<!-- -->)?long changes last\./,
   );
   assert.match(html, /Research evidence/);
   assert.match(html, /Wearable ultrasound, supported by clinical research\./);
@@ -389,9 +401,11 @@ test("server-renders the Frame landing page", async () => {
     /Frame is not intended to guide medical decisions or replace an\s*(?:<!-- -->)?FDA-authorized blood-pressure monitor\./,
   );
   assert.match(html, /frame-product-concept-realistic-v3-transparent-720w\.webp/);
-  assert.match(html, /frame-hero-man-transparent-v3-720w\.webp/);
+  assert.doesNotMatch(html, /frame-hero-man-transparent-v3-720w\.webp/);
+  assert.match(html, /hero-visuals--product/);
+  assert.match(html, /context-content--without-product/);
   assert.match(html, /frame-sensing-concept-realistic-v3-transparent-960w\.webp/);
-  assert.match(html, /frame-app-studio-v5-640w\.webp/);
+  assert.match(html, /frame-app-studio-v6-640w\.webp/);
   assert.match(html, /<script type="application\/ld\+json">/);
   assert.match(html, /Frame Wearable, Inc\./);
   assert.doesNotMatch(html, /facebook\.com\/tr\?id=/);
@@ -808,10 +822,10 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     css,
     /\.product-concept-showcase__media img\s*\{[\s\S]*?width: min\(24vw, 270px\);/,
   );
-  assert.match(page, /src="\/frame-hero-man-transparent-v3-720w\.webp"/);
+  assert.match(page, /className="hero-lifestyle hero-lifestyle--product"/);
   assert.match(
     page,
-    /src="\/frame-hero-man-transparent-v3-720w\.webp"[\s\S]*?width=\{1089\}[\s\S]*?height=\{1444\}/,
+    /src="\/frame-product-concept-realistic-v3-transparent-720w\.webp"[\s\S]*?width=\{1254\}[\s\S]*?height=\{1254\}/,
   );
   assert.match(css, /\.hero-visuals\s*\{[\s\S]*?top: 12px;/);
   assert.doesNotMatch(css, /\.hero-lifestyle\s*\{[^}]*transform:/);
@@ -830,7 +844,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     /\.hero--email-first \.waitlist-signup--compact\s*\{[^}]*order: 4;/,
   );
   assert.match(page, /src="\/frame-sensing-concept-realistic-v3-transparent-960w\.webp"/);
-  assert.match(page, /src="\/frame-app-studio-v5-640w\.webp"/);
+  assert.match(page, /src="\/frame-app-studio-v6-640w\.webp"/);
   assert.doesNotMatch(page, /<svg|ProductDiagram|CrossSection|PatternTimeline/);
   assert.match(waitlistFlow, /fetch\("\/api\/waitlist"/);
   assert.match(waitlistFlow, /MIN_FRUSTRATION_LENGTH = 20/);

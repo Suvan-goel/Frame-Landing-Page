@@ -1671,7 +1671,7 @@ h2 {
   line-height: 1;
 }
 
-.context-intro > p:last-child {
+.context-intro__description {
   grid-column: 2;
   max-width: 360px;
   margin: 0 0 5px;
@@ -5357,7 +5357,7 @@ h2 {
     line-height: 1.02;
   }
 
-  .context-intro > p:last-child,
+  .context-intro__description,
   .section-heading > p:last-child {
     grid-column: 1;
     margin-top: 4px;
@@ -5369,6 +5369,12 @@ h2 {
 
   .context-intro__mobile {
     display: inline;
+  }
+
+  .context-intro__description {
+    width: 100%;
+    max-width: none;
+    margin: 0;
   }
 
   .method-section .section-heading {
@@ -5458,7 +5464,7 @@ h2 {
 
   .method-layout {
     grid-template-columns: 1fr;
-    gap: 32px;
+    gap: 28px;
     padding-top: 0;
   }
 
@@ -5468,7 +5474,7 @@ h2 {
 
   .wide-image figcaption {
     margin-top: 14px;
-    font-size: 0.7rem;
+    font-size: 0.6rem;
   }
 
   .method-steps {
@@ -13938,5 +13944,59 @@ p.preorder-manage-feedback.form-error {
     padding-right: 8px;
     padding-left: 8px;
     font-size: 0.9rem;
+  }
+}
+
+/* Desktop product-led hero preview. The established mobile hero remains unchanged. */
+@media (min-width: 681px) {
+  .hero-visuals--product .hero-lifestyle--product {
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+    padding: 72px clamp(24px, 4vw, 72px) 40px;
+    background: radial-gradient(
+      ellipse 46% 52% at 52% 50%,
+      rgba(141, 62, 70, 0.07),
+      rgba(141, 62, 70, 0) 72%
+    );
+  }
+
+  .hero--email-first .hero-visuals--product .hero-lifestyle--product img {
+    position: relative;
+    z-index: 1;
+    width: min(26vw, 390px);
+    max-width: 70%;
+    height: auto;
+    object-position: center;
+    filter: drop-shadow(0 30px 34px rgba(32, 33, 30, 0.1));
+    transform: translateX(-1.5vw);
+  }
+
+  .context-content--without-product {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: clamp(42px, 6vw, 86px);
+  }
+}
+
+@media (min-width: 681px) and (max-width: 1279px) {
+  .hero--email-first .hero-visuals--product {
+    position: relative;
+    top: auto;
+    right: auto;
+    bottom: auto;
+    width: 100%;
+    min-height: 460px;
+    margin: 0;
+  }
+
+  .hero--email-first .hero-visuals--product .hero-lifestyle--product {
+    right: auto;
+    width: 100%;
+    height: 100%;
+  }
+
+  .hero--email-first .hero-visuals--product .hero-lifestyle--product img {
+    width: min(46vw, 430px);
+    transform: none;
   }
 }

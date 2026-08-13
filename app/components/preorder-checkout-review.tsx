@@ -199,22 +199,21 @@ export function PreorderCheckoutReview({
             <section className="preorder-development-note" aria-labelledby="preorder-development-title">
               <div>
                 <h2 id="preorder-development-title">
-                  <span className="preorder-review-copy__desktop">Frame product status</span>
-                  <span className="preorder-review-copy__mobile">Frame is still in development.</span>
+                  <span className="preorder-review-copy__desktop">Preparing for launch.</span>
+                  <span className="preorder-review-copy__mobile">Preparing for launch.</span>
                 </h2>
                 <p className="preorder-review-copy__desktop">
-                  Frame is an upper-arm wearable for everyday general-wellness insight.
-                  Final specifications and estimated shipping may evolve as validation
-                  and production readiness are completed. Frame has not received FDA
-                  marketing authorization as a blood-pressure monitor and should not
-                  guide medical decisions.
+                  Engineering and production preparation are now focused on Q1 2027
+                  dispatch. Final specifications and shipping timing may change. Frame
+                  is designed for general wellness and is not for medical decisions.
                 </p>
                 <p className="preorder-review-copy__mobile">
-                  Frame is being developed for general wellness. Specifications and
-                  shipping may change, and it should not guide medical decisions.
+                  Engineering and production preparation are now focused on Q1 2027
+                  dispatch. Final specifications and shipping timing may change. Frame
+                  is designed for general wellness and is not for medical decisions.
                 </p>
               </div>
-              <Link href="/preorder/product-status">Review Product Status →</Link>
+              <Link href="/preorder/product-status">View product and shipping details →</Link>
             </section>
           </div>
         </div>

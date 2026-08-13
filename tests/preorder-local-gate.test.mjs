@@ -321,14 +321,14 @@ test("keeps the funnel usable only on loopback during development", async () => 
   assert.doesNotMatch(html, /\$19/);
   assert.match(html, /Standard US shipping[\s\S]*?Free/i);
   assert.match(html, /Applicable sales tax is calculated at Stripe Checkout/i);
-  assert.match(html, /Frame is still in development/);
-  assert.match(html, /Review Product Status/);
+  assert.match(html, /Preparing for launch\./);
+  assert.match(html, /View product and shipping details/);
   assert.doesNotMatch(html, /Two quick confirmations/);
   assert.match(html, /Secure Stripe checkout/);
   assert.match(html, /Tax shown before payment/);
   assert.match(html, /Estimated shipping/);
   assert.match(html, /Q1 2027/);
-  assert.match(html, /has not received FDA marketing authorization/);
+  assert.match(html, /is not for medical decisions/);
   assert.match(html, /Continue to secure checkout/);
   assert.match(html, /Cancellation and Refund Policy/);
   assert.doesNotMatch(html, /FCC equipment authorization/i);
@@ -339,23 +339,21 @@ test("keeps the funnel usable only on loopback during development", async () => 
 
   assert.equal(productStatusResponse.status, 200);
   const productStatus = await productStatusResponse.text();
-  assert.match(productStatus, /Early proof-of-concept work is complete/);
-  assert.match(productStatus, /initial measurement-validation phase/);
-  assert.match(productStatus, /validation of the integrated product/);
-  assert.match(productStatus, /Current shipping plan/);
+  assert.match(productStatus, /sensing technology has completed measurement validation/);
+  assert.match(productStatus, /Complete system integration/);
+  assert.match(productStatus, /Q1 2027 dispatch/);
   assert.match(productStatus, /not an FDA-authorized medical/);
-  assert.match(productStatus, /Targeting dispatch in\s*(?:<!-- -->)?Q1 2027/);
+  assert.match(productStatus, /production preparation are focused on(?:<!-- -->)?\s*Q1 2027/);
   assert.match(productStatus, /Product status version 2026-08-12-v1/);
   assert.match(productStatus, /August 12, 2026/);
   assert.match(productStatus, /FCC equipment authorization and delivery/);
   assert.match(productStatus, /conditional upon successful completion of the applicable FCC equipment/);
-  assert.match(productStatus, /Pre-order Terms and Cancellation and Refund Policy/);
-
   assert.equal(termsResponse.status, 200);
   const terms = await termsResponse.text();
   assert.match(terms, /Key terms/);
   assert.match(terms, /Delivery and risk of loss/);
   assert.match(terms, /Warranty and product problems/);
+  assert.match(terms, /completing final engineering and production preparation for Q1 2027 dispatch/);
   assert.match(terms, /has not received FDA marketing authorization/);
   assert.match(terms, /Legal pack version 2026-08-12-v1/);
   assert.match(terms, /FCC equipment authorization and conditional delivery/);
