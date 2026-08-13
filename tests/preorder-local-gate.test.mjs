@@ -270,24 +270,25 @@ test("keeps the funnel usable only on loopback during development", async () => 
   assert.equal(homeResponse.status, 200);
   const home = await homeResponse.text();
   assert.match(home, /Pre-order now/);
-  assert.match(home, /You save/);
+  assert.match(home, /Pre-order price/);
+  assert.match(home, /40(?:<!-- -->)?% off the planned/);
   assert.match(home, /40(?:<!-- -->)?% off/);
-  assert.match(home, /Pre-order now -\s*(?:<!-- -->)?\$299/);
+  assert.match(home, /Pre-order\s*(?:<!-- -->)?\$299/);
   assert.match(home, /href="\/preorder\/review\?source=homepage_header"/);
   assert.match(home, /href="\/preorder\/review\?source=homepage_hero"/);
   assert.match(home, /href="\/preorder\/review\?source=homepage"/);
   assert.doesNotMatch(home, /Pre-orders are now open\./);
   assert.match(home, /See details/);
   assert.match(home, /home-preorder-hero__offer-line/);
-  assert.match(home, /Pre order offer/);
+  assert.match(home, /Pre-order offer/);
   assert.match(
     home,
-    /Pre-order today and save\s*(?:<!-- -->)?40\s*(?:<!-- -->)?%/,
+    /Save\s*(?:<!-- -->)?\$200/,
   );
   assert.doesNotMatch(home, /home-preorder-hero__saving-note/);
   assert.match(home, /home-preorder-hero__actions/);
-  assert.match(home, /hero-email-first__shipping-pill/);
-  assert.match(home, /Shipping est\.\s*(?:<!-- -->)?Q1 2027/);
+  assert.doesNotMatch(home, /hero-email-first__shipping-pill/);
+  assert.match(home, /SHIPPING EST\.\s*(?:<!-- -->)?Q1 2027/i);
   assert.doesNotMatch(home, /home-preorder-hero__shipping/);
   assert.match(home, /home-preorder-price-comparison/);
   assert.match(home, /id="homepage-hero-preorder-waitlist-email"/);
@@ -302,7 +303,7 @@ test("keeps the funnel usable only on loopback during development", async () => 
       home.indexOf('href="/preorder/review?source=homepage_hero"'),
   );
   assert.doesNotMatch(home, /home-preorder-saving--hero/);
-  assert.match(home, /Product progress and shipping plan/);
+  assert.match(home, /Product and shipping details/);
   assert.match(home, /\$299/);
   assert.match(home, /\$499/);
   assert.match(home, /Q1 2027/);
@@ -311,16 +312,13 @@ test("keeps the funnel usable only on loopback during development", async () => 
   assert.equal(response.status, 200);
   const html = await response.text();
   assert.match(html, /Review your Frame pre-order/);
-  assert.match(html, /Product subtotal/);
-  assert.match(html, /Release price/);
-  assert.match(html, /Pre-order saving/);
-  assert.match(html, /Total before tax/);
-  assert.match(html, /Total before tax[\s\S]*?\$299/);
+  assert.match(html, /40(?:<!-- -->)?% off the (?:<!-- -->)?\$499(?:<!-- -->)? release price/);
+  assert.match(html, /\$299(?:<!-- -->)? before tax/);
   assert.match(html, /\$499/);
   assert.match(html, /\$200/);
   assert.doesNotMatch(html, /\$19/);
-  assert.match(html, /Standard US shipping[\s\S]*?Free/i);
-  assert.match(html, /Applicable sales tax is calculated at Stripe Checkout/i);
+  assert.match(html, /US shipping[\s\S]*?Free/i);
+  assert.match(html, /Tax calculated at secure checkout/i);
   assert.match(html, /Preparing for launch\./);
   assert.match(html, /View product and shipping details/);
   assert.doesNotMatch(html, /Two quick confirmations/);
@@ -329,8 +327,9 @@ test("keeps the funnel usable only on loopback during development", async () => 
   assert.match(html, /Estimated shipping/);
   assert.match(html, /Q1 2027/);
   assert.match(html, /is not for medical decisions/);
-  assert.match(html, /Continue to secure checkout/);
-  assert.match(html, /Cancellation and Refund Policy/);
+  assert.match(html, /Continue to checkout/);
+  assert.match(html, /Privacy Notice/);
+  assert.match(html, /Seller information/);
   assert.doesNotMatch(html, /FCC equipment authorization/i);
   assert.match(html, /rel="canonical" href="https:\/\/framewearable\.com\/preorder\/review"/);
   assert.doesNotMatch(html, /name="email"/);
@@ -431,7 +430,10 @@ test("keeps the public homepage free of pre-order discovery and blocks webhook b
   assert.doesNotMatch(home, /href=["']\/preorder/i);
   assert.doesNotMatch(home, /Product concept\. Final design in development\./);
   assert.doesNotMatch(home, /Product concept · final design in development/);
-  assert.match(home, /Wearable ultrasound, supported by clinical research\./);
+  assert.match(
+    home,
+    /Wearable ultrasound has been evaluated in peer-reviewed human\s*(?:<!-- -->)?studies\./,
+  );
   assert.match(home, /Frame is under development and is not currently available for sale\./);
   assert.match(home, /Frame is developing a non-invasive upper-arm ultrasound wearable/);
   assert.doesNotMatch(home, /Evidence-driven by design\./);

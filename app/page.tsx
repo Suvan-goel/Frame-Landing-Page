@@ -27,43 +27,46 @@ const content = {
   ],
   insights: [
     ["Baseline", "What is typical for you during comparable periods."],
+    ["Response", "How your blood pressure changes around meaningful events."],
     ["Recovery", "How quickly you return toward your usual pattern."],
-    ["Response", "How your cardiovascular system changes around meaningful events."],
-    ["Confidence", "What was measured reliably, and what was not."],
+    ["Confidence", "How intelligent signal analysis keeps your patterns clear."],
   ],
   principles: [
     [
       "Screenless by design",
-      "No glowing display or constant alerts. Frame keeps your attention on life, not the device.",
+      "No glowing screen or constant alerts. Frame works quietly in the background.",
     ],
     [
-      "Built around comfort",
+      "Made to live in",
       "A soft, adjustable upper-arm form designed for comfortable everyday wear.",
     ],
     [
-      "Quietly continuous",
-      "Frame works in the background while you sleep, move, work, and recover.",
+      "Advanced made simple",
+      "Ultrasound and machine learning do the complex work; you see the patterns that matter.",
     ],
-    [
-      "Complex technology, clear experience",
-      "Wearable ultrasound and machine learning do the complex work; the app brings meaningful patterns into view.",
-    ],
-  ],
-  researchStandards: [
-    {
-      metric: "118",
-      title: "adults recruited",
-      description:
-        "A clinical validation study tested a wearable ultrasound sensor during daily activities and in outpatient, cardiac catheterisation, and intensive-care settings.",
-    },
-    {
-      metric: null,
-      title: "Compared with clinical references",
-      description:
-        "Ultrasound-derived measurements have been evaluated against arm cuffs, arterial tonometry, and invasive arterial lines.",
-    },
   ],
 } as const;
+
+const contextIntroCopy =
+  "Blood pressure changes with sleep, stress, movement, and recovery. Frame is designed to connect those moments, helping reveal patterns an occasional reading may miss.";
+
+const methodIntroCopy =
+  "Frame combines cutting-edge wearable ultrasound technology with movement, contact, sleep, and activity sensing to reveal patterns over time.";
+
+const methodSteps = [
+  [
+    "Observe",
+    "Wearable ultrasound uses high-frequency sound waves to observe arterial motion beneath the skin.",
+  ],
+  [
+    "Add context",
+    "Movement, contact, sleep, and activity data help explain changes in the ultrasound signal.",
+  ],
+  [
+    "Reveal patterns",
+    "Personalised machine-learning analysis combines ultrasound signals with daily context to reveal clear patterns over time.",
+  ],
+] as const;
 
 function Arrow() {
   return <span aria-hidden="true">↗</span>;
@@ -162,13 +165,10 @@ export default async function Home() {
           <div className="hero-copy">
             <p className="eyebrow hero-email-first__eyebrow">
               <span className="hero-eyebrow__desktop">
-                MEASURE YOUR BLOOD PRESSURE CONTINUOUSLY
+                {preorderOffer
+                  ? `SHIPPING EST. ${preorderOffer.estimatedShipping}`
+                  : "MEASURE YOUR BLOOD PRESSURE CONTINUOUSLY"}
               </span>
-              {preorderOffer ? (
-                <span className="hero-email-first__shipping-pill hero-eyebrow__desktop">
-                  Shipping est. {preorderOffer.estimatedShipping}
-                </span>
-              ) : null}
               <span className="hero-eyebrow__mobile">
                 {preorderOffer
                   ? `SHIPPING EST. ${preorderOffer.estimatedShipping}`
@@ -186,11 +186,11 @@ export default async function Home() {
             <p className="hero-intro">
               <span className="hero-intro__desktop">
                 The first wearable to continuously track blood pressure
-                accurately and reliably
+                using ultrasound technology
               </span>
               <span className="hero-intro__mobile">
                 The first wearable to continuously track blood pressure
-                accurately and reliably
+                using ultrasound technology
               </span>
             </p>
             {preorderOffer ? (
@@ -206,9 +206,15 @@ export default async function Home() {
                   />
                 </figure>
                 <p className="home-preorder-hero__offer-line">
-                  <span className="home-preorder-hero__offer-tag">Pre order offer</span>
+                  <span className="home-preorder-hero__offer-tag">Pre-order offer</span>
+                  <span
+                    className="home-preorder-hero__offer-separator"
+                    aria-hidden="true"
+                  >
+                    ·
+                  </span>
                   <span className="home-preorder-hero__offer-message">
-                    Pre-order today and save {PREORDER_DISCOUNT_PERCENT}%
+                    Save <strong>{preorderSavingsLabel}</strong>
                   </span>
                 </p>
                 <div
@@ -233,7 +239,9 @@ export default async function Home() {
                     className="button home-preorder-hero__preorder-button"
                     href="/preorder/review?source=homepage_hero"
                   >
-                    <span className="home-preorder-hero__cta-desktop">Pre-order now</span>
+                    <span className="home-preorder-hero__cta-desktop">
+                      Pre-order for {preorderPriceLabel}
+                    </span>
                     <span className="home-preorder-hero__cta-mobile">
                       Pre-order for {preorderPriceLabel}
                     </span>
@@ -286,14 +294,10 @@ export default async function Home() {
             <h2>A single reading cannot show a pattern.</h2>
             <p className="context-intro__description">
               <span className="context-intro__desktop">
-                {showPreorderAreas
-                  ? "Blood pressure changes with sleep, movement, stress, exercise, food, posture, and recovery. Most people only see an occasional snapshot. Frame is built to connect what happens in between, helping you see how personal patterns relate to everyday life."
-                  : "Blood pressure changes with sleep, movement, stress, exercise, food, posture, and recovery. Most people only see an occasional snapshot. Frame aims to connect what happens in between, helping you see how personal patterns relate to everyday life."}
+                {contextIntroCopy}
               </span>
               <span className="context-intro__mobile">
-                Blood pressure changes with sleep, stress, movement, and
-                recovery. Frame is designed to connect those moments, helping
-                reveal patterns an occasional reading may miss.
+                {contextIntroCopy}
               </span>
             </p>
           </div>
@@ -380,14 +384,10 @@ export default async function Home() {
             <h2>Ultrasound, made wearable.</h2>
             <p>
               <span className="method-intro__desktop">
-                {showPreorderAreas
-                  ? "Ultrasound can observe arterial motion beneath the skin. Frame combines cutting-edge wearable ultrasound technology, contextual sensing, and personalised analysis to show how those signals change over time."
-                  : "Ultrasound can observe arterial motion beneath the skin. Frame is exploring how to make that signal dependable, comfortable, and useful over time."}
+                {methodIntroCopy}
               </span>
               <span className="method-intro__mobile">
-                Frame combines cutting-edge wearable ultrasound technology with
-                movement, contact, sleep, and activity sensing to reveal patterns
-                over time.
+                {methodIntroCopy}
               </span>
             </p>
           </div>
@@ -408,9 +408,7 @@ export default async function Home() {
               </div>
               <figcaption>
                 <span className="method-caption__desktop">
-                  {showPreorderAreas
-                    ? "simplified illustration"
-                    : "Simplified sensing concept · anatomy and final sensor configuration are illustrative"}
+                  simplified illustration
                 </span>
                 <span className="method-caption__mobile">
                   simplified illustration
@@ -418,75 +416,26 @@ export default async function Home() {
               </figcaption>
             </figure>
             <ol className="method-steps method-steps--desktop">
-              <li>
-                <span>01</span>
-                <div>
-                  <h3>Observe</h3>
-                  <p>
-                    A specialised sensor sends and receives high-frequency
-                    ultrasound waves to observe the artery beneath the skin.
-                  </p>
-                </div>
-              </li>
-              <li>
-                <span>02</span>
-                <div>
-                  <h3>Interpret</h3>
-                  <p>
-                    Arterial features are analysed using a personalised
-                    machine-learning model.
-                  </p>
-                </div>
-              </li>
-              <li>
-                <span>03</span>
-                <div>
-                  <h3>Add context</h3>
-                  <p>
-                    Motion, contact, temperature, sleep, and activity data help
-                    the model understand changes in the ultrasound signal.
-                  </p>
-                </div>
-              </li>
-              <li>
-                <span>04</span>
-                <div>
-                  <h3>Show what is trusted</h3>
-                  <p>Lower-confidence or interrupted periods remain clearly marked.</p>
-                </div>
-              </li>
+              {methodSteps.map(([title, description], index) => (
+                <li key={title}>
+                  <span>0{index + 1}</span>
+                  <div>
+                    <h3>{title}</h3>
+                    <p>{description}</p>
+                  </div>
+                </li>
+              ))}
             </ol>
             <ol className="method-steps method-steps--mobile">
-              <li>
-                <span>01</span>
-                <div>
-                  <h3>Observe</h3>
-                  <p>
-                    Wearable ultrasound uses high-frequency sound waves to
-                    observe arterial motion beneath the skin.
-                  </p>
-                </div>
-              </li>
-              <li>
-                <span>02</span>
-                <div>
-                  <h3>Add context</h3>
-                  <p>
-                    Movement, contact, sleep, and activity data help explain
-                    changes in the ultrasound signal.
-                  </p>
-                </div>
-              </li>
-              <li>
-                <span>03</span>
-                <div>
-                  <h3>Reveal patterns</h3>
-                  <p>
-                    Personalised machine-learning analysis combines ultrasound
-                    signals with daily context to reveal clear patterns over time.
-                  </p>
-                </div>
-              </li>
+              {methodSteps.map(([title, description], index) => (
+                <li key={title}>
+                  <span>0{index + 1}</span>
+                  <div>
+                    <h3>{title}</h3>
+                    <p>{description}</p>
+                  </div>
+                </li>
+              ))}
             </ol>
           </div>
         </div>
@@ -511,7 +460,7 @@ export default async function Home() {
             <p className="eyebrow">The experience</p>
             <h2>
               <span className="software-heading__desktop">
-                From measurements to personal experiments.
+                See the patterns behind your readings.
               </span>
               <span className="software-heading__mobile">
                 See the patterns behind your readings.
@@ -519,9 +468,8 @@ export default async function Home() {
             </h2>
             <p>
               <span className="software-intro__desktop">
-                Frame is designed to explain patterns relative to your baseline,
-                show how long a response lasts, and make confidence part of every
-                result.
+                See what is typical for you, how your body responds, and how
+                long changes last.
               </span>
               <span className="software-intro__mobile">
                 See what is typical for you, how your body responds, and how
@@ -544,7 +492,7 @@ export default async function Home() {
               <div className="home-preorder-copy">
                 <p className="eyebrow">
                   <span className="home-preorder-copy__eyebrow-desktop">
-                    Frame pre-order
+                    Pre-order offer
                   </span>
                   <span className="home-preorder-copy__eyebrow-mobile">
                     Pre-order offer
@@ -552,7 +500,7 @@ export default async function Home() {
                 </p>
                 <h2>
                   <span className="home-preorder-copy__heading-desktop">
-                    Coming Q1 2027.
+                    Reserve your Frame.
                   </span>
                   <span className="home-preorder-copy__heading-mobile">
                     Reserve your Frame.
@@ -560,9 +508,7 @@ export default async function Home() {
                 </h2>
                 <p className="home-preorder-copy__intro">
                   <span className="home-preorder-copy__intro-desktop">
-                    A {preorderPriceLabel} pre-order reserves one Frame upper-arm
-                    wearable at {PREORDER_DISCOUNT_PERCENT}% below the planned{" "}
-                    {preorderReleasePriceLabel} release price.
+                    Shipping is estimated for Q1 2027.
                   </span>
                   <span className="home-preorder-copy__intro-mobile">
                     Shipping is estimated for Q1 2027.
@@ -573,22 +519,23 @@ export default async function Home() {
                   className="home-preorder-price-comparison home-preorder-price-comparison--section"
                   aria-label="Frame pre-order pricing"
                 >
-                  <div className="home-preorder-price-comparison__pair">
-                    <div>
-                      <dt>Pre-order price</dt>
-                      <dd>{preorderPriceLabel}</dd>
-                    </div>
-                    <div>
-                      <dt>Release price</dt>
-                      <dd><del>{preorderReleasePriceLabel}</del></dd>
-                    </div>
+                  <div className="home-preorder-price-comparison__primary">
+                    <dt>Pre-order price</dt>
+                    <dd>
+                      <span className="home-preorder-price-comparison__amount">
+                        {preorderPriceLabel}
+                      </span>
+                      <span className="home-preorder-price-comparison__badge">
+                        Save {preorderSavingsLabel}
+                      </span>
+                    </dd>
                   </div>
                   <div className="home-preorder-price-comparison__saving">
-                    <div>
-                      <dt>You save</dt>
-                      <dd>{preorderSavingsLabel}</dd>
-                    </div>
-                    <span>{PREORDER_DISCOUNT_PERCENT}% off</span>
+                    <dt>Release offer</dt>
+                    <dd>
+                      {PREORDER_DISCOUNT_PERCENT}% off the planned{" "}
+                      <del>{preorderReleasePriceLabel}</del> release price
+                    </dd>
                   </div>
                 </dl>
 
@@ -609,11 +556,6 @@ export default async function Home() {
                   </p>
                 </div>
 
-                <p className="home-preorder-price-note home-preorder-price-note--desktop">
-                  Applicable sales tax is added at checkout. Standard US shipping is free.
-                  Cancel any time before fulfilment for a full refund.
-                </p>
-
                 <div className="home-preorder-actions">
                   <a className="button button--dark" href={preorderHref}>
                     <span className="home-preorder-actions__label-desktop">
@@ -624,6 +566,9 @@ export default async function Home() {
                     </span>
                     <Arrow />
                   </a>
+                  <p className="home-preorder-price-note home-preorder-price-note--desktop">
+                    US shipping included · Refundable before fulfilment
+                  </p>
                   <ul
                     className="home-preorder-price-note home-preorder-price-note--mobile"
                     aria-label="Pre-order reassurance"
@@ -632,7 +577,7 @@ export default async function Home() {
                   </ul>
                   <a className="text-link" href="/preorder/product-status">
                     <span className="home-preorder-progress-label__desktop">
-                      Product progress and shipping plan
+                      Product and shipping details
                     </span>
                     <span className="home-preorder-progress-label__mobile">
                       Product and shipping details
@@ -669,7 +614,7 @@ export default async function Home() {
             <p className="eyebrow">Product principles</p>
             <h2>
               <span className="principles-heading__desktop">
-                Advanced technology, effortless to live with.
+                Advanced technology. Effortless to live with.
               </span>
               <span className="principles-heading__mobile">
                 Advanced technology. Effortless to live with.
@@ -684,20 +629,7 @@ export default async function Home() {
               ))}
             </div>
             <div className="principle-list principle-list--mobile">
-              {[
-                [
-                  "Screenless by design",
-                  "No glowing screen or constant alerts. Frame works quietly in the background.",
-                ],
-                [
-                  "Made to live in",
-                  "A soft, adjustable upper-arm form designed for comfortable everyday wear.",
-                ],
-                [
-                  "Advanced made simple",
-                  "Ultrasound and machine learning do the complex work; you see the patterns that matter.",
-                ],
-              ].map(([title, description], index) => (
+              {content.principles.map(([title, description], index) => (
                 <article key={title}>
                   <span className="principle-list__number">0{index + 1}</span>
                   <div>
@@ -713,7 +645,8 @@ export default async function Home() {
               <span className="status-label">Research evidence</span>
               <h3>
                 <span className="research-heading__desktop">
-                  Wearable ultrasound, supported by clinical research.
+                  Wearable ultrasound has been evaluated in peer-reviewed human
+                  studies.
                 </span>
                 <span className="research-heading__mobile">
                   Wearable ultrasound has been evaluated in peer-reviewed human
@@ -722,28 +655,24 @@ export default async function Home() {
               </h3>
               <p>
                 <span className="research-intro__desktop">
-                  Validated for accuracy and reliability, the tech behind Frame is
-                  a game-changer for continuous blood-pressure monitoring.
+                  Backed by peer-reviewed human studies, Frame brings validated
+                  ultrasound sensing to continuous blood-pressure monitoring.
                 </span>
                 <span className="research-intro__mobile">
-                  Validated for accuracy and reliability, the tech behind Frame is
-                  a game-changer for continuous blood-pressure monitoring.
+                  Backed by peer-reviewed human studies, Frame brings validated
+                  ultrasound sensing to continuous blood-pressure monitoring.
                 </span>
               </p>
               <div className="research-standards research-standards--desktop" aria-label="Published evidence for wearable ultrasound">
-                {content.researchStandards.map((standard) => (
-                  <article key={standard.title}>
-                    <h4 className={standard.metric ? "research-standard-title--metric" : undefined}>
-                      {standard.metric ? (
-                        <>
-                          <span className="research-standard-metric">{standard.metric}</span>
-                          <span>{standard.title}</span>
-                        </>
-                      ) : standard.title}
-                    </h4>
-                    <p>{standard.description}</p>
-                  </article>
-                ))}
+                <article>
+                  <h4 className="research-standard-title--metric">
+                    <span className="research-standard-metric">118</span>
+                    <span>adults studied</span>
+                  </h4>
+                </article>
+                <article>
+                  <h4>Compared with clinical references</h4>
+                </article>
               </div>
               <div className="research-standards research-standards--mobile" aria-label="Published evidence for wearable ultrasound">
                 <article>
@@ -849,14 +778,11 @@ export default async function Home() {
               {showPreorderAreas ? (
                 <>
                   <span className="footer-disclosure__desktop">
-                    Frame is a general-wellness wearable in development. Product visuals
-                    show the intended experience
-                    {preorderOffer
-                      ? `; specifications and estimated ${preorderOffer.estimatedShipping} shipping may change.`
-                      : "."}
-                    {" "}
-                    Frame is not intended to guide medical decisions or replace an
-                    FDA-authorized blood-pressure monitor.
+                    Frame is a general-wellness wearable in development. Product
+                    visuals, specifications and estimated{" "}
+                    {preorderOffer?.estimatedShipping ?? "Q1 2027"} shipping may
+                    change. It is not intended for medical decisions or to replace
+                    an FDA-authorized blood-pressure monitor.
                   </span>
                   <span className="footer-disclosure__mobile">
                     Frame is a general-wellness wearable in development. Product
@@ -880,7 +806,6 @@ export default async function Home() {
           </div>
           <div className="footer-bottom__meta">
             <p>© {new Date().getFullYear()} {ORGANIZATION_NAME}</p>
-            <a className="footer-bottom__privacy" href="/privacy">Privacy</a>
           </div>
         </div>
       </footer>

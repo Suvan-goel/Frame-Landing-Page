@@ -13,18 +13,11 @@ export function MobileWaitlistDisclosure({
     const disclosure = disclosureRef.current;
     if (!disclosure) return;
 
-    if (window.matchMedia("(max-width: 680px)").matches) {
-      disclosure.open = false;
-    }
     disclosure.dataset.mobileReady = "true";
   }, []);
 
   return (
-    <details
-      className="home-preorder-hero__waitlist-disclosure"
-      ref={disclosureRef}
-      open
-    >
+    <details className="home-preorder-hero__waitlist-disclosure" ref={disclosureRef}>
       <summary>
         <span>Prefer updates?</span>
         <span className="home-preorder-hero__waitlist-action">

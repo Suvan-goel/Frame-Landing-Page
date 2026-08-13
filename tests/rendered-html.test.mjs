@@ -363,22 +363,24 @@ test("server-renders the Frame landing page", async () => {
   );
   assert.doesNotMatch(html, /Currently in development/);
   assert.match(html, /hero--email-first/);
+  assert.match(html, /SHIPPING EST\.\s*(?:<!-- -->)?Q1 2027/);
   assert.match(
     html,
-    /MEASURE YOUR BLOOD PRESSURE CONTINUOUSLY/,
+    /The first wearable to continuously track blood pressure\s*(?:<!-- -->)?using ultrasound technology/,
   );
   assert.match(
     html,
-    /The first wearable to continuously track blood pressure accurately and reliably/,
-  );
-  assert.match(
-    html,
-    /Advanced technology, effortless to live with\./,
+    /Advanced technology\. Effortless to live with\./,
   );
   assert.match(
     html,
     /Personalised machine-learning analysis combines ultrasound\s*(?:<!-- -->)?signals with daily context to reveal clear patterns over time\./,
   );
+  assert.doesNotMatch(
+    html,
+    /Frame pairs wearable ultrasound with everyday context/,
+  );
+  assert.doesNotMatch(html, /lower-confidence periods/);
   assert.match(
     html,
     /How intelligent signal analysis keeps your patterns clear\./,
@@ -388,9 +390,12 @@ test("server-renders the Frame landing page", async () => {
     /See what is typical for you, how your body responds, and how\s*(?:<!-- -->)?long changes last\./,
   );
   assert.match(html, /Research evidence/);
-  assert.match(html, /Wearable ultrasound, supported by clinical research\./);
+  assert.match(
+    html,
+    /Wearable ultrasound has been evaluated in peer-reviewed human\s*(?:<!-- -->)?studies\./,
+  );
   assert.match(html, />118</);
-  assert.match(html, /adults recruited/);
+  assert.match(html, /adults studied/);
   assert.doesNotMatch(html, /Read the clinical validation study/);
   assert.match(
     html,
@@ -398,7 +403,7 @@ test("server-renders the Frame landing page", async () => {
   );
   assert.match(
     html,
-    /Frame is not intended to guide medical decisions or replace an\s*(?:<!-- -->)?FDA-authorized blood-pressure monitor\./,
+    /It is not intended for medical decisions or to replace\s*(?:<!-- -->)?an FDA-authorized blood-pressure monitor\./,
   );
   assert.match(html, /frame-product-concept-realistic-v3-transparent-720w\.webp/);
   assert.doesNotMatch(html, /frame-hero-man-transparent-v3-720w\.webp/);
@@ -410,25 +415,28 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /frame-app-studio-v6-640w\.webp/);
   assert.match(html, /<script type="application\/ld\+json">/);
   assert.match(html, /Frame Wearable, Inc\./);
+  assert.match(html, /class="footer-links__privacy" href="\/privacy">Privacy<\/a>/);
+  assert.doesNotMatch(html, /footer-bottom__privacy/);
   assert.doesNotMatch(html, /facebook\.com\/tr\?id=/);
   assert.equal(html.match(/name="email"/g)?.length, 2);
   assert.match(html, /Pre-order now/);
-  assert.match(html, /You save/);
+  assert.match(html, /Pre-order price/);
+  assert.match(html, /40(?:<!-- -->)?% off the planned/);
   assert.match(html, /40(?:<!-- -->)?% off/);
-  assert.match(html, /Pre-order now -\s*(?:<!-- -->)?\$299/);
+  assert.match(html, /Pre-order\s*(?:<!-- -->)?\$299/);
   assert.match(html, /href="\/preorder\/review\?source=homepage_hero"/);
   assert.doesNotMatch(html, /Pre-orders are now open\./);
   assert.match(html, /See details/);
   assert.match(html, /home-preorder-hero__offer-line/);
-  assert.match(html, /Pre order offer/);
+  assert.match(html, /Pre-order offer/);
   assert.match(
     html,
-    /Pre-order today and save\s*(?:<!-- -->)?40\s*(?:<!-- -->)?%/,
+    /Save\s*(?:<!-- -->)?\$200/,
   );
   assert.doesNotMatch(html, /home-preorder-hero__saving-note/);
   assert.match(html, /home-preorder-hero__actions/);
-  assert.match(html, /hero-email-first__shipping-pill/);
-  assert.match(html, /Shipping est\.\s*(?:<!-- -->)?Q1 2027/);
+  assert.doesNotMatch(html, /hero-email-first__shipping-pill/);
+  assert.match(html, /SHIPPING EST\.\s*(?:<!-- -->)?Q1 2027/i);
   assert.doesNotMatch(html, /home-preorder-hero__shipping/);
   assert.match(html, /home-preorder-price-comparison/);
   assert.match(html, /id="homepage-hero-preorder-waitlist-email"/);

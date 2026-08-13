@@ -481,7 +481,7 @@ export function PreorderManage() {
         <div className="preorder-manage-card__kicker">
           <span className="preorder-confirmation__mark" aria-hidden="true">{cancelled ? "×" : "✓"}</span>
           <p className="eyebrow">
-            <span className="preorder-manage-copy--desktop">Order {order.orderNumber}</span>
+            <span className="preorder-manage-copy--desktop">{statusLabel}</span>
             <span className="preorder-manage-copy--mobile">{statusLabel}</span>
           </p>
         </div>
@@ -489,13 +489,10 @@ export function PreorderManage() {
           <div>
             <h1>Manage your<br />pre-order.</h1>
             <p>
-              <span className="preorder-manage-copy--desktop">Review your order, delivery details, and available changes.</span>
+              <span className="preorder-manage-copy--desktop">Review your order and make changes.</span>
               <span className="preorder-manage-copy--mobile">Review your order and make changes.</span>
             </p>
           </div>
-          <span className={`preorder-manage-status${cancelled ? " preorder-manage-status--cancelled" : ""}`}>
-            {statusLabel}
-          </span>
         </div>
       </header>
 
@@ -511,12 +508,10 @@ export function PreorderManage() {
             />
           </div>
           <div className="preorder-manage-summary__copy">
-            <p className="eyebrow preorder-manage-summary__order-label">Your order</p>
             <h2 id="managed-order-heading">Frame</h2>
-            <p className="preorder-manage-copy--desktop">One device</p>
+            <p className="preorder-manage-copy--desktop">Qty 1</p>
           </div>
           <div className="preorder-manage-summary__total">
-            <span>Total paid</span>
             <strong>{order.amountPaid}</strong>
             {order.refundStatus !== "none" ? (
               <small>{order.amountRefunded} refunded</small>
@@ -539,7 +534,7 @@ export function PreorderManage() {
           <div>
             <div className="preorder-manage-info-heading">
               <p className="eyebrow">
-                <span className="preorder-manage-copy--desktop">Shipping to</span>
+                <span className="preorder-manage-copy--desktop">Delivery address</span>
                 <span className="preorder-manage-copy--mobile">Delivery address</span>
               </p>
               {order.canRequestAddressChange ? (
@@ -575,7 +570,6 @@ export function PreorderManage() {
                 {showEmailForm ? "Close" : <>Change <span aria-hidden="true">→</span></>}
               </button>
             </div>
-            <p className="preorder-manage-summary__updates-copy">We’ll send important product, timing, and delivery updates to:</p>
             <a href={`mailto:${order.email}`}>{order.email}</a>
             <button
               className="preorder-manage-email-toggle preorder-manage-email-toggle--desktop"
@@ -589,7 +583,7 @@ export function PreorderManage() {
                 setShowEmailForm((current) => !current);
               }}
             >
-              {showEmailForm ? "Close" : "Change order email"}
+              {showEmailForm ? "Close" : <>Change <span aria-hidden="true">→</span></>}
             </button>
             <InlineFeedback feedback={feedback} target="email" />
             {showEmailForm ? (
@@ -688,7 +682,7 @@ export function PreorderManage() {
               <p className="eyebrow">Delivery details</p>
               <h2>Change your shipping address.</h2>
               <p>
-                <span className="preorder-manage-copy--desktop">Request an address change while the order is still unshipped. We’ll review it before applying it.</span>
+                <span className="preorder-manage-copy--desktop">Request a change before fulfilment.</span>
                 <span className="preorder-manage-copy--mobile">Request a change before fulfilment.</span>
               </p>
             </div>
@@ -741,7 +735,7 @@ export function PreorderManage() {
               <p className="eyebrow">Cancellation</p>
               <h2>Need to cancel?</h2>
               <p>
-                <span className="preorder-manage-copy--desktop">You can cancel until fulfilment begins, before the order moves to processing. We’ll refund the full remaining amount to your original payment method.</span>
+                <span className="preorder-manage-copy--desktop">Cancel before fulfilment for a full refund.</span>
                 <span className="preorder-manage-copy--mobile">Cancel before fulfilment for a full refund.</span>
               </p>
             </div>

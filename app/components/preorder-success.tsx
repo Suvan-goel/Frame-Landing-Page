@@ -216,10 +216,6 @@ export function PreorderSuccess() {
                 </address>
               </div>
             ) : null}
-            <p>
-              We’re targeting this window for dispatch. You can request an address change from your secure
-              management page.
-            </p>
           </div>
         </div>
       </section>
@@ -229,10 +225,6 @@ export function PreorderSuccess() {
           <p className="eyebrow">What happens next</p>
           <h2 id="next-heading">Watch your inbox.</h2>
         </div>
-        <p>
-          Your receipt and secure management link are on their way. We’ll send shipping and tracking updates
-          before dispatch.
-        </p>
         <ol className="preorder-confirmation__steps">
           <li>
             <span>01</span>

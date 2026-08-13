@@ -401,7 +401,7 @@ test("keeps launch-candidate policies aligned with cancellation operations", asy
   assert.doesNotMatch(ownerOperations, /decline_cancellation/);
   assert.doesNotMatch(ownerInterface, /declineCancellation|decline_cancellation/);
   assert.match(ownerInterface, /no later than seven business days/);
-  assert.match(customerInterface, /full remaining amount/);
+  assert.match(customerInterface, /Cancel before fulfilment for a full refund/);
   assert.match(customerInterface, /silence is treated as consent to this short delay/);
   assert.match(ownerInterface, /Material product change/);
 });

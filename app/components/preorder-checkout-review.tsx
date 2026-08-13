@@ -163,10 +163,9 @@ export function PreorderCheckoutReview({
           <div className="preorder-order-summary__body">
             <div className="preorder-order-summary__title">
               <h2 id="preorder-order-title">Frame</h2>
-              <span>Qty 1</span>
             </div>
             <p className="preorder-order-summary__offer">
-              <span>Pre-order saving</span>
+              <span>{priceLabel}</span>
               <strong>Save {savingsLabel}</strong>
               <small>{discountPercent}% off the {releasePriceLabel} release price</small>
             </p>
@@ -178,19 +177,11 @@ export function PreorderCheckoutReview({
 
           <div className="preorder-order-summary__checkout">
             <dl className="preorder-order-summary__prices">
-              <div className="preorder-order-summary__release-price">
-                <dt>Release price</dt><dd><del>{releasePriceLabel}</del></dd>
-              </div>
-              <div className="preorder-order-summary__saving">
-                <dt>Pre-order saving</dt><dd>−{savingsLabel}</dd>
-              </div>
-              <div><dt>Product subtotal</dt><dd>{priceLabel}</dd></div>
-              <div><dt>Standard US shipping</dt><dd>{shippingLabel}</dd></div>
-              <div className="preorder-order-summary__total">
-                <dt>Total before tax</dt><dd>{estimatedTotalLabel}</dd>
-              </div>
+              <div><dt>US shipping</dt><dd>{shippingLabel}</dd></div>
             </dl>
-            <p className="preorder-order-summary__tax">Applicable sales tax is calculated at Stripe Checkout.</p>
+            <p className="preorder-order-summary__tax">
+              {estimatedTotalLabel} before tax · Tax calculated at secure checkout
+            </p>
           </div>
         </section>
 
@@ -226,15 +217,15 @@ export function PreorderCheckoutReview({
                 "Opening secure checkout…"
               ) : (
                 <>
-                  <span className="preorder-review-copy__desktop">Continue to secure checkout</span>
+                  <span className="preorder-review-copy__desktop">Continue to checkout</span>
                   <span className="preorder-review-copy__mobile">Continue to checkout</span>
                 </>
               )}
             </button>
             <p className="preorder-checkout-action__promise">
               <span className="preorder-review-copy__desktop">
-                You’ll review the final total, including tax, before payment. One-time
-                payment; cancel before fulfilment for a full refund.
+                <strong>Secure Stripe checkout</strong>
+                <span>Tax shown before payment · Full refund before fulfilment</span>
               </span>
               <span className="preorder-review-copy__mobile preorder-checkout-action__mobile-promise">
                 <strong>Secure Stripe checkout</strong>
@@ -245,21 +236,13 @@ export function PreorderCheckoutReview({
 
           <div className="preorder-checkout-footer__legal">
             <div className="checkout-review__policies">
-              <Link className="preorder-policy__duplicate-mobile" href="/preorder/product-status">Product Status</Link>
-              <Link className="preorder-policy__duplicate-mobile" href="/preorder/terms">Pre-order Terms</Link>
-              <Link className="preorder-policy__duplicate-mobile" href="/preorder/refunds">Cancellation and Refund Policy</Link>
               <Link href="/privacy">Privacy Notice</Link>
             </div>
             {sellerIdentityLine ? (
-              <>
-              <p className="checkout-review__seller-identity preorder-seller-identity__desktop">
-                {sellerIdentityLine}
-              </p>
               <details className="preorder-seller-details">
                 <summary>Seller information</summary>
                 <p>{sellerIdentityLine}</p>
               </details>
-              </>
             ) : null}
           </div>
         </footer>

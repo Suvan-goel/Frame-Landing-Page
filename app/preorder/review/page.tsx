@@ -37,13 +37,12 @@ export default async function PreorderReviewPage() {
         <header className="preorder-review-heading">
           <p className="eyebrow">Frame pre-order</p>
           <h1>
-            <span className="preorder-review-copy__desktop">Review your order.</span>
+            <span className="preorder-review-copy__desktop">Review your pre-order.</span>
             <span className="preorder-review-copy__mobile">Review your pre-order.</span>
           </h1>
           <p>
             <span className="preorder-review-copy__desktop">
-              Confirm your offer and required acknowledgements before continuing
-              to secure checkout.
+              Confirm your offer before secure checkout.
             </span>
             <span className="preorder-review-copy__mobile">
               Confirm your offer before secure checkout.

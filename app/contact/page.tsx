@@ -45,47 +45,12 @@ export default async function ContactPage({
             <h1 id="contact-title">Start a conversation.</h1>
             <p>
               <span className="contact-page__intro-description--desktop">
-                Whether you need support or want to explore what Frame is building,
-                your note will go directly to our team.
+                Choose a topic below and your message will go directly to our team.
               </span>
               <span className="contact-page__intro-description--mobile">
                 Choose a topic below and your message will go directly to our team.
               </span>
             </p>
-          </div>
-
-          <div className="contact-page__directory">
-            <p>Contact directory</p>
-            <ol aria-label="Reasons to contact Frame">
-              <li>
-                <span>01</span>
-                <div>
-                  <strong>Pre-order support</strong>
-                  <small>Orders, delivery, and account help</small>
-                </div>
-              </li>
-              <li>
-                <span>02</span>
-                <div>
-                  <strong>Research &amp; engineering</strong>
-                  <small>Scientific and technical conversations</small>
-                </div>
-              </li>
-              <li>
-                <span>03</span>
-                <div>
-                  <strong>Partnerships &amp; press</strong>
-                  <small>Collaborations and media enquiries</small>
-                </div>
-              </li>
-              <li>
-                <span>04</span>
-                <div>
-                  <strong>Privacy &amp; general</strong>
-                  <small>Data requests and everything else</small>
-                </div>
-              </li>
-            </ol>
           </div>
 
           <div className="contact-page__direct">
