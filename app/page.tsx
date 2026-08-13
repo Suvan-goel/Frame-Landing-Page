@@ -409,11 +409,11 @@ export default async function Home() {
               <figcaption>
                 <span className="method-caption__desktop">
                   {showPreorderAreas
-                    ? "How Frame observes the artery beneath the skin · simplified illustration"
+                    ? "simplified illustration"
                     : "Simplified sensing concept · anatomy and final sensor configuration are illustrative"}
                 </span>
                 <span className="method-caption__mobile">
-                  Illustrative view
+                  simplified illustration
                 </span>
               </figcaption>
             </figure>
