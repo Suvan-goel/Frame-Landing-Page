@@ -297,6 +297,18 @@ export default async function Home() {
               </span>
             </p>
           </div>
+          <figure className="context-lifestyle-visual">
+            <img
+              src="/frame-woman-dumbbell-upper-arm-transparent-v1.png"
+              alt="Woman lifting a dumbbell while wearing Frame just above her elbow"
+              width={1672}
+              height={941}
+              sizes="(max-width: 680px) calc(100vw - 32px), (max-width: 1200px) 84vw, 1100px"
+              loading="lazy"
+              decoding="async"
+            />
+            <figcaption>Worn on the upper arm</figcaption>
+          </figure>
           <div
             className={`context-content${showPreorderAreas ? " context-content--without-product" : ""}`}
           >

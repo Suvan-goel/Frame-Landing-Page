@@ -1679,6 +1679,32 @@ h2 {
   line-height: 1.72;
 }
 
+.context-lifestyle-visual {
+  width: min(1100px, 92%);
+  margin: clamp(42px, 5vw, 68px) auto 0;
+}
+
+.context-lifestyle-visual img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.context-lifestyle-visual figcaption {
+  margin-top: 10px;
+  color: rgba(32, 33, 30, 0.55);
+  font-size: 0.62rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.context-lifestyle-visual + .context-content {
+  margin-top: clamp(32px, 4vw, 52px);
+  padding-top: 0;
+}
+
 .insight-list {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -5375,6 +5401,20 @@ h2 {
     width: 100%;
     max-width: none;
     margin: 0;
+  }
+
+  .context-lifestyle-visual {
+    width: calc(100% + 8px);
+    margin: 28px -4px 0;
+  }
+
+  .context-lifestyle-visual figcaption {
+    margin-top: 8px;
+    font-size: 0.58rem;
+  }
+
+  .context-lifestyle-visual + .context-content {
+    margin-top: 28px;
   }
 
   .method-section .section-heading {

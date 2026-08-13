@@ -404,6 +404,8 @@ test("server-renders the Frame landing page", async () => {
   assert.doesNotMatch(html, /frame-hero-man-transparent-v3-720w\.webp/);
   assert.match(html, /hero-visuals--product/);
   assert.match(html, /context-content--without-product/);
+  assert.match(html, /frame-woman-dumbbell-upper-arm-transparent-v1\.png/);
+  assert.match(html, /Worn on the upper arm/);
   assert.match(html, /frame-sensing-concept-realistic-v3-transparent-960w\.webp/);
   assert.match(html, /frame-app-studio-v6-640w\.webp/);
   assert.match(html, /<script type="application\/ld\+json">/);
