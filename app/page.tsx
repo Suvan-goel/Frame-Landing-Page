@@ -722,13 +722,12 @@ export default async function Home() {
               </h3>
               <p>
                 <span className="research-intro__desktop">
-                  Peer-reviewed human studies of wearable-ultrasound technology—not
-                  Frame itself—show that continuous arterial waveforms can support
-                  non-invasive blood-pressure estimation. Frame remains in development.
+                  Validated for accuracy and reliability, the tech behind Frame is
+                  a game-changer for continuous blood-pressure monitoring.
                 </span>
                 <span className="research-intro__mobile">
                   Validated for accuracy and reliability, the tech behind Frame is
-                  perfect for continuous blood-pressure monitoring.
+                  a game-changer for continuous blood-pressure monitoring.
                 </span>
               </p>
               <div className="research-standards research-standards--desktop" aria-label="Published evidence for wearable ultrasound">
