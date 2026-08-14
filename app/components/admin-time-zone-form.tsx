@@ -4,7 +4,7 @@ import {
 } from "@/lib/admin-time-zone";
 import { AdminTimeZoneClock } from "./admin-time-zone-clock";
 
-type WaitlistView = "qualified" | "unqualified" | "insights";
+type WaitlistView = "new" | "legacy" | "unqualified" | "insights";
 
 export function AdminTimeZoneForm({
   activeTab,

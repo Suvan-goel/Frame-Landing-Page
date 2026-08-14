@@ -6,11 +6,14 @@ import { isWaitlistAdmin } from "@/lib/supabase-admin.server";
 
 export const dynamic = "force-dynamic";
 
-type WaitlistView = "qualified" | "unqualified" | "insights";
+type WaitlistView = "new" | "legacy" | "unqualified" | "insights";
 
 function isWaitlistView(value: FormDataEntryValue | null): value is WaitlistView {
   return (
-    value === "qualified" || value === "unqualified" || value === "insights"
+    value === "new" ||
+    value === "legacy" ||
+    value === "unqualified" ||
+    value === "insights"
   );
 }
 
@@ -59,7 +62,7 @@ export async function POST(request: Request) {
 
   const activeTab = formData.get("tab");
   const redirectUrl = new URL("/admin/waitlist", request.url);
-  if (isWaitlistView(activeTab) && activeTab !== "qualified") {
+  if (isWaitlistView(activeTab) && activeTab !== "new") {
     redirectUrl.searchParams.set("tab", activeTab);
   }
 

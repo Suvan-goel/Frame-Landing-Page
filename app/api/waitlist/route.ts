@@ -1,17 +1,18 @@
 import { getSupabaseAdmin } from "@/lib/supabase-admin.server";
-import { formatName } from "@/lib/name-format";
 import { isLoopbackHost } from "@/lib/contributor-local-only";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import {
-  genderValues,
+  monitoringFrequencyValues,
   monitoringMethodValues,
-  normalizeResearchCallValue,
-  primaryInterestValues,
-  researchCallValues,
+  monitoringOutcomeValues,
+  monitoringReadinessValues,
+  monitoringReasonValues,
+  preorderDeclineReasonValues,
 } from "@/lib/waitlist-options";
 import {
   captureWaitlistEmail,
   completeWaitlistQualification,
+  recordWaitlistPreorderDecline,
   skipWaitlistQualification,
   type MetaLeadRecord,
   type QualificationUpdate,
@@ -36,20 +37,17 @@ export const dynamic = "force-dynamic";
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const MAX_BODY_BYTES = 8_192;
-const MAX_NAME_LENGTH = 60;
 const MAX_ATTRIBUTION_LENGTH = 200;
 const MAX_REFERRER_LENGTH = 500;
-const MAX_OTHER_LENGTH = 160;
-const MAX_LONG_TEXT_LENGTH = 750;
-const MIN_FRUSTRATION_LENGTH = 20;
-const MIN_AGE = 18;
-const MAX_AGE = 120;
+const MAX_QUALITATIVE_DETAIL_LENGTH = 300;
+const MAX_PREORDER_DECLINE_DETAIL_LENGTH = 300;
 const MAX_META_IDENTIFIER_LENGTH = 500;
 
 type WaitlistAction =
   | "capture_email"
   | "deliver_meta_lead"
   | "submit_qualification"
+  | "record_preorder_decline"
   | "skip_qualification";
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
@@ -68,20 +66,25 @@ function cleanText(value: unknown, maxLength: number) {
   return cleaned || null;
 }
 
-function cleanLongText(value: unknown) {
+function cleanQualitativeDetail(value: unknown) {
   if (typeof value !== "string") return null;
   const cleaned = value
     .trim()
     .replace(/\r\n?/g, "\n")
     .replace(/[ \t]+/g, " ")
     .replace(/\n{3,}/g, "\n\n")
-    .slice(0, MAX_LONG_TEXT_LENGTH);
+    .slice(0, MAX_QUALITATIVE_DETAIL_LENGTH);
   return cleaned || null;
 }
 
-function cleanName(value: unknown) {
+function cleanPreorderDeclineDetail(value: unknown) {
   if (typeof value !== "string") return null;
-  const cleaned = formatName(value).slice(0, MAX_NAME_LENGTH);
+  const cleaned = value
+    .trim()
+    .replace(/\r\n?/g, "\n")
+    .replace(/[ \t]+/g, " ")
+    .replace(/\n{3,}/g, "\n\n")
+    .slice(0, MAX_PREORDER_DECLINE_DETAIL_LENGTH);
   return cleaned || null;
 }
 
@@ -286,16 +289,12 @@ function waitlistRepository(supabase: SupabaseClient): WaitlistRepository {
     async completeIfIncomplete(id, update: QualificationUpdate) {
       const values: Record<string, string | number | null> = {
         qualification_status: "completed",
-        first_name: update.firstName,
-        last_name: update.lastName,
-        age: update.age,
-        gender: update.gender,
-        primary_interest: update.primaryInterest,
-        primary_interest_other: update.primaryInterestOther,
+        monitoring_frequency: update.monitoringFrequency,
+        monitoring_reason: update.monitoringReason,
+        monitoring_readiness: update.monitoringReadiness,
         current_monitoring_method: update.monitoringMethod,
-        current_monitoring_method_other: update.monitoringMethodOther,
-        frustration_or_missing_need: update.frustration,
-        open_to_research_call: update.researchCall,
+        monitoring_outcome: update.monitoringOutcome,
+        frustration_or_missing_need: update.qualitativeDetail,
         survey_completed_at: update.completedAt,
       };
       const { data, error } = await supabase
@@ -304,6 +303,21 @@ function waitlistRepository(supabase: SupabaseClient): WaitlistRepository {
         .eq("id", id)
         .neq("qualification_status", "completed")
         .is("survey_completed_at", null)
+        .select("id")
+        .maybeSingle<{ id: number }>();
+      if (error) throw error;
+      return Boolean(data);
+    },
+    async recordPreorderDecline(id, update) {
+      const { data, error } = await supabase
+        .from("waitlist_signups")
+        .update({
+          preorder_decline_reason: update.reason,
+          preorder_decline_detail: update.detail,
+          preorder_declined_at: update.recordedAt,
+        })
+        .eq("id", id)
+        .eq("qualification_status", "completed")
         .select("id")
         .maybeSingle<{ id: number }>();
       if (error) throw error;
@@ -619,81 +633,76 @@ async function skipQualification(payload: Record<string, unknown>, request: Requ
 async function submitQualification(payload: Record<string, unknown>, request: Request) {
   const signupToken =
     typeof payload.signupToken === "string" ? payload.signupToken : "";
-  const primaryInterest =
-    typeof payload.primaryInterest === "string" ? payload.primaryInterest : "";
+  const monitoringFrequency =
+    typeof payload.monitoringFrequency === "string"
+      ? payload.monitoringFrequency
+      : "";
+  const monitoringReason =
+    typeof payload.monitoringReason === "string" ? payload.monitoringReason : null;
+  const monitoringReadiness =
+    typeof payload.monitoringReadiness === "string"
+      ? payload.monitoringReadiness
+      : null;
   const monitoringMethod =
     typeof payload.monitoringMethod === "string" ? payload.monitoringMethod : "";
-  const submittedResearchCall =
-    typeof payload.researchCall === "string" ? payload.researchCall : null;
-  const researchCall = normalizeResearchCallValue(submittedResearchCall);
-  const firstName = cleanName(payload.firstName);
-  const lastName = cleanName(payload.lastName);
-  const age = typeof payload.age === "number" ? payload.age : null;
-  const gender = typeof payload.gender === "string" && payload.gender
-    ? payload.gender
-    : null;
-  const frustration = cleanLongText(payload.frustration);
+  const monitoringOutcome =
+    typeof payload.monitoringOutcome === "string" ? payload.monitoringOutcome : null;
+  const qualitativeDetail = cleanQualitativeDetail(payload.qualitativeDetail);
+  const hasMeasuredBefore = monitoringFrequency !== "never_outside_appointment";
 
   if (!UUID_PATTERN.test(signupToken)) {
     return jsonResponse({ error: "This signup session is no longer valid." }, 400);
   }
-  if (!primaryInterestValues.has(primaryInterest)) {
+  if (!monitoringFrequencyValues.has(monitoringFrequency)) {
     return jsonResponse(
-      { error: "Choose the one main reason that matters most to you." },
+      { error: "Choose how often you measured your blood pressure." },
       400,
     );
   }
-  if (!monitoringMethodValues.has(monitoringMethod)) {
+  if (
+    hasMeasuredBefore &&
+    (!monitoringReason || !monitoringReasonValues.has(monitoringReason))
+  ) {
     return jsonResponse(
-      { error: "Choose how you currently monitor your blood pressure." },
+      { error: "Choose the main reason you measured it most recently." },
       400,
     );
   }
-  if (!frustration || frustration.length < MIN_FRUSTRATION_LENGTH) {
+  if (
+    !hasMeasuredBefore &&
+    (!monitoringReadiness || !monitoringReadinessValues.has(monitoringReadiness))
+  ) {
     return jsonResponse(
-      { error: "Write at least 20 characters before submitting." },
+      { error: "Choose the furthest step you had taken toward monitoring." },
       400,
     );
   }
-  if (!researchCall || !researchCallValues.has(researchCall)) {
-    return jsonResponse({ error: "Choose a valid research-call response." }, 400);
-  }
-  if (!firstName) {
-    return jsonResponse({ error: "Enter your first name." }, 400);
-  }
-  if (!lastName) {
-    return jsonResponse({ error: "Enter your last name." }, 400);
-  }
-  if (age === null || !Number.isInteger(age) || age < MIN_AGE || age > MAX_AGE) {
+  if (hasMeasuredBefore && !monitoringMethodValues.has(monitoringMethod)) {
     return jsonResponse(
-      { error: `Enter an age between ${MIN_AGE} and ${MAX_AGE}.` },
+      { error: "Choose what you used the most recent time." },
       400,
     );
   }
-  if (!gender || !genderValues.has(gender)) {
-    return jsonResponse({ error: "Select a gender option." }, 400);
+  if (
+    hasMeasuredBefore &&
+    (!monitoringOutcome || !monitoringOutcomeValues.has(monitoringOutcome))
+  ) {
+    return jsonResponse(
+      { error: "Choose the answer that best describes that experience." },
+      400,
+    );
   }
   try {
     const result = await completeWaitlistQualification(
       await repositoryForRequest(request),
       signupToken,
       {
-        primaryInterest,
-        primaryInterestOther:
-          primaryInterest === "something_else"
-            ? cleanText(payload.primaryInterestOther, MAX_OTHER_LENGTH)
-            : null,
-        monitoringMethod,
-        monitoringMethodOther:
-          monitoringMethod === "something_else"
-            ? cleanText(payload.monitoringMethodOther, MAX_OTHER_LENGTH)
-            : null,
-        frustration,
-        researchCall,
-        firstName,
-        lastName,
-        age,
-        gender,
+        monitoringFrequency,
+        monitoringReason: hasMeasuredBefore ? monitoringReason : null,
+        monitoringReadiness: hasMeasuredBefore ? null : monitoringReadiness,
+        monitoringMethod: hasMeasuredBefore ? monitoringMethod : null,
+        monitoringOutcome: hasMeasuredBefore ? monitoringOutcome : null,
+        qualitativeDetail: hasMeasuredBefore ? qualitativeDetail : null,
         completedAt: new Date().toISOString(),
       },
     );
@@ -705,6 +714,57 @@ async function submitQualification(payload: Record<string, unknown>, request: Re
     console.error("Waitlist qualification failed", error);
     return jsonResponse(
       { error: "We couldn’t save your answers. Please try again shortly." },
+      503,
+    );
+  }
+}
+
+async function recordPreorderDecline(
+  payload: Record<string, unknown>,
+  request: Request,
+) {
+  const signupToken =
+    typeof payload.signupToken === "string" ? payload.signupToken : "";
+  const reason = typeof payload.reason === "string" ? payload.reason : "";
+  const detail = cleanPreorderDeclineDetail(payload.detail);
+
+  if (!UUID_PATTERN.test(signupToken)) {
+    return jsonResponse({ error: "This signup session is no longer valid." }, 400);
+  }
+  if (!preorderDeclineReasonValues.has(reason)) {
+    return jsonResponse(
+      { error: "Choose the main reason you aren’t ready to pre-order." },
+      400,
+    );
+  }
+  if (reason === "another_reason" && !detail) {
+    return jsonResponse({ error: "Tell us the other main reason." }, 400);
+  }
+
+  try {
+    const result = await recordWaitlistPreorderDecline(
+      await repositoryForRequest(request),
+      signupToken,
+      {
+        reason,
+        detail: reason === "another_reason" ? detail : null,
+        recordedAt: new Date().toISOString(),
+      },
+    );
+    if (result.status === "not_found") {
+      return jsonResponse({ error: "This signup session is no longer valid." }, 404);
+    }
+    if (result.status === "qualification_required") {
+      return jsonResponse(
+        { error: "Complete the survey before recording this answer." },
+        409,
+      );
+    }
+    return jsonResponse(result);
+  } catch (error) {
+    console.error("Waitlist pre-order decline recording failed", error);
+    return jsonResponse(
+      { error: "We couldn’t save that answer. Please try again shortly." },
       503,
     );
   }
@@ -735,6 +795,9 @@ export async function POST(request: Request) {
   if (action === "capture_email") return captureEmail(payload, request);
   if (action === "deliver_meta_lead") return deliverMetaLeadAction(payload, request);
   if (action === "submit_qualification") return submitQualification(payload, request);
+  if (action === "record_preorder_decline") {
+    return recordPreorderDecline(payload, request);
+  }
   if (action === "skip_qualification") return skipQualification(payload, request);
   return jsonResponse({ error: "The submitted action is invalid." }, 400);
 }

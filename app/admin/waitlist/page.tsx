@@ -15,16 +15,20 @@ import {
   genderLabels,
   interviewLabels,
   mainReasonLabels,
+  monitoringFrequencyLabels,
   monitoringLabels,
+  monitoringOutcomeLabels,
+  monitoringReadinessLabels,
+  monitoringReasonLabels,
+  preorderDeclineReasonLabels,
   qualificationStatusLabels,
   WAITLIST_SIGNUP_SELECT,
-  type LeadTab,
   type WaitlistSignup,
 } from "@/lib/waitlist-leads";
 
 export const dynamic = "force-dynamic";
 
-type WaitlistView = LeadTab | "insights";
+type WaitlistView = "new" | "legacy" | "unqualified" | "insights";
 
 function waitlistTabHref(tab: WaitlistView) {
   return `/admin/waitlist?tab=${tab}`;
@@ -90,9 +94,11 @@ export default async function WaitlistAdminPage({
   const resolvedSearchParams = await searchParams;
   const requestedTab = resolvedSearchParams?.tab;
   const activeTab: WaitlistView =
-    requestedTab === "unqualified" || requestedTab === "insights"
+    requestedTab === "legacy" ||
+    requestedTab === "unqualified" ||
+    requestedTab === "insights"
       ? requestedTab
-      : "qualified";
+      : "new";
   const dateFormatter = new Intl.DateTimeFormat("en", {
     dateStyle: "medium",
     timeStyle: "short",
@@ -103,15 +109,24 @@ export default async function WaitlistAdminPage({
   const qualifiedSignups = categorizedSignups.filter(
     (entry) => entry.tab === "qualified",
   );
-  const qualifiedCount = qualifiedSignups.length;
-  const unqualifiedCount = categorizedSignups.length - qualifiedCount;
-  const highIntentCount = qualifiedSignups.filter(
-    (entry) => entry.highIntent,
-  ).length;
+  const newSurveySignups = qualifiedSignups.filter(
+    (entry) => entry.surveyFlow === "new",
+  );
+  const legacySurveySignups = qualifiedSignups.filter(
+    (entry) => entry.surveyFlow === "legacy",
+  );
+  const unqualifiedSignups = categorizedSignups.filter(
+    (entry) => entry.tab === "unqualified",
+  );
+  const unqualifiedCount = unqualifiedSignups.length;
   const activeSignups =
     activeTab === "insights"
       ? []
-      : categorizedSignups.filter((entry) => entry.tab === activeTab);
+      : activeTab === "new"
+        ? newSurveySignups
+        : activeTab === "legacy"
+          ? legacySurveySignups
+          : unqualifiedSignups;
 
   return (
     <AdminDashboardShell
@@ -127,8 +142,8 @@ export default async function WaitlistAdminPage({
     >
       <section className="admin-metrics" aria-label="Waitlist overview">
         <article><span>Total signups</span><strong>{signups.length}</strong><small>All visible leads</small></article>
-        <article><span>Qualified</span><strong>{qualifiedCount}</strong><small>Survey completed</small></article>
-        <article><span>High intent</span><strong>{highIntentCount}</strong><small>Priority conversations</small></article>
+        <article><span>New survey</span><strong>{newSurveySignups.length}</strong><small>Current flow completed</small></article>
+        <article><span>Previous survey</span><strong>{legacySurveySignups.length}</strong><small>Legacy flow completed</small></article>
         <article><span>Unqualified</span><strong>{unqualifiedCount}</strong><small>Email-only or incomplete</small></article>
       </section>
 
@@ -148,11 +163,18 @@ export default async function WaitlistAdminPage({
 
         <nav className="admin-tabs" aria-label="Waitlist dashboard views">
           <a
-            className={activeTab === "qualified" ? "is-active" : undefined}
-            href={waitlistTabHref("qualified")}
-            aria-current={activeTab === "qualified" ? "page" : undefined}
+            className={activeTab === "new" ? "is-active" : undefined}
+            href={waitlistTabHref("new")}
+            aria-current={activeTab === "new" ? "page" : undefined}
           >
-            Qualified leads <span>{qualifiedCount}</span>
+            New survey <span>{newSurveySignups.length}</span>
+          </a>
+          <a
+            className={activeTab === "legacy" ? "is-active" : undefined}
+            href={waitlistTabHref("legacy")}
+            aria-current={activeTab === "legacy" ? "page" : undefined}
+          >
+            Previous survey <span>{legacySurveySignups.length}</span>
           </a>
           <a
             className={activeTab === "unqualified" ? "is-active" : undefined}
@@ -166,27 +188,35 @@ export default async function WaitlistAdminPage({
             href={waitlistTabHref("insights")}
             aria-current={activeTab === "insights" ? "page" : undefined}
           >
-            Lead insights <span>{qualifiedCount}</span>
+            New survey insights <span>{newSurveySignups.length}</span>
           </a>
         </nav>
         <p className="admin-tabs__note">
           {activeTab === "insights"
-            ? "Insights are calculated from qualified leads only."
+            ? "Insights use completed responses from the new survey only."
             : activeTab === "unqualified"
-              ? "Unqualified leads joined with their email but have not completed and submitted the full survey."
-              : "Qualified leads completed and submitted the full survey."}
+              ? "Unqualified leads joined with their email but have not completed and submitted a survey."
+              : activeTab === "legacy"
+                ? "Previous survey responses retain their original answer format and demographics."
+                : "New survey responses use the current behavioural and purchase-objection format."}
         </p>
       </section>
 
         {activeTab === "insights" ? (
-          <QualifiedLeadInsights leads={qualifiedSignups} />
+          <QualifiedLeadInsights leads={newSurveySignups} />
         ) : null}
 
         {activeTab !== "insights" ? (
           <div className="admin-section-heading">
             <div>
               <p className="eyebrow">Lead directory</p>
-              <h2>{activeTab === "qualified" ? "Qualified leads" : "Unqualified leads"}</h2>
+              <h2>
+                {activeTab === "new"
+                  ? "New survey responses"
+                  : activeTab === "legacy"
+                    ? "Previous survey responses"
+                    : "Unqualified leads"}
+              </h2>
             </div>
             <span>{activeSignups.length} shown</span>
           </div>
@@ -203,13 +233,25 @@ export default async function WaitlistAdminPage({
                     <th>Date and time</th>
                     <th>Delete</th>
                   </tr>
-                ) : (
+                ) : activeTab === "legacy" ? (
                   <tr>
                     <th>Lead</th>
                     <th>Main reason</th>
-                    <th>What Frame should help with</th>
-                    <th>Current monitoring</th>
+                    <th>Monitoring method</th>
+                    <th>Written response</th>
                     <th>Research call</th>
+                    <th>Profile</th>
+                    <th>Source</th>
+                    <th>Joined</th>
+                    <th><span className="sr-only">Actions</span></th>
+                  </tr>
+                ) : (
+                  <tr>
+                    <th>Lead</th>
+                    <th>30-day frequency</th>
+                    <th>Most recent reason or readiness</th>
+                    <th>Method</th>
+                    <th>Outcome, insight and pre-order objection</th>
                     <th>Source</th>
                     <th>Joined</th>
                     <th><span className="sr-only">Actions</span></th>
@@ -244,37 +286,117 @@ export default async function WaitlistAdminPage({
                         </td>
                       </tr>
                     ))
-                  : activeSignups.map(({ signup, qualification, qualificationStatus, highIntent }) => (
+                  : activeTab === "legacy"
+                    ? activeSignups.map(({ signup, qualification, qualificationStatus, qualitativeInsight }) => (
                       <tr key={signup.id}>
                         <td className="admin-lead">
                           <strong>
                             {[signup.first_name, signup.last_name]
                               .filter(Boolean)
-                              .join(" ") || "Qualified signup"}
+                              .join(" ") || "Previous survey response"}
                           </strong>
                           <a href={`mailto:${signup.email}`}>{signup.email}</a>
                           <small>
                             {[
                               qualificationStatusLabels[qualificationStatus],
-                              highIntent ? "High intent" : null,
-                              signup.gender
-                                ? genderLabels[signup.gender] ??
-                                  signup.gender.replaceAll("_", " ")
-                                : null,
-                              signup.age ? `Age ${signup.age}` : null,
+                              qualitativeInsight ? "Written response provided" : null,
                             ]
                               .filter(Boolean)
                               .join(" · ")}
                           </small>
                         </td>
                         <td>
-                          {qualification.mainReason
-                            ? `${mainReasonLabels[qualification.mainReason] ?? qualification.mainReason}${qualification.mainReasonOther ? `: ${qualification.mainReasonOther}` : ""}`
-                            : "Legacy signup"}
+                          {qualification.legacyMainReason
+                            ? `${mainReasonLabels[qualification.legacyMainReason] ?? qualification.legacyMainReason.replaceAll("_", " ")}${qualification.legacyMainReasonOther ? `: ${qualification.legacyMainReasonOther}` : ""}`
+                            : "N/A"}
                         </td>
-                        <td className="admin-motivation">
-                          {qualification.recentSituation ||
-                            "No qualification response"}
+                        <td>
+                          {qualification.monitoringMethod
+                            ? monitoringLabels[qualification.monitoringMethod] ??
+                              qualification.monitoringMethod.replaceAll("_", " ")
+                            : "N/A"}
+                        </td>
+                        <td>
+                          {qualification.qualitativeDetail ? (
+                            <small className="admin-motivation">
+                              {qualification.qualitativeDetail}
+                            </small>
+                          ) : (
+                            "N/A"
+                          )}
+                        </td>
+                        <td>
+                          {qualification.interviewWillingness
+                            ? interviewLabels[qualification.interviewWillingness] ??
+                              qualification.interviewWillingness
+                            : "N/A"}
+                        </td>
+                        <td>
+                          <strong>
+                            {signup.age ? `${signup.age} years` : "Age not provided"}
+                          </strong>
+                          <small>
+                            {signup.gender
+                              ? genderLabels[signup.gender] ??
+                                signup.gender.replaceAll("_", " ")
+                              : "Gender not provided"}
+                          </small>
+                        </td>
+                        <td className="admin-source">
+                          <span>{signup.placement.replaceAll("_", " ")}</span>
+                          <small>
+                            {[signup.utm_source, signup.utm_medium, signup.utm_campaign]
+                              .filter(Boolean)
+                              .join(" / ") || "Direct"}
+                          </small>
+                        </td>
+                        <td>
+                          <time dateTime={signup.created_at}>
+                            {dateFormatter.format(new Date(signup.created_at))}
+                          </time>
+                        </td>
+                        <td>
+                          <DeleteWaitlistSignupButton
+                            signupId={signup.id}
+                            leadLabel={
+                              [signup.first_name, signup.last_name]
+                                .filter(Boolean)
+                                .join(" ") || signup.email
+                            }
+                          />
+                        </td>
+                      </tr>
+                    ))
+                  : activeSignups.map(({ signup, qualification, qualificationStatus, qualitativeInsight }) => (
+                      <tr key={signup.id}>
+                        <td className="admin-lead">
+                          <strong>
+                            New survey response
+                          </strong>
+                          <a href={`mailto:${signup.email}`}>{signup.email}</a>
+                          <small>
+                            {[
+                              qualificationStatusLabels[qualificationStatus],
+                              qualitativeInsight ? "Written insight provided" : null,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </small>
+                        </td>
+                        <td>
+                          {qualification.monitoringFrequency
+                            ? monitoringFrequencyLabels[qualification.monitoringFrequency] ??
+                              qualification.monitoringFrequency.replaceAll("_", " ")
+                            : "N/A"}
+                        </td>
+                        <td>
+                          {qualification.monitoringReason
+                            ? monitoringReasonLabels[qualification.monitoringReason] ??
+                              qualification.monitoringReason.replaceAll("_", " ")
+                            : qualification.monitoringReadiness
+                              ? monitoringReadinessLabels[qualification.monitoringReadiness] ??
+                                qualification.monitoringReadiness.replaceAll("_", " ")
+                              : "N/A"}
                         </td>
                         <td>
                           {qualification.monitoringMethod
@@ -282,10 +404,28 @@ export default async function WaitlistAdminPage({
                             : "N/A"}
                         </td>
                         <td>
-                          {qualification.interviewWillingness
-                            ? interviewLabels[qualification.interviewWillingness] ??
-                              qualification.interviewWillingness.replaceAll("_", " ")
-                            : "N/A"}
+                          <strong>
+                            {qualification.monitoringOutcome
+                              ? monitoringOutcomeLabels[qualification.monitoringOutcome] ??
+                                qualification.monitoringOutcome.replaceAll("_", " ")
+                              : "N/A"}
+                          </strong>
+                          {qualification.qualitativeDetail ? (
+                            <small className="admin-motivation">
+                              {qualification.qualitativeDetail}
+                            </small>
+                          ) : null}
+                          {qualification.preorderDeclineReason ? (
+                            <small className="admin-motivation">
+                              <strong>Not ready to pre-order:</strong>{" "}
+                              {preorderDeclineReasonLabels[
+                                qualification.preorderDeclineReason
+                              ] ?? qualification.preorderDeclineReason.replaceAll("_", " ")}
+                              {qualification.preorderDeclineDetail
+                                ? ` - ${qualification.preorderDeclineDetail}`
+                                : ""}
+                            </small>
+                          ) : null}
                         </td>
                         <td className="admin-source">
                           <span>{signup.placement.replaceAll("_", " ")}</span>
@@ -319,9 +459,11 @@ export default async function WaitlistAdminPage({
           <div className="admin-empty">
             <h2>No {activeTab} leads.</h2>
             <p>
-              {activeTab === "qualified"
-                ? "Completed surveys will appear here."
-                : "Email-only, skipped, or legacy incomplete signups will appear here."}
+              {activeTab === "new"
+                ? "Completed responses from the new survey will appear here."
+                : activeTab === "legacy"
+                  ? "Completed responses from the previous survey will appear here."
+                  : "Email-only, skipped, or incomplete signups will appear here."}
             </p>
           </div>
         ) : null}

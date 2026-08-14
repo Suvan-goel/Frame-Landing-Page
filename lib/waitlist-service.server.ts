@@ -54,17 +54,19 @@ export type NewWaitlistRecord = {
 };
 
 export type QualificationUpdate = {
-  primaryInterest: string;
-  primaryInterestOther: string | null;
-  monitoringMethod: string;
-  monitoringMethodOther: string | null;
-  frustration: string | null;
-  researchCall: string | null;
-  firstName: string | null;
-  lastName: string | null;
-  age: number | null;
-  gender: string | null;
+  monitoringFrequency: string;
+  monitoringReason: string | null;
+  monitoringReadiness: string | null;
+  monitoringMethod: string | null;
+  monitoringOutcome: string | null;
+  qualitativeDetail: string | null;
   completedAt: string;
+};
+
+export type PreorderDeclineUpdate = {
+  reason: string;
+  detail: string | null;
+  recordedAt: string;
 };
 
 export type WaitlistRepository = {
@@ -81,6 +83,10 @@ export type WaitlistRepository = {
   completeIfIncomplete(
     id: number,
     update: QualificationUpdate,
+  ): Promise<boolean>;
+  recordPreorderDecline(
+    id: number,
+    update: PreorderDeclineUpdate,
   ): Promise<boolean>;
 };
 
@@ -170,4 +176,24 @@ export async function completeWaitlistQualification(
   return completed
     ? { status: "completed" as const, qualifiedLeadCreated: true }
     : { status: "already_completed" as const, qualifiedLeadCreated: false };
+}
+
+export async function recordWaitlistPreorderDecline(
+  repository: WaitlistRepository,
+  signupToken: string,
+  update: PreorderDeclineUpdate,
+) {
+  const existing = await repository.findByToken(signupToken);
+  if (!existing) return { status: "not_found" as const };
+  if (
+    existing.qualificationStatus !== "completed" ||
+    !existing.surveyCompletedAt
+  ) {
+    return { status: "qualification_required" as const };
+  }
+
+  const recorded = await repository.recordPreorderDecline(existing.id, update);
+  return recorded
+    ? { status: "recorded" as const }
+    : { status: "not_found" as const };
 }

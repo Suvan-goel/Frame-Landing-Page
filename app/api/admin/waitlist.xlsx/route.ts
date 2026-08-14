@@ -8,17 +8,17 @@ import {
   toWaitlistExportRow,
   WAITLIST_SIGNUP_SELECT,
   waitlistExportHeaders,
-  type LeadTab,
   type WaitlistSignup,
 } from "@/lib/waitlist-leads";
 import { createXlsxWorkbook } from "@/lib/xlsx.server";
 
 export const dynamic = "force-dynamic";
 
-const sheetNames: Record<LeadTab, string> = {
-  qualified: "Qualified leads",
+const sheetNames = {
+  new: "New survey leads",
+  legacy: "Previous survey leads",
   unqualified: "Unqualified leads",
-};
+} as const;
 
 export async function GET() {
   const user = await getChatGPTUser();
@@ -47,12 +47,16 @@ export async function GET() {
 
   const categorizedSignups = categorizeVisibleSignups(data ?? []);
   const workbook = createXlsxWorkbook(
-    (["qualified", "unqualified"] as const).map((tab) => ({
-      name: sheetNames[tab],
+    (["new", "legacy", "unqualified"] as const).map((section) => ({
+      name: sheetNames[section],
       rows: [
         [...waitlistExportHeaders],
         ...categorizedSignups
-          .filter((entry) => entry.tab === tab)
+          .filter((entry) =>
+            section === "unqualified"
+              ? entry.tab === "unqualified"
+              : entry.tab === "qualified" && entry.surveyFlow === section,
+          )
           .map(({ signup, qualification }) =>
             toWaitlistExportRow(signup, qualification),
           ),

@@ -14,93 +14,84 @@ import {
   useState,
 } from "react";
 import {
-  GENDER_OPTIONS,
+  MONITORING_FREQUENCY_OPTIONS,
   MONITORING_METHOD_OPTIONS,
-  PRIMARY_INTEREST_OPTIONS,
-  RESEARCH_CALL_OPTIONS,
-  genderValues,
-  researchCallValues,
+  MONITORING_OUTCOME_OPTIONS,
+  MONITORING_READINESS_OPTIONS,
+  MONITORING_REASON_OPTIONS,
+  PREORDER_DECLINE_REASON_OPTIONS,
+  QUALITATIVE_FOLLOW_UP_OUTCOMES,
 } from "@/lib/waitlist-options";
 import {
   getMetaTrackingContext,
   trackMetaLead,
-  trackMetaQualifiedLead,
   trackWaitlistEvent,
 } from "./meta-pixel";
 import { recordLandingDiagnostic } from "./landing-diagnostics.client";
 import { requestTrackingPolicyAttestation } from "@/lib/geo-attestation";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const MAX_LONG_TEXT_LENGTH = 750;
-const MIN_FRUSTRATION_LENGTH = 20;
-const MIN_AGE = 18;
-const MAX_AGE = 120;
+const MAX_QUALITATIVE_DETAIL_LENGTH = 300;
 const WAITLIST_SURVEY_SESSION_KEY = "frame_waitlist_survey";
-const SURVEY_STEPS = 5;
-const RESEARCH_SURVEY_STEP = 3;
-const PROFILE_SURVEY_STEP = 4;
+const MEASURED_SURVEY_STEPS = 4;
+const NEVER_MEASURED_SURVEY_STEPS = 2;
+const FINAL_MEASURED_STEP = 3;
+const FINAL_NEVER_MEASURED_STEP = 1;
 const LOCAL_PREVIEW_SIGNUP_TOKEN = "local-survey-preview";
 
 type FlowStage =
   | "email"
   | "survey"
   | "completed"
+  | "preorder_decline"
   | "finished"
   | "skipped";
 type RequestStatus = "idle" | "submitting" | "error";
 type SurveyResumeStatus = "loading" | "ready" | "missing";
-type FieldErrors = Partial<
-  Record<
-    | "email"
-    | "primaryInterest"
-    | "monitoringMethod"
-    | "frustration"
-    | "researchCall"
-    | "firstName"
-    | "lastName"
-    | "age"
-    | "gender",
-    string
-  >
->;
+type SurveyField =
+  | "email"
+  | "monitoringFrequency"
+  | "monitoringReason"
+  | "monitoringReadiness"
+  | "monitoringMethod"
+  | "monitoringOutcome";
+type FieldErrors = Partial<Record<SurveyField, string>>;
 
 type WaitlistFlowContextValue = {
   stage: FlowStage;
   activePlacement: string | null;
   surveyStep: number;
+  surveySteps: number;
   email: string;
-  primaryInterest: string;
-  primaryInterestOther: string;
+  monitoringFrequency: string;
+  monitoringReason: string;
+  monitoringReadiness: string;
   monitoringMethod: string;
-  monitoringMethodOther: string;
-  frustration: string;
-  researchCall: string;
-  firstName: string;
-  lastName: string;
-  age: string;
-  gender: string;
+  monitoringOutcome: string;
+  qualitativeDetail: string;
+  preorderDeclineReason: string;
+  preorderDeclineDetail: string;
   emailStatus: RequestStatus;
   surveyStatus: RequestStatus;
   surveyResumeStatus: SurveyResumeStatus;
   errors: FieldErrors;
   submissionError: string;
   setEmail: (value: string) => void;
-  setPrimaryInterest: (value: string) => void;
-  setPrimaryInterestOther: (value: string) => void;
+  setMonitoringFrequency: (value: string) => void;
+  setMonitoringReason: (value: string) => void;
+  setMonitoringReadiness: (value: string) => void;
   setMonitoringMethod: (value: string) => void;
-  setMonitoringMethodOther: (value: string) => void;
-  setFrustration: (value: string) => void;
-  setResearchCall: (value: string) => void;
-  setFirstName: (value: string) => void;
-  setLastName: (value: string) => void;
-  setAge: (value: string) => void;
-  setGender: (value: string) => void;
+  setMonitoringOutcome: (value: string) => void;
+  setQualitativeDetail: (value: string) => void;
+  setPreorderDeclineReason: (value: string) => void;
+  setPreorderDeclineDetail: (value: string) => void;
   captureEmail: (placement: string, website: string) => Promise<void>;
   continueSurvey: () => void;
   backSurvey: () => void;
   skipSurvey: (placement: string) => void;
   submitSurvey: (placement: string) => Promise<void>;
-  finishFlow: () => void;
+  beginPreorderDecline: (placement: string) => void;
+  submitPreorderDecline: (placement: string) => Promise<void>;
 };
 
 type StoredWaitlistSurvey = {
@@ -110,45 +101,6 @@ type StoredWaitlistSurvey = {
 };
 
 const WaitlistFlowContext = createContext<WaitlistFlowContextValue | null>(null);
-
-function cleanName(value: string) {
-  return value.trim().replace(/\s+/g, " ");
-}
-
-function requiredProfileErrors(
-  firstName: string,
-  lastName: string,
-  age: string,
-  gender: string,
-) {
-  const nextErrors: FieldErrors = {};
-  const normalizedAge = age.trim();
-  const parsedAge = Number(normalizedAge);
-
-  if (!firstName.trim()) {
-    nextErrors.firstName = "Enter your first name.";
-  } else if (cleanName(firstName).length > 60) {
-    nextErrors.firstName = "Keep your first name to 60 characters or fewer.";
-  }
-  if (!lastName.trim()) {
-    nextErrors.lastName = "Enter your last name.";
-  } else if (cleanName(lastName).length > 60) {
-    nextErrors.lastName = "Keep your last name to 60 characters or fewer.";
-  }
-  if (
-    !normalizedAge ||
-    !/^\d{1,3}$/.test(normalizedAge) ||
-      !Number.isInteger(parsedAge) ||
-      parsedAge < MIN_AGE ||
-      parsedAge > MAX_AGE
-  ) {
-    nextErrors.age = `Enter an age between ${MIN_AGE} and ${MAX_AGE}.`;
-  }
-  if (!gender || !genderValues.has(gender)) {
-    nextErrors.gender = "Select a gender option.";
-  }
-  return nextErrors;
-}
 
 function storeWaitlistSurveySession(value: StoredWaitlistSurvey) {
   try {
@@ -204,16 +156,14 @@ export function WaitlistSignupProvider({
   const [surveyStep, setSurveyStep] = useState(0);
   const [email, setEmailState] = useState("");
   const [signupToken, setSignupToken] = useState("");
-  const [primaryInterest, setPrimaryInterestState] = useState("");
-  const [primaryInterestOther, setPrimaryInterestOther] = useState("");
+  const [monitoringFrequency, setMonitoringFrequencyState] = useState("");
+  const [monitoringReason, setMonitoringReasonState] = useState("");
+  const [monitoringReadiness, setMonitoringReadinessState] = useState("");
   const [monitoringMethod, setMonitoringMethodState] = useState("");
-  const [monitoringMethodOther, setMonitoringMethodOther] = useState("");
-  const [frustration, setFrustrationState] = useState("");
-  const [researchCall, setResearchCallState] = useState("");
-  const [firstName, setFirstNameState] = useState("");
-  const [lastName, setLastNameState] = useState("");
-  const [age, setAgeState] = useState("");
-  const [gender, setGenderState] = useState("");
+  const [monitoringOutcome, setMonitoringOutcomeState] = useState("");
+  const [qualitativeDetail, setQualitativeDetailState] = useState("");
+  const [preorderDeclineReason, setPreorderDeclineReasonState] = useState("");
+  const [preorderDeclineDetail, setPreorderDeclineDetailState] = useState("");
   const [emailStatus, setEmailStatus] = useState<RequestStatus>("idle");
   const [surveyStatus, setSurveyStatus] = useState<RequestStatus>("idle");
   const [surveyResumeStatus, setSurveyResumeStatus] =
@@ -223,6 +173,11 @@ export function WaitlistSignupProvider({
   const emailRequest = useRef<Promise<void> | null>(null);
   const surveyRequest = useRef<Promise<void> | null>(null);
   const skippedTokens = useRef(new Set<string>());
+  const surveyStarted = useRef(false);
+  const neverMeasured = monitoringFrequency === "never_outside_appointment";
+  const surveySteps = neverMeasured
+    ? NEVER_MEASURED_SURVEY_STEPS
+    : MEASURED_SURVEY_STEPS;
 
   useEffect(() => {
     if (!resumeSurvey) return;
@@ -262,17 +217,42 @@ export function WaitlistSignupProvider({
       setActivePlacement(resumePlacement);
       setStage("survey");
       setSurveyResumeStatus("ready");
-
-      if (!stored.qualificationStarted) {
-        trackWaitlistEvent("qualification_started", { placement: resumePlacement });
-        storeWaitlistSurveySession({ ...stored, qualificationStarted: true });
-      }
+      surveyStarted.current = stored.qualificationStarted;
     }, 0);
 
     return () => window.clearTimeout(restoreSurvey);
   }, [previewSurvey, resumePlacement, resumeSurvey]);
 
-  const clearFieldError = useCallback((field: keyof FieldErrors) => {
+  useEffect(() => {
+    if (
+      stage !== "survey" ||
+      !monitoringFrequency ||
+      !signupToken ||
+      surveyStarted.current
+    ) {
+      return;
+    }
+    surveyStarted.current = true;
+    trackWaitlistEvent("qualification_started", {
+      placement: activePlacement ?? resumePlacement,
+    });
+    if (signupToken !== LOCAL_PREVIEW_SIGNUP_TOKEN) {
+      storeWaitlistSurveySession({
+        email,
+        signupToken,
+        qualificationStarted: true,
+      });
+    }
+  }, [
+    activePlacement,
+    email,
+    monitoringFrequency,
+    resumePlacement,
+    signupToken,
+    stage,
+  ]);
+
+  const clearFieldError = useCallback((field: SurveyField) => {
     setErrors((current) => {
       if (!current[field]) return current;
       const next = { ...current };
@@ -291,14 +271,35 @@ export function WaitlistSignupProvider({
     [clearFieldError, emailStatus],
   );
 
-  const setPrimaryInterest = useCallback(
+  const setMonitoringFrequency = useCallback(
     (value: string) => {
-      setPrimaryInterestState(value);
-      clearFieldError("primaryInterest");
+      setMonitoringFrequencyState(value);
+      clearFieldError("monitoringFrequency");
+      if (value === "never_outside_appointment") {
+        setMonitoringReasonState("");
+        setMonitoringMethodState("");
+        setMonitoringOutcomeState("");
+        setQualitativeDetailState("");
+      } else {
+        setMonitoringReadinessState("");
+      }
     },
     [clearFieldError],
   );
-
+  const setMonitoringReason = useCallback(
+    (value: string) => {
+      setMonitoringReasonState(value);
+      clearFieldError("monitoringReason");
+    },
+    [clearFieldError],
+  );
+  const setMonitoringReadiness = useCallback(
+    (value: string) => {
+      setMonitoringReadinessState(value);
+      clearFieldError("monitoringReadiness");
+    },
+    [clearFieldError],
+  );
   const setMonitoringMethod = useCallback(
     (value: string) => {
       setMonitoringMethodState(value);
@@ -306,54 +307,27 @@ export function WaitlistSignupProvider({
     },
     [clearFieldError],
   );
-
-  const setFrustration = useCallback(
+  const setMonitoringOutcome = useCallback(
     (value: string) => {
-      setFrustrationState(value);
-      clearFieldError("frustration");
+      setMonitoringOutcomeState(value);
+      clearFieldError("monitoringOutcome");
+      if (!QUALITATIVE_FOLLOW_UP_OUTCOMES.has(value)) {
+        setQualitativeDetailState("");
+      }
     },
     [clearFieldError],
   );
 
-  const setResearchCall = useCallback(
-    (value: string) => {
-      setResearchCallState(value);
-      clearFieldError("researchCall");
-    },
-    [clearFieldError],
-  );
+  const setPreorderDeclineReason = useCallback((value: string) => {
+    setPreorderDeclineReasonState(value);
+    if (value !== "another_reason") setPreorderDeclineDetailState("");
+    setSubmissionError("");
+  }, []);
 
-  const setFirstName = useCallback(
-    (value: string) => {
-      setFirstNameState(value);
-      clearFieldError("firstName");
-    },
-    [clearFieldError],
-  );
-
-  const setLastName = useCallback(
-    (value: string) => {
-      setLastNameState(value);
-      clearFieldError("lastName");
-    },
-    [clearFieldError],
-  );
-
-  const setAge = useCallback(
-    (value: string) => {
-      setAgeState(value);
-      clearFieldError("age");
-    },
-    [clearFieldError],
-  );
-
-  const setGender = useCallback(
-    (value: string) => {
-      setGenderState(value);
-      clearFieldError("gender");
-    },
-    [clearFieldError],
-  );
+  const setPreorderDeclineDetail = useCallback((value: string) => {
+    setPreorderDeclineDetailState(value);
+    setSubmissionError("");
+  }, []);
 
   const captureEmail = useCallback(
     async (placement: string, website: string) => {
@@ -396,7 +370,8 @@ export function WaitlistSignupProvider({
             }),
           });
           const result = await responsePayload(response);
-          const token = typeof result.signupToken === "string" ? result.signupToken : "";
+          const token =
+            typeof result.signupToken === "string" ? result.signupToken : "";
           const metaEventId =
             typeof result.metaEventId === "string" ? result.metaEventId : "";
 
@@ -425,11 +400,11 @@ export function WaitlistSignupProvider({
           recordLandingDiagnostic("lead_completed");
           router.push("/early-access/questions");
         } catch (error) {
-          const message =
+          setSubmissionError(
             error instanceof Error
               ? error.message
-              : "We couldn’t save your email. Please try again.";
-          setSubmissionError(message);
+              : "We couldn’t save your email. Please try again.",
+          );
           setEmailStatus("error");
           trackWaitlistEvent("waitlist_email_error", { placement });
         }
@@ -446,29 +421,37 @@ export function WaitlistSignupProvider({
   );
 
   const continueSurvey = useCallback(() => {
-    if (surveyStep === 0 && !primaryInterest) {
-      setErrors({ primaryInterest: "Choose the one main reason that matters most to you." });
+    if (surveyStep === 0 && !monitoringFrequency) {
+      setErrors({
+        monitoringFrequency: "Choose how often you measured your blood pressure.",
+      });
       return;
     }
-    if (surveyStep === 1 && !monitoringMethod) {
-      setErrors({ monitoringMethod: "Choose how you currently monitor your blood pressure." });
+    if (surveyStep === 1 && neverMeasured && !monitoringReadiness) {
+      setErrors({
+        monitoringReadiness: "Choose the furthest step you had taken.",
+      });
       return;
     }
-    if (surveyStep === 2 && frustration.trim().length < MIN_FRUSTRATION_LENGTH) {
-      setErrors({ frustration: "Write at least 20 characters before continuing." });
+    if (surveyStep === 1 && !neverMeasured && !monitoringReason) {
+      setErrors({ monitoringReason: "Choose the main reason you measured it." });
       return;
     }
-    if (
-      surveyStep === RESEARCH_SURVEY_STEP &&
-      (!researchCall || !researchCallValues.has(researchCall))
-    ) {
-      setErrors({ researchCall: "Choose a research-call response." });
+    if (surveyStep === 2 && !monitoringMethod) {
+      setErrors({ monitoringMethod: "Choose what you used for that measurement." });
       return;
     }
     setErrors({});
     setSubmissionError("");
-    setSurveyStep((current) => Math.min(current + 1, PROFILE_SURVEY_STEP));
-  }, [frustration, monitoringMethod, primaryInterest, researchCall, surveyStep]);
+    setSurveyStep((current) => Math.min(current + 1, FINAL_MEASURED_STEP));
+  }, [
+    monitoringFrequency,
+    monitoringMethod,
+    monitoringReadiness,
+    monitoringReason,
+    neverMeasured,
+    surveyStep,
+  ]);
 
   const backSurvey = useCallback(() => {
     setErrors({});
@@ -491,10 +474,7 @@ export function WaitlistSignupProvider({
         void fetch("/api/waitlist", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            action: "skip_qualification",
-            signupToken,
-          }),
+          body: JSON.stringify({ action: "skip_qualification", signupToken }),
         });
       }
     },
@@ -504,36 +484,37 @@ export function WaitlistSignupProvider({
   const submitSurvey = useCallback(
     async (placement: string) => {
       if (surveyRequest.current) return surveyRequest.current;
-      if (surveyStep < PROFILE_SURVEY_STEP) return;
+      const finalStep = neverMeasured
+        ? FINAL_NEVER_MEASURED_STEP
+        : FINAL_MEASURED_STEP;
+      if (surveyStep < finalStep) return;
 
-      const nextErrors = requiredProfileErrors(
-        firstName,
-        lastName,
-        age,
-        gender,
-      );
-      if (!primaryInterest) {
-        nextErrors.primaryInterest = "Choose the one main reason that matters most to you.";
+      const nextErrors: FieldErrors = {};
+      if (!monitoringFrequency) {
+        nextErrors.monitoringFrequency =
+          "Choose how often you measured your blood pressure.";
       }
-      if (!monitoringMethod) {
-        nextErrors.monitoringMethod = "Choose how you currently monitor your blood pressure.";
+      if (neverMeasured && !monitoringReadiness) {
+        nextErrors.monitoringReadiness = "Choose the furthest step you had taken.";
       }
-      if (frustration.trim().length < MIN_FRUSTRATION_LENGTH) {
-        nextErrors.frustration = "Write at least 20 characters before submitting.";
+      if (!neverMeasured && !monitoringReason) {
+        nextErrors.monitoringReason = "Choose the main reason you measured it.";
       }
-      if (!researchCall || !researchCallValues.has(researchCall)) {
-        nextErrors.researchCall = "Choose a research-call response.";
+      if (!neverMeasured && !monitoringMethod) {
+        nextErrors.monitoringMethod = "Choose what you used the most recent time.";
+      }
+      if (!neverMeasured && !monitoringOutcome) {
+        nextErrors.monitoringOutcome =
+          "Choose the answer that best describes that experience.";
       }
       if (Object.keys(nextErrors).length) {
         setErrors(nextErrors);
-        if (nextErrors.researchCall) setSurveyStep(RESEARCH_SURVEY_STEP);
         return;
       }
 
       if (signupToken === LOCAL_PREVIEW_SIGNUP_TOKEN) {
         setErrors({});
         setSubmissionError("");
-        setSurveyStatus("idle");
         setStage("completed");
         setActivePlacement(placement);
         return;
@@ -543,7 +524,6 @@ export function WaitlistSignupProvider({
         setErrors({});
         setSubmissionError("");
         setSurveyStatus("submitting");
-
         try {
           const response = await fetch("/api/waitlist", {
             method: "POST",
@@ -551,16 +531,12 @@ export function WaitlistSignupProvider({
             body: JSON.stringify({
               action: "submit_qualification",
               signupToken,
-              primaryInterest,
-              primaryInterestOther: primaryInterestOther.trim(),
+              monitoringFrequency,
+              monitoringReason,
+              monitoringReadiness,
               monitoringMethod,
-              monitoringMethodOther: monitoringMethodOther.trim(),
-              frustration: frustration.trim(),
-              researchCall,
-              firstName: cleanName(firstName),
-              lastName: cleanName(lastName),
-              age: Number(age.trim()),
-              gender,
+              monitoringOutcome,
+              qualitativeDetail: qualitativeDetail.trim(),
             }),
           });
           const result = await responsePayload(response);
@@ -577,8 +553,8 @@ export function WaitlistSignupProvider({
           setActivePlacement(placement);
           clearWaitlistSurveySession();
           if (result.qualifiedLeadCreated === true) {
+            // A completed research survey is engagement, not purchase intent.
             trackWaitlistEvent("qualification_completed", { placement });
-            trackMetaQualifiedLead(signupToken);
           }
         } catch (error) {
           setSubmissionError(
@@ -598,18 +574,102 @@ export function WaitlistSignupProvider({
       }
     },
     [
-      age,
-      firstName,
-      frustration,
-      gender,
-      lastName,
+      monitoringFrequency,
       monitoringMethod,
-      monitoringMethodOther,
-      primaryInterest,
-      primaryInterestOther,
-      researchCall,
+      monitoringOutcome,
+      monitoringReadiness,
+      monitoringReason,
+      neverMeasured,
+      qualitativeDetail,
       signupToken,
       surveyStep,
+    ],
+  );
+
+  const beginPreorderDecline = useCallback((placement: string) => {
+    setActivePlacement(placement);
+    setPreorderDeclineReasonState("");
+    setPreorderDeclineDetailState("");
+    setSubmissionError("");
+    setStage("preorder_decline");
+    trackWaitlistEvent("preorder_decline_started", { placement });
+  }, []);
+
+  const submitPreorderDecline = useCallback(
+    async (placement: string) => {
+      if (surveyRequest.current) return surveyRequest.current;
+      if (!preorderDeclineReason) {
+        setSubmissionError("Choose the main reason you aren’t ready to pre-order.");
+        return;
+      }
+      if (
+        preorderDeclineReason === "another_reason" &&
+        !preorderDeclineDetail.trim()
+      ) {
+        setSubmissionError("Tell us the other main reason.");
+        return;
+      }
+
+      if (signupToken === LOCAL_PREVIEW_SIGNUP_TOKEN) {
+        setStage("finished");
+        setActivePlacement(placement);
+        trackWaitlistEvent("preorder_decline_completed", {
+          placement,
+          reason: preorderDeclineReason,
+        });
+        return;
+      }
+
+      const request = (async () => {
+        setSubmissionError("");
+        setSurveyStatus("submitting");
+        try {
+          const response = await fetch("/api/waitlist", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              action: "record_preorder_decline",
+              signupToken,
+              reason: preorderDeclineReason,
+              detail: preorderDeclineDetail.trim(),
+            }),
+          });
+          const result = await responsePayload(response);
+          if (!response.ok || result.status !== "recorded") {
+            throw new Error(
+              typeof result.error === "string"
+                ? result.error
+                : "We couldn’t save that answer. Please try again.",
+            );
+          }
+
+          setSurveyStatus("idle");
+          setStage("finished");
+          setActivePlacement(placement);
+          trackWaitlistEvent("preorder_decline_completed", {
+            placement,
+            reason: preorderDeclineReason,
+          });
+        } catch (error) {
+          setSubmissionError(
+            error instanceof Error
+              ? error.message
+              : "We couldn’t save that answer. Please try again.",
+          );
+          setSurveyStatus("error");
+        }
+      })();
+
+      surveyRequest.current = request;
+      try {
+        await request;
+      } finally {
+        surveyRequest.current = null;
+      }
+    }, [
+      preorderDeclineDetail,
+      preorderDeclineReason,
+      signupToken,
     ],
   );
 
@@ -618,39 +678,37 @@ export function WaitlistSignupProvider({
       stage,
       activePlacement,
       surveyStep,
+      surveySteps,
       email,
-      primaryInterest,
-      primaryInterestOther,
+      monitoringFrequency,
+      monitoringReason,
+      monitoringReadiness,
       monitoringMethod,
-      monitoringMethodOther,
-      frustration,
-      researchCall,
-      firstName,
-      lastName,
-      age,
-      gender,
+      monitoringOutcome,
+      qualitativeDetail,
+      preorderDeclineReason,
+      preorderDeclineDetail,
       emailStatus,
       surveyStatus,
       surveyResumeStatus,
       errors,
       submissionError,
       setEmail,
-      setPrimaryInterest,
-      setPrimaryInterestOther,
+      setMonitoringFrequency,
+      setMonitoringReason,
+      setMonitoringReadiness,
       setMonitoringMethod,
-      setMonitoringMethodOther,
-      setFrustration,
-      setResearchCall,
-      setFirstName,
-      setLastName,
-      setAge,
-      setGender,
+      setMonitoringOutcome,
+      setQualitativeDetail: setQualitativeDetailState,
+      setPreorderDeclineReason,
+      setPreorderDeclineDetail,
       captureEmail,
       continueSurvey,
       backSurvey,
       skipSurvey,
       submitSurvey,
-      finishFlow: () => setStage("finished"),
+      beginPreorderDecline,
+      submitPreorderDecline,
     }),
     [
       activePlacement,
@@ -660,32 +718,32 @@ export function WaitlistSignupProvider({
       email,
       emailStatus,
       errors,
-      age,
-      firstName,
-      frustration,
-      gender,
-      lastName,
+      monitoringFrequency,
       monitoringMethod,
-      monitoringMethodOther,
-      primaryInterest,
-      primaryInterestOther,
-      researchCall,
+      monitoringOutcome,
+      monitoringReadiness,
+      monitoringReason,
+      preorderDeclineDetail,
+      preorderDeclineReason,
+      qualitativeDetail,
       setEmail,
-      setAge,
-      setFirstName,
-      setGender,
-      setLastName,
+      setMonitoringFrequency,
       setMonitoringMethod,
-      setPrimaryInterest,
-      setResearchCall,
-      setFrustration,
+      setMonitoringOutcome,
+      setMonitoringReadiness,
+      setMonitoringReason,
+      setPreorderDeclineDetail,
+      setPreorderDeclineReason,
       skipSurvey,
       stage,
       submissionError,
+      beginPreorderDecline,
+      submitPreorderDecline,
       submitSurvey,
-      surveyStatus,
       surveyResumeStatus,
+      surveyStatus,
       surveyStep,
+      surveySteps,
     ],
   );
 
@@ -752,16 +810,18 @@ export function WaitlistSignupFlow({
   placement,
   tone = "dark",
   compact = false,
-  showFoundingContributorOffer = false,
-  finishHref = "#product",
+  finishHref = "/",
   usePreorderLaunchCopy = false,
+  preorderHref,
+  preorderPriceLabel,
 }: {
   placement: string;
   tone?: "dark" | "light";
   compact?: boolean;
-  showFoundingContributorOffer?: boolean;
   finishHref?: string;
   usePreorderLaunchCopy?: boolean;
+  preorderHref?: string;
+  preorderPriceLabel?: string;
 }) {
   const flow = useWaitlistFlow();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -769,11 +829,15 @@ export function WaitlistSignupFlow({
   const viewed = useRef(false);
   const idPrefix = placement.replaceAll("_", "-");
   const isActivePlacement = flow.activePlacement === placement;
+  const neverMeasured =
+    flow.monitoringFrequency === "never_outside_appointment";
+  const isFinalStep = neverMeasured
+    ? flow.surveyStep === FINAL_NEVER_MEASURED_STEP
+    : flow.surveyStep === FINAL_MEASURED_STEP;
 
   useEffect(() => {
     const root = rootRef.current;
     if (!root || viewed.current) return;
-
     const recordView = () => {
       if (viewed.current) return;
       viewed.current = true;
@@ -822,28 +886,30 @@ export function WaitlistSignupFlow({
 
   function handleSurveySubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (flow.surveyStep < PROFILE_SURVEY_STEP) {
-      flow.continueSurvey();
+    if (isFinalStep) {
+      void flow.submitSurvey(placement);
       return;
     }
-    void flow.submitSurvey(placement);
+    flow.continueSurvey();
   }
 
-  const title = [
-    "What is the main reason you want Frame?",
-    "How do you currently monitor your blood pressure?",
-    "What do you hope Frame will help you understand that current devices can’t?",
-    "Open to a 20-minute conversation?",
-    "A little about you.",
-  ][flow.surveyStep];
+  const title =
+    flow.surveyStep === 0
+      ? "How many days in the past 30 did you measure your blood pressure outside an appointment?"
+      : flow.surveyStep === 1 && neverMeasured
+        ? "Before today, had you taken any steps to measure your blood pressure outside appointments?"
+        : flow.surveyStep === 1
+          ? "What prompted your most recent blood pressure measurement outside a medical appointment?"
+          : flow.surveyStep === 2
+            ? "What did you use for that blood pressure measurement?"
+            : "How well did that blood pressure measurement meet your needs?";
 
-  const isResearchStep = flow.surveyStep === RESEARCH_SURVEY_STEP;
-  const isProfileStep = flow.surveyStep === PROFILE_SURVEY_STEP;
   const canContinue =
-    (flow.surveyStep === 0 && Boolean(flow.primaryInterest)) ||
-    (flow.surveyStep === 1 && Boolean(flow.monitoringMethod)) ||
-    (flow.surveyStep === 2 && flow.frustration.trim().length >= MIN_FRUSTRATION_LENGTH) ||
-    (flow.surveyStep === RESEARCH_SURVEY_STEP && Boolean(flow.researchCall));
+    (flow.surveyStep === 0 && Boolean(flow.monitoringFrequency)) ||
+    (flow.surveyStep === 1 &&
+      Boolean(neverMeasured ? flow.monitoringReadiness : flow.monitoringReason)) ||
+    (flow.surveyStep === 2 && Boolean(flow.monitoringMethod)) ||
+    (flow.surveyStep === FINAL_MEASURED_STEP && Boolean(flow.monitoringOutcome));
 
   return (
     <div
@@ -906,13 +972,7 @@ export function WaitlistSignupFlow({
                   type="submit"
                   disabled={flow.emailStatus === "submitting"}
                 >
-                  {flow.emailStatus === "submitting"
-                    ? compact
-                      ? "Getting updates…"
-                      : "Signing up…"
-                    : compact
-                      ? "Get updates"
-                      : "Sign up"}
+                  {flow.emailStatus === "submitting" ? "Getting updates…" : "Get updates"}
                 </button>
               </div>
               {isActivePlacement && flow.errors.email ? (
@@ -923,10 +983,8 @@ export function WaitlistSignupFlow({
             </div>
             {!compact ? (
               <p className="form-note" id={`${idPrefix}-email-note`}>
-                {usePreorderLaunchCopy
-                  ? "Product and launch updates. "
-                  : "Development updates only. "}
-                Unsubscribe anytime. <a href="/privacy">Privacy</a>
+                Product and launch updates. Unsubscribe anytime.{" "}
+                <a href="/privacy">Privacy</a>
               </p>
             ) : null}
             <p className="waitlist-signup__live" aria-live="assertive">
@@ -940,135 +998,297 @@ export function WaitlistSignupFlow({
         <form className="interest-flow__form" onSubmit={handleSurveySubmit} noValidate>
           <div
             className="interest-flow__progress"
-            aria-label={`Step ${flow.surveyStep + 1} of ${SURVEY_STEPS}`}
+            aria-label={`Question ${flow.surveyStep + 1} of ${flow.surveySteps}`}
           >
             <span>{`0${flow.surveyStep + 1}`}</span>
-            <div><i style={{ width: `${((flow.surveyStep + 1) / SURVEY_STEPS) * 100}%` }} /></div>
-            <span>{`0${SURVEY_STEPS}`}</span>
+            <div>
+              <i
+                style={{
+                  width: `${((flow.surveyStep + 1) / flow.surveySteps) * 100}%`,
+                }}
+              />
+            </div>
+            <span>{`0${flow.surveySteps}`}</span>
           </div>
           <div className="interest-flow__content">
             <p className="eyebrow">
-              {isProfileStep ? "Final step" : "You’re subscribed. These questions are optional."}
+              {flow.surveyStep === 0
+                ? `You’re on the list · Question 1 of ${flow.surveySteps}`
+                : `Question ${flow.surveyStep + 1} of ${flow.surveySteps}`}
             </p>
-            <h2 id={`${idPrefix}-survey-title`} ref={headingRef} tabIndex={-1}>{title}</h2>
+            <h2 id={`${idPrefix}-survey-title`} ref={headingRef} tabIndex={-1}>
+              {title}
+            </h2>
 
-            {isResearchStep ? (
+            {flow.surveyStep === 0 ? (
               <ChoiceList
                 idPrefix={idPrefix}
-                name="research-call"
-                options={RESEARCH_CALL_OPTIONS}
-                value={flow.researchCall}
-                error={flow.errors.researchCall}
-                onChange={flow.setResearchCall}
+                name="monitoring-frequency"
+                options={MONITORING_FREQUENCY_OPTIONS}
+                value={flow.monitoringFrequency}
+                error={flow.errors.monitoringFrequency}
+                onChange={flow.setMonitoringFrequency}
               />
             ) : null}
 
-            {isProfileStep ? (
-              <div className="interest-flow__optional-details">
-                <p>
-                  These details help us understand who we’re hearing from.
-                </p>
-                <div className="interest-flow__details">
-                <div className="form-name-fields">
-                  <div className="form-field">
-                    <label htmlFor={`${idPrefix}-first-name`}>First name</label>
-                    <input id={`${idPrefix}-first-name`} name="firstName" type="text" autoComplete="given-name" required value={flow.firstName} onChange={(event) => flow.setFirstName(event.target.value)} maxLength={60} aria-invalid={Boolean(flow.errors.firstName)} aria-describedby={flow.errors.firstName ? `${idPrefix}-first-name-error` : undefined} />
-                    {flow.errors.firstName ? <p className="form-error" id={`${idPrefix}-first-name-error`} role="alert">{flow.errors.firstName}</p> : null}
-                  </div>
-                  <div className="form-field">
-                    <label htmlFor={`${idPrefix}-last-name`}>Last name</label>
-                    <input id={`${idPrefix}-last-name`} name="lastName" type="text" autoComplete="family-name" required value={flow.lastName} onChange={(event) => flow.setLastName(event.target.value)} maxLength={60} aria-invalid={Boolean(flow.errors.lastName)} aria-describedby={flow.errors.lastName ? `${idPrefix}-last-name-error` : undefined} />
-                    {flow.errors.lastName ? <p className="form-error" id={`${idPrefix}-last-name-error`} role="alert">{flow.errors.lastName}</p> : null}
-                  </div>
-                </div>
-                <div className="form-demographic-fields">
-                  <div className="form-field">
-                    <label htmlFor={`${idPrefix}-age`}>Age</label>
-                    <input id={`${idPrefix}-age`} name="age" type="number" inputMode="numeric" min={MIN_AGE} max={MAX_AGE} step={1} required value={flow.age} onChange={(event) => flow.setAge(event.target.value)} aria-invalid={Boolean(flow.errors.age)} aria-describedby={flow.errors.age ? `${idPrefix}-age-error` : undefined} />
-                    {flow.errors.age ? <p className="form-error" id={`${idPrefix}-age-error`} role="alert">{flow.errors.age}</p> : null}
-                  </div>
-                  <div className="form-field">
-                    <label htmlFor={`${idPrefix}-gender`}>Gender</label>
-                    <select id={`${idPrefix}-gender`} name="gender" required value={flow.gender} onChange={(event) => flow.setGender(event.target.value)} aria-invalid={Boolean(flow.errors.gender)} aria-describedby={flow.errors.gender ? `${idPrefix}-gender-error` : undefined}>
-                      <option value="">Select an option</option>
-                      {GENDER_OPTIONS.map(([value, label]) => <option key={value} value={value}>{label}</option>)}
-                    </select>
-                    {flow.errors.gender ? <p className="form-error" id={`${idPrefix}-gender-error`} role="alert">{flow.errors.gender}</p> : null}
-                  </div>
-                </div>
-                </div>
-              </div>
+            {flow.surveyStep === 1 && neverMeasured ? (
+              <ChoiceList
+                idPrefix={idPrefix}
+                name="monitoring-readiness"
+                options={MONITORING_READINESS_OPTIONS}
+                value={flow.monitoringReadiness}
+                error={flow.errors.monitoringReadiness}
+                onChange={flow.setMonitoringReadiness}
+              />
             ) : null}
 
-            {flow.surveyStep === 0 ? (
-              <ChoiceList idPrefix={idPrefix} name="primary-interest" options={PRIMARY_INTEREST_OPTIONS} value={flow.primaryInterest} error={flow.errors.primaryInterest} onChange={flow.setPrimaryInterest} />
+            {flow.surveyStep === 1 && !neverMeasured ? (
+              <ChoiceList
+                idPrefix={idPrefix}
+                name="monitoring-reason"
+                options={MONITORING_REASON_OPTIONS}
+                value={flow.monitoringReason}
+                error={flow.errors.monitoringReason}
+                onChange={flow.setMonitoringReason}
+              />
             ) : null}
 
             {flow.surveyStep === 2 ? (
-              <div className="interest-flow__text-response form-field">
-                <label htmlFor={`${idPrefix}-frustration`} className="sr-only">{title}</label>
-                <textarea id={`${idPrefix}-frustration`} name="frustration" value={flow.frustration} onChange={(event) => flow.setFrustration(event.target.value)} required minLength={MIN_FRUSTRATION_LENGTH} maxLength={MAX_LONG_TEXT_LENGTH} aria-invalid={Boolean(flow.errors.frustration)} aria-describedby={`${idPrefix}-frustration-note${flow.errors.frustration ? ` ${idPrefix}-frustration-error` : ""}`} />
-                <div className="field-hint" id={`${idPrefix}-frustration-note`}>
-                  <span>Share a specific situation if you can · minimum {MIN_FRUSTRATION_LENGTH} characters</span>
-                  <span>{flow.frustration.trim().length}/{MAX_LONG_TEXT_LENGTH}</span>
-                </div>
-                {flow.errors.frustration ? <p className="form-error" id={`${idPrefix}-frustration-error`} role="alert">{flow.errors.frustration}</p> : null}
-                <p className="interest-flow__privacy-note">Please don’t include private medical information.</p>
-              </div>
+              <ChoiceList
+                idPrefix={idPrefix}
+                name="monitoring-method"
+                options={MONITORING_METHOD_OPTIONS}
+                value={flow.monitoringMethod}
+                error={flow.errors.monitoringMethod}
+                onChange={flow.setMonitoringMethod}
+              />
             ) : null}
 
-            {flow.surveyStep === 1 ? (
-              <ChoiceList idPrefix={idPrefix} name="monitoring-method" options={MONITORING_METHOD_OPTIONS} value={flow.monitoringMethod} error={flow.errors.monitoringMethod} onChange={flow.setMonitoringMethod} />
+            {flow.surveyStep === FINAL_MEASURED_STEP ? (
+              <>
+                <ChoiceList
+                  idPrefix={idPrefix}
+                  name="monitoring-outcome"
+                  options={MONITORING_OUTCOME_OPTIONS}
+                  value={flow.monitoringOutcome}
+                  error={flow.errors.monitoringOutcome}
+                  onChange={flow.setMonitoringOutcome}
+                />
+                {QUALITATIVE_FOLLOW_UP_OUTCOMES.has(flow.monitoringOutcome) ? (
+                  <div className="interest-flow__text-response interest-flow__text-response--optional form-field">
+                    <label htmlFor={`${idPrefix}-qualitative-detail`}>
+                      Thinking about that specific occasion, what was difficult or
+                      still unclear? <span>Optional</span>
+                    </label>
+                    <textarea
+                      id={`${idPrefix}-qualitative-detail`}
+                      name="qualitativeDetail"
+                      value={flow.qualitativeDetail}
+                      onChange={(event) => flow.setQualitativeDetail(event.target.value)}
+                      maxLength={MAX_QUALITATIVE_DETAIL_LENGTH}
+                      placeholder="A few words is enough"
+                      aria-describedby={`${idPrefix}-qualitative-detail-note`}
+                    />
+                    <div className="field-hint" id={`${idPrefix}-qualitative-detail-note`}>
+                      <span>Please don’t include private medical information.</span>
+                      <span>
+                        {flow.qualitativeDetail.length}/{MAX_QUALITATIVE_DETAIL_LENGTH}
+                      </span>
+                    </div>
+                  </div>
+                ) : null}
+              </>
             ) : null}
-
           </div>
 
-          {flow.submissionError ? <p className="form-error form-error--submission" role="alert">{flow.submissionError}</p> : null}
-          <footer className={`interest-flow__actions${flow.surveyStep > 0 ? " interest-flow__actions--split" : ""}`}>
+          {flow.submissionError ? (
+            <p className="form-error form-error--submission" role="alert">
+              {flow.submissionError}
+            </p>
+          ) : null}
+          <footer
+            className={`interest-flow__actions${flow.surveyStep > 0 ? " interest-flow__actions--split" : ""}`}
+          >
             {flow.surveyStep > 0 ? (
-              <button className="button button--secondary interest-flow__back" type="button" onClick={flow.backSurvey} disabled={flow.surveyStatus === "submitting"}>Back</button>
-            ) : null}
-            {flow.surveyStep < PROFILE_SURVEY_STEP ? (
-              <button className="button button--dark" type="submit" disabled={!canContinue}>Continue</button>
-            ) : (
-              <button className="button button--dark" type="submit" disabled={flow.surveyStatus === "submitting"}>
-                {flow.surveyStatus === "submitting" ? "Submitting…" : "Submit answers"}
+              <button
+                className="button button--secondary interest-flow__back"
+                type="button"
+                onClick={flow.backSurvey}
+                disabled={flow.surveyStatus === "submitting"}
+              >
+                Back
               </button>
-            )}
+            ) : null}
+            <button
+              className="button button--dark"
+              type="submit"
+              disabled={!canContinue || flow.surveyStatus === "submitting"}
+            >
+              {flow.surveyStatus === "submitting"
+                ? "Submitting…"
+                : isFinalStep
+                  ? "Submit answers"
+                  : "Continue"}
+            </button>
           </footer>
         </form>
       ) : null}
 
       {flow.stage === "completed" ? (
-        <div className="interest-flow__success" aria-live={isActivePlacement ? "polite" : "off"}>
-          <p className="eyebrow">Answers submitted</p>
-          <h2 ref={headingRef} tabIndex={-1}>Thanks for helping shape Frame.</h2>
-          <p>
-            {usePreorderLaunchCopy
-              ? "We read every response. Yours will help shape the Frame experience."
-              : "We read every response. Yours will help guide Frame’s development."}
-          </p>
-          <div className="interest-flow__success-actions">
-            <Link className="button button--dark" href={finishHref}><span aria-hidden="true">←</span> Return to Frame</Link>
+        <div className="interest-flow__success" aria-live="polite">
+          <div className="interest-flow__success-copy">
+            <p className="eyebrow interest-flow__success-status">
+              <span aria-hidden="true">✓</span>
+              Answers saved
+            </p>
+            <h2 ref={headingRef} tabIndex={-1}>
+              Thanks. Your answers have been saved.
+            </h2>
+            {preorderHref && preorderPriceLabel ? (
+              <>
+                <p>
+                  Ready to take the next step? Frame is available to pre-order for{" "}
+                  {preorderPriceLabel}.
+                </p>
+                <div className="interest-flow__success-actions interest-flow__success-actions--stacked">
+                  <a
+                    className="button button--dark interest-flow__preorder-button"
+                    href={preorderHref}
+                  >
+                    <span>Pre-order Frame</span>
+                    <span>
+                      {preorderPriceLabel} <span aria-hidden="true">→</span>
+                    </span>
+                  </a>
+                  <button
+                    className="text-link interest-flow__decline-trigger"
+                    type="button"
+                    onClick={() => flow.beginPreorderDecline(placement)}
+                  >
+                    <span>I’m not ready to pre-order</span>
+                    <span aria-hidden="true">→</span>
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <p>
+                  We read every response. Yours will help guide Frame’s development.
+                </p>
+                <div className="interest-flow__success-actions">
+                  <Link className="button button--dark" href={finishHref}>
+                    <span aria-hidden="true">←</span> Return to Frame
+                  </Link>
+                </div>
+              </>
+            )}
           </div>
-          {showFoundingContributorOffer ? (
-            <aside className="interest-flow__membership-offer">
-              <p className="eyebrow">Want to go further?</p>
-              <h3>Become a Founding Contributor</h3>
-              <p>Join Frame’s private development community for 12 months. The one-time $99 membership supports the work; it is not a product purchase or preorder.</p>
-              <Link href="/founding-contributors?source=waitlist_success" className="text-link">See what membership includes <span aria-hidden="true">↗</span></Link>
-            </aside>
-          ) : null}
         </div>
       ) : null}
 
-      {flow.stage === "skipped" || flow.stage === "finished" ? (
-        <div className="interest-flow__success" aria-live={isActivePlacement ? "polite" : "off"}>
+      {flow.stage === "preorder_decline" ? (
+        <form
+          className="interest-flow__form interest-flow__decline-form"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void flow.submitPreorderDecline(placement);
+          }}
+          noValidate
+        >
+          <div className="interest-flow__content">
+            <p className="eyebrow">One last question</p>
+            <h2 ref={headingRef} tabIndex={-1}>
+              What’s the main reason you’re not pre-ordering Frame today?
+            </h2>
+            <ChoiceList
+              idPrefix={idPrefix}
+              name="preorder-decline-reason"
+              options={PREORDER_DECLINE_REASON_OPTIONS}
+              value={flow.preorderDeclineReason}
+              onChange={flow.setPreorderDeclineReason}
+            />
+            {flow.preorderDeclineReason === "another_reason" ? (
+              <div className="interest-flow__text-response interest-flow__text-response--optional form-field">
+                <label htmlFor={`${idPrefix}-preorder-decline-detail`}>
+                  What’s the other main reason?
+                </label>
+                <textarea
+                  id={`${idPrefix}-preorder-decline-detail`}
+                  name="preorderDeclineDetail"
+                  value={flow.preorderDeclineDetail}
+                  onChange={(event) =>
+                    flow.setPreorderDeclineDetail(event.target.value)
+                  }
+                  maxLength={MAX_QUALITATIVE_DETAIL_LENGTH}
+                  placeholder="A few words is enough"
+                  aria-describedby={`${idPrefix}-preorder-decline-detail-note`}
+                />
+                <div
+                  className="field-hint"
+                  id={`${idPrefix}-preorder-decline-detail-note`}
+                >
+                  <span>Please don’t include private medical information.</span>
+                  <span>
+                    {flow.preorderDeclineDetail.length}/
+                    {MAX_QUALITATIVE_DETAIL_LENGTH}
+                  </span>
+                </div>
+              </div>
+            ) : null}
+          </div>
+          {flow.submissionError ? (
+            <p className="form-error form-error--submission" role="alert">
+              {flow.submissionError}
+            </p>
+          ) : null}
+          <footer className="interest-flow__actions">
+            <button
+              className="button button--dark"
+              type="submit"
+              disabled={
+                !flow.preorderDeclineReason ||
+                (flow.preorderDeclineReason === "another_reason" &&
+                  !flow.preorderDeclineDetail.trim()) ||
+                flow.surveyStatus === "submitting"
+              }
+            >
+              {flow.surveyStatus === "submitting"
+                ? "Saving…"
+                : "Save answer and return"}
+            </button>
+          </footer>
+        </form>
+      ) : null}
+
+      {flow.stage === "skipped" ? (
+        <div className="interest-flow__success" aria-live="polite">
           <p className="eyebrow">Updates confirmed</p>
-          <h2 ref={headingRef} tabIndex={-1}>You’re subscribed.</h2>
-          <p>{flow.stage === "finished" ? "Thank you for helping shape Frame." : "No problem. You can return to the survey another time."}</p>
+          <h2 ref={headingRef} tabIndex={-1}>
+            You’re subscribed.
+          </h2>
+          <p>No problem—your place on the updates list is already confirmed.</p>
           <div className="interest-flow__success-actions">
-            <Link className="button button--dark" href={finishHref}><span aria-hidden="true">←</span> Back to home</Link>
+            <Link className="button button--dark" href={finishHref}>
+              <span aria-hidden="true">←</span> Back to Frame
+            </Link>
+          </div>
+        </div>
+      ) : null}
+
+      {flow.stage === "finished" ? (
+        <div className="interest-flow__success" aria-live="polite">
+          <p className="eyebrow">Response saved</p>
+          <h2 ref={headingRef} tabIndex={-1}>
+            Thank you for sharing.
+          </h2>
+          <p>
+            Your answer will help us understand what matters most before Frame
+            launches.
+          </p>
+          <div className="interest-flow__success-actions">
+            <Link className="button button--dark" href={finishHref}>
+              <span aria-hidden="true">←</span> Return to Frame
+            </Link>
           </div>
         </div>
       ) : null}
@@ -1076,12 +1296,61 @@ export function WaitlistSignupFlow({
   );
 }
 
-export function WaitlistQualificationFlow({
+export function WaitlistSurveyHeaderAction({
   placement,
   finishHref = "/",
 }: {
   placement: string;
   finishHref?: string;
+}) {
+  const flow = useWaitlistFlow();
+
+  if (flow.stage === "survey") {
+    return (
+      <button
+        className="site-header__back site-header__back--forward"
+        type="button"
+        onClick={() => flow.skipSurvey(placement)}
+        disabled={flow.surveyStatus === "submitting"}
+        aria-label="Skip survey"
+      >
+        <span className="site-header__back-label">Skip</span>
+        <span className="site-header__back-arrow" aria-hidden="true">←</span>
+      </button>
+    );
+  }
+
+  if (flow.stage === "preorder_decline") {
+    return (
+      <Link
+        className="site-header__back site-header__back--forward"
+        href={finishHref}
+        aria-label="Skip question and return to Frame"
+      >
+        <span className="site-header__back-label">Skip</span>
+        <span className="site-header__back-arrow" aria-hidden="true">←</span>
+      </Link>
+    );
+  }
+
+  return (
+    <Link className="site-header__back" href={finishHref}>
+      <span className="site-header__back-arrow" aria-hidden="true">←</span>
+      <span className="site-header__back-label">Back to Frame</span>
+    </Link>
+  );
+}
+
+export function WaitlistQualificationFlow({
+  placement,
+  finishHref = "/",
+  preorderHref,
+  preorderPriceLabel,
+}: {
+  placement: string;
+  finishHref?: string;
+  preorderHref?: string;
+  preorderPriceLabel?: string;
 }) {
   const flow = useWaitlistFlow();
 
@@ -1098,10 +1367,7 @@ export function WaitlistQualificationFlow({
       <div className="qualification-page__message">
         <p className="eyebrow">Survey link expired</p>
         <h1>Return to Frame to begin.</h1>
-        <p>
-          Join the updates list first and we’ll bring you straight back to these
-          five short questions.
-        </p>
+        <p>Join the updates list first and we’ll bring you straight to the survey.</p>
         <Link className="button button--dark" href="/#homepage-hero-waitlist">
           Join the updates list
         </Link>
@@ -1109,5 +1375,12 @@ export function WaitlistQualificationFlow({
     );
   }
 
-  return <WaitlistSignupFlow placement={placement} finishHref={finishHref} />;
+  return (
+    <WaitlistSignupFlow
+      placement={placement}
+      finishHref={finishHref}
+      preorderHref={preorderHref}
+      preorderPriceLabel={preorderPriceLabel}
+    />
+  );
 }

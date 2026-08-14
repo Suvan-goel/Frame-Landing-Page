@@ -9,6 +9,7 @@ import {
 import {
   captureWaitlistEmail,
   completeWaitlistQualification,
+  recordWaitlistPreorderDecline,
   skipWaitlistQualification,
 } from "../lib/waitlist-service.server.ts";
 import { resolveAdminTimeZone } from "../lib/admin-time-zone.ts";
@@ -78,6 +79,12 @@ function createWaitlistRepositoryFixture() {
       record.qualificationStatus = "completed";
       record.surveyCompletedAt = update.completedAt;
       record.qualification = update;
+      return true;
+    },
+    async recordPreorderDecline(id, update) {
+      const record = records.find((candidate) => candidate.id === id);
+      if (!record) return false;
+      record.preorderDecline = update;
       return true;
     },
   };
@@ -440,7 +447,8 @@ test("server-renders the Frame landing page", async () => {
   assert.doesNotMatch(html, /home-preorder-hero__shipping/);
   assert.match(html, /home-preorder-price-comparison/);
   assert.match(html, /id="homepage-hero-preorder-waitlist-email"/);
-  assert.match(html, /Prefer updates\?/);
+  assert.match(html, /Not ready to pre-order\?/);
+  assert.match(html, /Get updates/);
   assert.doesNotMatch(html, /home-preorder-saving--hero/);
   assert.match(html, /\$499/);
   assert.match(html, /Q1 2027/);
@@ -857,90 +865,146 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(page, /src="\/frame-app-studio-v6-640w\.webp"/);
   assert.doesNotMatch(page, /<svg|ProductDiagram|CrossSection|PatternTimeline/);
   assert.match(waitlistFlow, /fetch\("\/api\/waitlist"/);
-  assert.match(waitlistFlow, /MIN_FRUSTRATION_LENGTH = 20/);
+  assert.match(waitlistFlow, /MAX_QUALITATIVE_DETAIL_LENGTH = 300/);
+  assert.match(waitlistFlow, /How many days in the past 30 did you measure/);
   assert.match(
     waitlistFlow,
-    /What do you hope Frame will help you understand that current devices can’t\?/,
+    /What prompted your most recent blood pressure measurement outside a medical appointment\?/,
   );
-  assert.match(waitlistFlow, /MAX_LONG_TEXT_LENGTH = 750/);
+  assert.match(
+    waitlistOptions,
+    /It was part of my regular or clinician-recommended monitoring/,
+  );
+  assert.match(
+    waitlistOptions,
+    /I wanted to understand how it changed or what affected it/,
+  );
+  assert.doesNotMatch(waitlistOptions, /A clinician asked me to/);
+  assert.doesNotMatch(waitlistOptions, /Seeing how it changed during the day or overnight/);
+  assert.match(
+    waitlistFlow,
+    /What did you use for that blood pressure measurement\?/,
+  );
+  assert.match(waitlistOptions, /\["automated_upper_arm", "An upper-arm cuff"\]/);
+  assert.match(waitlistOptions, /A clinician-provided monitor/);
+  assert.match(waitlistOptions, /Something else or I don’t remember/);
+  assert.match(
+    waitlistOptions,
+    /LEGACY_MONITORING_METHOD_OPTIONS = \[[\s\S]*?\["do_not_remember", "I don’t remember"\]/,
+  );
+  assert.match(
+    waitlistFlow,
+    /How well did that blood pressure measurement meet your needs\?/,
+  );
+  assert.match(
+    waitlistFlow,
+    /Before today, had you taken any steps to measure your blood pressure outside appointments\?/,
+  );
+  assert.match(waitlistOptions, /I had a device but hadn’t used it/);
+  assert.match(
+    waitlistOptions,
+    /I had researched devices or asked a clinician what to use/,
+  );
+  assert.match(waitlistOptions, /I hadn’t considered it before/);
+  assert.match(
+    waitlistOptions,
+    /LEGACY_MONITORING_READINESS_OPTIONS = \[[\s\S]*?"asked_clinician"/,
+  );
+  assert.match(waitlistOptions, /It gave me what I needed easily/);
+  assert.match(waitlistOptions, /It left important questions unanswered/);
+  assert.match(
+    waitlistOptions,
+    /I was only taking a reading, not trying to understand anything else/,
+  );
+  assert.match(
+    waitlistOptions,
+    /LEGACY_MONITORING_OUTCOME_OPTIONS = \[[\s\S]*?"difficult_and_unanswered"/,
+  );
+  assert.match(waitlistFlow, /Thinking about that specific occasion, what was difficult or/);
   assert.match(waitlistFlow, /type="radio"/);
-  assert.match(waitlistFlow, /name="frustration"/);
-  assert.match(waitlistFlow, /name="firstName"/);
-  assert.match(waitlistFlow, /name="lastName"/);
-  assert.match(waitlistFlow, /name="age"/);
-  assert.match(waitlistFlow, /name="gender"/);
+  assert.match(waitlistFlow, /name="qualitativeDetail"/);
+  assert.doesNotMatch(waitlistFlow, /name="firstName"/);
+  assert.doesNotMatch(waitlistFlow, /name="lastName"/);
+  assert.doesNotMatch(waitlistFlow, /name="age"/);
+  assert.doesNotMatch(waitlistFlow, /name="gender"/);
   assert.match(waitlistFlow, /name="email"/);
   assert.match(page, /WaitlistSignupProvider/);
   assert.match(page, /<WaitlistSignupFlow\s+placement="homepage_hero"\s+compact/);
   assert.match(page, /<WaitlistSignupFlow\s+placement="homepage_final"\s+tone="light"/);
   assert.match(waitlistFlow, /router\.push\("\/early-access\/questions"\)/);
   assert.match(qualificationPage, /WaitlistQualificationFlow/);
-  assert.match(
-    qualificationPage,
-    /<SiteHeader backLabel="Skip" arrowDirection="right" \/>/,
-  );
+  assert.match(qualificationPage, /WaitlistSurveyHeaderAction/);
   assert.match(qualificationPage, /previewSurvey=\{previewSurvey\}/);
   assert.match(waitlistOptions, /See my blood pressure patterns over time/);
   assert.match(waitlistOptions, /Understand my blood pressure while sleeping/);
-  assert.match(waitlistFlow, /Thanks for helping shape Frame\./);
-  assert.match(waitlistFlow, /You’re subscribed\./);
+  assert.match(waitlistFlow, /Thanks\. Your answers have been saved\./);
+  assert.match(waitlistFlow, /Response saved/);
+  assert.match(waitlistFlow, /Thank you for sharing\./);
   assert.match(
     waitlistFlow,
-    /We read every response\. Yours will help shape the Frame experience\./,
+    /Your answer will help us understand what matters most before Frame[\s\S]*?launches\./,
   );
+  assert.doesNotMatch(waitlistFlow, /Thanks—that helps\./);
+  assert.match(
+    waitlistFlow,
+    /interest-flow__decline-trigger[\s\S]*?I’m not ready to pre-order[\s\S]*?→/,
+  );
+  assert.match(
+    css,
+    /\.interest-flow__decline-trigger\s*\{[^}]*border: 1px solid rgba\(32, 33, 30, 0\.22\);/,
+  );
+  assert.doesNotMatch(waitlistFlow, /Thanks—your answers have been saved\./);
+  assert.doesNotMatch(waitlistFlow, /interest-flow__success--preorder/);
+  assert.doesNotMatch(waitlistFlow, /interest-flow__success-product/);
+  assert.match(waitlistFlow, /You’re subscribed\./);
   assert.doesNotMatch(waitlistFlow, /formatName\(flow\.firstName\)|Thanks, \{/);
-  assert.match(api, /formatName\(value\)\.slice/);
-  assert.match(api, /MIN_FRUSTRATION_LENGTH = 20/);
-  assert.match(api, /primaryInterestValues/);
+  assert.match(api, /monitoringFrequencyValues/);
   assert.match(api, /monitoringMethodValues/);
-  assert.match(api, /researchCallValues/);
-  assert.match(api, /genderValues/);
-  assert.match(api, /age < MIN_AGE \|\| age > MAX_AGE/);
+  assert.match(api, /monitoringOutcomeValues/);
+  assert.match(api, /monitoringReadinessValues/);
   assert.match(waitlistFlow, /window\.sessionStorage/);
   assert.match(waitlistFlow, /trackMetaLead\(metaEventId\)/);
   assert.doesNotMatch(waitlistFlow, /className="interest-flow__back" href=\{finishHref\}>Back<\/Link>/);
   assert.match(
     waitlistFlow,
-    /flow\.surveyStep > 0 \? \([\s\S]*?className="button button--secondary interest-flow__back"[\s\S]*?>Back<\/button>[\s\S]*?\) : null/,
+    /flow\.surveyStep > 0 \? \([\s\S]*?className="button button--secondary interest-flow__back"[\s\S]*?Back[\s\S]*?\) : null/,
   );
   assert.match(css, /\.interest-flow__actions--split > \.interest-flow__back\s*\{[^}]*flex: 0 1 140px;/);
-  assert.match(css, /\.interest-flow__actions--split > \.button:not\(\.interest-flow__back\)\s*\{[^}]*flex: 1 1 auto;[^}]*white-space: nowrap;/);
+  assert.match(css, /\.interest-flow__actions--split > \.button\s*\{[^}]*width: auto;/);
+  assert.match(css, /\.interest-flow__actions--split > \.button:not\(\.interest-flow__back\)\s*\{[^}]*flex: 0 0 auto;[^}]*min-width: 146px;[^}]*white-space: nowrap;/);
   assert.match(css, /\.interest-flow__actions--split\s*\{[^}]*gap: 12px;/);
   assert.match(css, /\.interest-flow__actions--split \.button\s*\{[^}]*min-width: 0;/);
   assert.match(css, /\.interest-flow__actions \.interest-flow__back\s*\{[^}]*border: 1px solid var\(--ink\);[^}]*background: transparent;/);
+  assert.match(waitlistFlow, /MEASURED_SURVEY_STEPS = 4/);
+  assert.match(waitlistFlow, /NEVER_MEASURED_SURVEY_STEPS = 2/);
+  assert.match(waitlistFlow, /name="monitoring-frequency"/);
+  assert.match(waitlistFlow, /name="monitoring-reason"/);
+  assert.match(waitlistFlow, /name="monitoring-readiness"/);
+  assert.match(waitlistFlow, /name="monitoring-method"/);
+  assert.match(waitlistFlow, /name="monitoring-outcome"/);
+  assert.match(waitlistFlow, /name="preorder-decline-reason"/);
   assert.match(
     waitlistFlow,
-    /const title = \[\s*"What is the main reason you want Frame\?",\s*"How do you currently monitor your blood pressure\?",\s*"What do you hope Frame will help you understand that current devices can’t\?",\s*"Open to a 20-minute conversation\?",\s*"A little about you\."/,
+    /What’s the main reason you’re not pre-ordering Frame today\?/,
   );
+  assert.match(waitlistOptions, /I need more evidence or product information/);
   assert.match(
-    waitlistFlow,
-    /isResearchStep \? \([\s\S]*?<ChoiceList[\s\S]*?name="research-call"/,
+    waitlistOptions,
+    /LEGACY_PREORDER_DECLINE_REASON_OPTIONS = \[[\s\S]*?"need_more_product_detail"[\s\S]*?"need_to_discuss"/,
   );
-  assert.match(
-    waitlistFlow,
-    /isProfileStep \? \([\s\S]*?className="interest-flow__optional-details"/,
-  );
-  assert.match(
-    waitlistFlow,
-    /flow\.surveyStep === 0 \? \([\s\S]*?name="primary-interest"/,
-  );
-  assert.match(
-    waitlistFlow,
-    /flow\.surveyStep === 1 \? \([\s\S]*?name="monitoring-method"/,
-  );
-  assert.match(
-    waitlistFlow,
-    /flow\.surveyStep === 2 \? \([\s\S]*?name="frustration"/,
-  );
-  assert.match(waitlistFlow, /SURVEY_STEPS = 5/);
-  assert.match(waitlistFlow, /You’re subscribed\. These questions are optional\./);
+  assert.match(waitlistFlow, /action: "record_preorder_decline"/);
+  assert.match(api, /preorderDeclineReasonValues/);
+  assert.match(api, /preorder_decline_reason: update\.reason/);
+  assert.match(api, /preorder_decline_detail: update\.detail/);
+  assert.match(waitlistFlow, /aria-label="Skip survey"/);
+  assert.match(waitlistFlow, /flow\.stage === "preorder_decline"/);
+  assert.match(waitlistFlow, /aria-label="Skip question and return to Frame"/);
+  assert.match(waitlistFlow, /site-header__back--forward/);
+  assert.doesNotMatch(waitlistFlow, />\s*Skip questions\s*</);
+  assert.doesNotMatch(waitlistFlow, /Skip and return to Frame/);
   assert.match(css, /padding: 28px 0 34px;/);
   assert.match(waitlistFlow, /LOCAL_PREVIEW_SIGNUP_TOKEN = "local-survey-preview"/);
-  assert.match(waitlistFlow, /requiredProfileErrors/);
-  assert.match(waitlistFlow, /nextErrors\.researchCall = "Choose a research-call response\."/);
-  assert.match(waitlistFlow, /nextErrors\.firstName = "Enter your first name\."/);
-  assert.match(waitlistFlow, /nextErrors\.lastName = "Enter your last name\."/);
-  assert.match(waitlistFlow, /!gender \|\| !genderValues\.has\(gender\)/);
+  assert.doesNotMatch(waitlistFlow, /requiredProfileErrors/);
   assert.match(waitlistFlow, /disabled=\{flow\.surveyStatus === "submitting"\}/);
   assert.match(
     css,
@@ -1030,14 +1094,13 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   );
   assert.match(css, /prefers-reduced-motion:\s*reduce/);
   assert.match(api, /from\("waitlist_signups"\)/);
-  assert.match(api, /first_name: update\.firstName/);
-  assert.match(api, /last_name: update\.lastName/);
-  assert.match(api, /gender/);
-  assert.match(api, /age/);
   assert.match(api, /qualification_status: "completed"/);
-  assert.match(api, /primary_interest: update\.primaryInterest/);
+  assert.match(api, /monitoring_frequency: update\.monitoringFrequency/);
+  assert.match(api, /monitoring_reason: update\.monitoringReason/);
+  assert.match(api, /monitoring_readiness: update\.monitoringReadiness/);
   assert.match(api, /current_monitoring_method: update\.monitoringMethod/);
-  assert.match(api, /frustration_or_missing_need: update\.frustration/);
+  assert.match(api, /monitoring_outcome: update\.monitoringOutcome/);
+  assert.match(api, /frustration_or_missing_need: update\.qualitativeDetail/);
   assert.match(supabase, /SUPABASE_SECRET_KEY/);
   assert.doesNotMatch(page, /SUPABASE_SECRET_KEY|createClient/);
   assert.match(demographicsMigration, /add column if not exists gender text/);
@@ -1184,7 +1247,7 @@ test("rejects an invalid email before creating a waitlist record", async () => {
   assert.match(await response.text(), /valid email address/i);
 });
 
-test("requires every final-step survey field before completion", async () => {
+test("requires the behavioural survey fields while keeping written detail optional", async () => {
   const workerUrl = new URL("../dist/server/index.js", import.meta.url);
   workerUrl.searchParams.set("required-profile-test", `${process.pid}-${Date.now()}`);
   const { default: worker } = await import(workerUrl.href);
@@ -1219,14 +1282,12 @@ test("requires every final-step survey field before completion", async () => {
     body: JSON.stringify({
       action: "submit_qualification",
       signupToken: capture.signupToken,
-      primaryInterest: "understand_daily_factors",
-      monitoringMethod: "upper_arm_occasionally",
-      frustration: "I want clearer context around changes during everyday life.",
+      monitoringFrequency: "three_to_seven_days",
     }),
   });
 
   assert.equal(incompleteResponse.status, 400);
-  assert.match(await incompleteResponse.text(), /research-call response/i);
+  assert.match(await incompleteResponse.text(), /main reason/i);
 
   const completeResponse = await fetchFromWorker({
     method: "POST",
@@ -1234,19 +1295,38 @@ test("requires every final-step survey field before completion", async () => {
     body: JSON.stringify({
       action: "submit_qualification",
       signupToken: capture.signupToken,
-      primaryInterest: "understand_daily_factors",
-      monitoringMethod: "upper_arm_occasionally",
-      frustration: "I want clearer context around changes during everyday life.",
-      researchCall: "no",
-      firstName: "Ada",
-      lastName: "Lovelace",
-      age: 36,
-      gender: "prefer_not_to_say",
+      monitoringFrequency: "three_to_seven_days",
+      monitoringReason: "daily_factor_effect",
+      monitoringMethod: "automated_upper_arm",
+      monitoringOutcome: "worked_with_difficulty",
     }),
   });
 
   assert.equal(completeResponse.status, 200);
   assert.match(await completeResponse.text(), /"status":"completed"/);
+
+  const invalidDeclineResponse = await fetchFromWorker({
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      action: "record_preorder_decline",
+      signupToken: capture.signupToken,
+      reason: "not_a_real_reason",
+    }),
+  });
+  assert.equal(invalidDeclineResponse.status, 400);
+
+  const declineResponse = await fetchFromWorker({
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({
+      action: "record_preorder_decline",
+      signupToken: capture.signupToken,
+      reason: "need_more_evidence",
+    }),
+  });
+  assert.equal(declineResponse.status, 200);
+  assert.match(await declineResponse.text(), /"status":"recorded"/);
 });
 
 test("returns one stable Lead ID and rejects unsigned request.cf or header policy", async () => {
@@ -1408,6 +1488,57 @@ test("captures email before the survey and treats a duplicate as success", async
   assert.equal(records[0].qualificationStatus, "not_started");
 });
 
+test("records a completed respondent's main pre-order objection", async () => {
+  const { repository, records } = createWaitlistRepositoryFixture();
+  const captured = await captureWaitlistEmail(
+    repository,
+    waitlistEmailInput("objection@example.com"),
+  );
+
+  await completeWaitlistQualification(repository, captured.signupToken, {
+    monitoringFrequency: "three_to_seven_days",
+    monitoringReason: "daily_factor_effect",
+    monitoringReadiness: null,
+    monitoringMethod: "automated_upper_arm",
+    monitoringOutcome: "worked_with_difficulty",
+    qualitativeDetail: null,
+    completedAt: "2026-08-13T17:00:00.000Z",
+  });
+
+  const recorded = await recordWaitlistPreorderDecline(
+    repository,
+    captured.signupToken,
+    {
+      reason: "need_more_evidence",
+      detail: null,
+      recordedAt: "2026-08-13T17:01:00.000Z",
+    },
+  );
+
+  assert.equal(recorded.status, "recorded");
+  assert.equal(records[0].preorderDecline.reason, "need_more_evidence");
+});
+
+test("does not accept a pre-order objection before survey completion", async () => {
+  const { repository } = createWaitlistRepositoryFixture();
+  const captured = await captureWaitlistEmail(
+    repository,
+    waitlistEmailInput("premature-objection@example.com"),
+  );
+
+  const recorded = await recordWaitlistPreorderDecline(
+    repository,
+    captured.signupToken,
+    {
+      reason: "price_too_high",
+      detail: null,
+      recordedAt: "2026-08-13T17:01:00.000Z",
+    },
+  );
+
+  assert.equal(recorded.status, "qualification_required");
+});
+
 test("writes legacy full-survey submissions into the canonical qualification fields", async () => {
   const legacySubmission = await readFile(
     new URL("../lib/legacy-waitlist-submission.server.ts", import.meta.url),
@@ -1524,17 +1655,22 @@ test("separates, visualizes, exports, and permanently deletes admin leads", asyn
   ]);
 
   assert.match(leadHelpers, /type LeadTab = "qualified" \| "unqualified"/);
-  assert.match(adminPage, /Qualified leads/);
+  assert.match(leadHelpers, /type SurveyFlow = "new" \| "legacy"/);
+  assert.match(leadHelpers, /qualification\.monitoringFrequency[\s\S]*\? "new"[\s\S]*: "legacy"/);
+  assert.match(adminPage, /New survey responses/);
+  assert.match(adminPage, /Previous survey responses/);
   assert.match(adminPage, /Unqualified leads/);
+  assert.match(adminPage, /entry\.surveyFlow === "new"/);
+  assert.match(adminPage, /entry\.surveyFlow === "legacy"/);
   assert.match(adminPage, /activeTab === "unqualified"/);
   assert.match(adminPage, /<th>Email<\/th>/);
   assert.match(adminPage, /<th>Source<\/th>/);
   assert.match(adminPage, /<th>Date and time<\/th>/);
   assert.match(adminPage, /<th>Delete<\/th>/);
   assert.match(adminPage, /leadLabel=\{signup\.email\}/);
-  assert.match(adminPage, /Lead insights/);
+  assert.match(adminPage, /New survey insights/);
   assert.match(adminPage, /waitlistTabHref\("insights"\)/);
-  assert.match(adminPage, /What Frame should help with/);
+  assert.match(adminPage, /Outcome, insight and pre-order objection/);
   assert.match(adminPage, /Export spreadsheet/);
   assert.match(adminPage, /AdminTimeZoneForm/);
   assert.match(timeZoneForm, /Lead time zone/);
@@ -1560,26 +1696,28 @@ test("separates, visualizes, exports, and permanently deletes admin leads", asyn
   assert.match(adminPage, /timeZone: selectedTimeZone/);
   assert.doesNotMatch(adminPage, /Manage hidden test entries/);
   assert.match(adminPage, /DeleteWaitlistSignupButton/);
-  assert.match(insights, /admin-age-chart/);
-  assert.match(insights, /admin-donut/);
-  assert.match(insights, /Multiple-choice responses/);
-  assert.match(insights, /eyebrow="Question 2"/);
+  assert.match(insights, /Behavioural survey responses/);
+  assert.match(insights, /eyebrow="Question 1"/);
+  assert.match(insights, /Question 2 · measured before/);
   assert.match(insights, /eyebrow="Question 4"/);
-  assert.match(insights, /eyebrow="Question 5"/);
-  assert.doesNotMatch(insights, /const interviewLabels|const genderLabels/);
+  assert.match(insights, /Post-survey objection/);
+  assert.doesNotMatch(insights, /interviewLabels|genderLabels/);
   assert.match(leadHelpers, /isQualifiedSignup/);
   assert.match(leadHelpers, /qualification_status: QualificationStatus/);
   assert.match(leadHelpers, /Email captured · survey not completed/);
   assert.match(leadHelpers, /survey_completed_at/);
-  assert.match(leadHelpers, /Object\.fromEntries\(\s*PRIMARY_INTEREST_OPTIONS/);
-  assert.match(leadHelpers, /normalizeResearchCallValue\(interviewWillingness\)/);
-  assert.match(adminPage, /interviewLabels\[qualification\.interviewWillingness\]/);
-  assert.match(adminPage, /genderLabels\[signup\.gender\]/);
+  assert.match(leadHelpers, /MONITORING_FREQUENCY_OPTIONS/);
+  assert.match(leadHelpers, /monitoringOutcomeLabels/);
+  assert.match(leadHelpers, /not_ready_to_preorder_reason/);
+  assert.match(leadHelpers, /"survey_flow"/);
+  assert.match(adminPage, /monitoringOutcomeLabels\[qualification\.monitoringOutcome\]/);
   assert.doesNotMatch(adminPage, /\? "Maybe"/);
   assert.doesNotMatch(leadHelpers, /toLocaleLowerCase\(\) !== "suvan"/);
   assert.match(leadHelpers, /return signups\.map\(categorizeSignup\)/);
-  assert.match(workbookRoute, /"Qualified leads"/);
+  assert.match(workbookRoute, /"New survey leads"/);
+  assert.match(workbookRoute, /"Previous survey leads"/);
   assert.match(workbookRoute, /"Unqualified leads"/);
+  assert.match(workbookRoute, /entry\.surveyFlow === section/);
   assert.match(workbookRoute, /categorizeVisibleSignups\(data \?\? \[\]\)/);
   assert.match(workbookRoute, /frame-subscribers\.xlsx/);
   assert.match(csvRoute, /\.select\(WAITLIST_SIGNUP_SELECT\)/);

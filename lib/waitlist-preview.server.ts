@@ -9,6 +9,11 @@ type PreviewWaitlistRecord = WaitlistRecordState & {
   email: string;
   signup: NewWaitlistRecord;
   qualification: QualificationUpdate | null;
+  preorderDecline: {
+    reason: string;
+    detail: string | null;
+    recordedAt: string;
+  } | null;
   skippedAt: string | null;
 };
 
@@ -42,6 +47,7 @@ export function getWaitlistPreviewRepository(): WaitlistRepository {
         surveyCompletedAt: null,
         signup: input,
         qualification: null,
+        preorderDecline: null,
         skippedAt: null,
       };
       previewRecords.set(input.email, record);
@@ -92,6 +98,14 @@ export function getWaitlistPreviewRepository(): WaitlistRepository {
       record.qualificationStatus = "completed";
       record.surveyCompletedAt = update.completedAt;
       record.qualification = update;
+      return true;
+    },
+    async recordPreorderDecline(id, update) {
+      const record = Array.from(previewRecords.values()).find(
+        (candidate) => candidate.id === id,
+      );
+      if (!record) return false;
+      record.preorderDecline = update;
       return true;
     },
   };

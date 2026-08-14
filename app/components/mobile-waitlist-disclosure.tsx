@@ -19,9 +19,9 @@ export function MobileWaitlistDisclosure({
   return (
     <details className="home-preorder-hero__waitlist-disclosure" ref={disclosureRef}>
       <summary>
-        <span>Prefer updates?</span>
+        <span>Not ready to pre-order?</span>
         <span className="home-preorder-hero__waitlist-action">
-          Join the list <span aria-hidden="true">→</span>
+          Get updates <span aria-hidden="true">→</span>
         </span>
       </summary>
       {children}

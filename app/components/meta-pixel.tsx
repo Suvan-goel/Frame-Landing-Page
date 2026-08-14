@@ -58,7 +58,9 @@ export type WaitlistAnalyticsEvent =
   | "waitlist_email_error"
   | "qualification_started"
   | "qualification_skipped"
-  | "qualification_completed";
+  | "qualification_completed"
+  | "preorder_decline_started"
+  | "preorder_decline_completed";
 
 declare global {
   interface Window {
