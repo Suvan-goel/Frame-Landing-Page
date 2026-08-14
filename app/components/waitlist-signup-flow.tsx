@@ -1078,7 +1078,7 @@ export function WaitlistSignupFlow({
                   <div className="interest-flow__text-response interest-flow__text-response--optional form-field">
                     <label htmlFor={`${idPrefix}-qualitative-detail`}>
                       Thinking about that specific occasion, what was difficult or
-                      still unclear? <span>Optional</span>
+                      still unclear?
                     </label>
                     <textarea
                       id={`${idPrefix}-qualitative-detail`}
