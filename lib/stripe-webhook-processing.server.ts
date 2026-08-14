@@ -62,7 +62,7 @@ export async function processStripeWebhookEvent(
     case "checkout.session.async_payment_succeeded": {
       const session = event.data.object as Stripe.Checkout.Session;
       if (session.payment_status === "paid") {
-        if (session.metadata?.flow === "frame_preorder") {
+        if (["frame_preorder", "frame_reservation"].includes(session.metadata?.flow ?? "")) {
           await fulfillPreorderCheckout(session, origin);
         } else if (
           session.metadata?.membership === "frame_founding_contributor"
@@ -77,7 +77,7 @@ export async function processStripeWebhookEvent(
       const intentId = session.metadata?.checkout_intent_id;
       if (intentId) {
         const table =
-          session.metadata?.flow === "frame_preorder"
+          ["frame_preorder", "frame_reservation"].includes(session.metadata?.flow ?? "")
             ? "preorder_checkout_intents"
             : session.metadata?.membership === "frame_founding_contributor"
               ? "contributor_checkout_intents"

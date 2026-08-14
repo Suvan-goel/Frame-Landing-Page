@@ -44,7 +44,7 @@ test("uses dashboard-managed payment methods and identifies each Checkout flow",
     preorderCheckout,
     /integration_identifier: STRIPE_CHECKOUT_INTEGRATION_IDENTIFIER/,
   );
-  assert.match(preorderCheckout, /frame_preorder_[a-z]{8}/);
+  assert.match(preorderCheckout, /frame_reservation_[a-z]{8}/);
   assert.match(
     contributorCheckout,
     /integration_identifier: STRIPE_CHECKOUT_INTEGRATION_IDENTIFIER/,
@@ -135,8 +135,8 @@ test("makes failed and stale background events recoverable", () => {
   );
 });
 
-test("keeps the reviewed subtotal, free shipping, tax and inventory controls explicit", async () => {
-  const [checkout, offer, migration, initialRelease, readiness] = await Promise.all([
+test("keeps the reviewed reservation, free shipping, tax and inventory controls explicit", async () => {
+  const [checkout, offer, migration, initialRelease, reservationMigration, readiness] = await Promise.all([
     readFile(new URL("../app/api/preorders/checkout/route.ts", import.meta.url), "utf8"),
     readFile(new URL("../lib/preorder.ts", import.meta.url), "utf8"),
     readFile(
@@ -153,21 +153,38 @@ test("keeps the reviewed subtotal, free shipping, tax and inventory controls exp
       ),
       "utf8",
     ),
+    readFile(
+      new URL(
+        "../supabase/migrations/20260814000000_add_frame_reservations.sql",
+        import.meta.url,
+      ),
+      "utf8",
+    ),
     readFile(new URL("../lib/preorder-launch-readiness.server.ts", import.meta.url), "utf8"),
   ]);
 
-  assert.match(offer, /PREORDER_DEFAULT_PRICE_CENTS = 29_900/);
-  assert.match(offer, /PREORDER_RELEASE_PRICE_CENTS = 49_900/);
+  assert.match(offer, /PREORDER_DEFAULT_PRICE_CENTS = 4_900/);
+  assert.match(offer, /PREORDER_FOUNDING_PRICE_CENTS = 29_900/);
+  assert.match(offer, /PREORDER_REMAINING_BALANCE_CENTS/);
+  assert.match(offer, /PREORDER_LAUNCH_PRICE_CENTS = 39_900/);
   assert.match(offer, /PREORDER_SHIPPING_RATE_CENTS = 0/);
   assert.match(offer, /PREORDER_ESTIMATED_SHIPPING = "Q1 2027"/);
   assert.match(offer, /PREORDER_MAX_INVENTORY_UNITS = 1_000/);
-  assert.match(offer, /PREORDER_STRIPE_PRODUCT_NAME = "Frame pre-order"/);
+  assert.match(offer, /PREORDER_STRIPE_PRODUCT_NAME = "Frame reservation"/);
   assert.match(
     offer,
     /PREORDER_REVIEWED_PRODUCT_IMAGE_PATH[\s\S]*frame-product-concept-realistic-v3-transparent\.png/,
   );
   assert.match(offer, /PREORDER_STRIPE_PRODUCT_IMAGE_URL[\s\S]*https:\/\/files\.stripe\.com\/links\//);
-  assert.match(offer, /Frame upper-arm wearable pre-order/);
+  assert.match(offer, /\$49 fully refundable Frame reservation/);
+  assert.match(offer, /\$250 due before shipping/);
+  assert.match(checkout, /getStripeReservationPriceId\(environment\)/);
+  assert.doesNotMatch(checkout, /getStripePreorderPriceId/);
+  assert.match(checkout, /flow: "frame_reservation"/);
+  assert.match(checkout, /offer_type: "reservation"/);
+  assert.match(checkout, /reservation_amount: String\(config\.priceCents\)/);
+  assert.match(checkout, /locked_total_price: String\(PREORDER_FOUNDING_PRICE_CENTS\)/);
+  assert.match(checkout, /remaining_balance: String\(PREORDER_REMAINING_BALANCE_CENTS\)/);
   assert.match(checkout, /shipping_options:/);
   assert.doesNotMatch(checkout, /stripe\.customers\.create/);
   assert.match(checkout, /customer_creation: "always"/);
@@ -189,7 +206,7 @@ test("keeps the reviewed subtotal, free shipping, tax and inventory controls exp
   assert.match(checkout, /legalBaseUrl = mode === "test" \? requestOrigin : SITE_URL/);
   assert.match(
     checkout,
-    /\[Pre-order Terms\]\(\$\{legalBaseUrl\}\/preorder\/terms\)/,
+    /\[Reservation Terms\]\(\$\{legalBaseUrl\}\/preorder\/terms\)/,
   );
   assert.match(
     checkout,
@@ -207,6 +224,12 @@ test("keeps the reviewed subtotal, free shipping, tax and inventory controls exp
   assert.match(migration, /unit_limit <= inventory_limit/);
   assert.match(initialRelease, /sales_status = 'paused'/);
   assert.match(initialRelease, /unit_limit = 100/);
+  assert.match(reservationMigration, /set offer_type = 'full_preorder'[\s\S]*where offer_type is null/);
+  assert.match(reservationMigration, /offer_type in \('full_preorder', 'reservation'\)/);
+  assert.match(reservationMigration, /payment_kind in \('full_payment', 'deposit', 'balance', 'reservation_fee'\)/);
+  assert.match(reservationMigration, /remaining_balance = locked_total_price - reservation_amount/);
+  assert.match(reservationMigration, /add column if not exists willingness_to_pay_band text/);
+  assert.match(reservationMigration, /add column if not exists evidence_requirements text\[\]/);
   assert.match(readiness, /reviewed free standard US shipping rate/i);
   assert.match(readiness, /product\?\.name !== PREORDER_STRIPE_PRODUCT_NAME/);
   assert.match(readiness, /product\?\.images\[0\] !== PREORDER_STRIPE_PRODUCT_IMAGE_URL/);
@@ -374,7 +397,8 @@ test("keeps launch-candidate policies aligned with cancellation operations", asy
       readFile(new URL("../app/components/preorder-manage.tsx", import.meta.url), "utf8"),
     ]);
 
-  assert.match(terms, /cancel for any reason until fulfilment begins/);
+  assert.match(terms, /cancel the reservation for any reason before paying the balance/);
+  assert.match(terms, /cancel until[\s\S]*fulfilment begins/);
   assert.match(terms, /full refund/);
   assert.match(terms, /Frame One-Year Limited Warranty/);
   assert.match(terms, /within 30 calendar days after receiving the device/);
@@ -615,7 +639,7 @@ test("wires the production confirmation page to the reviewed metadata and access
     readFile(new URL("../app/api/preorders/status/route.ts", import.meta.url), "utf8"),
   ]);
 
-  assert.match(page, /title: "Frame pre-order confirmation"/);
+  assert.match(page, /title: "Frame reservation confirmation"/);
   assert.match(page, /canonical: "\/preorder\/success"/);
   assert.match(page, /index: false, follow: false/);
   assert.match(component, /Confirming payment/);
@@ -624,7 +648,9 @@ test("wires the production confirmation page to the reviewed metadata and access
   assert.match(component, /topic=preorder/);
   assert.doesNotMatch(component, /topic=general/);
   assert.match(component, /Shipping to/);
-  assert.match(component, /Thanks - your payment is complete/);
+  assert.match(component, /fully refundable reservation/);
+  assert.match(component, /Your price locked/);
+  assert.match(component, /Balance before shipping/);
   assert.match(component, /Watch your inbox/);
   assert.match(component, /Receipt and secure link/);
   assert.match(component, /Delivery updates/);

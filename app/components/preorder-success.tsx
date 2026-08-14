@@ -12,6 +12,7 @@ import {
   PREORDER_CHECKOUT_REQUEST_KEY,
   PREORDER_DELIVERY_DRAFT_KEY,
 } from "@/lib/preorder-checkout-draft";
+import { trackWaitlistEvent } from "./meta-pixel";
 
 type StatusResult = {
   status?: string;
@@ -30,6 +31,11 @@ type StatusResult = {
     placedAt: string;
     estimatedShipping: string;
     managePath?: string | null;
+    offerType?: "full_preorder" | "reservation";
+    reservationAmountCents?: number | null;
+    lockedTotalPriceCents?: number | null;
+    remainingBalanceCents?: number | null;
+    reservationStatus?: string | null;
   };
 };
 
@@ -91,14 +97,30 @@ export function PreorderSuccess() {
     } catch {
       // Storage may be unavailable; confirmation must still load.
     }
-  }, [result.status]);
+    const orderNumber = result.order?.orderNumber;
+    if (result.order?.offerType === "reservation" && orderNumber) {
+      const key = `frame-reservation-completed:${orderNumber}`;
+      try {
+        if (window.sessionStorage.getItem(key) !== "1") {
+          window.sessionStorage.setItem(key, "1");
+          trackWaitlistEvent("reservation_completed", {
+            orderReference: orderNumber,
+          });
+        }
+      } catch {
+        trackWaitlistEvent("reservation_completed", {
+          orderReference: orderNumber,
+        });
+      }
+    }
+  }, [result.order, result.status]);
 
   if (result.status === "loading" || result.status === "processing") {
     return (
       <section className="preorder-confirmation preorder-confirmation--state" role="status" aria-live="polite">
         <div className="preorder-confirmation__mark" aria-hidden="true">…</div>
         <p className="eyebrow">Confirming payment</p>
-        <h1>We’re confirming your pre-order.</h1>
+        <h1>We’re confirming your reservation.</h1>
         <p>This usually takes only a few moments. Please keep this page open while we finish preparing your confirmation.</p>
         <div className="preorder-confirmation__loader" aria-hidden="true" />
       </section>
@@ -131,6 +153,7 @@ export function PreorderSuccess() {
   }
 
   const order = result.order;
+  const reservation = order.offerType === "reservation";
   const shippingAddress = order.shippingAddress
     ? preorderShippingAddressLines(order.shippingAddress)
     : [];
@@ -138,16 +161,16 @@ export function PreorderSuccess() {
   return (
     <section className="preorder-confirmation">
       <p className="sr-only" role="status" aria-live="polite">
-        Your Frame pre-order is confirmed. Payment received.
+        Your Frame {reservation ? "reservation" : "pre-order"} is confirmed. Payment received.
       </p>
       <header className="preorder-confirmation__hero">
         <div className="preorder-confirmation__status">
           <span className="preorder-confirmation__mark" aria-hidden="true">✓</span>
           <p className="eyebrow">Payment received</p>
         </div>
-        <h1>Your pre-order is confirmed.</h1>
+        <h1>Your {reservation ? "reservation" : "pre-order"} is confirmed.</h1>
         <p className="preorder-confirmation__email">
-          Thanks - your payment is complete. Order updates will be sent to <a href={`mailto:${order.email}`}>{order.email}</a>.
+          Thanks - your {reservation ? "fully refundable reservation" : "payment"} is complete. Updates will be sent to <a href={`mailto:${order.email}`}>{order.email}</a>.
         </p>
       </header>
 
@@ -163,7 +186,7 @@ export function PreorderSuccess() {
             />
           </div>
           <div className="preorder-confirmation__product-copy">
-            <p className="eyebrow">Your order</p>
+            <p className="eyebrow">Your {reservation ? "reservation" : "order"}</p>
             <h2 id="order-summary-heading">Frame</h2>
             <p>Quantity {order.quantity}</p>
           </div>
@@ -184,9 +207,21 @@ export function PreorderSuccess() {
 
           <dl className="preorder-confirmation__pricing">
             <div>
-              <dt>Product subtotal</dt>
+              <dt>{reservation ? "Reservation paid" : "Product subtotal"}</dt>
               <dd>{formatMoney(order.amountSubtotalCents, order.currency)}</dd>
             </div>
+            {reservation && order.lockedTotalPriceCents != null ? (
+              <div>
+                <dt>Your price locked</dt>
+                <dd>{formatMoney(order.lockedTotalPriceCents, order.currency)}</dd>
+              </div>
+            ) : null}
+            {reservation && order.remainingBalanceCents != null ? (
+              <div>
+                <dt>Balance before shipping</dt>
+                <dd>{formatMoney(order.remainingBalanceCents, order.currency)}</dd>
+              </div>
+            ) : null}
             <div>
               <dt>Shipping</dt>
               <dd>{order.amountShippingCents === 0 ? "Free" : formatMoney(order.amountShippingCents, order.currency)}</dd>
@@ -196,7 +231,7 @@ export function PreorderSuccess() {
               <dd>{formatMoney(order.amountTaxCents, order.currency)}</dd>
             </div>
             <div className="preorder-confirmation__total">
-              <dt>Total paid</dt>
+              <dt>{reservation ? "Paid today" : "Total paid"}</dt>
               <dd>{formatMoney(order.amountPaidCents, order.currency)}</dd>
             </div>
           </dl>
@@ -230,14 +265,14 @@ export function PreorderSuccess() {
             <span>01</span>
             <div>
               <strong>Receipt and secure link</strong>
-              <small>Sent to your order email.</small>
+              <small>Sent to your reservation email.</small>
             </div>
           </li>
           <li>
             <span>02</span>
             <div>
-              <strong>Delivery updates</strong>
-              <small>Timing changes shared before dispatch.</small>
+              <strong>{reservation ? "Balance invitation" : "Delivery updates"}</strong>
+              <small>{reservation ? "We will ask before the $250 balance is due." : "Timing changes shared before dispatch."}</small>
             </div>
           </li>
           <li>
@@ -250,7 +285,7 @@ export function PreorderSuccess() {
         </ol>
         {order.managePath ? (
           <a className="button button--dark preorder-confirmation__mobile-manage" href={order.managePath}>
-            Manage your pre-order
+            Manage your {reservation ? "reservation" : "pre-order"}
           </a>
         ) : null}
       </section>
@@ -258,7 +293,7 @@ export function PreorderSuccess() {
       <div className="preorder-confirmation__actions">
         {order.managePath ? (
           <a className="button button--dark preorder-confirmation__desktop-manage" href={order.managePath}>
-            Manage your pre-order
+            Manage your {reservation ? "reservation" : "pre-order"}
           </a>
         ) : null}
         <Link
@@ -273,7 +308,7 @@ export function PreorderSuccess() {
       <nav className="preorder-confirmation__policies" aria-label="Order policies">
         <Link href="/contact?topic=preorder">Support</Link>
         <Link href="/preorder/product-status">Product status</Link>
-        <Link href="/preorder/terms">Pre-order terms</Link>
+        <Link href="/preorder/terms">{reservation ? "Reservation" : "Pre-order"} terms</Link>
         <Link href="/preorder/refunds">Cancellation and refunds</Link>
         <Link href="/privacy">Privacy</Link>
       </nav>

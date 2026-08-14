@@ -3,6 +3,8 @@ import {
   formatPreorderNumber,
   PREORDER_DEFAULT_CURRENCY,
   PREORDER_DEFAULT_PRICE_CENTS,
+  PREORDER_FOUNDING_PRICE_CENTS,
+  PREORDER_REMAINING_BALANCE_CENTS,
   PREORDER_ESTIMATED_SHIPPING,
   PREORDER_SHIPPING_RATE_CENTS,
 } from "@/lib/preorder";
@@ -34,6 +36,11 @@ type StoredOrder = {
   estimated_delivery: string;
   placed_at: string;
   manage_token_version: number;
+  offer_type: "full_preorder" | "reservation";
+  reservation_amount: number | null;
+  locked_total_price: number | null;
+  remaining_balance: number | null;
+  reservation_status: string | null;
 };
 
 function response(body: Record<string, unknown>, status = 200) {
@@ -78,6 +85,11 @@ async function orderResponse(order: StoredOrder) {
       estimatedShipping: order.estimated_delivery,
       fulfillmentStatus: order.fulfillment_status,
       managePath,
+      offerType: order.offer_type,
+      reservationAmountCents: order.reservation_amount,
+      lockedTotalPriceCents: order.locked_total_price,
+      remainingBalanceCents: order.remaining_balance,
+      reservationStatus: order.reservation_status,
     },
   };
 }
@@ -112,6 +124,11 @@ export async function GET(request: Request) {
         estimatedShipping: PREORDER_ESTIMATED_SHIPPING,
         fulfillmentStatus: "on_hold",
         managePath: "/preorder/manage?preview=1",
+        offerType: "reservation",
+        reservationAmountCents: PREORDER_DEFAULT_PRICE_CENTS,
+        lockedTotalPriceCents: PREORDER_FOUNDING_PRICE_CENTS,
+        remainingBalanceCents: PREORDER_REMAINING_BALANCE_CENTS,
+        reservationStatus: "active",
       },
     });
   }
@@ -148,7 +165,7 @@ export async function GET(request: Request) {
     const supabase = await getSupabaseAdmin();
     const stored = await supabase
       .from("preorders")
-      .select("id,order_number,full_name,email,shipping_address,payment_status,fulfillment_status,amount_subtotal,amount_shipping,amount_tax,amount_total,currency,estimated_delivery,placed_at,manage_token_version")
+      .select("id,order_number,full_name,email,shipping_address,payment_status,fulfillment_status,amount_subtotal,amount_shipping,amount_tax,amount_total,currency,estimated_delivery,placed_at,manage_token_version,offer_type,reservation_amount,locked_total_price,remaining_balance,reservation_status")
       .eq("stripe_checkout_session_id", sessionId)
       .maybeSingle<StoredOrder>();
     if (stored.error) throw stored.error;
@@ -157,8 +174,8 @@ export async function GET(request: Request) {
     const environment = sessionId.startsWith("cs_live_") ? "live" : "test";
     const stripe = await getStripe(environment);
     const session = await stripe.checkout.sessions.retrieve(sessionId);
-    if (session.metadata?.flow !== "frame_preorder") {
-      return response({ status: "invalid", error: "Payment reference is not a Frame pre-order." }, 400);
+    if (!["frame_preorder", "frame_reservation"].includes(session.metadata?.flow ?? "")) {
+      return response({ status: "invalid", error: "Payment reference is not a Frame reservation." }, 400);
     }
     if (session.payment_status === "paid") {
       const fulfilled = await fulfillPreorderCheckout(session, new URL(request.url).origin);

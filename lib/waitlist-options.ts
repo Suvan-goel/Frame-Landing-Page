@@ -83,13 +83,14 @@ export const QUALITATIVE_FOLLOW_UP_OUTCOMES = new Set<string>([
 ]);
 
 export const PREORDER_DECLINE_REASON_OPTIONS = [
-  ["need_more_evidence", "I need more evidence or product information"],
-  ["do_not_preorder", "I don’t pre-order products before release"],
-  ["price_too_high", "The price is more than I would pay"],
-  ["not_urgent", "It isn’t a priority for me right now"],
-  ["not_available_where_i_live", "Frame isn’t available where I live"],
-  ["does_not_solve_need", "I’m not convinced it solves a problem I have"],
-  ["another_reason", "Another reason"],
+  ["price_too_high", "The price is too high for me"],
+  ["need_more_evidence", "I need to see more evidence that it works accurately"],
+  ["pay_too_early", "I don’t want to pay for a product this far before it ships"],
+  ["need_working_product", "I’d need to see a real working/final product first"],
+  ["not_urgent", "I’m interested, but I don’t think I need it enough to buy one"],
+  ["comfort_concern", "I’m concerned about comfort or wearing it on my upper arm"],
+  ["shipping_too_far", "The estimated shipping date is too far away"],
+  ["another_reason", "Something else"],
 ] as const;
 
 export const LEGACY_PREORDER_DECLINE_REASON_OPTIONS = [
@@ -165,6 +166,29 @@ export const RESEARCH_CALL_OPTIONS = [
   ["no", "No"],
 ] as const;
 
+export const WILLINGNESS_TO_PAY_OPTIONS = [
+  ["under_100", "Less than $100"],
+  ["100_149", "$100–149"],
+  ["150_199", "$150–199"],
+  ["200_249", "$200–249"],
+  ["250_299", "$250–299"],
+  ["300_399", "$300–399"],
+  ["400_plus", "$400+"],
+  ["probably_would_not_buy", "I still probably wouldn’t buy one"],
+] as const;
+
+export const EVIDENCE_REQUIREMENT_OPTIONS = [
+  ["validated_cuff_comparison", "Accuracy testing against a validated upper-arm cuff"],
+  ["published_real_user_testing", "Published testing with real users"],
+  ["working_prototype", "Seeing a working Frame prototype"],
+  ["early_user_reviews", "Reviews from early users"],
+  ["final_device_design", "Seeing the final device/design"],
+  ["money_back_guarantee", "A money-back guarantee"],
+  ["clinician_recommendation", "Recommendation from a doctor or health professional"],
+  ["regulatory_or_clinical_validation", "Regulatory or clinical validation"],
+  ["something_else", "Something else"],
+] as const;
+
 export const GENDER_OPTIONS = [
   ["woman", "Woman"],
   ["man", "Man"],
@@ -178,6 +202,12 @@ export const primaryInterestValues = new Set<string>(
 );
 export const researchCallValues = new Set<string>(
   RESEARCH_CALL_OPTIONS.map(([value]) => value),
+);
+export const willingnessToPayValues = new Set<string>(
+  WILLINGNESS_TO_PAY_OPTIONS.map(([value]) => value),
+);
+export const evidenceRequirementValues = new Set<string>(
+  EVIDENCE_REQUIREMENT_OPTIONS.map(([value]) => value),
 );
 export const genderValues = new Set<string>(
   GENDER_OPTIONS.map(([value]) => value),

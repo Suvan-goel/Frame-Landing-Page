@@ -84,7 +84,7 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
     getRuntimeValue("PREORDER_PRODUCT_STATUS_APPROVED_VERSION"),
     getRuntimeValue("PREORDER_TAX_REVIEW_APPROVED_VERSION"),
     getRuntimeValue("STRIPE_LIVE_SECRET_KEY"),
-    getRuntimeValue("STRIPE_LIVE_PREORDER_PRICE_ID"),
+    getRuntimeValue("STRIPE_LIVE_RESERVATION_PRICE_ID"),
     getRuntimeValue("STRIPE_LIVE_WEBHOOK_SECRET"),
     getRuntimeValue("STRIPE_LIVE_WEBHOOK_ENDPOINT_ID"),
     getRuntimeValue("RESEND_API_KEY"),
@@ -130,7 +130,7 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
     blockers.push("A dedicated live Stripe secret key is not configured.");
   }
   if (!stripePriceId?.startsWith("price_")) {
-    blockers.push("A dedicated live Stripe pre-order price is not configured.");
+    blockers.push("A dedicated live Stripe reservation price is not configured.");
   }
   if (!stripeWebhookSecret?.startsWith("whsec_") || stripeWebhookSecret.length < 24) {
     blockers.push("A dedicated signed live Stripe webhook is not configured.");
@@ -193,7 +193,7 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
       PREORDER_DEFAULT_ALLOWED_COUNTRIES.join(",") ||
     configuration.estimatedShipping !== PREORDER_ESTIMATED_SHIPPING
   ) {
-    blockers.push("The runtime offer does not match the reviewed $299 pre-order price, $499 release price, US-only, Q1 2027 estimated-shipping configuration.");
+    blockers.push("The runtime offer does not match the reviewed $49 reservation amount, US-only availability, and Q1 2027 estimated-shipping configuration.");
   }
   if (configuration.shippingRateCents !== PREORDER_SHIPPING_RATE_CENTS) {
     blockers.push("The pre-order offer does not include the reviewed free standard US shipping rate.");

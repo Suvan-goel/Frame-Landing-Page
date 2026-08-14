@@ -75,6 +75,25 @@ export async function getStripePreorderPriceId(environment?: PreorderEnvironment
   return priceId;
 }
 
+export async function getStripeReservationPriceId(environment?: PreorderEnvironment) {
+  const dedicated = environment
+    ? await getRuntimeValue(
+        environment === "live"
+          ? "STRIPE_LIVE_RESERVATION_PRICE_ID"
+          : "STRIPE_TEST_RESERVATION_PRICE_ID",
+      )
+    : undefined;
+  const priceId = dedicated ?? (await getRuntimeValue("STRIPE_RESERVATION_PRICE_ID"));
+  if (!priceId) {
+    throw new Error(
+      environment
+        ? `The Stripe Frame reservation ${environment} price is not configured yet.`
+        : "The Stripe Frame reservation test price is not configured yet.",
+    );
+  }
+  return priceId;
+}
+
 export async function verifyStripeWebhook(rawBody: string, signature: string) {
   const mode = await getPreorderMode();
   const activeEnvironment = mode === "live" || mode === "test" ? mode : null;

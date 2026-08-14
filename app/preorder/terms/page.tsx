@@ -7,6 +7,9 @@ import {
   formatPreorderMoney,
   PREORDER_DEFAULT_CURRENCY,
   PREORDER_DEFAULT_PRICE_CENTS,
+  PREORDER_FOUNDING_PRICE_CENTS,
+  PREORDER_LAUNCH_PRICE_CENTS,
+  PREORDER_REMAINING_BALANCE_CENTS,
   PREORDER_ESTIMATED_SHIPPING,
   PREORDER_LEGAL_PACK_UPDATED,
   PREORDER_TERMS_VERSION,
@@ -22,12 +25,15 @@ import {
   SUPPORT_EMAIL,
 } from "@/lib/company";
 
-const TERMS_TITLE = "Frame Pre-order Terms";
-const TERMS_DESCRIPTION = "Terms for placing and managing a Frame device pre-order.";
-const PRODUCT_PRICE = formatPreorderMoney(
+const TERMS_TITLE = "Frame Reservation Terms";
+const TERMS_DESCRIPTION = "Terms for placing and managing a refundable Frame reservation.";
+const RESERVATION_PRICE = formatPreorderMoney(
   PREORDER_DEFAULT_PRICE_CENTS,
   PREORDER_DEFAULT_CURRENCY,
 );
+const FOUNDING_PRICE = formatPreorderMoney(PREORDER_FOUNDING_PRICE_CENTS, PREORDER_DEFAULT_CURRENCY);
+const REMAINING_BALANCE = formatPreorderMoney(PREORDER_REMAINING_BALANCE_CENTS, PREORDER_DEFAULT_CURRENCY);
+const LAUNCH_PRICE = formatPreorderMoney(PREORDER_LAUNCH_PRICE_CENTS, PREORDER_DEFAULT_CURRENCY);
 const LEGAL_PACK_IS_DRAFT = isDraftPreorderVersion(PREORDER_TERMS_VERSION);
 
 const TERMS_SECTIONS = [
@@ -72,8 +78,8 @@ export default async function PreorderTermsPage() {
     <main className="legal-page preorder-terms-page">
       <PreorderHeader backHref="/preorder/review" backLabel="Back" historyBack />
       <article className="legal-shell">
-        <p className="eyebrow">Frame device pre-order</p>
-        <h1>Pre-order Terms</h1>
+        <p className="eyebrow">Frame device reservation</p>
+        <h1>Reservation Terms</h1>
         <p className="legal-updated">
           {`Legal pack version ${PREORDER_TERMS_VERSION} · ${PREORDER_LEGAL_PACK_UPDATED}`}
         </p>
@@ -89,8 +95,12 @@ export default async function PreorderTermsPage() {
           </div>
           <dl>
             <div>
-              <dt>Pre-order price</dt>
-              <dd>{PRODUCT_PRICE}, plus applicable sales tax</dd>
+              <dt>Reservation today</dt>
+              <dd>{RESERVATION_PRICE}, fully refundable</dd>
+            </div>
+            <div>
+              <dt>Your price</dt>
+              <dd>{FOUNDING_PRICE} locked · {REMAINING_BALANCE} due before shipping</dd>
             </div>
             <div>
               <dt>Estimated shipping</dt>
@@ -108,7 +118,7 @@ export default async function PreorderTermsPage() {
         </section>
 
         <div className="preorder-terms-layout">
-          <nav className="preorder-terms-toc preorder-terms-toc--desktop" aria-label="Pre-order Terms sections">
+          <nav className="preorder-terms-toc preorder-terms-toc--desktop" aria-label="Reservation Terms sections">
             <p className="eyebrow">On this page</p>
             <ol>
               {TERMS_SECTIONS.map(([id, label], index) => (
@@ -121,7 +131,7 @@ export default async function PreorderTermsPage() {
 
           <details className="preorder-terms-toc-mobile">
             <summary>On this page</summary>
-            <nav aria-label="Pre-order Terms sections on mobile">
+            <nav aria-label="Reservation Terms sections on mobile">
               <ol>
                 {TERMS_SECTIONS.map(([id, label], index) => (
                   <li key={id}>
@@ -176,8 +186,10 @@ export default async function PreorderTermsPage() {
             <section id="purchase">
               <h2>3. What the pre-order purchases</h2>
               <p>
-                A pre-order purchases one Frame device to be supplied when it is ready. The full price is paid at
-                checkout, and your pre-order is recorded when payment succeeds. It is not an investment, subscription,
+                A reservation holds one Frame device at your {FOUNDING_PRICE} price. You pay a fully
+                refundable {RESERVATION_PRICE} reservation fee at checkout. That fee is applied to your
+                price, leaving {REMAINING_BALANCE} due before shipping. The planned public launch price is
+                {` ${LAUNCH_PRICE}`}. A reservation is not a completed device purchase, investment, subscription,
                 membership, donation, research participation, or payment for medical services.
               </p>
               <p>
@@ -192,13 +204,15 @@ export default async function PreorderTermsPage() {
             <section id="payment">
               <h2>4. Price, tax, shipping, and payment</h2>
               <p>
-                The pre-order product subtotal is {PRODUCT_PRICE}. Standard US shipping is included at no additional
-                charge. Applicable sales tax is calculated from the supplied address, and the complete total is shown
-                in Stripe Checkout before you pay.
+                The amount charged at reservation checkout is {RESERVATION_PRICE}, plus any applicable sales tax
+                shown by Stripe before payment. Standard US shipping is included at no additional charge. Your
+                reservation locks in your {FOUNDING_PRICE} price, and the reservation fee is credited toward it.
               </p>
               <p>
-                The complete amount is charged once at checkout. Payment is processed by Stripe, and Frame does not
-                receive or store your full card number. There are no recurring charges.
+                The {REMAINING_BALANCE} balance is not charged at reservation checkout and will not be charged
+                automatically. Before shipping, Frame will contact you with the final product details and a separate,
+                explicit way to pay the balance. Payment is processed by Stripe, and Frame does not receive or store
+                your full card number. There are no recurring charges or subscription fees.
               </p>
             </section>
 
@@ -235,8 +249,10 @@ export default async function PreorderTermsPage() {
             <section id="cancellations">
               <h2>7. Cancellation, refunds, and returns</h2>
               <p>
-                You may cancel for any reason until fulfilment begins, meaning before the order status changes to
-                processing, and receive a full refund of the product, standard shipping, and tax paid. Use the secure
+                You may cancel the reservation for any reason before paying the balance and receive a full refund of
+                the reservation fee and any tax paid. If you later complete the device purchase, you may cancel until
+                fulfilment begins, meaning before the order status changes to processing, and receive a full refund of
+                amounts paid. Use the secure
                 management link in your order email or the
                 <Link href="/contact?topic=preorder"> Frame pre-order support form</Link>.
               </p>
@@ -293,15 +309,15 @@ export default async function PreorderTermsPage() {
             <section id="fcc-authorization">
               <h2>10. FCC equipment authorization and conditional delivery</h2>
               <p>
-                Frame is subject to Federal Communications Commission rules. This pre-order is a conditional sale,
-                and delivery to the end user is conditional upon successful completion of the applicable FCC equipment
+                Frame is subject to Federal Communications Commission rules. Your reservation and any subsequent device
+                order are conditional upon successful completion of the applicable FCC equipment
                 authorization process. Frame will not deliver the device to you before that process is successfully
                 completed.
               </p>
               <p>
                 FCC rules governing conditional sales do not determine the applicability of consumer-protection,
                 contractual, or other provisions of federal or state law. If the applicable equipment authorization
-                process is not successfully completed, Frame will cancel the unshipped pre-order and refund every
+                process is not successfully completed, Frame will cancel the unshipped reservation or order and refund every
                 amount paid to the original payment method under the <Link href="/preorder/refunds#fcc-authorization">Cancellation
                 and Refund Policy</Link>. This section does not limit any other rights or remedies available to you.
               </p>
@@ -320,7 +336,7 @@ export default async function PreorderTermsPage() {
             <section id="changes">
               <h2>12. Changes to the legal pack</h2>
               <p>
-                The legal pack version accepted at checkout covers these Pre-order Terms and the Cancellation and Refund
+                The legal pack version accepted at checkout covers these Reservation Terms and the Cancellation and Refund
                 Policy, is recorded with the order, and continues to apply to that order. The Product Status Disclosure
                 is versioned and acknowledged separately. New versions and non-material administrative corrections apply
                 only to future orders and do not change the rights in the version you accepted.

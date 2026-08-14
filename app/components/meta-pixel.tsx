@@ -19,6 +19,7 @@ import {
   META_TRACKING_STATE_VERSION,
   type MetaTrackingClientState,
 } from "../../lib/meta-tracking";
+import type { ReservationFunnelEventName } from "../../lib/funnel-analytics";
 import {
   recordLandingDiagnostic,
   recordLandingDiagnosticGeo,
@@ -51,16 +52,7 @@ type PendingMetaLead = {
   queuedAt: number;
 };
 
-export type WaitlistAnalyticsEvent =
-  | "waitlist_form_viewed"
-  | "waitlist_email_submitted"
-  | "waitlist_email_success"
-  | "waitlist_email_error"
-  | "qualification_started"
-  | "qualification_skipped"
-  | "qualification_completed"
-  | "preorder_decline_started"
-  | "preorder_decline_completed";
+export type WaitlistAnalyticsEvent = ReservationFunnelEventName;
 
 declare global {
   interface Window {
@@ -715,4 +707,83 @@ export function trackWaitlistEvent(
     new CustomEvent("frame:analytics", { detail: payload }),
   );
   window.dataLayer?.push(payload);
+  recordFirstPartyFunnelEvent(event, detail);
+}
+
+const FUNNEL_SESSION_STORAGE_KEY = "frame-reservation-funnel-session-v1";
+const FUNNEL_EVENT_STORAGE_PREFIX = "frame-reservation-funnel-event-v1";
+
+function funnelStorageValue(key: string, create: () => string) {
+  try {
+    const existing = window.sessionStorage.getItem(key);
+    if (existing && UUID_PATTERN.test(existing)) return existing;
+    const value = create();
+    window.sessionStorage.setItem(key, value);
+    return value;
+  } catch {
+    return create();
+  }
+}
+
+function analyticsSignatureHash(value: string) {
+  let hash = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    hash ^= value.charCodeAt(index);
+    hash = Math.imul(hash, 16777619);
+  }
+  return (hash >>> 0).toString(36);
+}
+
+function cleanFunnelProperty(value: string | boolean | null) {
+  if (typeof value === "boolean") return value ? "true" : "false";
+  if (typeof value !== "string") return null;
+  const cleaned = value.trim().replace(/\s+/g, " ").slice(0, 200);
+  return cleaned || null;
+}
+
+function recordFirstPartyFunnelEvent(
+  event: WaitlistAnalyticsEvent,
+  detail: Record<string, string | boolean>,
+) {
+  if (isLocalBrowserHost()) return;
+
+  const query = new URLSearchParams(window.location.search);
+  const properties = Object.fromEntries(
+    Object.entries({
+      ...detail,
+      utmSource: query.get("utm_source"),
+      utmMedium: query.get("utm_medium"),
+      utmCampaign: query.get("utm_campaign"),
+    })
+      .map(([key, value]) => [key, cleanFunnelProperty(value)] as const)
+      .filter((entry): entry is readonly [string, string] => Boolean(entry[1])),
+  );
+  const pagePath = window.location.pathname;
+  const signature = JSON.stringify({ event, pagePath, properties });
+  const sessionId = funnelStorageValue(
+    FUNNEL_SESSION_STORAGE_KEY,
+    () => crypto.randomUUID(),
+  );
+  const eventId = funnelStorageValue(
+    `${FUNNEL_EVENT_STORAGE_PREFIX}:${analyticsSignatureHash(signature)}`,
+    () => crypto.randomUUID(),
+  );
+
+  void fetch("/api/funnel-events", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "same-origin",
+    cache: "no-store",
+    keepalive: true,
+    referrerPolicy: "no-referrer",
+    body: JSON.stringify({
+      eventId,
+      sessionId,
+      event,
+      pagePath,
+      properties,
+    }),
+  }).catch(() => {
+    // First-party funnel measurement is deliberately fail-open for visitors.
+  });
 }

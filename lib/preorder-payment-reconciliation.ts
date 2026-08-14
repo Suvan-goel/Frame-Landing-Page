@@ -14,6 +14,7 @@ export type StoredPreorderReconciliationOrder = {
   amountTotal: number;
   amountRefunded: number;
   currency: string;
+  offerType?: "full_preorder" | "reservation";
 };
 
 export type StoredPreorderReconciliationPayment = {
@@ -217,6 +218,9 @@ export function evaluatePreorderPaymentReconciliation(
   }
 
   for (const order of input.orders) {
+    const reservation = order.offerType === "reservation";
+    const expectedFlow = reservation ? "frame_reservation" : "frame_preorder";
+    const expectedPaymentKind = reservation ? "reservation_fee" : "full_payment";
     const orderContext = {
       orderNumber: order.orderNumber,
       checkoutSessionId: order.checkoutSessionId,
@@ -261,7 +265,7 @@ export function evaluatePreorderPaymentReconciliation(
         payment.preorderId === order.id &&
         payment.checkoutIntentId === order.checkoutIntentId &&
         payment.checkoutSessionId === order.checkoutSessionId &&
-        payment.paymentKind === "full_payment" &&
+        payment.paymentKind === expectedPaymentKind &&
         payment.customerId === order.customerId;
       if (!paymentLinksMatch) {
         addIssue(issues, {
@@ -307,7 +311,7 @@ export function evaluatePreorderPaymentReconciliation(
       stripe.sessionStatus !== "complete" ||
       stripe.paymentStatus !== "paid" ||
       stripe.mode !== "payment" ||
-      stripe.metadataFlow !== "frame_preorder"
+      stripe.metadataFlow !== expectedFlow
     ) {
       addIssue(issues, {
         code: "stripe_session_state_mismatch",
@@ -367,7 +371,7 @@ export function evaluatePreorderPaymentReconciliation(
         });
       }
       if (
-        paymentIntent.metadataFlow !== "frame_preorder" ||
+        paymentIntent.metadataFlow !== expectedFlow ||
         paymentIntent.metadataCheckoutIntentId !== order.checkoutIntentId
       ) {
         addIssue(issues, {

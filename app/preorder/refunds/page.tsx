@@ -18,8 +18,8 @@ import {
   SUPPORT_EMAIL,
 } from "@/lib/company";
 
-const REFUNDS_TITLE = "Frame Pre-order Cancellation and Refund Policy";
-const REFUNDS_DESCRIPTION = "How to cancel, return, or obtain a refund for a Frame pre-order.";
+const REFUNDS_TITLE = "Frame Reservation Cancellation and Refund Policy";
+const REFUNDS_DESCRIPTION = "How to cancel a Frame reservation or obtain a refund.";
 const LEGAL_PACK_IS_DRAFT = isDraftPreorderVersion(PREORDER_TERMS_VERSION);
 
 const REFUND_SECTIONS = [
@@ -60,15 +60,14 @@ export default async function PreorderRefundsPage() {
     <main className="legal-page preorder-terms-page preorder-refunds-page">
       <PreorderHeader backHref="/preorder/review" backLabel="Back" historyBack />
       <article className="legal-shell">
-        <p className="eyebrow">Frame device pre-order</p>
+        <p className="eyebrow">Frame device reservation</p>
         <h1>Cancellation and Refund Policy</h1>
         <p className="legal-updated">
           {`Legal pack version ${PREORDER_TERMS_VERSION} · ${PREORDER_LEGAL_PACK_UPDATED}`}
         </p>
         <p className="legal-intro">
-          You can cancel for any reason before fulfilment begins, with additional cancellation rights if
-          shipping is delayed or the product changes materially. This policy explains cancellations,
-          returns, and refunds.
+          The $49 reservation fee is fully refundable before you pay the remaining balance. If you later
+          complete the device purchase, you retain the cancellation and return rights described below.
         </p>
 
         <section className="preorder-terms-summary preorder-refunds-summary" aria-labelledby="refund-summary-heading">
@@ -77,8 +76,8 @@ export default async function PreorderRefundsPage() {
           </div>
           <dl>
             <div>
-              <dt>Before fulfilment</dt>
-              <dd>Cancel for any reason for a full refund</dd>
+              <dt>Reservation fee</dt>
+              <dd>Cancel before paying the balance for a full refund</dd>
             </div>
             <div>
               <dt>Shipping or product changes</dt>
@@ -122,22 +121,22 @@ export default async function PreorderRefundsPage() {
 
           <div className="preorder-terms-content">
             <section id="cancelling">
-              <h2>1. Cancel before fulfilment begins</h2>
+              <h2>1. Cancel your reservation</h2>
               <p>
-                You may cancel for any reason until the order status changes to processing. Use the
-                secure “Manage your pre-order” link in the confirmation email or submit a request through
-                the <Link href="/contact?topic=preorder">Frame pre-order support form</Link> using the purchase
-                email and order number. Do not send card details.
+                You may cancel your reservation for any reason before paying the remaining balance and receive
+                a full refund of the $49 reservation fee and any tax paid. Use the secure “Manage your
+                reservation” link in the confirmation email or submit a request through the
+                <Link href="/contact?topic=preorder"> Frame reservation support form</Link> using the reservation
+                email and number. Do not send card details.
               </p>
               <p>
-                When you cancel before fulfilment, we will refund every amount paid for the unshipped order,
-                including the product price and collected tax. Standard US shipping is free, and Frame does not
-                charge a cancellation or restocking fee.
+                The reservation has no cancellation or restocking fee. The remaining $250 is not charged
+                automatically, so cancelling the reservation only requires refunding the amount actually paid.
               </p>
               <p>
-                Once fulfilment is processing, Frame may be unable to stop an ordinary cancellation before
-                shipment. Shipping-delay and material-change cancellation rights remain available while the
-                order is unshipped. After shipment, use the return process below.
+                If you later pay the remaining balance, you may still cancel for a full refund until fulfilment
+                begins. Once fulfilment is processing, Frame may be unable to stop shipment; the return process
+                below then applies.
               </p>
             </section>
 
@@ -172,8 +171,8 @@ export default async function PreorderRefundsPage() {
               <p>
                 Delivery of Frame is conditional upon successful completion of the applicable FCC equipment
                 authorization process. Frame will not deliver the device before that process is successfully completed.
-                If authorization is not successfully completed, we will automatically cancel the unshipped pre-order
-                and refund every amount paid to the original payment method. FCC rules governing conditional sales do
+                If authorization is not successfully completed, we will automatically cancel the unshipped reservation
+                or order and refund every amount paid to the original payment method. FCC rules governing conditional sales do
                 not determine any other consumer-protection, contractual, or legal rights you may have under federal or
                 state law.
               </p>

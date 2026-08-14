@@ -33,6 +33,11 @@ type OrderDetail = {
   cancellation_resolution_note: string | null;
   amount_total: number;
   amount_refunded: number;
+  offer_type: string;
+  reservation_amount: number | null;
+  locked_total_price: number | null;
+  remaining_balance: number | null;
+  reservation_status: string | null;
   currency: string;
   estimated_delivery: string;
   current_estimated_delivery: string;
@@ -111,7 +116,7 @@ async function AuthenticatedOrderDetail({ id }: { id: string }) {
   const [orderResult, itemsResult, paymentsResult, eventsResult, emailsResult] = await Promise.all([
     supabase
       .from("preorders")
-      .select("id,order_number,environment,manage_token_version,full_name,email,phone,shipping_address,order_status,payment_status,fulfillment_status,cancellation_status,cancellation_requested_at,cancellation_reason,cancellation_resolved_at,cancellation_resolution_note,amount_total,amount_refunded,currency,estimated_delivery,current_estimated_delivery,placed_at,address_change_status,address_change_requested_at,requested_shipping_address,address_change_reason,address_change_resolved_at,address_change_resolution_note,delivery_update_version,delivery_update_status,delivery_update_notice_type,delivery_update_response_mode,delivery_update_response_deadline,delivery_update_message,delivery_update_sent_at,delivery_update_acknowledged_at,delivery_update_expired_at,confirmation_email_sent_at,carrier,tracking_number,tracking_url,shipped_at,delivered_at,owner_note")
+      .select("id,order_number,environment,manage_token_version,full_name,email,phone,shipping_address,order_status,payment_status,fulfillment_status,cancellation_status,cancellation_requested_at,cancellation_reason,cancellation_resolved_at,cancellation_resolution_note,amount_total,amount_refunded,currency,offer_type,reservation_amount,locked_total_price,remaining_balance,reservation_status,estimated_delivery,current_estimated_delivery,placed_at,address_change_status,address_change_requested_at,requested_shipping_address,address_change_reason,address_change_resolved_at,address_change_resolution_note,delivery_update_version,delivery_update_status,delivery_update_notice_type,delivery_update_response_mode,delivery_update_response_deadline,delivery_update_message,delivery_update_sent_at,delivery_update_acknowledged_at,delivery_update_expired_at,confirmation_email_sent_at,carrier,tracking_number,tracking_url,shipped_at,delivered_at,owner_note")
       .eq("id", id)
       .maybeSingle<OrderDetail>(),
     supabase.from("preorder_order_items").select("id,product_name,sku,quantity,unit_amount,currency").eq("preorder_id", id).returns<OrderItem[]>(),
@@ -225,11 +230,18 @@ async function AuthenticatedOrderDetail({ id }: { id: string }) {
             </section>
 
             <section className="preorder-owner-card">
-              <p className="eyebrow">Payment</p>
+              <p className="eyebrow">{order.offer_type === "reservation" ? "Reservation payment" : "Payment"}</p>
               <h2>{formatPreorderMoney(order.amount_total, order.currency)}</h2>
               <dl className="preorder-owner-facts">
+                {order.offer_type === "reservation" ? (
+                  <>
+                    <div><dt>Reservation status</dt><dd>{(order.reservation_status ?? "unknown").replaceAll("_", " ")}</dd></div>
+                    <div><dt>Locked price</dt><dd>{formatPreorderMoney(order.locked_total_price ?? 0, order.currency)}</dd></div>
+                    <div><dt>Due before shipping</dt><dd>{formatPreorderMoney(order.remaining_balance ?? 0, order.currency)}</dd></div>
+                  </>
+                ) : null}
                 <div><dt>Refunded</dt><dd>{formatPreorderMoney(order.amount_refunded, order.currency)}</dd></div>
-                <div><dt>Remaining</dt><dd>{formatPreorderMoney(amountRemaining, order.currency)}</dd></div>
+                <div><dt>{order.offer_type === "reservation" ? "Reservation retained" : "Remaining"}</dt><dd>{formatPreorderMoney(amountRemaining, order.currency)}</dd></div>
                 <div><dt>Paid</dt><dd>{dateTime(payment?.paid_at ?? null)}</dd></div>
               </dl>
               {stripePaymentUrl ? <a className="text-link" href={stripePaymentUrl} target="_blank" rel="noreferrer">Open payment in Stripe</a> : null}

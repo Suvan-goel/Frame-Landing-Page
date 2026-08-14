@@ -133,6 +133,10 @@ export async function reservePreorderCheckout(input: {
   productStatusAcknowledgedAt: string | null;
   marketingOptIn: boolean;
   marketingConsentAt: string | null;
+  offerType?: "reservation";
+  reservationAmount?: number;
+  lockedTotalPrice?: number;
+  remainingBalance?: number;
 }) {
   const supabase = await getSupabaseAdmin();
   const result = await supabase.rpc("reserve_preorder_checkout", {
@@ -170,6 +174,25 @@ export async function reservePreorderCheckout(input: {
   }
   if (typeof result.data !== "string") {
     throw new PreorderAvailabilityError("unavailable");
+  }
+  if (input.offerType === "reservation") {
+    const reservationTerms = await supabase
+      .from("preorder_checkout_intents")
+      .update({
+        offer_type: "reservation",
+        reservation_amount: input.reservationAmount,
+        locked_total_price: input.lockedTotalPrice,
+        remaining_balance: input.remainingBalance,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", result.data)
+      .in("status", ["created", "checkout_open"])
+      .select("id")
+      .maybeSingle();
+    if (reservationTerms.error || !reservationTerms.data) {
+      console.error("Frame reservation terms could not be recorded", reservationTerms.error);
+      throw new PreorderAvailabilityError("unavailable");
+    }
   }
   return result.data;
 }

@@ -35,6 +35,11 @@ type PreorderAdminRow = {
   cancellation_status: string;
   amount_total: number;
   amount_refunded: number;
+  offer_type: string;
+  reservation_amount: number | null;
+  locked_total_price: number | null;
+  remaining_balance: number | null;
+  reservation_status: string | null;
   currency: string;
   estimated_delivery: string;
   placed_at: string;
@@ -73,7 +78,7 @@ export default async function PreorderAdminPage({
   ] = await Promise.all([
     supabase
       .from("preorders")
-      .select("id,order_number,environment,full_name,email,shipping_address,order_status,payment_status,fulfillment_status,cancellation_status,amount_total,amount_refunded,currency,estimated_delivery,placed_at,confirmation_email_sent_at")
+      .select("id,order_number,environment,full_name,email,shipping_address,order_status,payment_status,fulfillment_status,cancellation_status,amount_total,amount_refunded,currency,offer_type,reservation_amount,locked_total_price,remaining_balance,reservation_status,estimated_delivery,placed_at,confirmation_email_sent_at")
       .eq("environment", environment)
       .order("order_number", { ascending: false })
       .limit(500)
@@ -214,11 +219,17 @@ export default async function PreorderAdminPage({
                     <td className="admin-lead">
                       <strong><a href={`/admin/preorders/${order.id}`}>{environment === "test" ? "TEST · " : ""}{formatPreorderNumber(order.order_number)} · {order.full_name}</a></strong>
                       <a href={`mailto:${order.email}`}>{order.email}</a>
-                      <small>{order.order_status}{order.cancellation_status !== "none" ? ` · cancellation ${order.cancellation_status}` : ""}</small>
+                      <small>{order.offer_type === "reservation" ? `reservation ${order.reservation_status ?? order.order_status}` : order.order_status}{order.cancellation_status !== "none" ? ` · cancellation ${order.cancellation_status}` : ""}</small>
                     </td>
                     <td><span className={`admin-status admin-status--${order.payment_status}`}>{order.payment_status.replaceAll("_", " ")}</span></td>
                     <td><span className={`admin-status admin-status--${order.fulfillment_status}`}>{order.fulfillment_status.replaceAll("_", " ")}</span></td>
-                    <td>{formatPreorderMoney(order.amount_total, order.currency)}{order.amount_refunded ? <><br /><small>{formatPreorderMoney(order.amount_refunded, order.currency)} refunded</small></> : null}</td>
+                    <td>
+                      {formatPreorderMoney(order.amount_total, order.currency)}
+                      {order.offer_type === "reservation" && order.locked_total_price !== null ? (
+                        <><br /><small>{formatPreorderMoney(order.locked_total_price, order.currency)} locked · {formatPreorderMoney(order.remaining_balance ?? 0, order.currency)} later</small></>
+                      ) : null}
+                      {order.amount_refunded ? <><br /><small>{formatPreorderMoney(order.amount_refunded, order.currency)} refunded</small></> : null}
+                    </td>
                     <td>{order.shipping_address?.country ?? "N/A"}</td>
                     <td>{order.confirmation_email_sent_at ? "Sent" : "Pending / failed"}</td>
                     <td><time dateTime={order.placed_at}>{new Intl.DateTimeFormat("en-GB", { dateStyle: "medium", timeStyle: "short", timeZone: "UTC" }).format(new Date(order.placed_at))}</time></td>

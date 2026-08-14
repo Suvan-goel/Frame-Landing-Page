@@ -19,7 +19,7 @@ export function MobileWaitlistDisclosure({
   return (
     <details className="home-preorder-hero__waitlist-disclosure" ref={disclosureRef}>
       <summary>
-        <span>Not ready to pre-order?</span>
+        <span>Not ready to reserve?</span>
         <span className="home-preorder-hero__waitlist-action">
           Get updates <span aria-hidden="true">→</span>
         </span>

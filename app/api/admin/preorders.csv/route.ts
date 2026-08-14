@@ -21,6 +21,11 @@ type ExportOrder = {
   cancellation_reason: string | null;
   amount_total: number;
   amount_refunded: number;
+  offer_type: string;
+  reservation_amount: number | null;
+  locked_total_price: number | null;
+  remaining_balance: number | null;
+  reservation_status: string | null;
   currency: string;
   estimated_delivery: string;
   terms_version: string;
@@ -72,7 +77,7 @@ export async function GET(request: Request) {
   const supabase = await getSupabaseAdmin();
   const ordersResult = await supabase
     .from("preorders")
-    .select("id,order_number,environment,full_name,email,phone,shipping_address,order_status,payment_status,fulfillment_status,cancellation_status,cancellation_requested_at,cancellation_reason,amount_total,amount_refunded,currency,estimated_delivery,terms_version,product_status_version,marketing_opt_in,carrier,tracking_number,tracking_url,placed_at,shipped_at,delivered_at")
+    .select("id,order_number,environment,full_name,email,phone,shipping_address,order_status,payment_status,fulfillment_status,cancellation_status,cancellation_requested_at,cancellation_reason,amount_total,amount_refunded,currency,offer_type,reservation_amount,locked_total_price,remaining_balance,reservation_status,estimated_delivery,terms_version,product_status_version,marketing_opt_in,carrier,tracking_number,tracking_url,placed_at,shipped_at,delivered_at")
     .eq("environment", environment)
     .order("order_number", { ascending: false })
     .limit(10_000)
@@ -128,6 +133,8 @@ export async function GET(request: Request) {
       "phone", "address_line_1", "address_line_2", "city", "state",
       "postal_code", "country", "product", "sku", "quantity",
       "amount_total_minor_units", "amount_refunded_minor_units", "currency",
+      "offer_type", "reservation_amount_minor_units", "locked_total_price_minor_units",
+      "remaining_balance_minor_units", "reservation_status",
       "estimated_delivery", "carrier", "tracking_number", "tracking_url",
       "shipped_at", "delivered_at", "stripe_payment_intent_id", "terms_version",
       "product_status_version", "marketing_opt_in",
@@ -148,6 +155,8 @@ export async function GET(request: Request) {
         addressValue(order.shipping_address, "country"),
         item?.product_name ?? null, item?.sku ?? null, item?.quantity ?? null,
         order.amount_total, order.amount_refunded, order.currency,
+        order.offer_type, order.reservation_amount, order.locked_total_price,
+        order.remaining_balance, order.reservation_status,
         order.estimated_delivery, order.carrier, order.tracking_number,
         order.tracking_url, order.shipped_at, order.delivered_at,
         payment?.stripe_payment_intent_id ?? null, order.terms_version,

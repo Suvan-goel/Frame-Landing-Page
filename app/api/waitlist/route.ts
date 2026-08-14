@@ -8,6 +8,9 @@ import {
   monitoringReadinessValues,
   monitoringReasonValues,
   preorderDeclineReasonValues,
+  evidenceRequirementValues,
+  researchCallValues,
+  willingnessToPayValues,
 } from "@/lib/waitlist-options";
 import {
   captureWaitlistEmail,
@@ -36,7 +39,7 @@ export const dynamic = "force-dynamic";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const MAX_BODY_BYTES = 8_192;
+const MAX_BODY_BYTES = 16_384;
 const MAX_ATTRIBUTION_LENGTH = 200;
 const MAX_REFERRER_LENGTH = 500;
 const MAX_QUALITATIVE_DETAIL_LENGTH = 300;
@@ -314,6 +317,10 @@ function waitlistRepository(supabase: SupabaseClient): WaitlistRepository {
         .update({
           preorder_decline_reason: update.reason,
           preorder_decline_detail: update.detail,
+          willingness_to_pay_band: update.willingnessToPayBand,
+          evidence_requirements: update.evidenceRequirements,
+          evidence_requirements_other: update.evidenceRequirementsOther,
+          open_to_research_call: update.openToResearchCall,
           preorder_declined_at: update.recordedAt,
         })
         .eq("id", id)
@@ -727,18 +734,47 @@ async function recordPreorderDecline(
     typeof payload.signupToken === "string" ? payload.signupToken : "";
   const reason = typeof payload.reason === "string" ? payload.reason : "";
   const detail = cleanPreorderDeclineDetail(payload.detail);
+  const willingnessToPayBand =
+    typeof payload.willingnessToPayBand === "string"
+      ? payload.willingnessToPayBand
+      : null;
+  const evidenceRequirements = Array.isArray(payload.evidenceRequirements)
+    ? [...new Set(payload.evidenceRequirements.filter(
+        (value): value is string => typeof value === "string",
+      ))]
+    : [];
+  const evidenceRequirementsOther = cleanPreorderDeclineDetail(
+    payload.evidenceRequirementsOther,
+  );
+  const openToResearchCall =
+    typeof payload.openToResearchCall === "string"
+      ? payload.openToResearchCall
+      : "";
 
   if (!UUID_PATTERN.test(signupToken)) {
     return jsonResponse({ error: "This signup session is no longer valid." }, 400);
   }
   if (!preorderDeclineReasonValues.has(reason)) {
     return jsonResponse(
-      { error: "Choose the main reason you aren’t ready to pre-order." },
+      { error: "Choose the main reason you wouldn’t reserve Frame today." },
       400,
     );
   }
-  if (reason === "another_reason" && !detail) {
-    return jsonResponse({ error: "Tell us the other main reason." }, 400);
+  if (
+    reason === "price_too_high" &&
+    (!willingnessToPayBand || !willingnessToPayValues.has(willingnessToPayBand))
+  ) {
+    return jsonResponse({ error: "Choose the most you would realistically consider paying." }, 400);
+  }
+  if (
+    reason === "need_more_evidence" &&
+    (!evidenceRequirements.length ||
+      evidenceRequirements.some((value) => !evidenceRequirementValues.has(value)))
+  ) {
+    return jsonResponse({ error: "Choose what would make you comfortable buying Frame." }, 400);
+  }
+  if (!researchCallValues.has(openToResearchCall)) {
+    return jsonResponse({ error: "Choose whether you would be open to research participation." }, 400);
   }
 
   try {
@@ -748,6 +784,16 @@ async function recordPreorderDecline(
       {
         reason,
         detail: reason === "another_reason" ? detail : null,
+        willingnessToPayBand:
+          reason === "price_too_high" ? willingnessToPayBand : null,
+        evidenceRequirements:
+          reason === "need_more_evidence" ? evidenceRequirements : null,
+        evidenceRequirementsOther:
+          reason === "need_more_evidence" &&
+          evidenceRequirements.includes("something_else")
+            ? evidenceRequirementsOther
+            : null,
+        openToResearchCall,
         recordedAt: new Date().toISOString(),
       },
     );

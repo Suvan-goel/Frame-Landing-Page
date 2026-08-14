@@ -25,6 +25,11 @@ type ManagedOrder = {
   amountPaid: string;
   amountRefunded: string;
   amountRemaining: string;
+  offerType?: "full_preorder" | "reservation";
+  reservationAmount?: string | null;
+  lockedTotalPrice?: string | null;
+  remainingBalance?: string | null;
+  reservationStatus?: string | null;
   refundStatus: string;
   originalEstimatedShipping: string;
   estimatedShipping: string;
@@ -164,6 +169,7 @@ function InlineFeedback({
 }
 
 function refundCopy(order: ManagedOrder) {
+  const purchaseLabel = order.offerType === "reservation" ? "reservation" : "pre-order";
   if (order.refundStatus === "completed") {
     return {
       eyebrow: "Refund completed",
@@ -194,7 +200,7 @@ function refundCopy(order: ManagedOrder) {
   }
   return {
     eyebrow: "Order cancelled",
-    heading: "Your pre-order is no longer active.",
+    heading: `Your ${purchaseLabel} is no longer active.`,
     body: `The remaining ${order.amountRemaining} will be returned to your original payment method. We’ll email you with the refund status.`,
   };
 }
@@ -469,6 +475,7 @@ export function PreorderManage() {
   }
 
   const order = result.order;
+  const reservation = order.offerType === "reservation";
   const shipping = addressLines(order.shippingAddress);
   const requestedShipping = addressLines(order.requestedShippingAddress);
   const cancellationPending = ["requested", "processing"].includes(
@@ -498,7 +505,9 @@ export function PreorderManage() {
             ? "Preparing for shipment"
             : order.fulfillmentStatus === "ready"
               ? "Ready to ship"
-              : "Pre-order confirmed";
+              : reservation
+                ? "Reservation confirmed"
+                : "Pre-order confirmed";
   const cancelledRefundCopy = refundCopy(order);
 
   return (
@@ -513,7 +522,7 @@ export function PreorderManage() {
         </div>
         <div className="preorder-manage-card__heading">
           <div>
-            <h1>Manage your<br />pre-order.</h1>
+            <h1>Manage your<br />{reservation ? "reservation" : "pre-order"}.</h1>
             <p>
               <span className="preorder-manage-copy--desktop">Review your order and make changes.</span>
               <span className="preorder-manage-copy--mobile">Review your order and make changes.</span>
@@ -538,10 +547,10 @@ export function PreorderManage() {
             <p className="preorder-manage-copy--desktop">Qty 1</p>
           </div>
           <div className="preorder-manage-summary__total">
-            <strong>{order.amountPaid}</strong>
+            <strong>{reservation ? order.reservationAmount ?? order.amountPaid : order.amountPaid}</strong>
             {order.refundStatus !== "none" ? (
               <small>{order.amountRefunded} refunded</small>
-            ) : <small className="preorder-manage-summary__paid">Paid</small>}
+            ) : <small className="preorder-manage-summary__paid">{reservation ? "Reservation paid" : "Paid"}</small>}
           </div>
           <p className="preorder-manage-summary__quantity-mobile">Qty 1</p>
         </div>
@@ -550,6 +559,12 @@ export function PreorderManage() {
           <div><dt>Order number</dt><dd>{order.orderNumber}</dd></div>
           <div><dt>Order date</dt><dd><time dateTime={order.placedAt}>{formatDate(order.placedAt)}</time></dd></div>
           <div><dt>Estimated shipping</dt><dd>{order.estimatedShipping}</dd></div>
+          {reservation && order.lockedTotalPrice ? (
+            <div><dt>Your price</dt><dd>{order.lockedTotalPrice} locked</dd></div>
+          ) : null}
+          {reservation && order.remainingBalance ? (
+            <div><dt>Balance before shipping</dt><dd>{order.remainingBalance}</dd></div>
+          ) : null}
         </dl>
 
         <div className="preorder-manage-summary__section-heading">
@@ -765,8 +780,8 @@ export function PreorderManage() {
               <label htmlFor="cancellation-reason">Why are you cancelling? <span>(optional)</span></label>
               <textarea id="cancellation-reason" name="cancellation-reason" rows={4} maxLength={1_000} value={cancellationReason} onChange={(event) => setCancellationReason(event.target.value)} placeholder="Share anything that could help us improve" />
               <div className="preorder-manage-form-actions">
-                <button className="button button--dark preorder-manage-cancel-submit" type="submit" disabled={Boolean(busy)}>{busy === "request_cancellation" ? "Submitting…" : "Cancel pre-order and request refund"}</button>
-                <button className="text-link preorder-manage-cancel-keep" type="button" onClick={() => setShowCancellationForm(false)}>Keep my pre-order</button>
+                <button className="button button--dark preorder-manage-cancel-submit" type="submit" disabled={Boolean(busy)}>{busy === "request_cancellation" ? "Submitting…" : `Cancel ${reservation ? "reservation" : "pre-order"} and request refund`}</button>
+                <button className="text-link preorder-manage-cancel-keep" type="button" onClick={() => setShowCancellationForm(false)}>Keep my {reservation ? "reservation" : "pre-order"}</button>
               </div>
             </form>
           ) : null}
@@ -793,7 +808,7 @@ export function PreorderManage() {
       <nav className="preorder-manage-policies" aria-label="Order policies">
         <span className="preorder-manage-policies__label">Order policies</span>
         <Link href="/preorder/product-status">Product status</Link>
-        <Link href="/preorder/terms">Pre-order terms</Link>
+        <Link href="/preorder/terms">{reservation ? "Reservation" : "Pre-order"} terms</Link>
         <Link href="/preorder/refunds">Cancellation and refunds</Link>
         <Link href="/privacy">Privacy</Link>
       </nav>

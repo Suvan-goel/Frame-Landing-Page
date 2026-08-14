@@ -1,3 +1,9 @@
+import {
+  PREORDER_DEFAULT_PRICE_CENTS,
+  PREORDER_FOUNDING_PRICE_CENTS,
+  PREORDER_REMAINING_BALANCE_CENTS,
+} from "./preorder.ts";
+
 export type PreorderLiveSmokeOrderEvidence = {
   id: string;
   checkoutIntentId: string;
@@ -5,6 +11,11 @@ export type PreorderLiveSmokeOrderEvidence = {
   paymentStatus: string;
   amountTotal: number;
   amountRefunded: number;
+  offerType: string;
+  reservationAmount: number;
+  lockedTotalPrice: number;
+  remainingBalance: number;
+  reservationStatus: string | null;
   confirmationEmailSentAt: string | null;
 };
 
@@ -13,6 +24,11 @@ export type PreorderLiveSmokeIntentEvidence = {
   environment: string;
   status: string;
   source: string | null;
+  offerType: string;
+  reservationAmount: number;
+  lockedTotalPrice: number;
+  remainingBalance: number;
+  unitAmount: number;
 };
 
 export function evaluatePreorderLiveSmokeEvidence(input: {
@@ -29,8 +45,18 @@ export function evaluatePreorderLiveSmokeEvidence(input: {
       intent.source === "private_live_smoke" &&
       order.environment === "live" &&
       order.paymentStatus === "refunded" &&
-      order.amountTotal > 0 &&
+      order.offerType === "reservation" &&
+      order.amountTotal === PREORDER_DEFAULT_PRICE_CENTS &&
       order.amountRefunded === order.amountTotal &&
+      order.reservationAmount === PREORDER_DEFAULT_PRICE_CENTS &&
+      order.lockedTotalPrice === PREORDER_FOUNDING_PRICE_CENTS &&
+      order.remainingBalance === PREORDER_REMAINING_BALANCE_CENTS &&
+      order.reservationStatus === "refunded" &&
+      intent.offerType === "reservation" &&
+      intent.reservationAmount === PREORDER_DEFAULT_PRICE_CENTS &&
+      intent.lockedTotalPrice === PREORDER_FOUNDING_PRICE_CENTS &&
+      intent.remainingBalance === PREORDER_REMAINING_BALANCE_CENTS &&
+      intent.unitAmount === PREORDER_DEFAULT_PRICE_CENTS &&
       order.confirmationEmailSentAt,
   );
 
@@ -38,6 +64,6 @@ export function evaluatePreorderLiveSmokeEvidence(input: {
     ready,
     blocker: ready
       ? null
-      : "The configured verification order is not a completed, confirmation-sent, fully refunded private live-verification order.",
+      : "The configured verification order is not a completed, confirmation-sent, fully refunded $49 Frame reservation with the reviewed $299 locked price and $250 remaining balance.",
   };
 }

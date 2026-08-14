@@ -13,8 +13,9 @@ import { getPreorderConfiguration } from "@/lib/preorder-config.server";
 import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
 import {
   formatPreorderMoney,
-  PREORDER_DISCOUNT_PERCENT,
-  PREORDER_RELEASE_PRICE_CENTS,
+  PREORDER_FOUNDING_PRICE_CENTS,
+  PREORDER_LAUNCH_PRICE_CENTS,
+  PREORDER_REMAINING_BALANCE_CENTS,
 } from "@/lib/preorder";
 import { companyLegalIdentityLine } from "@/lib/company";
 import { INSTAGRAM_URL, ORGANIZATION_NAME } from "@/lib/site";
@@ -83,11 +84,17 @@ export default async function Home() {
   const preorderPriceLabel = preorderOffer
     ? formatPreorderMoney(preorderOffer.priceCents, preorderOffer.currency)
     : null;
-  const preorderReleasePriceLabel = preorderOffer
-    ? formatPreorderMoney(PREORDER_RELEASE_PRICE_CENTS, preorderOffer.currency)
+  const preorderFoundingPriceLabel = preorderOffer
+    ? formatPreorderMoney(PREORDER_FOUNDING_PRICE_CENTS, preorderOffer.currency)
+    : null;
+  const preorderRemainingBalanceLabel = preorderOffer
+    ? formatPreorderMoney(PREORDER_REMAINING_BALANCE_CENTS, preorderOffer.currency)
+    : null;
+  const preorderLaunchPriceLabel = preorderOffer
+    ? formatPreorderMoney(PREORDER_LAUNCH_PRICE_CENTS, preorderOffer.currency)
     : null;
   const preorderSavingsCents = preorderOffer
-    ? Math.max(0, PREORDER_RELEASE_PRICE_CENTS - preorderOffer.priceCents)
+    ? Math.max(0, PREORDER_LAUNCH_PRICE_CENTS - PREORDER_FOUNDING_PRICE_CENTS)
     : 0;
   const preorderSavingsLabel = preorderOffer
     ? formatPreorderMoney(preorderSavingsCents, preorderOffer.currency)
@@ -132,7 +139,7 @@ export default async function Home() {
             }
           >
             {preorderOffer
-              ? `Pre-order now - ${preorderPriceLabel}`
+              ? `Reserve - ${preorderPriceLabel}`
               : "Get updates"}
           </a>
           {preorderOffer ? (
@@ -145,13 +152,13 @@ export default async function Home() {
             items={mobileNavigation}
             offerLabel={
               preorderOffer && preorderSavingsLabel
-                ? `Pre-order offer · Save ${preorderSavingsLabel}`
+                ? `Reservation offer · Save ${preorderSavingsLabel}`
                 : undefined
             }
             primaryItem={
               preorderOffer
                 ? {
-                    label: "Pre-order now",
+                    label: `Reserve Frame - ${preorderPriceLabel}`,
                     href: "/preorder/review?source=homepage_mobile",
                   }
                 : undefined
@@ -206,7 +213,9 @@ export default async function Home() {
                   />
                 </figure>
                 <p className="home-preorder-hero__offer-line">
-                  <span className="home-preorder-hero__offer-tag">Pre-order offer</span>
+                  <span className="home-preorder-hero__offer-tag">
+                    Save {preorderSavingsLabel} by reserving today
+                  </span>
                   <span
                     className="home-preorder-hero__offer-separator"
                     aria-hidden="true"
@@ -214,24 +223,15 @@ export default async function Home() {
                     ·
                   </span>
                   <span className="home-preorder-hero__offer-message">
-                    Save <strong>{preorderSavingsLabel}</strong>
+                    Fully refundable
                   </span>
                 </p>
                 <div
                   className="home-preorder-hero__mobile-offer"
-                  aria-label={`Pre-order offer; save ${preorderSavingsLabel}`}
+                  aria-label="Reservation is fully refundable."
                 >
                   <span className="home-preorder-hero__offer-tag">
-                    Pre-order offer
-                  </span>
-                  <span
-                    className="home-preorder-hero__mobile-offer-separator"
-                    aria-hidden="true"
-                  >
-                    ·
-                  </span>
-                  <span className="home-preorder-hero__mobile-offer-saving">
-                    Save <strong>{preorderSavingsLabel}</strong>
+                    Fully refundable
                   </span>
                 </div>
                 <div className="home-preorder-hero__actions">
@@ -240,10 +240,10 @@ export default async function Home() {
                     href="/preorder/review?source=homepage_hero"
                   >
                     <span className="home-preorder-hero__cta-desktop">
-                      Pre-order for {preorderPriceLabel}
+                      Reserve Frame - {preorderPriceLabel}
                     </span>
                     <span className="home-preorder-hero__cta-mobile">
-                      Pre-order for {preorderPriceLabel}
+                      Reserve Frame - {preorderPriceLabel}
                     </span>
                   </a>
                   <a className="home-preorder-hero__details-button" href="#preorder">
@@ -492,10 +492,10 @@ export default async function Home() {
               <div className="home-preorder-copy">
                 <p className="eyebrow">
                   <span className="home-preorder-copy__eyebrow-desktop">
-                    Pre-order offer
+                    Reservation offer
                   </span>
                   <span className="home-preorder-copy__eyebrow-mobile">
-                    Pre-order offer
+                    Reservation offer
                   </span>
                 </p>
                 <h2>
@@ -517,40 +517,39 @@ export default async function Home() {
 
                 <dl
                   className="home-preorder-price-comparison home-preorder-price-comparison--section"
-                  aria-label="Frame pre-order pricing"
+                  aria-label="Frame reservation pricing"
                 >
                   <div className="home-preorder-price-comparison__pair">
                     <div>
-                      <dt>Pre-order price</dt>
-                      <dd>{preorderPriceLabel}</dd>
+                      <dt>Your price</dt>
+                      <dd>{preorderFoundingPriceLabel}</dd>
                     </div>
                     <div>
-                      <dt>Release price</dt>
-                      <dd><del>{preorderReleasePriceLabel}</del></dd>
+                      <dt>Launch price</dt>
+                      <dd>{preorderLaunchPriceLabel}</dd>
                     </div>
                   </div>
                   <div className="home-preorder-price-comparison__saving">
                     <div>
-                      <dt>You save</dt>
-                      <dd>{preorderSavingsLabel}</dd>
+                      <dt>Reserve today</dt>
+                      <dd>{preorderPriceLabel}</dd>
                     </div>
-                    <span>{PREORDER_DISCOUNT_PERCENT}% off</span>
                   </div>
                 </dl>
 
                 <div
                   className="home-preorder-mobile-price-card"
-                  aria-label={`${preorderPriceLabel} pre-order price. Save ${preorderSavingsLabel}, ${PREORDER_DISCOUNT_PERCENT}% off the planned ${preorderReleasePriceLabel} release price.`}
+                  aria-label={`${preorderPriceLabel} fully refundable reservation. Locks in your ${preorderFoundingPriceLabel} price; ${preorderRemainingBalanceLabel} due before shipping. Launch price ${preorderLaunchPriceLabel}.`}
                 >
-                  <span>Pre-order price</span>
+                  <span>Your price</span>
                   <div className="home-preorder-mobile-price-card__price-row">
-                    <strong>{preorderPriceLabel}</strong>
-                    <span>Save {preorderSavingsLabel}</span>
+                    <strong>{preorderFoundingPriceLabel}</strong>
+                    <span>Reserve {preorderPriceLabel}</span>
                   </div>
                   <p>
                     <span>
-                      {PREORDER_DISCOUNT_PERCENT}% off the planned{" "}
-                      <del>{preorderReleasePriceLabel}</del> release price
+                      {preorderRemainingBalanceLabel} due before shipping ·{" "}
+                      {preorderLaunchPriceLabel} launch price
                     </span>
                   </p>
                 </div>
@@ -558,21 +557,21 @@ export default async function Home() {
                 <div className="home-preorder-actions">
                   <a className="button button--dark" href={preorderHref}>
                     <span className="home-preorder-actions__label-desktop">
-                      Pre-order now
+                      Reserve Frame - {preorderPriceLabel}
                     </span>
                     <span className="home-preorder-actions__label-mobile">
-                      Pre-order now
+                      Reserve Frame - {preorderPriceLabel}
                     </span>
                     <Arrow />
                   </a>
                   <p className="home-preorder-price-note home-preorder-price-note--desktop">
-                    US shipping included · Refundable before fulfilment
+                    Fully refundable · No automatic later charge
                   </p>
                   <ul
                     className="home-preorder-price-note home-preorder-price-note--mobile"
-                    aria-label="Pre-order reassurance"
+                    aria-label="Reservation reassurance"
                   >
-                    <li>US shipping included · Refundable before fulfilment</li>
+                    <li>Fully refundable · No automatic later charge</li>
                   </ul>
                   <a className="text-link" href="/preorder/product-status">
                     <span className="home-preorder-progress-label__desktop">
@@ -585,8 +584,8 @@ export default async function Home() {
                   </a>
                 </div>
 
-                <div className="home-preorder-links" aria-label="Pre-order policies">
-                  <a href="/preorder/terms">Pre-order Terms</a>
+                <div className="home-preorder-links" aria-label="Reservation policies">
+                  <a href="/preorder/terms">Reservation Terms</a>
                   <a href="/preorder/refunds">Cancellation &amp; Refund Policy</a>
                 </div>
               </div>

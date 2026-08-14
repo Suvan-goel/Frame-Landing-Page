@@ -38,7 +38,7 @@ function allowedCountries(value: string | undefined) {
 
 export async function getPreorderConfiguration() {
   const [priceCents, currency, countries, shippingEstimate, legacyDeliveryEstimate, shippingRateCents] = await Promise.all([
-    getRuntimeValue("PREORDER_PRICE_CENTS"),
+    getRuntimeValue("FRAME_RESERVATION_PRICE_CENTS"),
     getRuntimeValue("PREORDER_CURRENCY"),
     getRuntimeValue("PREORDER_ALLOWED_COUNTRIES"),
     getRuntimeValue("PREORDER_ESTIMATED_SHIPPING"),

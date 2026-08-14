@@ -66,6 +66,10 @@ export type QualificationUpdate = {
 export type PreorderDeclineUpdate = {
   reason: string;
   detail: string | null;
+  willingnessToPayBand: string | null;
+  evidenceRequirements: string[] | null;
+  evidenceRequirementsOther: string | null;
+  openToResearchCall: string;
   recordedAt: string;
 };
 

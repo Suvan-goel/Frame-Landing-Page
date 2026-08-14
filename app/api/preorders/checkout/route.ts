@@ -4,9 +4,11 @@ import {
   formatPreorderMoney,
   preorderStripeProductDescription,
   PREORDER_CHECKOUT_SESSION_TTL_SECONDS,
+  PREORDER_DEFAULT_PRICE_CENTS,
+  PREORDER_FOUNDING_PRICE_CENTS,
   PREORDER_MAX_QUANTITY,
   PREORDER_PRODUCT_STATUS_VERSION,
-  PREORDER_RELEASE_PRICE_CENTS,
+  PREORDER_REMAINING_BALANCE_CENTS,
   PREORDER_SHIPPING_RATE_CENTS,
   PREORDER_STRIPE_PRODUCT_IMAGE_URL,
   PREORDER_STRIPE_PRODUCT_NAME,
@@ -26,7 +28,7 @@ import {
   isPreorderSalesRequestEnabled,
 } from "@/lib/runtime-env.server";
 import { consumePreorderRateLimit } from "@/lib/preorder-rate-limit.server";
-import { getStripe, getStripePreorderPriceId } from "@/lib/stripe.server";
+import { getStripe, getStripeReservationPriceId } from "@/lib/stripe.server";
 import { getSupabaseAdmin } from "@/lib/supabase-admin.server";
 import { SITE_URL } from "@/lib/site";
 import { verifiedRequestOrigin } from "@/lib/request-origin.server";
@@ -35,7 +37,7 @@ import { cleanAttribution } from "@/lib/attribution";
 export const dynamic = "force-dynamic";
 
 const MAX_BODY_BYTES = 8_192;
-const STRIPE_CHECKOUT_INTEGRATION_IDENTIFIER = "frame_preorder_xkqvnjrt";
+const STRIPE_CHECKOUT_INTEGRATION_IDENTIFIER = "frame_reservation_xkqvnjrt";
 
 function jsonResponse(body: Record<string, unknown>, status = 200) {
   return Response.json(body, {
@@ -76,12 +78,12 @@ export async function POST(request: Request) {
   try {
     payload = (await request.json()) as typeof payload;
   } catch {
-    return jsonResponse({ error: "Review your pre-order details and try again." }, 400);
+    return jsonResponse({ error: "Review your reservation details and try again." }, 400);
   }
 
   const quantity = typeof payload.quantity === "number" ? payload.quantity : 1;
   if (!Number.isInteger(quantity) || quantity < 1 || quantity > PREORDER_MAX_QUANTITY) {
-    return jsonResponse({ error: "Choose a valid pre-order quantity." }, 400);
+    return jsonResponse({ error: "Choose a valid reservation quantity." }, 400);
   }
 
   if (await isLocalPreorderPreview(request)) {
@@ -131,7 +133,7 @@ export async function POST(request: Request) {
     const mode = await getPreorderMode();
     const environment = preorderEnvironmentForMode(mode);
     if (!environment) {
-      throw new Error("Pre-order Checkout is disabled.");
+      throw new Error("Reservation checkout is disabled.");
     }
     if (liveSmokeRequest && environment !== "live") {
       throw new Error("Private live verification requires the live payment environment.");
@@ -144,14 +146,25 @@ export async function POST(request: Request) {
       mode === "live" &&
       !isPreorderLiveApproved({ mode, approvedTermsVersion, approvedProductStatusVersion })
     ) {
-      throw new Error("Live pre-order Checkout is blocked until approved legal disclosures are active.");
+      throw new Error("Live reservation checkout is blocked until approved legal disclosures are active.");
     }
     const config = await getPreorderConfiguration();
     if (config.shippingRateCents !== PREORDER_SHIPPING_RATE_CENTS) {
-      throw new Error("Pre-order shipping does not match the reviewed offer.");
+      throw new Error("Reservation shipping does not match the reviewed offer.");
     }
-    const preorderSavingsLabel = formatPreorderMoney(
-      PREORDER_RELEASE_PRICE_CENTS - config.priceCents,
+    if (
+      config.priceCents !== PREORDER_DEFAULT_PRICE_CENTS ||
+      PREORDER_FOUNDING_PRICE_CENTS - config.priceCents !==
+        PREORDER_REMAINING_BALANCE_CENTS
+    ) {
+      throw new Error("The Frame reservation amount does not match the reviewed offer.");
+    }
+    const foundingPriceLabel = formatPreorderMoney(
+      PREORDER_FOUNDING_PRICE_CENTS,
+      config.currency,
+    );
+    const remainingBalanceLabel = formatPreorderMoney(
+      PREORDER_REMAINING_BALANCE_CENTS,
       config.currency,
     );
     const totalBeforeTaxLabel = formatPreorderMoney(
@@ -160,7 +173,7 @@ export async function POST(request: Request) {
     );
     const legalBaseUrl = mode === "test" ? requestOrigin : SITE_URL;
     const stripe = await getStripe(environment);
-    const priceId = await getStripePreorderPriceId(environment);
+    const priceId = await getStripeReservationPriceId(environment);
     const price = await stripe.prices.retrieve(priceId, { expand: ["product"] });
     const product =
       typeof price.product === "string" || !price.product || price.product.deleted
@@ -183,7 +196,7 @@ export async function POST(request: Request) {
       product.description !== expectedProductDescription ||
       product.tax_code !== PREORDER_STRIPE_PRODUCT_TAX_CODE
     ) {
-      throw new Error("The Stripe pre-order product and price do not match the reviewed offer.");
+      throw new Error("The Stripe reservation product and price do not match the reviewed offer.");
     }
 
     const now = new Date();
@@ -208,6 +221,10 @@ export async function POST(request: Request) {
       productStatusAcknowledgedAt: null,
       marketingOptIn,
       marketingConsentAt: marketingOptIn ? now.toISOString() : null,
+      offerType: "reservation",
+      reservationAmount: config.priceCents,
+      lockedTotalPrice: PREORDER_FOUNDING_PRICE_CENTS,
+      remainingBalance: PREORDER_REMAINING_BALANCE_CENTS,
     });
 
     const supabase = await getSupabaseAdmin();
@@ -218,7 +235,7 @@ export async function POST(request: Request) {
       .maybeSingle();
     if (reservedIntent.error) throw reservedIntent.error;
     if (!reservedIntent.data) {
-      throw new Error("The pre-order checkout reservation could not be loaded.");
+      throw new Error("The checkout reservation could not be loaded.");
     }
 
     const existingSessionId = reservedIntent.data.stripe_checkout_session_id;
@@ -274,21 +291,25 @@ export async function POST(request: Request) {
           submit: {
             message:
               liveSmokeRequest
-                ? `Private live verification: your card will be charged ${totalBeforeTaxLabel} plus applicable tax. Refund the order immediately after verifying the order record, confirmation email, and management link. Free standard US shipping is included.`
+                ? `Private live verification: your card will be charged ${totalBeforeTaxLabel} plus applicable tax for a fully refundable Frame reservation. Refund it immediately after verifying the reservation record, confirmation email, and management link.`
                 : mode === "test"
-                ? `Sandbox payment only. ${totalBeforeTaxLabel} before tax · Free US shipping · Save ${preorderSavingsLabel} · Estimated shipping ${config.estimatedShipping}.`
-                : `${totalBeforeTaxLabel} before tax · Free US shipping · Save ${preorderSavingsLabel} · Estimated shipping ${config.estimatedShipping}.`,
+                ? `Sandbox payment only. ${totalBeforeTaxLabel} before tax today · Fully refundable · Your price ${foundingPriceLabel} · ${remainingBalanceLabel} due before shipping.`
+                : `${totalBeforeTaxLabel} before tax today · Fully refundable · Your price ${foundingPriceLabel} · ${remainingBalanceLabel} due before shipping.`,
           },
           terms_of_service_acceptance: {
-            message: `I agree to the [Pre-order Terms](${legalBaseUrl}/preorder/terms) and [Refund Policy](${legalBaseUrl}/preorder/refunds), and acknowledge Frame’s [Product Status](${legalBaseUrl}/preorder/product-status) and [Privacy Notice](${legalBaseUrl}/privacy).`,
+            message: `I agree to the [Reservation Terms](${legalBaseUrl}/preorder/terms) and [Refund Policy](${legalBaseUrl}/preorder/refunds), and acknowledge Frame’s [Product Status](${legalBaseUrl}/preorder/product-status) and [Privacy Notice](${legalBaseUrl}/privacy).`,
           },
         },
         submit_type: "pay",
         allow_promotion_codes: false,
         metadata: {
-          flow: "frame_preorder",
+          flow: "frame_reservation",
           checkout_intent_id: reservedIntentId,
           environment,
+          offer_type: "reservation",
+          reservation_amount: String(config.priceCents),
+          locked_total_price: String(PREORDER_FOUNDING_PRICE_CENTS),
+          remaining_balance: String(PREORDER_REMAINING_BALANCE_CENTS),
           terms_version: PREORDER_TERMS_VERSION,
           product_status_version: PREORDER_PRODUCT_STATUS_VERSION,
           ...(liveSmokeRequest ? { verification_mode: "live_smoke" } : {}),
@@ -299,9 +320,13 @@ export async function POST(request: Request) {
               ? `${PREORDER_STRIPE_PRODUCT_NAME} (sandbox)`
               : PREORDER_STRIPE_PRODUCT_NAME,
           metadata: {
-            flow: "frame_preorder",
+            flow: "frame_reservation",
             checkout_intent_id: reservedIntentId,
             environment,
+            offer_type: "reservation",
+            reservation_amount: String(config.priceCents),
+            locked_total_price: String(PREORDER_FOUNDING_PRICE_CENTS),
+            remaining_balance: String(PREORDER_REMAINING_BALANCE_CENTS),
             terms_version: PREORDER_TERMS_VERSION,
             product_status_version: PREORDER_PRODUCT_STATUS_VERSION,
             ...(liveSmokeRequest ? { verification_mode: "live_smoke" } : {}),
@@ -311,7 +336,7 @@ export async function POST(request: Request) {
         success_url: `${requestOrigin}/preorder/success?session_id={CHECKOUT_SESSION_ID}`,
         cancel_url: `${requestOrigin}/preorder/review?cancelled=1`,
       },
-      { idempotencyKey: `frame-preorder-checkout-${reservedIntentId}` },
+      { idempotencyKey: `frame-reservation-checkout-${reservedIntentId}` },
     );
     stripeSessionCreated = true;
 
@@ -336,12 +361,12 @@ export async function POST(request: Request) {
     if (error instanceof PreorderAvailabilityError) {
       const message =
         error.reason === "paused"
-          ? "Pre-orders are temporarily paused. Please check back soon."
+          ? "Reservations are temporarily paused. Please check back soon."
           : error.reason === "sold_out"
-            ? "This pre-order allocation is currently full."
+            ? "This reservation allocation is currently full."
             : error.reason === "already_completed"
               ? "This checkout request has already been completed. Refresh the page to start again."
-              : "Pre-order availability is temporarily unavailable. Please try again shortly.";
+              : "Reservation availability is temporarily unavailable. Please try again shortly.";
       return jsonResponse({ error: message }, 409);
     }
     return jsonResponse(

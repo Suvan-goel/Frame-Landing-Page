@@ -46,6 +46,9 @@ export type WaitlistSignup = {
   frustration_or_missing_need: string | null;
   preorder_decline_reason: string | null;
   preorder_decline_detail: string | null;
+  willingness_to_pay_band: string | null;
+  evidence_requirements: string[] | null;
+  evidence_requirements_other: string | null;
   preorder_declined_at: string | null;
   open_to_research_call: string | null;
   survey_completed_at: string | null;
@@ -72,7 +75,7 @@ export type LeadTab = "qualified" | "unqualified";
 export type SurveyFlow = "new" | "legacy";
 
 export const WAITLIST_SIGNUP_SELECT =
-  "id,first_name,last_name,email,gender,age,motivation,placement,utm_source,utm_medium,utm_campaign,utm_content,utm_term,signup_referrer,meta_click_id,qualification_status,primary_interest,primary_interest_other,monitoring_frequency,monitoring_reason,monitoring_readiness,current_monitoring_method,current_monitoring_method_other,monitoring_outcome,frustration_or_missing_need,preorder_decline_reason,preorder_decline_detail,preorder_declined_at,open_to_research_call,survey_completed_at,qualification_skipped_at,created_at";
+  "id,first_name,last_name,email,gender,age,motivation,placement,utm_source,utm_medium,utm_campaign,utm_content,utm_term,signup_referrer,meta_click_id,qualification_status,primary_interest,primary_interest_other,monitoring_frequency,monitoring_reason,monitoring_readiness,current_monitoring_method,current_monitoring_method_other,monitoring_outcome,frustration_or_missing_need,preorder_decline_reason,preorder_decline_detail,willingness_to_pay_band,evidence_requirements,evidence_requirements_other,preorder_declined_at,open_to_research_call,survey_completed_at,qualification_skipped_at,created_at";
 
 export const monitoringFrequencyLabels: Record<string, string> =
   Object.fromEntries(MONITORING_FREQUENCY_OPTIONS);
@@ -235,6 +238,9 @@ export const waitlistExportHeaders = [
   "qualitative_detail",
   "not_ready_to_preorder_reason",
   "not_ready_to_preorder_detail",
+  "willingness_to_pay_band",
+  "evidence_requirements",
+  "evidence_requirements_other",
   "not_ready_to_preorder_recorded_at",
   "legacy_main_reason",
   "legacy_main_reason_other",
@@ -274,6 +280,9 @@ export function toWaitlistExportRow(
     qualification.qualitativeDetail,
     qualification.preorderDeclineReason,
     qualification.preorderDeclineDetail,
+    signup.willingness_to_pay_band,
+    signup.evidence_requirements?.join("|") ?? null,
+    signup.evidence_requirements_other,
     signup.preorder_declined_at,
     qualification.legacyMainReason,
     qualification.legacyMainReasonOther,

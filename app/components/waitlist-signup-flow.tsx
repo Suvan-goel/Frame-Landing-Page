@@ -21,6 +21,9 @@ import {
   MONITORING_REASON_OPTIONS,
   PREORDER_DECLINE_REASON_OPTIONS,
   QUALITATIVE_FOLLOW_UP_OUTCOMES,
+  EVIDENCE_REQUIREMENT_OPTIONS,
+  RESEARCH_CALL_OPTIONS,
+  WILLINGNESS_TO_PAY_OPTIONS,
 } from "@/lib/waitlist-options";
 import {
   getMetaTrackingContext,
@@ -71,6 +74,11 @@ type WaitlistFlowContextValue = {
   qualitativeDetail: string;
   preorderDeclineReason: string;
   preorderDeclineDetail: string;
+  preorderDeclineStep: number;
+  willingnessToPayBand: string;
+  evidenceRequirements: string[];
+  evidenceRequirementsOther: string;
+  openToResearchCall: string;
   emailStatus: RequestStatus;
   surveyStatus: RequestStatus;
   surveyResumeStatus: SurveyResumeStatus;
@@ -85,6 +93,12 @@ type WaitlistFlowContextValue = {
   setQualitativeDetail: (value: string) => void;
   setPreorderDeclineReason: (value: string) => void;
   setPreorderDeclineDetail: (value: string) => void;
+  setWillingnessToPayBand: (value: string) => void;
+  toggleEvidenceRequirement: (value: string) => void;
+  setEvidenceRequirementsOther: (value: string) => void;
+  setOpenToResearchCall: (value: string) => void;
+  continuePreorderDecline: () => void;
+  backPreorderDecline: () => void;
   captureEmail: (placement: string, website: string) => Promise<void>;
   continueSurvey: () => void;
   backSurvey: () => void;
@@ -164,6 +178,12 @@ export function WaitlistSignupProvider({
   const [qualitativeDetail, setQualitativeDetailState] = useState("");
   const [preorderDeclineReason, setPreorderDeclineReasonState] = useState("");
   const [preorderDeclineDetail, setPreorderDeclineDetailState] = useState("");
+  const [preorderDeclineStep, setPreorderDeclineStep] = useState(0);
+  const [willingnessToPayBand, setWillingnessToPayBandState] = useState("");
+  const [evidenceRequirements, setEvidenceRequirements] = useState<string[]>([]);
+  const [evidenceRequirementsOther, setEvidenceRequirementsOtherState] =
+    useState("");
+  const [openToResearchCall, setOpenToResearchCallState] = useState("");
   const [emailStatus, setEmailStatus] = useState<RequestStatus>("idle");
   const [surveyStatus, setSurveyStatus] = useState<RequestStatus>("idle");
   const [surveyResumeStatus, setSurveyResumeStatus] =
@@ -173,6 +193,7 @@ export function WaitlistSignupProvider({
   const emailRequest = useRef<Promise<void> | null>(null);
   const surveyRequest = useRef<Promise<void> | null>(null);
   const skippedTokens = useRef(new Set<string>());
+  const analyticsSelections = useRef(new Set<string>());
   const surveyStarted = useRef(false);
   const neverMeasured = monitoringFrequency === "never_outside_appointment";
   const surveySteps = neverMeasured
@@ -318,14 +339,86 @@ export function WaitlistSignupProvider({
     [clearFieldError],
   );
 
-  const setPreorderDeclineReason = useCallback((value: string) => {
-    setPreorderDeclineReasonState(value);
-    if (value !== "another_reason") setPreorderDeclineDetailState("");
-    setSubmissionError("");
-  }, []);
+  const setPreorderDeclineReason = useCallback(
+    (value: string) => {
+      setPreorderDeclineReasonState(value);
+      if (value !== "another_reason") setPreorderDeclineDetailState("");
+      if (value !== "price_too_high") setWillingnessToPayBandState("");
+      if (value !== "need_more_evidence") {
+        setEvidenceRequirements([]);
+        setEvidenceRequirementsOtherState("");
+      }
+      setSubmissionError("");
+
+      const eventKey = `objection:${value}`;
+      if (!analyticsSelections.current.has(eventKey)) {
+        analyticsSelections.current.add(eventKey);
+        trackWaitlistEvent("reservation_objection_selected", {
+          placement: activePlacement ?? "qualification_page",
+          reason: value,
+        });
+        if (value === "price_too_high") {
+          trackWaitlistEvent("reservation_price_objection_selected", {
+            placement: activePlacement ?? "qualification_page",
+          });
+        } else if (value === "need_more_evidence") {
+          trackWaitlistEvent("reservation_evidence_objection_selected", {
+            placement: activePlacement ?? "qualification_page",
+          });
+        }
+      }
+    },
+    [activePlacement],
+  );
 
   const setPreorderDeclineDetail = useCallback((value: string) => {
     setPreorderDeclineDetailState(value);
+    setSubmissionError("");
+  }, []);
+
+  const setWillingnessToPayBand = useCallback(
+    (value: string) => {
+      setWillingnessToPayBandState(value);
+      setSubmissionError("");
+      const eventKey = `willingness:${value}`;
+      if (!analyticsSelections.current.has(eventKey)) {
+        analyticsSelections.current.add(eventKey);
+        trackWaitlistEvent("reservation_willingness_band_selected", {
+          placement: activePlacement ?? "qualification_page",
+          band: value,
+        });
+      }
+    },
+    [activePlacement],
+  );
+
+  const toggleEvidenceRequirement = useCallback(
+    (value: string) => {
+      setEvidenceRequirements((current) =>
+        current.includes(value)
+          ? current.filter((entry) => entry !== value)
+          : [...current, value],
+      );
+      setSubmissionError("");
+      const eventKey = `evidence:${value}`;
+      if (!analyticsSelections.current.has(eventKey)) {
+        analyticsSelections.current.add(eventKey);
+        trackWaitlistEvent("reservation_evidence_requirement_selected", {
+          placement: activePlacement ?? "qualification_page",
+          requirement: value,
+        });
+      }
+    },
+    [activePlacement],
+  );
+
+  const setEvidenceRequirementsOther = useCallback((value: string) => {
+    setEvidenceRequirementsOtherState(value);
+    setSubmissionError("");
+  }, []);
+
+  const setOpenToResearchCall = useCallback((value: string) => {
+    setOpenToResearchCallState(value);
     setSubmissionError("");
   }, []);
 
@@ -590,23 +683,79 @@ export function WaitlistSignupProvider({
     setActivePlacement(placement);
     setPreorderDeclineReasonState("");
     setPreorderDeclineDetailState("");
+    setPreorderDeclineStep(0);
+    setWillingnessToPayBandState("");
+    setEvidenceRequirements([]);
+    setEvidenceRequirementsOtherState("");
+    setOpenToResearchCallState("");
+    analyticsSelections.current.clear();
     setSubmissionError("");
     setStage("preorder_decline");
     trackWaitlistEvent("preorder_decline_started", { placement });
+  }, []);
+
+  const continuePreorderDecline = useCallback(() => {
+    if (preorderDeclineStep === 0) {
+      if (!preorderDeclineReason) {
+        setSubmissionError("Choose the main reason you wouldn’t reserve Frame today.");
+        return;
+      }
+      setPreorderDeclineStep(1);
+      setSubmissionError("");
+      return;
+    }
+    if (preorderDeclineStep === 1 && preorderDeclineReason === "price_too_high") {
+      if (!willingnessToPayBand) {
+        setSubmissionError("Choose the price range that would feel realistic.");
+        return;
+      }
+      setPreorderDeclineStep(2);
+      setSubmissionError("");
+      return;
+    }
+    if (
+      preorderDeclineStep === 1 &&
+      preorderDeclineReason === "need_more_evidence"
+    ) {
+      if (!evidenceRequirements.length) {
+        setSubmissionError("Choose at least one type of evidence.");
+        return;
+      }
+      setPreorderDeclineStep(2);
+      setSubmissionError("");
+    }
+  }, [
+    evidenceRequirements.length,
+    preorderDeclineReason,
+    preorderDeclineStep,
+    willingnessToPayBand,
+  ]);
+
+  const backPreorderDecline = useCallback(() => {
+    setSubmissionError("");
+    setPreorderDeclineStep((current) => Math.max(0, current - 1));
   }, []);
 
   const submitPreorderDecline = useCallback(
     async (placement: string) => {
       if (surveyRequest.current) return surveyRequest.current;
       if (!preorderDeclineReason) {
-        setSubmissionError("Choose the main reason you aren’t ready to pre-order.");
+        setSubmissionError("Choose the main reason you wouldn’t reserve Frame today.");
+        return;
+      }
+      if (preorderDeclineReason === "price_too_high" && !willingnessToPayBand) {
+        setSubmissionError("Choose the price range that would feel realistic.");
         return;
       }
       if (
-        preorderDeclineReason === "another_reason" &&
-        !preorderDeclineDetail.trim()
+        preorderDeclineReason === "need_more_evidence" &&
+        !evidenceRequirements.length
       ) {
-        setSubmissionError("Tell us the other main reason.");
+        setSubmissionError("Choose at least one type of evidence.");
+        return;
+      }
+      if (!openToResearchCall) {
+        setSubmissionError("Choose whether you would be open to a conversation.");
         return;
       }
 
@@ -632,6 +781,10 @@ export function WaitlistSignupProvider({
               signupToken,
               reason: preorderDeclineReason,
               detail: preorderDeclineDetail.trim(),
+              willingnessToPayBand,
+              evidenceRequirements,
+              evidenceRequirementsOther: evidenceRequirementsOther.trim(),
+              openToResearchCall,
             }),
           });
           const result = await responsePayload(response);
@@ -669,6 +822,10 @@ export function WaitlistSignupProvider({
     }, [
       preorderDeclineDetail,
       preorderDeclineReason,
+      willingnessToPayBand,
+      evidenceRequirements,
+      evidenceRequirementsOther,
+      openToResearchCall,
       signupToken,
     ],
   );
@@ -688,6 +845,11 @@ export function WaitlistSignupProvider({
       qualitativeDetail,
       preorderDeclineReason,
       preorderDeclineDetail,
+      preorderDeclineStep,
+      willingnessToPayBand,
+      evidenceRequirements,
+      evidenceRequirementsOther,
+      openToResearchCall,
       emailStatus,
       surveyStatus,
       surveyResumeStatus,
@@ -702,6 +864,12 @@ export function WaitlistSignupProvider({
       setQualitativeDetail: setQualitativeDetailState,
       setPreorderDeclineReason,
       setPreorderDeclineDetail,
+      setWillingnessToPayBand,
+      toggleEvidenceRequirement,
+      setEvidenceRequirementsOther,
+      setOpenToResearchCall,
+      continuePreorderDecline,
+      backPreorderDecline,
       captureEmail,
       continueSurvey,
       backSurvey,
@@ -725,6 +893,11 @@ export function WaitlistSignupProvider({
       monitoringReason,
       preorderDeclineDetail,
       preorderDeclineReason,
+      preorderDeclineStep,
+      willingnessToPayBand,
+      evidenceRequirements,
+      evidenceRequirementsOther,
+      openToResearchCall,
       qualitativeDetail,
       setEmail,
       setMonitoringFrequency,
@@ -734,6 +907,12 @@ export function WaitlistSignupProvider({
       setMonitoringReason,
       setPreorderDeclineDetail,
       setPreorderDeclineReason,
+      setWillingnessToPayBand,
+      toggleEvidenceRequirement,
+      setEvidenceRequirementsOther,
+      setOpenToResearchCall,
+      continuePreorderDecline,
+      backPreorderDecline,
       skipSurvey,
       stage,
       submissionError,
@@ -806,6 +985,39 @@ function ChoiceList({
   );
 }
 
+function MultiChoiceList({
+  idPrefix,
+  name,
+  options,
+  values,
+  onToggle,
+}: {
+  idPrefix: string;
+  name: string;
+  options: readonly (readonly [string, string])[];
+  values: string[];
+  onToggle: (value: string) => void;
+}) {
+  return (
+    <fieldset className="interest-flow__choices interest-flow__choices--multiple">
+      <legend className="sr-only">Choose all that apply</legend>
+      {options.map(([optionValue, label]) => (
+        <label className="interest-flow__choice" key={optionValue}>
+          <input
+            type="checkbox"
+            name={`${idPrefix}-${name}`}
+            value={optionValue}
+            checked={values.includes(optionValue)}
+            onChange={() => onToggle(optionValue)}
+          />
+          <span aria-hidden="true" />
+          <strong>{label}</strong>
+        </label>
+      ))}
+    </fieldset>
+  );
+}
+
 export function WaitlistSignupFlow({
   placement,
   tone = "dark",
@@ -827,6 +1039,7 @@ export function WaitlistSignupFlow({
   const rootRef = useRef<HTMLDivElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const viewed = useRef(false);
+  const reservationCtaViewed = useRef(false);
   const idPrefix = placement.replaceAll("_", "-");
   const isActivePlacement = flow.activePlacement === placement;
   const neverMeasured =
@@ -834,6 +1047,11 @@ export function WaitlistSignupFlow({
   const isFinalStep = neverMeasured
     ? flow.surveyStep === FINAL_NEVER_MEASURED_STEP
     : flow.surveyStep === FINAL_MEASURED_STEP;
+  const hasConditionalObjection =
+    flow.preorderDeclineReason === "price_too_high" ||
+    flow.preorderDeclineReason === "need_more_evidence";
+  const declineFinalStep = hasConditionalObjection ? 2 : 1;
+  const isDeclineFinalStep = flow.preorderDeclineStep === declineFinalStep;
 
   useEffect(() => {
     const root = rootRef.current;
@@ -859,6 +1077,18 @@ export function WaitlistSignupFlow({
     observer.observe(root);
     return () => observer.disconnect();
   }, [placement]);
+
+  useEffect(() => {
+    if (
+      !preorderHref ||
+      (flow.stage !== "completed" && flow.stage !== "finished") ||
+      reservationCtaViewed.current
+    ) {
+      return;
+    }
+    reservationCtaViewed.current = true;
+    trackWaitlistEvent("reservation_cta_viewed", { placement });
+  }, [flow.stage, placement, preorderHref]);
 
   useEffect(() => {
     if (
@@ -1147,15 +1377,20 @@ export function WaitlistSignupFlow({
             {preorderHref && preorderPriceLabel ? (
               <>
                 <p>
-                  Ready to take the next step? Frame is available to pre-order for{" "}
-                  {preorderPriceLabel}.
+                  Reserve Frame for {preorderPriceLabel} today to lock in your
+                  $299 price - $100 less than the $399 launch price. Your
+                  reservation is fully refundable and counts toward the total,
+                  leaving $250 due before shipping.
                 </p>
                 <div className="interest-flow__success-actions interest-flow__success-actions--stacked">
                   <a
                     className="button button--dark interest-flow__preorder-button"
                     href={preorderHref}
+                    onClick={() =>
+                      trackWaitlistEvent("reservation_cta_clicked", { placement })
+                    }
                   >
-                    <span>Pre-order Frame</span>
+                    <span>Reserve Frame</span>
                     <span>
                       {preorderPriceLabel} <span aria-hidden="true">→</span>
                     </span>
@@ -1165,7 +1400,7 @@ export function WaitlistSignupFlow({
                     type="button"
                     onClick={() => flow.beginPreorderDecline(placement)}
                   >
-                    <span>I’m not ready to pre-order</span>
+                    <span>I’m not ready to reserve</span>
                     <span aria-hidden="true">→</span>
                   </button>
                 </div>
@@ -1191,27 +1426,45 @@ export function WaitlistSignupFlow({
           className="interest-flow__form interest-flow__decline-form"
           onSubmit={(event) => {
             event.preventDefault();
-            void flow.submitPreorderDecline(placement);
+            if (isDeclineFinalStep) {
+              void flow.submitPreorderDecline(placement);
+            } else {
+              flow.continuePreorderDecline();
+            }
           }}
           noValidate
         >
           <div className="interest-flow__content">
-            <p className="eyebrow">One last question</p>
+            <p className="eyebrow">
+              Reservation research · Question {flow.preorderDeclineStep + 1} of{" "}
+              {declineFinalStep + 1}
+            </p>
             <h2 ref={headingRef} tabIndex={-1}>
-              What’s the main reason you’re not pre-ordering Frame today?
+              {flow.preorderDeclineStep === 0
+                ? "What’s the main reason you wouldn’t reserve Frame today?"
+                : flow.preorderDeclineStep === 1 &&
+                    flow.preorderDeclineReason === "price_too_high"
+                  ? "If Frame delivered reliable automatic blood-pressure tracking throughout the day, what’s the most you’d realistically consider paying for it?"
+                  : flow.preorderDeclineStep === 1 &&
+                      flow.preorderDeclineReason === "need_more_evidence"
+                    ? "What would make you comfortable buying Frame?"
+                    : "Would you be open to a short call or testing an early Frame prototype?"}
             </h2>
-            <ChoiceList
-              idPrefix={idPrefix}
-              name="preorder-decline-reason"
-              options={PREORDER_DECLINE_REASON_OPTIONS}
-              value={flow.preorderDeclineReason}
-              onChange={flow.setPreorderDeclineReason}
-            />
-            {flow.preorderDeclineReason === "another_reason" ? (
+
+            {flow.preorderDeclineStep === 0 ? (
+              <ChoiceList
+                idPrefix={idPrefix}
+                name="preorder-decline-reason"
+                options={PREORDER_DECLINE_REASON_OPTIONS}
+                value={flow.preorderDeclineReason}
+                onChange={flow.setPreorderDeclineReason}
+              />
+            ) : null}
+
+            {flow.preorderDeclineStep === 0 &&
+            flow.preorderDeclineReason === "another_reason" ? (
               <div className="interest-flow__text-response interest-flow__text-response--optional form-field">
-                <label htmlFor={`${idPrefix}-preorder-decline-detail`}>
-                  What’s the other main reason?
-                </label>
+                <label htmlFor={`${idPrefix}-preorder-decline-detail`}>Tell us more (optional)</label>
                 <textarea
                   id={`${idPrefix}-preorder-decline-detail`}
                   name="preorderDeclineDetail"
@@ -1235,26 +1488,95 @@ export function WaitlistSignupFlow({
                 </div>
               </div>
             ) : null}
+
+            {flow.preorderDeclineStep === 1 &&
+            flow.preorderDeclineReason === "price_too_high" ? (
+              <ChoiceList
+                idPrefix={idPrefix}
+                name="willingness-to-pay"
+                options={WILLINGNESS_TO_PAY_OPTIONS}
+                value={flow.willingnessToPayBand}
+                onChange={flow.setWillingnessToPayBand}
+              />
+            ) : null}
+
+            {flow.preorderDeclineStep === 1 &&
+            flow.preorderDeclineReason === "need_more_evidence" ? (
+              <>
+                <MultiChoiceList
+                  idPrefix={idPrefix}
+                  name="evidence-requirements"
+                  options={EVIDENCE_REQUIREMENT_OPTIONS}
+                  values={flow.evidenceRequirements}
+                  onToggle={flow.toggleEvidenceRequirement}
+                />
+                {flow.evidenceRequirements.includes("something_else") ? (
+                  <div className="interest-flow__text-response interest-flow__text-response--optional form-field">
+                    <label htmlFor={`${idPrefix}-evidence-requirements-other`}>
+                      What other evidence would help? (optional)
+                    </label>
+                    <textarea
+                      id={`${idPrefix}-evidence-requirements-other`}
+                      value={flow.evidenceRequirementsOther}
+                      onChange={(event) =>
+                        flow.setEvidenceRequirementsOther(event.target.value)
+                      }
+                      maxLength={MAX_QUALITATIVE_DETAIL_LENGTH}
+                      placeholder="A few words is enough"
+                    />
+                  </div>
+                ) : null}
+              </>
+            ) : null}
+
+            {isDeclineFinalStep ? (
+              <ChoiceList
+                idPrefix={idPrefix}
+                name="research-call"
+                options={RESEARCH_CALL_OPTIONS}
+                value={flow.openToResearchCall}
+                onChange={flow.setOpenToResearchCall}
+              />
+            ) : null}
           </div>
           {flow.submissionError ? (
             <p className="form-error form-error--submission" role="alert">
               {flow.submissionError}
             </p>
           ) : null}
-          <footer className="interest-flow__actions">
+          <footer
+            className={`interest-flow__actions${flow.preorderDeclineStep > 0 ? " interest-flow__actions--split" : ""}`}
+          >
+            {flow.preorderDeclineStep > 0 ? (
+              <button
+                className="button button--secondary interest-flow__back"
+                type="button"
+                onClick={flow.backPreorderDecline}
+                disabled={flow.surveyStatus === "submitting"}
+              >
+                Back
+              </button>
+            ) : null}
             <button
               className="button button--dark"
               type="submit"
               disabled={
                 !flow.preorderDeclineReason ||
-                (flow.preorderDeclineReason === "another_reason" &&
-                  !flow.preorderDeclineDetail.trim()) ||
+                (flow.preorderDeclineStep === 1 &&
+                  flow.preorderDeclineReason === "price_too_high" &&
+                  !flow.willingnessToPayBand) ||
+                (flow.preorderDeclineStep === 1 &&
+                  flow.preorderDeclineReason === "need_more_evidence" &&
+                  !flow.evidenceRequirements.length) ||
+                (isDeclineFinalStep && !flow.openToResearchCall) ||
                 flow.surveyStatus === "submitting"
               }
             >
               {flow.surveyStatus === "submitting"
                 ? "Saving…"
-                : "Save answer and return"}
+                : isDeclineFinalStep
+                  ? "Submit answers"
+                  : "Continue"}
             </button>
           </footer>
         </form>
@@ -1281,13 +1603,14 @@ export function WaitlistSignupFlow({
           <h2 ref={headingRef} tabIndex={-1}>
             Thank you for sharing.
           </h2>
-          <p>
-            Your answer will help us understand what matters most before Frame
-            launches.
-          </p>
+          <p>Your feedback will help us shape Frame.</p>
           <div className="interest-flow__success-actions">
-            <Link className="button button--dark" href={finishHref}>
-              <span aria-hidden="true">←</span> Return to Frame
+            <Link
+              className="text-link interest-flow__decline-trigger"
+              href={finishHref}
+            >
+              <span>Return to Frame</span>
+              <span aria-hidden="true">→</span>
             </Link>
           </div>
         </div>

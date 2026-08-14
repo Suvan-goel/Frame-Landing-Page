@@ -6,15 +6,15 @@ import { getPreorderConfiguration } from "@/lib/preorder-config.server";
 import {
   formatPreorderMoney,
   formatPreorderShipping,
-  PREORDER_DISCOUNT_PERCENT,
-  PREORDER_RELEASE_PRICE_CENTS,
+  PREORDER_FOUNDING_PRICE_CENTS,
+  PREORDER_REMAINING_BALANCE_CENTS,
   PREORDER_SHIPPING_RATE_CENTS,
 } from "@/lib/preorder";
 import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
 
 export const metadata: Metadata = {
-  title: "Review your Frame pre-order",
-  description: "Review your Frame pre-order details before secure payment.",
+  title: "Review your Frame reservation",
+  description: "Review your Frame reservation before secure payment.",
   alternates: { canonical: "/preorder/review" },
   robots: { index: false, follow: false },
 };
@@ -35,10 +35,10 @@ export default async function PreorderReviewPage() {
       <PreorderHeader backHref="/" backLabel="Back to home" />
       <div className="preorder-review-shell">
         <header className="preorder-review-heading">
-          <p className="eyebrow">Frame pre-order</p>
+          <p className="eyebrow">Frame reservation</p>
           <h1>
-            <span className="preorder-review-copy__desktop">Review your pre-order.</span>
-            <span className="preorder-review-copy__mobile">Review your pre-order.</span>
+            <span className="preorder-review-copy__desktop">Review your reservation.</span>
+            <span className="preorder-review-copy__mobile">Review your reservation.</span>
           </h1>
           <p>
             <span className="preorder-review-copy__desktop">
@@ -50,16 +50,15 @@ export default async function PreorderReviewPage() {
           </p>
         </header>
         <PreorderCheckoutReview
-          priceLabel={formatPreorderMoney(offer.priceCents, offer.currency)}
-          releasePriceLabel={formatPreorderMoney(
-            PREORDER_RELEASE_PRICE_CENTS,
+          reservationPriceLabel={formatPreorderMoney(offer.priceCents, offer.currency)}
+          foundingPriceLabel={formatPreorderMoney(
+            PREORDER_FOUNDING_PRICE_CENTS,
             offer.currency,
           )}
-          savingsLabel={formatPreorderMoney(
-            PREORDER_RELEASE_PRICE_CENTS - offer.priceCents,
+          remainingBalanceLabel={formatPreorderMoney(
+            PREORDER_REMAINING_BALANCE_CENTS,
             offer.currency,
           )}
-          discountPercent={PREORDER_DISCOUNT_PERCENT}
           shippingLabel={formatPreorderShipping(
             offer.shippingRateCents ?? PREORDER_SHIPPING_RATE_CENTS,
             offer.currency,

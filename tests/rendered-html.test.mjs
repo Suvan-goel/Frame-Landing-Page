@@ -426,19 +426,19 @@ test("server-renders the Frame landing page", async () => {
   assert.doesNotMatch(html, /footer-bottom__privacy/);
   assert.doesNotMatch(html, /facebook\.com\/tr\?id=/);
   assert.equal(html.match(/name="email"/g)?.length, 2);
-  assert.match(html, /Pre-order now/);
-  assert.match(html, /Pre-order price/);
-  assert.match(html, /40(?:<!-- -->)?% off the planned/);
-  assert.match(html, /40(?:<!-- -->)?% off/);
-  assert.match(html, /Pre-order\s*(?:<!-- -->)?\$299/);
+  assert.match(html, /Reserve Frame/);
+  assert.match(html, /Your price/);
+  assert.match(html, /Reserve(?: for)?\s*(?:<!-- -->)?\$49/);
+  assert.match(html, /\$250(?:<!-- -->)? due before shipping/);
+  assert.match(html, /Launch price/);
   assert.match(html, /href="\/preorder\/review\?source=homepage_hero"/);
   assert.doesNotMatch(html, /Pre-orders are now open\./);
   assert.match(html, /See details/);
   assert.match(html, /home-preorder-hero__offer-line/);
-  assert.match(html, /Pre-order offer/);
+  assert.match(html, /Reservation offer/);
   assert.match(
     html,
-    /Save\s*(?:<!-- -->)?\$200/,
+    /Reserve\s*(?:<!-- -->)?\$49/,
   );
   assert.doesNotMatch(html, /home-preorder-hero__saving-note/);
   assert.match(html, /home-preorder-hero__actions/);
@@ -447,10 +447,10 @@ test("server-renders the Frame landing page", async () => {
   assert.doesNotMatch(html, /home-preorder-hero__shipping/);
   assert.match(html, /home-preorder-price-comparison/);
   assert.match(html, /id="homepage-hero-preorder-waitlist-email"/);
-  assert.match(html, /Not ready to pre-order\?/);
   assert.match(html, /Get updates/);
   assert.doesNotMatch(html, /home-preorder-saving--hero/);
-  assert.match(html, /\$499/);
+  assert.match(html, /\$399/);
+  assert.doesNotMatch(html, /\$499/);
   assert.match(html, /Q1 2027/);
   assert.doesNotMatch(html, /What is the main reason you want Frame\?/);
   assert.doesNotMatch(html, /<dialog/i);
@@ -942,12 +942,13 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(waitlistFlow, /Thank you for sharing\./);
   assert.match(
     waitlistFlow,
-    /Your answer will help us understand what matters most before Frame[\s\S]*?launches\./,
+    /Your feedback will help us shape Frame\.[\s\S]*?interest-flow__decline-trigger[\s\S]*?Return to Frame[\s\S]*?→/,
   );
+  assert.doesNotMatch(waitlistFlow, /If you decide to continue/);
   assert.doesNotMatch(waitlistFlow, /Thanks—that helps\./);
   assert.match(
     waitlistFlow,
-    /interest-flow__decline-trigger[\s\S]*?I’m not ready to pre-order[\s\S]*?→/,
+    /interest-flow__decline-trigger[\s\S]*?I’m not ready to reserve[\s\S]*?→/,
   );
   assert.match(
     css,
@@ -955,7 +956,15 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   );
   assert.match(
     css,
-    /\.preorder-review-copy__desktop,\s*\.preorder-checkout-action__promise > \.preorder-review-copy__desktop\s*\{\s*display: none;/,
+    /\.preorder-review-copy__desktop\s*\{\s*display: none;/,
+  );
+  assert.match(
+    css,
+    /\.preorder-checkout-action__promise\s*\{[^}]*color: #355a3d;/,
+  );
+  assert.match(
+    css,
+    /\.checkout-page\.preorder-checkout-page\s*\{[^}]*min-height: calc\(100dvh \+ 64px\);/,
   );
   assert.doesNotMatch(waitlistFlow, /Thanks—your answers have been saved\./);
   assert.doesNotMatch(waitlistFlow, /interest-flow__success--preorder/);
@@ -989,9 +998,17 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(waitlistFlow, /name="preorder-decline-reason"/);
   assert.match(
     waitlistFlow,
-    /What’s the main reason you’re not pre-ordering Frame today\?/,
+    /What’s the main reason you wouldn’t reserve Frame today\?/,
   );
-  assert.match(waitlistOptions, /I need more evidence or product information/);
+  assert.match(waitlistOptions, /I need to see more evidence that it works accurately/);
+  assert.match(waitlistOptions, /I don’t want to pay for a product this far before it ships/);
+  assert.match(waitlistOptions, /I’d need to see a real working\/final product first/);
+  assert.match(waitlistFlow, /reliable automatic blood-pressure tracking throughout the day/);
+  assert.match(waitlistFlow, /What would make you comfortable buying Frame\?/);
+  assert.match(waitlistFlow, /short call or testing an early Frame prototype/);
+  assert.match(waitlistFlow, /name="willingness-to-pay"/);
+  assert.match(waitlistFlow, /name="evidence-requirements"/);
+  assert.match(waitlistFlow, /name="research-call"/);
   assert.match(
     waitlistOptions,
     /LEGACY_PREORDER_DECLINE_REASON_OPTIONS = \[[\s\S]*?"need_more_product_detail"[\s\S]*?"need_to_discuss"/,
@@ -1327,6 +1344,8 @@ test("requires the behavioural survey fields while keeping written detail option
       action: "record_preorder_decline",
       signupToken: capture.signupToken,
       reason: "need_more_evidence",
+      evidenceRequirements: ["validated_cuff_comparison", "working_prototype"],
+      openToResearchCall: "possibly",
     }),
   });
   assert.equal(declineResponse.status, 200);

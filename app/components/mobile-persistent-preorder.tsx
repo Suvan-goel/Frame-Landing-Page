@@ -38,7 +38,7 @@ export function MobilePersistentPreorder({
       aria-hidden={visible ? undefined : true}
       tabIndex={visible ? undefined : -1}
     >
-      Pre-order {priceLabel}
+      Reserve {priceLabel}
     </a>
   );
 }

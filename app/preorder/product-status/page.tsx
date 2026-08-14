@@ -18,13 +18,13 @@ import {
   SUPPORT_EMAIL,
 } from "@/lib/company";
 
-const PRODUCT_STATUS_TITLE = "Frame Product Progress and Pre-order Information";
+const PRODUCT_STATUS_TITLE = "Frame Product Progress and Reservation Information";
 const PRODUCT_STATUS_DESCRIPTION =
-  "Frame launch readiness, intended use, Q1 2027 shipping plan, and customer protections for pre-orders.";
+  "Frame launch readiness, intended use, Q1 2027 shipping plan, and customer protections for reservations.";
 
 const PRODUCT_STATUS_SECTIONS = [
   ["launch-readiness", "Final steps to launch"],
-  ["preorder-protection", "Pre-order protection"],
+  ["preorder-protection", "Reservation protection"],
   ["important-information", "Important information"],
 ] as const;
 
@@ -117,10 +117,10 @@ export default async function PreorderProductStatusPage() {
             </section>
 
             <section id="preorder-protection">
-              <h2>2. Pre-order protection</h2>
+              <h2>2. Reservation protection</h2>
               <p>
-                <strong>Your Frame is allocated.</strong> Your full payment secures one device from the Frame
-                pre-order allocation.
+                <strong>Your $299 price is locked.</strong> Your fully refundable $49 reservation secures one
+                device at that price. The reservation counts toward the total, leaving $250 due before shipping.
               </p>
               <p>
                 <strong>Q1 2027 dispatch.</strong> Engineering and production preparation are focused on
@@ -128,12 +128,13 @@ export default async function PreorderProductStatusPage() {
                 final readiness.
               </p>
               <p>
-                <strong>Your order stays protected.</strong> If timing or the product changes materially, we’ll
+                <strong>Your reservation stays protected.</strong> If timing or the product changes materially, we’ll
                 explain the update and let you accept it or cancel for a full refund.
               </p>
               <p>
-                If we cannot supply Frame, we will cancel your order and issue a full refund. Your payment is not an
-                investment, subscription, participation in research, or payment for medical services. Read the
+                We will not charge the remaining balance automatically. There is no subscription. If we cannot supply
+                Frame, we will cancel your reservation and issue a full refund. Your payment is not an investment,
+                participation in research, or payment for medical services. Read the
                 <Link href="/preorder/refunds"> Cancellation and Refund Policy</Link> for details.
               </p>
             </section>
@@ -150,11 +151,11 @@ export default async function PreorderProductStatusPage() {
               </p>
               <p>
                 <strong>FCC equipment authorization and delivery.</strong> Frame is subject to Federal Communications
-                Commission rules. This pre-order is a conditional sale, and delivery is conditional upon successful
+                Commission rules. Your reservation and any subsequent device order are conditional upon successful
                 completion of the applicable FCC equipment authorization process. Frame will not deliver the device
                 before that process is successfully completed. FCC rules governing conditional sales do not determine
                 the applicability of consumer-protection, contractual, or other provisions of federal or state law.
-                If authorization is not successfully completed, Frame will cancel your unshipped pre-order and issue
+                If authorization is not successfully completed, Frame will cancel your unshipped reservation or order and issue
                 a full refund under the
                 <Link href="/preorder/refunds#fcc-authorization"> Cancellation and Refund Policy</Link>.
               </p>

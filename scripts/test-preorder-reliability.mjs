@@ -1,6 +1,12 @@
 import { randomBytes, randomUUID } from "node:crypto";
 import { readFile } from "node:fs/promises";
 import { createClient } from "@supabase/supabase-js";
+import {
+  PREORDER_DEFAULT_PRICE_CENTS,
+  PREORDER_FOUNDING_PRICE_CENTS,
+  PREORDER_REMAINING_BALANCE_CENTS,
+  PREORDER_SKU,
+} from "../lib/preorder.ts";
 
 async function loadLocalEnvironment() {
   try {
@@ -41,9 +47,9 @@ function checkoutArgs(requestKey, source) {
   return {
     p_request_key: requestKey,
     p_environment: "test",
-    p_sku: "frame-reliability-test",
+    p_sku: PREORDER_SKU,
     p_quantity: 1,
-    p_unit_amount: 29_900,
+    p_unit_amount: PREORDER_DEFAULT_PRICE_CENTS,
     p_currency: "usd",
     p_estimated_delivery: "Q1 2027",
     p_source: source,
@@ -89,6 +95,7 @@ const rateScope = `reliability_${runId}`;
 const rateSubject = randomBytes(32).toString("hex");
 const eventId = `evt_reliability_${runId}`;
 let originalTestControl;
+let originalLiveControl;
 const cleanupFailures = [];
 
 async function updateTestControl(values) {
@@ -125,10 +132,11 @@ try {
   if (controls.error) throw new Error(`Sales controls: ${controls.error.message}`);
 
   const liveControl = controls.data.find((row) => row.environment === "live");
+  originalLiveControl = liveControl;
   originalTestControl = controls.data.find((row) => row.environment === "test");
-  assert(liveControl?.sales_status === "paused", "Live pre-orders must remain paused.");
+  assert(liveControl, "The live sales control is missing.");
   assert(originalTestControl, "The test sales control is missing.");
-  console.log("PASS  Safety interlock: test mode is active and live pre-orders are paused.");
+  console.log(`PASS  Safety interlock: test mode is active and live allocation state is captured as ${liveControl.sales_status}.`);
 
   const initialSnapshot = await getSnapshot();
   const initialCapacity = Number(initialSnapshot.paid_units) + Number(initialSnapshot.reserved_units) + 1;
@@ -151,12 +159,30 @@ try {
   });
   assert(new Set(sharedIds).size === 1, "The same request key created more than one checkout intent.");
 
+  const reservationTerms = await supabase
+    .from("preorder_checkout_intents")
+    .update({
+      offer_type: "reservation",
+      reservation_amount: PREORDER_DEFAULT_PRICE_CENTS,
+      locked_total_price: PREORDER_FOUNDING_PRICE_CENTS,
+      remaining_balance: PREORDER_REMAINING_BALANCE_CENTS,
+    })
+    .eq("source", source);
+  if (reservationTerms.error) {
+    throw new Error(`Reservation terms setup: ${reservationTerms.error.message}`);
+  }
+
   const syntheticIntents = await supabase
     .from("preorder_checkout_intents")
-    .select("id,status,request_key")
+    .select("id,status,request_key,offer_type,reservation_amount,locked_total_price,remaining_balance,unit_amount")
     .eq("source", source);
   if (syntheticIntents.error) throw new Error(`Checkout verification: ${syntheticIntents.error.message}`);
   assert(syntheticIntents.data.length === 1, "Duplicate checkout intents were stored.");
+  assert(syntheticIntents.data[0].offer_type === "reservation", "The reservation offer type was not stored.");
+  assert(syntheticIntents.data[0].unit_amount === PREORDER_DEFAULT_PRICE_CENTS, "The $49 reservation amount drifted.");
+  assert(syntheticIntents.data[0].reservation_amount === PREORDER_DEFAULT_PRICE_CENTS, "The reservation amount was not stored.");
+  assert(syntheticIntents.data[0].locked_total_price === PREORDER_FOUNDING_PRICE_CENTS, "The $299 locked price was not stored.");
+  assert(syntheticIntents.data[0].remaining_balance === PREORDER_REMAINING_BALANCE_CENTS, "The $250 remaining balance was not stored.");
   console.log("PASS  Checkout idempotency: 8 simultaneous requests produced one reservation.");
 
   const filledSnapshot = await getSnapshot();
@@ -302,11 +328,15 @@ try {
   await cleanup("live allocation verification", async () => {
     const result = await supabase
       .from("preorder_sales_controls")
-      .select("sales_status")
+      .select("sales_status,inventory_limit,unit_limit,updated_by,updated_at")
       .eq("environment", "live")
       .single();
     if (result.error) throw result.error;
-    if (result.data.sales_status !== "paused") throw new Error("Live pre-orders are no longer paused.");
+    for (const key of ["sales_status", "inventory_limit", "unit_limit", "updated_by", "updated_at"]) {
+      if (result.data[key] !== originalLiveControl?.[key]) {
+        throw new Error(`Live allocation field ${key} changed during the test.`);
+      }
+    }
   });
 }
 
@@ -314,5 +344,5 @@ if (cleanupFailures.length) {
   throw new Error(`Reliability checks finished, but cleanup failed:\n${cleanupFailures.join("\n")}`);
 }
 
-console.log("\nPASS  Cleanup: synthetic records were removed, the test allocation was restored, and live remained paused.");
+console.log("\nPASS  Cleanup: synthetic records were removed, the test allocation was restored, and live allocation was unchanged.");
 console.log("\nRELIABILITY CHECK PASSED");

@@ -5,9 +5,18 @@ import {
   sendPreorderRefundUpdateEmail,
 } from "./preorder-email.server";
 import { createPreorderManagePath } from "./preorder-order-access.server";
-import { PREORDER_PRODUCT_NAME } from "./preorder";
+import {
+  PREORDER_DEFAULT_PRICE_CENTS,
+  PREORDER_FOUNDING_PRICE_CENTS,
+  PREORDER_PRODUCT_NAME,
+  PREORDER_REMAINING_BALANCE_CENTS,
+} from "./preorder";
 import { isAllowedPreorderUsState } from "./preorder-shipping";
-import { getStripe, getStripePreorderPriceId } from "./stripe.server";
+import {
+  getStripe,
+  getStripePreorderPriceId,
+  getStripeReservationPriceId,
+} from "./stripe.server";
 import { getSupabaseAdmin } from "./supabase-admin.server";
 
 type PreorderRow = {
@@ -28,6 +37,11 @@ type PreorderRow = {
   confirmation_email_sent_at: string | null;
   shipping_address: Record<string, unknown>;
   manage_token_version: number;
+  offer_type: "full_preorder" | "reservation";
+  reservation_amount: number | null;
+  locked_total_price: number | null;
+  remaining_balance: number | null;
+  reservation_status: string | null;
 };
 
 function stripeId(value: string | { id: string } | null) {
@@ -58,8 +72,15 @@ export async function fulfillPreorderCheckout(
   session: Stripe.Checkout.Session,
   origin: string,
 ) {
-  if (session.metadata?.flow !== "frame_preorder") {
-    throw new Error("Checkout Session is not a Frame pre-order.");
+  const checkoutFlow = session.metadata?.flow;
+  const metadata = session.metadata;
+  const reservationCheckout = checkoutFlow === "frame_reservation";
+  const legacyPreorderCheckout = checkoutFlow === "frame_preorder";
+  if (!reservationCheckout && !legacyPreorderCheckout) {
+    throw new Error("Checkout Session is not a Frame reservation or legacy pre-order.");
+  }
+  if (!metadata) {
+    throw new Error("Checkout Session metadata is missing.");
   }
   if (session.payment_status !== "paid") {
     throw new Error("Pre-order Checkout Session has not been paid.");
@@ -69,11 +90,11 @@ export async function fulfillPreorderCheckout(
   }
 
   const environment = session.livemode ? "live" : "test";
-  if (session.metadata.environment !== environment) {
+  if (metadata.environment !== environment) {
     throw new Error("Stripe payment environment metadata is invalid.");
   }
 
-  const intentId = session.metadata.checkout_intent_id;
+  const intentId = metadata.checkout_intent_id;
   if (!intentId) throw new Error("Pre-order checkout intent metadata is missing.");
 
   const supabase = await getSupabaseAdmin();
@@ -87,6 +108,24 @@ export async function fulfillPreorderCheckout(
   }
   const intent = intentResult.data;
 
+  if (
+    reservationCheckout &&
+    (intent.offer_type !== "reservation" ||
+      intent.reservation_amount !== PREORDER_DEFAULT_PRICE_CENTS ||
+      intent.locked_total_price !== PREORDER_FOUNDING_PRICE_CENTS ||
+      intent.remaining_balance !== PREORDER_REMAINING_BALANCE_CENTS ||
+      intent.unit_amount !== PREORDER_DEFAULT_PRICE_CENTS ||
+      metadata.offer_type !== "reservation" ||
+      metadata.reservation_amount !== String(PREORDER_DEFAULT_PRICE_CENTS) ||
+      metadata.locked_total_price !== String(PREORDER_FOUNDING_PRICE_CENTS) ||
+      metadata.remaining_balance !== String(PREORDER_REMAINING_BALANCE_CENTS))
+  ) {
+    throw new Error("Frame reservation terms do not match the reviewed offer.");
+  }
+  if (legacyPreorderCheckout && intent.offer_type === "reservation") {
+    throw new Error("A reservation cannot be fulfilled through the legacy pre-order flow.");
+  }
+
   if (intent.environment !== environment) {
     throw new Error("Pre-order intent environment does not match the Stripe payment.");
   }
@@ -94,8 +133,8 @@ export async function fulfillPreorderCheckout(
   if (
     !intent.terms_version ||
     !intent.product_status_version ||
-    session.metadata.terms_version !== intent.terms_version ||
-    session.metadata.product_status_version !== intent.product_status_version
+    metadata.terms_version !== intent.terms_version ||
+    metadata.product_status_version !== intent.product_status_version
   ) {
     throw new Error("Pre-order legal versions do not match the reviewed offer.");
   }
@@ -129,7 +168,9 @@ export async function fulfillPreorderCheckout(
   }
 
   const stripe = await getStripe(environment);
-  const configuredPriceId = await getStripePreorderPriceId(environment);
+  const configuredPriceId = reservationCheckout
+    ? await getStripeReservationPriceId(environment)
+    : await getStripePreorderPriceId(environment);
   const lineItems = await stripe.checkout.sessions.listLineItems(session.id, { limit: 10 });
   if (
     lineItems.data.length !== 1 ||
@@ -158,7 +199,7 @@ export async function fulfillPreorderCheckout(
 
   if (
     !collectedShipping &&
-    (activeCustomer?.metadata.flow !== "frame_preorder" ||
+    (activeCustomer?.metadata.flow !== checkoutFlow ||
       activeCustomer.metadata.checkout_intent_id !== intent.id ||
       activeCustomer.metadata.environment !== environment)
   ) {
@@ -220,6 +261,11 @@ export async function fulfillPreorderCheckout(
         marketing_opt_in: intent.marketing_opt_in,
         marketing_consent_at: intent.marketing_consent_at,
         placed_at: placedAt,
+        offer_type: reservationCheckout ? "reservation" : "full_preorder",
+        reservation_amount: reservationCheckout ? intent.reservation_amount : null,
+        locked_total_price: reservationCheckout ? intent.locked_total_price : null,
+        remaining_balance: reservationCheckout ? intent.remaining_balance : null,
+        reservation_status: reservationCheckout ? "active" : null,
       })
       .select("*")
       .single<PreorderRow>();
@@ -261,7 +307,7 @@ export async function fulfillPreorderCheckout(
       stripe_checkout_session_id: session.id,
       stripe_payment_intent_id: paymentIntentId,
       stripe_customer_id: customerId,
-      payment_kind: "full_payment",
+      payment_kind: reservationCheckout ? "reservation_fee" : "full_payment",
       amount_total: session.amount_total,
       currency: session.currency,
       payment_status: "paid",
@@ -284,9 +330,20 @@ export async function fulfillPreorderCheckout(
 
   await insertOrderEvent({
     preorderId: order.id,
-    eventKey: `preorder-paid-${session.id}`,
-    eventType: "payment_confirmed",
-    detail: { checkout_session_id: session.id, payment_intent_id: paymentIntentId },
+    eventKey: `${reservationCheckout ? "reservation" : "preorder"}-paid-${session.id}`,
+    eventType: reservationCheckout ? "reservation_confirmed" : "payment_confirmed",
+    detail: {
+      checkout_session_id: session.id,
+      payment_intent_id: paymentIntentId,
+      offer_type: reservationCheckout ? "reservation" : "full_preorder",
+      ...(reservationCheckout
+        ? {
+            reservation_amount: intent.reservation_amount,
+            locked_total_price: intent.locked_total_price,
+            remaining_balance: intent.remaining_balance,
+          }
+        : {}),
+    },
   });
 
   if (!order.confirmation_email_sent_at) {
@@ -312,6 +369,10 @@ export async function fulfillPreorderCheckout(
         estimatedShipping: order.estimated_delivery,
         shippingAddress: order.shipping_address,
         managePath,
+        offerType: order.offer_type,
+        reservationAmount: order.reservation_amount,
+        lockedTotalPrice: order.locked_total_price,
+        remainingBalance: order.remaining_balance,
       });
       const sentAt = new Date().toISOString();
       const updated = await supabase
@@ -353,7 +414,7 @@ export async function reconcilePreorderRefund(input: {
   if (!payment.data?.preorder_id) return false;
   const order = await supabase
     .from("preorders")
-    .select("id,order_number,environment,manage_token_version,email,full_name,cancellation_status")
+    .select("id,order_number,environment,manage_token_version,email,full_name,cancellation_status,offer_type")
     .eq("id", payment.data.preorder_id)
     .single();
   if (order.error) throw order.error;
@@ -389,8 +450,18 @@ export async function reconcilePreorderRefund(input: {
   if (input.fullyRefunded) {
     orderUpdateValues.cancellation_status = "completed";
     orderUpdateValues.cancellation_resolved_at = new Date().toISOString();
+    if (order.data.offer_type === "reservation") {
+      orderUpdateValues.reservation_status = "refunded";
+    }
   } else if (input.failed && order.data.cancellation_status === "processing") {
     orderUpdateValues.cancellation_status = "requested";
+    if (order.data.offer_type === "reservation") {
+      orderUpdateValues.reservation_status = "active";
+    }
+  } else if (order.data.offer_type === "reservation") {
+    orderUpdateValues.reservation_status = input.failed
+      ? "active"
+      : "refund_pending";
   }
 
   const orderUpdate = await supabase

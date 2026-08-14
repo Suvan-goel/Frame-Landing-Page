@@ -4,6 +4,8 @@ import {
   PREORDER_DEFAULT_PRICE_CENTS,
   PREORDER_ESTIMATED_SHIPPING,
   PREORDER_SHIPPING_RATE_CENTS,
+  PREORDER_FOUNDING_PRICE_CENTS,
+  PREORDER_REMAINING_BALANCE_CENTS,
 } from "./preorder";
 
 export const PREORDER_MANAGE_PREVIEW_STATES = [
@@ -57,6 +59,20 @@ export function preorderManagePreviewOrder(value: unknown) {
     amountPaid: formatPreorderMoney(TOTAL_CENTS, PREORDER_DEFAULT_CURRENCY),
     amountRefunded: formatPreorderMoney(0, PREORDER_DEFAULT_CURRENCY),
     amountRemaining: formatPreorderMoney(TOTAL_CENTS, PREORDER_DEFAULT_CURRENCY),
+    offerType: "reservation",
+    reservationAmount: formatPreorderMoney(
+      PREORDER_DEFAULT_PRICE_CENTS,
+      PREORDER_DEFAULT_CURRENCY,
+    ),
+    lockedTotalPrice: formatPreorderMoney(
+      PREORDER_FOUNDING_PRICE_CENTS,
+      PREORDER_DEFAULT_CURRENCY,
+    ),
+    remainingBalance: formatPreorderMoney(
+      PREORDER_REMAINING_BALANCE_CENTS,
+      PREORDER_DEFAULT_CURRENCY,
+    ),
+    reservationStatus: "active",
     refundStatus: "none",
     originalEstimatedShipping: PREORDER_ESTIMATED_SHIPPING,
     estimatedShipping: PREORDER_ESTIMATED_SHIPPING,

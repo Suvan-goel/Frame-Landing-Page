@@ -30,6 +30,11 @@ export type CustomerManagedPreorder = {
   cancellation_resolution_note: string | null;
   amount_total: number;
   amount_refunded: number;
+  offer_type: "full_preorder" | "reservation";
+  reservation_amount: number | null;
+  locked_total_price: number | null;
+  remaining_balance: number | null;
+  reservation_status: string | null;
   currency: string;
   estimated_delivery: string;
   current_estimated_delivery: string;
@@ -56,7 +61,7 @@ export type CustomerManagedPreorder = {
 };
 
 const managedOrderColumns =
-  "id,order_number,environment,manage_token_version,full_name,email,shipping_address,order_status,payment_status,fulfillment_status,cancellation_status,cancellation_requested_at,cancellation_resolution_note,amount_total,amount_refunded,currency,estimated_delivery,current_estimated_delivery,address_change_status,address_change_requested_at,requested_shipping_address,address_change_reason,address_change_resolution_note,delivery_update_version,delivery_update_status,delivery_update_notice_type,delivery_update_response_mode,delivery_update_response_deadline,delivery_update_message,delivery_update_sent_at,delivery_update_acknowledged_at,delivery_update_expired_at,carrier,tracking_number,tracking_url,shipped_at,delivered_at,placed_at";
+  "id,order_number,environment,manage_token_version,full_name,email,shipping_address,order_status,payment_status,fulfillment_status,cancellation_status,cancellation_requested_at,cancellation_resolution_note,amount_total,amount_refunded,currency,offer_type,reservation_amount,locked_total_price,remaining_balance,reservation_status,estimated_delivery,current_estimated_delivery,address_change_status,address_change_requested_at,requested_shipping_address,address_change_reason,address_change_resolution_note,delivery_update_version,delivery_update_status,delivery_update_notice_type,delivery_update_response_mode,delivery_update_response_deadline,delivery_update_message,delivery_update_sent_at,delivery_update_acknowledged_at,delivery_update_expired_at,carrier,tracking_number,tracking_url,shipped_at,delivered_at,placed_at";
 
 function customerRefundStatus(order: CustomerManagedPreorder) {
   if (order.payment_status === "refund_pending") return "processing";
@@ -126,6 +131,17 @@ export function customerPreorderResponse(order: CustomerManagedPreorder) {
       Math.max(order.amount_total - order.amount_refunded, 0),
       order.currency,
     ),
+    offerType: order.offer_type,
+    reservationAmount: order.reservation_amount == null
+      ? null
+      : formatPreorderMoney(order.reservation_amount, order.currency),
+    lockedTotalPrice: order.locked_total_price == null
+      ? null
+      : formatPreorderMoney(order.locked_total_price, order.currency),
+    remainingBalance: order.remaining_balance == null
+      ? null
+      : formatPreorderMoney(order.remaining_balance, order.currency),
+    reservationStatus: order.reservation_status,
     refundStatus: customerRefundStatus(order),
     originalEstimatedShipping: order.estimated_delivery,
     estimatedShipping: order.current_estimated_delivery,

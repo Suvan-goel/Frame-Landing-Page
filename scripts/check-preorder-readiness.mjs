@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js";
 import Stripe from "stripe";
 import {
   preorderStripeProductDescription,
+  PREORDER_DEFAULT_PRICE_CENTS,
   PREORDER_PRODUCT_STATUS_VERSION,
   PREORDER_SELLER_DETAILS_COMPLETE,
   PREORDER_STRIPE_PRODUCT_IMAGE_URL,
@@ -93,8 +94,8 @@ const secretKey = targetEnvironment === "live"
   ? process.env.STRIPE_LIVE_SECRET_KEY ?? ""
   : process.env.STRIPE_TEST_SECRET_KEY ?? process.env.STRIPE_SECRET_KEY ?? "";
 const priceId = targetEnvironment === "live"
-  ? process.env.STRIPE_LIVE_PREORDER_PRICE_ID ?? ""
-  : process.env.STRIPE_TEST_PREORDER_PRICE_ID ?? process.env.STRIPE_PREORDER_PRICE_ID ?? "";
+  ? process.env.STRIPE_LIVE_RESERVATION_PRICE_ID ?? ""
+  : process.env.STRIPE_TEST_RESERVATION_PRICE_ID ?? process.env.STRIPE_RESERVATION_PRICE_ID ?? "";
 const webhookSecret = targetEnvironment === "live"
   ? process.env.STRIPE_LIVE_WEBHOOK_SECRET ?? ""
   : process.env.STRIPE_TEST_WEBHOOK_SECRET ?? process.env.STRIPE_WEBHOOK_SECRET ?? "";
@@ -104,7 +105,7 @@ const webhookEndpointId =
       ? "STRIPE_LIVE_WEBHOOK_ENDPOINT_ID"
       : "STRIPE_TEST_WEBHOOK_ENDPOINT_ID"
   ] ?? "";
-const expectedPrice = Number(process.env.PREORDER_PRICE_CENTS ?? "29900");
+const expectedPrice = Number(process.env.FRAME_RESERVATION_PRICE_CENTS ?? "4900");
 const expectedCurrency = (process.env.PREORDER_CURRENCY ?? "usd").toLowerCase();
 const allowedCountries = (process.env.PREORDER_ALLOWED_COUNTRIES ?? "US")
   .split(",")
@@ -302,13 +303,13 @@ for (const check of evaluatePreorderEmailReadiness({
 }
 
 if (
-  expectedPrice === 29_900 &&
+  expectedPrice === PREORDER_DEFAULT_PRICE_CENTS &&
   expectedCurrency === "usd" &&
   allowedCountries.length === 1 &&
   allowedCountries[0] === "US" &&
   estimatedShipping === "Q1 2027"
 ) {
-  pass("Reviewed offer", "$299 USD, one device, US-only and Q1 2027 estimated shipping are configured.");
+  pass("Reviewed offer", "$49 USD reservation, one device, US-only and Q1 2027 estimated shipping are configured.");
 } else {
   fail("Reviewed offer", "The runtime offer differs from the reviewed pre-order configuration.");
 }
@@ -534,7 +535,7 @@ if (secretKey && priceId) {
     ) {
       pass("Stripe price", `${expectedPrice} ${expectedCurrency.toUpperCase()} tax-exclusive one-time price is active.`);
     } else {
-      fail("Stripe price", "The configured price does not match the reviewed pre-order offer.");
+      fail("Stripe price", "The configured price does not match the reviewed reservation offer.");
     }
     if (product?.tax_code === PREORDER_STRIPE_PRODUCT_TAX_CODE) {
       pass("Stripe product tax code", "General - Tangible Goods is configured explicitly.");
@@ -618,8 +619,8 @@ if (secretKey && priceId) {
   fail(
     "Stripe price",
     isLiveTarget
-      ? "STRIPE_LIVE_PREORDER_PRICE_ID and STRIPE_LIVE_SECRET_KEY are required."
-      : "STRIPE_PREORDER_PRICE_ID and STRIPE_SECRET_KEY are required.",
+      ? "STRIPE_LIVE_RESERVATION_PRICE_ID and STRIPE_LIVE_SECRET_KEY are required."
+      : "STRIPE_RESERVATION_PRICE_ID and STRIPE_SECRET_KEY are required.",
   );
 }
 

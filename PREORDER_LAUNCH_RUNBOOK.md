@@ -1,24 +1,25 @@
-# Frame pre-order launch runbook
+# Frame reservation launch runbook
 
 This is the canonical launch runbook. The supporting evidence and handoff template
 is [`docs/preorder-pre-incorporation-pack.md`](docs/preorder-pre-incorporation-pack.md).
 Do not duplicate launch instructions elsewhere.
 
-This runbook records the completed public cutover and the safeguards that must
-remain in place while checkout is open. Use the final-cutover procedure again
-only for a full relaunch after sales have been intentionally paused.
+This runbook governs the pending transition from the legacy $299 full-payment
+pre-order to the $49 refundable reservation. The August 12 full-payment launch
+does not qualify as reservation verification. Follow the controlled cutover in
+section 5 before exposing any reservation checkout publicly.
 
-## 0. Current public launch state
+## 0. Reservation cutover state
 
-The controlled public cutover completed on August 12, 2026. Production is in
-live mode, the public pre-order flow is enabled, and the initial 100-unit
-allocation is open within the 1,000-unit lifetime ceiling. Owner routes remain
-authenticated and launch-gated.
+The public site remains on the legacy full-payment release until the reservation
+candidate, live Stripe catalog, hosted configuration and private live smoke have
+all passed. Before deploying the reservation candidate, disable public checkout,
+pause the live allocation and reduce its released-unit ceiling to one.
 
-Keep these production invariants aligned:
+After the reservation cutover, keep these production invariants aligned:
 
 - `PREORDER_MODE=live`;
-- `PREORDER_LEGAL_APPROVED_VERSION=2026-08-12-v1`;
+- `PREORDER_LEGAL_APPROVED_VERSION=2026-08-14-v2`;
 - `PREORDER_PRODUCT_STATUS_APPROVED_VERSION=2026-08-12-v1`;
 - `PREORDER_TAX_REVIEW_APPROVED_VERSION=uk-remote-seller-2026-08-09-v1`;
 - `PREORDER_PUBLIC_LAUNCH_ENABLED=true`;
@@ -36,17 +37,20 @@ safeguards.
 
 ## 1. Current verified state
 
-- Stripe live and test modes are connected to separate one-time $299 USD Prices
-  for one device.
+- Stripe test mode uses a dedicated one-time $49 USD reservation Price. The
+  separate live reservation Product and Price must be created and verified
+  before the reservation cutover; legacy $299 objects remain only for historic
+  payment reconciliation.
 - Orders are limited to all 50 United States and Washington, DC; US territories and international destinations are excluded.
 - The recorded estimated shipping window is Q1 2027.
-- The offer is $299 USD plus applicable sales tax, with free standard US shipping.
+- The reservation offer is $49 USD plus applicable sales tax today, fully
+  refundable, locking a $299 total price with $250 due before shipping and free
+  standard US shipping. There is no subscription or automatic later charge.
 - Customer confirmation, management, address, delivery, cancellation, shipping and refund emails are connected.
 - Test and live commerce records are separated.
 - The lifetime inventory ceiling is 1,000 units, with an approved initial cumulative release allocation of 100 units.
-- The live allocation is open at 100 released units. At the August 12, 2026
-  verification snapshot, there were no paid or reserved live units and all 100
-  released units remained available.
+- The legacy live allocation may remain open only while the legacy public build
+  is serving. It must be paused before the reservation candidate is deployed.
 
 Run the local preflight at any time:
 
@@ -127,10 +131,10 @@ PREORDER_PRODUCT_STATUS_APPROVED_VERSION=
 PREORDER_STAGING_ACCESS_SECRET=<unique secret of at least 32 characters>
 PREORDER_MAINTENANCE_SECRET=<third unique secret of at least 32 characters>
 STRIPE_SECRET_KEY=<test key>
-STRIPE_PREORDER_PRICE_ID=<test $299 price>
+STRIPE_RESERVATION_PRICE_ID=<test $49 reservation price>
 STRIPE_WEBHOOK_SECRET=<staging endpoint signing secret>
 STRIPE_TEST_SECRET_KEY=<test key>
-STRIPE_TEST_PREORDER_PRICE_ID=<test $299 price>
+STRIPE_TEST_RESERVATION_PRICE_ID=<test $49 reservation price>
 STRIPE_TEST_WEBHOOK_SECRET=<staging endpoint signing secret>
 STRIPE_TEST_WEBHOOK_ENDPOINT_ID=<test endpoint ID>
 ```
@@ -182,8 +186,8 @@ exact version during the controlled incorporation-day launch sequence.
 
 The company-identity work and authorised correspondence address were completed
 on August 11, 2026. The matching approved production legal and product-status
-versions are `2026-08-12-v1`. Keep the approved tax lock aligned with the
-production value above.
+versions are legal pack `2026-08-14-v2` and Product Status `2026-08-12-v1`.
+Keep the approved tax lock aligned with the production value above.
 
 - Preserve the verified incorporated seller identity, document-matched registered office, and Stable-authorised customer correspondence address. Keep `correspondenceAddressAuthorized` and `MAILING_POSTAL_ADDRESS` aligned with the approved provider record.
 - Preserve the founder-approved one-year limited hardware warranty, shipping-delay consent matrix, material-change consent flow, and automatic deadline refund operation unless the founder reopens the legal-page review.
@@ -202,8 +206,8 @@ production value above.
   replacement batteries out of the ordinary outbound workflow until the carrier
   has approved a compliant procedure.
 - Keep the founder-approved tangible-goods Stripe product tax code `txcd_99999999` unless the product classification changes.
-- Keep `PREORDER_TERMS_VERSION` and the matching product-status version on the approved `2026-08-12-v1` launch versions until substantive copy changes require a new approval.
-- Keep `PREORDER_LEGAL_APPROVED_VERSION` set to exactly `2026-08-12-v1`.
+- Keep `PREORDER_TERMS_VERSION` on approved legal pack `2026-08-14-v2` and the product-status version on `2026-08-12-v1` until substantive copy changes require a new approval.
+- Keep `PREORDER_LEGAL_APPROVED_VERSION` set to exactly `2026-08-14-v2`.
 - Keep `PREORDER_PRODUCT_STATUS_APPROVED_VERSION` set to exactly `2026-08-12-v1`.
 - Re-run the full test suite after the version and copy change.
 
@@ -211,29 +215,35 @@ The application rejects live checkout while the active version begins with `draf
 
 ## 4. Live payment and hosted configuration
 
-Create a separate Stripe live Product and one-time $299 USD Price. Never reuse test IDs in live configuration.
+Create a separate Stripe live Product named `Frame reservation` and a one-time
+$49 USD Price. Never reuse the former $299 Price or any test ID in new live
+reservation Checkout sessions.
 
 Before private live verification, the live Stripe Account must show the Stripe Services Agreement accepted and live charges and card payments active. By default, it must also show every onboarding detail submitted, payouts enabled with an automatic schedule, and no current, past-due, failed, or pending-verification requirements. If the company payout account alone is still missing or being verified, `PREORDER_ALLOW_BANK_PENDING_LAUNCH=true` may temporarily waive only the external-account, payout-enabled and automatic-schedule checks. Live charges must remain active and every non-bank verification requirement must still be clear; customer proceeds remain in Stripe until the payout account is connected. Its US company name must match `lib/company.ts`; configure the Frame public website, monitored support email and `/contact` URL, merchant category, product description, a 5–22 character statement descriptor containing `FRAME`, and an icon or logo plus primary brand colour. The pre-order Checkout session supplies its own Frame presentation and links the Pre-order Terms, Cancellation and Refund Policy, and Privacy Notice on Stripe's hosted page.
 
-The US live-account objects were created on August 11, 2026:
+The existing full-payment live objects were created on August 11, 2026 and are
+retained only for historical payment verification:
 
 ```text
-Stripe live Product: prod_V3V9vCQumIgCO9
-Stripe live Price: price_1U3OGqCayZz7QEuo8L4htBJr
+Legacy live Product: prod_V3V9vCQumIgCO9
+Legacy $299 live Price: price_1U3OGqCayZz7QEuo8L4htBJr
 ```
 
-The Price is the Product's active default price, is one-time $299 USD, and has
-exclusive tax behaviour. The Product is active in Stripe live mode, uses the
-explicit General - Tangible Goods tax code `txcd_99999999`, and carries the
-`preorder_batch=q1_2027` metadata. Local development must continue using the
-separate test Price. The superseded live Price
-`price_1U3O9SCayZz7QEuo2LpiEA7H` must not be configured or used for checkout.
+Before releasing the reservation model, create the new live Product and Price,
+then record their IDs in the production environment rather than in this file.
+The new reservation Price must be the new Product's active default price, be a
+one-time $49 USD Price, and have exclusive tax behaviour. The Product must use
+the explicit General - Tangible Goods tax code `txcd_99999999` and carry the
+`preorder_batch=q1_2027` metadata. Local development must continue using a
+separate test reservation Price. Former $299 Price IDs may remain configured
+only for verification of historical Checkout Sessions and must never be used by
+new reservation checkout.
 
 Current live invariants:
 
 ```text
 PREORDER_MODE=live
-PREORDER_LEGAL_APPROVED_VERSION=2026-08-12-v1
+PREORDER_LEGAL_APPROVED_VERSION=2026-08-14-v2
 PREORDER_PRODUCT_STATUS_APPROVED_VERSION=2026-08-12-v1
 PREORDER_TAX_REVIEW_APPROVED_VERSION=uk-remote-seller-2026-08-09-v1
 PREORDER_PREVIEW_MODE=false
@@ -247,13 +257,13 @@ PREORDER_ORDER_ACCESS_SECRET=<stable dedicated secret of at least 32 characters>
 PREORDER_RATE_LIMIT_SECRET=<different dedicated secret of at least 32 characters>
 PREORDER_STAGING_ACCESS_SECRET=<different staging secret of at least 32 characters>
 STRIPE_SECRET_KEY=<live key>
-STRIPE_PREORDER_PRICE_ID=<live $299 price>
+STRIPE_RESERVATION_PRICE_ID=<live $49 reservation price>
 STRIPE_WEBHOOK_SECRET=<live endpoint signing secret>
 STRIPE_LIVE_SECRET_KEY=<restricted live key>
-STRIPE_LIVE_PREORDER_PRICE_ID=<live $299 price>
+STRIPE_LIVE_RESERVATION_PRICE_ID=<live $49 reservation price>
 STRIPE_LIVE_WEBHOOK_SECRET=<live endpoint signing secret>
 STRIPE_LIVE_WEBHOOK_ENDPOINT_ID=<live endpoint ID>
-PREORDER_PRICE_CENTS=29900
+FRAME_RESERVATION_PRICE_CENTS=4900
 PREORDER_CURRENCY=usd
 PREORDER_ALLOWED_COUNTRIES=US
 PREORDER_ESTIMATED_SHIPPING=Q1 2027
@@ -302,15 +312,16 @@ verified event is claimed in Supabase before Stripe is acknowledged, then
 processed in the Worker background. Failed work and processing that has stalled
 for five minutes appears in the owner recovery panel and can be safely retried.
 
-## 5. Completed cutover and future releases
+## 5. Reservation cutover and future releases
 
 Before each Sites publish, commit the exact validated source on `main`, push
 `main`, and run `npm run release:check`. Package and publish only that exact
 commit.
 
-The initial live-smoke and public-cutover sequence below completed on August 12,
-2026. Repeat it only for a full relaunch after an intentional launch reset; an
-ordinary source release must preserve the current live invariants in section 0.
+The August 12, 2026 live smoke covered the legacy $299 full-payment offer. It
+must not be reused for the reservation launch. Complete this sequence once for
+the $49 reservation, then preserve the resulting live invariants for ordinary
+source releases.
 
 1. Configure live mode with `PREORDER_PUBLIC_LAUNCH_ENABLED=false`, an empty `PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID`, and a unique `PREORDER_LIVE_SMOKE_ACCESS_SECRET`. Public pre-order routes remain hidden.
 2. Keep the Supabase `live` allocation `paused` and set its released-unit ceiling to exactly `1`.
@@ -320,7 +331,7 @@ ordinary source release must preserve the current live invariants in section 0.
 6. From the authenticated owner view, open the one-unit live allocation. The control rejects any larger non-public live opening.
 7. Use the invitation to complete one real-card order. Immediately pause the live allocation after Stripe accepts the payment.
 8. Verify the charged subtotal, shipping and tax, signed webhook, live order record, delivered confirmation outcome, management link and operational alert. Then issue a full refund and wait until the order shows `refunded` with the full amount reconciled.
-9. Copy that live pre-order UUID into `PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID`, restore the paused released-unit ceiling to `100`, and set `PREORDER_PUBLIC_LAUNCH_ENABLED=true` in the coordinated public-cutover configuration.
+9. Copy that live reservation UUID into `PREORDER_LIVE_SMOKE_VERIFIED_ORDER_ID`, restore the paused released-unit ceiling to `100`, and set `PREORDER_PUBLIC_LAUNCH_ENABLED=true` in the coordinated public-cutover configuration.
 10. Run `npm run preorder:check:payments`, `npm run preorder:check:operations`, then `npm run preorder:check:launch`. They verify that the private live order reconciles exactly with Stripe, came from the private path, completed through the webhook, recorded a delivered confirmation outcome, was fully refunded, and left no failed or stalled operational work.
 11. Publish the public-cutover configuration and open the 100-unit live allocation from the authenticated owner view.
 12. Confirm the public homepage button reaches review and Stripe live Checkout, then monitor the first public order before allowing more traffic.

@@ -74,7 +74,7 @@ async function listPaidPreorderSessions(stripe: Stripe) {
     scanned += page.data.length;
     for (const session of page.data) {
       if (
-        session.metadata?.flow === "frame_preorder" &&
+        ["frame_preorder", "frame_reservation"].includes(session.metadata?.flow ?? "") &&
         session.payment_status === "paid"
       ) {
         sessions.push(session);
@@ -257,6 +257,7 @@ function storedOrder(row: Record<string, unknown>): StoredPreorderReconciliation
     amountTotal: Number(row.amount_total),
     amountRefunded: Number(row.amount_refunded),
     currency: String(row.currency),
+    offerType: row.offer_type === "reservation" ? "reservation" : "full_preorder",
   };
 }
 
@@ -309,7 +310,7 @@ export async function runPreorderPaymentReconciliation(input: {
     loadAllEnvironmentRows(
       input.supabase,
       "preorders",
-      "id,order_number,environment,checkout_intent_id,stripe_checkout_session_id,stripe_customer_id,order_status,payment_status,cancellation_status,amount_subtotal,amount_shipping,amount_tax,amount_total,amount_refunded,currency",
+      "id,order_number,environment,checkout_intent_id,stripe_checkout_session_id,stripe_customer_id,order_status,payment_status,cancellation_status,amount_subtotal,amount_shipping,amount_tax,amount_total,amount_refunded,currency,offer_type",
       input.environment,
     ),
     loadAllEnvironmentRows(

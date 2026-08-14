@@ -9,6 +9,7 @@ import {
   serializePreorderCheckoutRequestKey,
 } from "@/lib/preorder-checkout-draft";
 import { companyLegalIdentityLine } from "@/lib/company";
+import { trackWaitlistEvent } from "./meta-pixel";
 
 const sellerIdentityLine = companyLegalIdentityLine();
 
@@ -32,18 +33,16 @@ function saveCheckoutRequestKey(requestKey: string) {
 }
 
 export function PreorderCheckoutReview({
-  priceLabel,
-  releasePriceLabel,
-  savingsLabel,
-  discountPercent,
+  reservationPriceLabel,
+  foundingPriceLabel,
+  remainingBalanceLabel,
   shippingLabel,
   estimatedTotalLabel,
   estimatedShipping,
 }: {
-  priceLabel: string;
-  releasePriceLabel: string;
-  savingsLabel: string;
-  discountPercent: number;
+  reservationPriceLabel: string;
+  foundingPriceLabel: string;
+  remainingBalanceLabel: string;
   shippingLabel: string;
   estimatedTotalLabel: string;
   estimatedShipping: string;
@@ -73,6 +72,10 @@ export function PreorderCheckoutReview({
     const query = new URLSearchParams(window.location.search);
     const checkoutRequestKey =
       (requestKey.current ??= window.crypto.randomUUID());
+    trackWaitlistEvent("reservation_checkout_started", {
+      source: query.get("source") ?? "preorder_review",
+      attemptId: checkoutRequestKey,
+    });
     try {
       const response = await fetch("/api/preorders/checkout", {
         method: "POST",
@@ -93,6 +96,10 @@ export function PreorderCheckoutReview({
       saveCheckoutRequestKey(checkoutRequestKey);
       window.location.assign(result.url);
     } catch (caught) {
+      trackWaitlistEvent("reservation_checkout_error", {
+        source: query.get("source") ?? "preorder_review",
+        attemptId: checkoutRequestKey,
+      });
       setError(caught instanceof Error ? caught.message : "Secure payment is temporarily unavailable.");
       setSubmitting(false);
     }
@@ -102,7 +109,7 @@ export function PreorderCheckoutReview({
     <form className="checkout-review preorder-checkout-review" onSubmit={submit}>
       {cancelled ? (
         <div className="checkout-review__notice" role="status">
-          Checkout was cancelled. No pre-order was placed and no payment was taken.
+          Checkout was cancelled. No reservation was placed and no payment was taken.
         </div>
       ) : null}
 
@@ -125,12 +132,12 @@ export function PreorderCheckoutReview({
             <div className="preorder-order-summary-mobile__title">
               <h2 id="preorder-order-mobile-title">Frame</h2>
               <div className="preorder-order-summary-mobile__price">
-                <strong>{priceLabel}</strong>
-                <span>Save {savingsLabel}</span>
+                <strong>{reservationPriceLabel}</strong>
+                <span>due today</span>
               </div>
             </div>
             <p className="preorder-order-summary-mobile__discount">
-              {discountPercent}% off the {releasePriceLabel} release price
+              Locks in your {foundingPriceLabel} price
             </p>
           </div>
           <dl className="preorder-order-summary-mobile__facts">
@@ -144,7 +151,7 @@ export function PreorderCheckoutReview({
             </div>
           </dl>
           <p className="preorder-order-summary-mobile__tax">
-            {estimatedTotalLabel} before tax · Tax calculated at secure checkout
+            {estimatedTotalLabel} reservation before tax · Tax calculated at secure checkout
           </p>
         </section>
 
@@ -165,9 +172,9 @@ export function PreorderCheckoutReview({
               <h2 id="preorder-order-title">Frame</h2>
             </div>
             <p className="preorder-order-summary__offer">
-              <span>{priceLabel}</span>
-              <strong>Save {savingsLabel}</strong>
-              <small>{discountPercent}% off the {releasePriceLabel} release price</small>
+              <span>{reservationPriceLabel} today</span>
+              <strong>Your price {foundingPriceLabel}</strong>
+              <small>{remainingBalanceLabel} due before shipping</small>
             </p>
             <p className="preorder-order-summary__shipping">
               <span>Estimated shipping</span>
@@ -180,7 +187,7 @@ export function PreorderCheckoutReview({
               <div><dt>US shipping</dt><dd>{shippingLabel}</dd></div>
             </dl>
             <p className="preorder-order-summary__tax">
-              {estimatedTotalLabel} before tax · Tax calculated at secure checkout
+              {estimatedTotalLabel} reservation before tax · Tax calculated at secure checkout
             </p>
           </div>
         </section>
@@ -195,14 +202,15 @@ export function PreorderCheckoutReview({
                     <span className="preorder-review-copy__mobile">Preparing for launch.</span>
                   </h2>
                   <p className="preorder-review-copy__desktop">
-                    Engineering and production preparation are now focused on Q1 2027
-                    dispatch. Final specifications and shipping timing may change. Frame
-                    is designed for general wellness and is not for medical decisions.
+                    Your fully refundable {reservationPriceLabel} reservation locks in
+                    your {foundingPriceLabel} price and counts toward that
+                    total, leaving {remainingBalanceLabel} due before shipping. We
+                    will ask before any later payment; there is no subscription.
                   </p>
                   <p className="preorder-review-copy__mobile">
-                    Engineering and production preparation are now focused on Q1 2027
-                    dispatch. Final specifications and shipping timing may change. Frame
-                    is designed for general wellness and is not for medical decisions.
+                    Fully refundable {reservationPriceLabel} today. Lock in the{" "}
+                    {foundingPriceLabel} price; {remainingBalanceLabel} is due
+                    before shipping. No automatic later charge or subscription.
                   </p>
                 </div>
                 <Link href="/preorder/product-status">View product and shipping details →</Link>
@@ -217,20 +225,17 @@ export function PreorderCheckoutReview({
                 {submitting ? (
                   "Opening secure checkout…"
                 ) : (
-                  <>
-                    <span className="preorder-review-copy__desktop">Continue to checkout</span>
-                    <span className="preorder-review-copy__mobile">Continue to checkout</span>
-                  </>
+                  "Secure Stripe checkout"
                 )}
               </button>
               <p className="preorder-checkout-action__promise">
-                <span className="preorder-review-copy__desktop">
-                  <strong>Secure Stripe checkout</strong>
-                  <span>Tax shown before payment · Full refund before fulfilment</span>
+                <span>
+                  <span className="preorder-checkout-action__check" aria-hidden="true">✓</span>
+                  Fully refundable
                 </span>
-                <span className="preorder-review-copy__mobile preorder-checkout-action__mobile-promise">
-                  <strong>Secure Stripe checkout</strong>
-                  <span>Tax shown before payment · Full refund before fulfilment</span>
+                <span>
+                  <span className="preorder-checkout-action__check" aria-hidden="true">✓</span>
+                  No automatic later charges
                 </span>
               </p>
             </div>

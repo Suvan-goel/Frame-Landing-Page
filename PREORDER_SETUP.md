@@ -1,11 +1,13 @@
-# Frame local pre-order setup
+# Frame reservation setup
 
-The pre-order funnel is deliberately local-only and fail-closed while its legal
-version is marked `draft`. Nothing in this setup enables public sales.
+The reservation candidate remains fail-closed until its legal approval,
+dedicated Stripe Price, private live-smoke order and inventory safeguards all
+pass. Nothing in this setup alone enables public reservation sales.
 
-The public homepage remains unchanged and contains no pre-order link. Remote
-pre-order pages and APIs are rejected by the Worker before application routing.
-Use `npm run preorder:test:visibility` to verify that boundary.
+Until the reservation cutover, the public site continues to serve the legacy
+full-payment release. During the controlled cutover, remote reservation pages
+and APIs are rejected by the Worker before application routing. Use
+`npm run preorder:test:visibility` to verify that boundary.
 
 Run `npm run preorder:check:email` for a read-only transactional-email preflight.
 It validates the exact Frame pre-order sender, support routing, inbound MX, root
@@ -14,12 +16,19 @@ does not send an email or change DNS or Resend. A restricted sending-only Resend
 credential is preferred; the check does not require domain-administration access.
 The signed `/api/resend/webhook` endpoint also records `sent`, `delivered`,
 `delivery_delayed`, `failed`, `bounced`, `complained` and `suppressed` outcomes
-for each new pre-order email. Apply
-all migrations through `20260810130000_start_preorder_numbers_at_ten.sql` before
+for each new reservation email. Apply
+all migrations through `20260814010000_add_reservation_funnel_analytics.sql` before
 deploying the matching application source. Existing historical sends remain
 labelled as legacy; new tracked sends must reach a delivered outcome within ten
-minutes. The numbering migration ensures the first generated customer pre-order
+minutes. The numbering migration ensures the first generated customer order
 number is at least 10 without reusing any number already issued.
+
+The reservation funnel writes a separate first-party analytics record for each
+whitelisted milestone. Event payloads accept acquisition labels, placements,
+objection categories, willingness bands and evidence categories only. They
+reject email addresses, health answers and free text. Browser event IDs and a
+tab-scoped session ID make retries idempotent without weakening the optional
+Meta tracking-consent boundary.
 
 Run `npm run preorder:check:payments:test` to reconcile every paid Stripe test
 pre-order against its stored checkout intent, order and payment record. The live
@@ -52,8 +61,9 @@ a synthetic `FR-TEST-0001` order and does not call Stripe, Supabase, or Resend.
 1. Apply all pending files in `supabase/migrations` to the existing Supabase
    project. The inventory-ceiling migration fixes the lifetime ceiling at
    1,000 units and keeps live released capacity at zero until an owner raises it.
-2. In Stripe test mode, create one active, one-time USD Price for $299.00 with
-   tax behaviour set to exclusive.
+2. In Stripe test mode, create one active, one-time USD Price for $49.00 with
+   tax behaviour set to exclusive. Its Product must use the exact reviewed
+   reservation name, description, image, and tax code enforced by checkout.
 3. Configure Stripe's test-mode public details and terms-of-service URL so
    Checkout can require terms acceptance.
 4. Add these values to `.env.local`:
@@ -61,16 +71,16 @@ a synthetic `FR-TEST-0001` order and does not call Stripe, Supabase, or Resend.
 ```dotenv
 PREORDER_MODE=test
 PREORDER_PREVIEW_MODE=false
-PREORDER_PRICE_CENTS=29900
+FRAME_RESERVATION_PRICE_CENTS=4900
 PREORDER_CURRENCY=usd
 PREORDER_ALLOWED_COUNTRIES=US
 PREORDER_ESTIMATED_SHIPPING=Q1 2027
 PREORDER_SHIPPING_RATE_CENTS=0
 STRIPE_SECRET_KEY=sk_test_...
-STRIPE_PREORDER_PRICE_ID=price_...
+STRIPE_RESERVATION_PRICE_ID=price_...
 STRIPE_WEBHOOK_SECRET=whsec_...
 STRIPE_TEST_SECRET_KEY=sk_test_...
-STRIPE_TEST_PREORDER_PRICE_ID=price_...
+STRIPE_TEST_RESERVATION_PRICE_ID=price_...
 STRIPE_TEST_WEBHOOK_SECRET=whsec_...
 STRIPE_TEST_WEBHOOK_ENDPOINT_ID=we_...
 RESEND_API_KEY=re_...
@@ -113,7 +123,8 @@ available for purchase.
 stripe listen --forward-to localhost:3000/api/stripe/webhook
 ```
 
-6. Complete `/preorder/review` with a Stripe test card. Successful orders appear
+6. Complete `/preorder/review` with a Stripe test card. Checkout charges $49
+   only. Successful reservations appear
    at `/admin/preorders` after signing in with an email in
    `WAITLIST_ADMIN_EMAILS`.
 
@@ -146,7 +157,9 @@ The draft pages, prices, countries, tax setting, shipping treatment, product
 copy, cancellation process, and delivery wording must all be replaced or
 approved before changing that lock.
 
-The legacy `STRIPE_SECRET_KEY`, `STRIPE_PREORDER_PRICE_ID` and
-`STRIPE_WEBHOOK_SECRET` values remain supported for local test workflows. Hosted
-pre-orders should use the explicit `STRIPE_TEST_*` and `STRIPE_LIVE_*` values so
-test-order refunds and delayed webhooks remain recoverable after live cutover.
+The legacy `STRIPE_PREORDER_PRICE_ID`, `STRIPE_TEST_PREORDER_PRICE_ID`, and
+`STRIPE_LIVE_PREORDER_PRICE_ID` values identify the former $299 product only.
+Retain them where historical, already-created Checkout Sessions still need to be
+verified, but new checkout always uses the dedicated `*_RESERVATION_PRICE_ID`.
+Hosted environments should keep explicit test and live credentials so refunds
+and delayed webhooks remain recoverable after live cutover.

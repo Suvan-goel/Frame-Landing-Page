@@ -234,6 +234,10 @@ export type PreorderConfirmationEmailInput = {
   shippingAddress: Record<string, unknown>;
   managePath?: string | null;
   deliveryKey?: string;
+  offerType?: "full_preorder" | "reservation";
+  reservationAmount?: number | null;
+  lockedTotalPrice?: number | null;
+  remainingBalance?: number | null;
 };
 
 export function renderPreorderConfirmationEmail(
@@ -244,6 +248,15 @@ export function renderPreorderConfirmationEmail(
   const shippingAmount = formatPreorderShipping(input.amountShipping, input.currency);
   const taxAmount = formatPreorderMoney(input.amountTax, input.currency);
   const amount = formatPreorderMoney(input.amountTotal, input.currency);
+  const reservation = input.offerType === "reservation";
+  const foundingPrice = formatPreorderMoney(
+    input.lockedTotalPrice ?? input.amountTotal,
+    input.currency,
+  );
+  const remainingBalance = formatPreorderMoney(
+    input.remainingBalance ?? 0,
+    input.currency,
+  );
   const placedAt = new Intl.DateTimeFormat("en-US", { dateStyle: "long" }).format(
     new Date(input.placedAt),
   );
@@ -253,7 +266,7 @@ export function renderPreorderConfirmationEmail(
   const productStatusUrl = `${input.origin}/preorder/product-status`;
   const manageUrl = input.managePath ? `${input.origin}${input.managePath}` : null;
   const sandbox = input.environment === "test";
-  const subject = `${sandbox ? "[Sandbox] " : ""}Frame pre-order confirmation | ${orderNumber}`;
+  const subject = `${sandbox ? "[Sandbox] " : ""}Frame ${reservation ? "reservation" : "pre-order"} confirmation | ${orderNumber}`;
   const legalIdentity = companyLegalIdentityLine();
   const sandboxText = sandbox
     ? ["", "Sandbox order: no live charge was made."]
@@ -261,8 +274,15 @@ export function renderPreorderConfirmationEmail(
   const text = [
       `Hello ${input.fullName},`,
       "",
-      `Your Frame pre-order is confirmed. Order ${orderNumber}.`,
-      `Product subtotal: ${subtotal}`,
+      `Your Frame ${reservation ? "reservation" : "pre-order"} is confirmed. Order ${orderNumber}.`,
+      `${reservation ? "Reservation paid" : "Product subtotal"}: ${subtotal}`,
+      ...(reservation
+        ? [
+            `Your price locked: ${foundingPrice}`,
+            `Remaining balance before shipping: ${remainingBalance}`,
+            "You will not be charged the remaining balance automatically.",
+          ]
+        : []),
       `Standard US shipping: ${shippingAmount}`,
       `Sales tax: ${taxAmount}`,
       `Total paid: ${amount}`,
@@ -275,9 +295,9 @@ export function renderPreorderConfirmationEmail(
       ...shipping,
       ...sandboxText,
       "",
-      ...(manageUrl ? [`Manage your pre-order: ${manageUrl}`] : []),
+      ...(manageUrl ? [`Manage your ${reservation ? "reservation" : "pre-order"}: ${manageUrl}`] : []),
       `Product status disclosure: ${productStatusUrl}`,
-      `Pre-order terms: ${termsUrl}`,
+      `${reservation ? "Reservation" : "Pre-order"} terms: ${termsUrl}`,
       `Cancellation and refunds: ${refundsUrl}`,
       "",
       PREORDER_SUPPORT_LINE,
@@ -289,7 +309,7 @@ export function renderPreorderConfirmationEmail(
   const shippingHtml = shipping.length
     ? shipping.map(escapeHtml).join("<br>")
     : "Address provided at checkout";
-  const preheader = `Payment received for Frame pre-order ${orderNumber}. Estimated shipping: ${input.estimatedShipping}.`;
+  const preheader = `Payment received for Frame ${reservation ? "reservation" : "pre-order"} ${orderNumber}. Estimated shipping: ${input.estimatedShipping}.`;
   const html = `<!doctype html>
 <html lang="en">
   <head>
@@ -337,7 +357,7 @@ export function renderPreorderConfirmationEmail(
                       <a href="${safeOrigin}" style="color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:28px;font-weight:400;letter-spacing:-1px;line-height:1;text-decoration:none">Frame<span style="color:#8d3e46">.</span></a>
                     </td>
                     <td align="right" valign="middle" style="color:#66645e;font-family:Arial,Helvetica,sans-serif;font-size:10px;font-weight:700;letter-spacing:.12em;line-height:1.4;text-transform:uppercase">
-                      <span style="color:#8d3e46;font-size:15px;vertical-align:-1px">&#10003;</span>&nbsp;&nbsp;Order confirmed
+                      <span style="color:#8d3e46;font-size:15px;vertical-align:-1px">&#10003;</span>&nbsp;&nbsp;${reservation ? "Reservation" : "Order"} confirmed
                     </td>
                   </tr>
                 </table>
@@ -345,10 +365,10 @@ export function renderPreorderConfirmationEmail(
             </tr>
             <tr>
               <td class="email-content" style="padding:50px 42px 48px">
-                <p style="margin:0 0 15px;color:#8d3e46;font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:700;letter-spacing:.16em;line-height:1.4;text-transform:uppercase">${sandbox ? "Sandbox &middot; " : ""}Pre-order ${safeOrderNumber}</p>
-                <h1 class="email-heading" style="margin:0;color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:44px;font-weight:400;letter-spacing:-1.3px;line-height:1.04">Your Frame pre-order is confirmed.</h1>
+                <p style="margin:0 0 15px;color:#8d3e46;font-family:Arial,Helvetica,sans-serif;font-size:11px;font-weight:700;letter-spacing:.16em;line-height:1.4;text-transform:uppercase">${sandbox ? "Sandbox &middot; " : ""}${reservation ? "Reservation" : "Pre-order"} ${safeOrderNumber}</p>
+                <h1 class="email-heading" style="margin:0;color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:44px;font-weight:400;letter-spacing:-1.3px;line-height:1.04">Your Frame ${reservation ? "reservation" : "pre-order"} is confirmed.</h1>
                 <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:25px 0 25px"><tr><td width="42" height="2" bgcolor="#8d3e46" style="width:42px;height:2px;background:#8d3e46;font-size:0;line-height:0">&nbsp;</td></tr></table>
-                <p style="margin:0 0 34px;color:#4f504b;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.7">Hello ${escapeHtml(input.fullName)}. We’ve received your payment and reserved your place in the pre-order queue. We’ll keep you informed as Frame moves toward shipping.</p>
+                <p style="margin:0 0 34px;color:#4f504b;font-family:Arial,Helvetica,sans-serif;font-size:16px;line-height:1.7">Hello ${escapeHtml(input.fullName)}. ${reservation ? `Your ${escapeHtml(amount)} fully refundable reservation locks in your ${escapeHtml(foundingPrice)} price. The ${escapeHtml(remainingBalance)} balance is due before shipping and will not be charged automatically.` : "We’ve received your payment and reserved your place in the pre-order queue."} We’ll keep you informed as Frame moves toward shipping.</p>
 
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#f3efe6" style="width:100%;background:#f3efe6;border:1px solid #e4ddd1">
                   <tr>
@@ -362,7 +382,7 @@ export function renderPreorderConfirmationEmail(
                           <td align="right" valign="bottom" style="padding:0 0 20px;border-bottom:1px solid #d8d1c5;color:#4f504b;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.4">Qty ${input.quantity}</td>
                         </tr>
                         <tr>
-                          <td style="padding:20px 0 7px;color:#5d5d57;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.45">Product subtotal</td>
+                          <td style="padding:20px 0 7px;color:#5d5d57;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.45">${reservation ? "Reservation paid" : "Product subtotal"}</td>
                           <td align="right" style="padding:20px 0 7px;color:#20211e;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.45">${escapeHtml(subtotal)}</td>
                         </tr>
                         <tr>
@@ -374,7 +394,7 @@ export function renderPreorderConfirmationEmail(
                           <td align="right" style="padding:7px 0 20px;color:#20211e;font-family:Arial,Helvetica,sans-serif;font-size:13px;line-height:1.45">${escapeHtml(taxAmount)}</td>
                         </tr>
                         <tr>
-                          <td style="padding:18px 0 0;border-top:1px solid #d8d1c5;color:#20211e;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;line-height:1.45">Total paid</td>
+                          <td style="padding:18px 0 0;border-top:1px solid #d8d1c5;color:#20211e;font-family:Arial,Helvetica,sans-serif;font-size:14px;font-weight:700;line-height:1.45">${reservation ? `Your price ${escapeHtml(foundingPrice)} · balance ${escapeHtml(remainingBalance)}` : "Total paid"}</td>
                           <td align="right" style="padding:18px 0 0;border-top:1px solid #d8d1c5;color:#20211e;font-family:Georgia,'Times New Roman',serif;font-size:24px;line-height:1.2">${escapeHtml(amount)}</td>
                         </tr>
                       </table>
@@ -403,7 +423,7 @@ export function renderPreorderConfirmationEmail(
 
                 ${sandbox ? `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" bgcolor="#f8ebed" style="width:100%;margin:16px 0 0;background:#f8ebed;border-left:3px solid #8d3e46"><tr><td style="padding:14px 17px;color:#4f504b;font-family:Arial,Helvetica,sans-serif;font-size:12px;line-height:1.55"><strong style="color:#20211e">Sandbox order.</strong> No live charge was made.</td></tr></table>` : ""}
 
-                ${safeManageUrl ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:30px 0 37px"><tr><td bgcolor="#20211e" style="background:#20211e"><a class="email-button-link" href="${safeManageUrl}" style="display:inline-block;padding:15px 22px;color:#fffdf8;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;letter-spacing:.01em;line-height:1.4;text-decoration:none">Manage your pre-order&nbsp;&nbsp;&rarr;</a></td></tr></table>` : '<div style="height:37px;line-height:37px">&nbsp;</div>'}
+                ${safeManageUrl ? `<table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:30px 0 37px"><tr><td bgcolor="#20211e" style="background:#20211e"><a class="email-button-link" href="${safeManageUrl}" style="display:inline-block;padding:15px 22px;color:#fffdf8;font-family:Arial,Helvetica,sans-serif;font-size:13px;font-weight:700;letter-spacing:.01em;line-height:1.4;text-decoration:none">Manage your ${reservation ? "reservation" : "pre-order"}&nbsp;&nbsp;&rarr;</a></td></tr></table>` : '<div style="height:37px;line-height:37px">&nbsp;</div>'}
 
                 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="width:100%;border-top:1px solid #e0dbd1">
                   <tr>
@@ -430,7 +450,7 @@ export function renderPreorderConfirmationEmail(
                 <p style="margin:0 0 11px;color:#fffdf8;font-family:Georgia,'Times New Roman',serif;font-size:20px;line-height:1">Frame<span style="color:#bd6871">.</span></p>
                 <p style="margin:0 0 8px">Questions? <a href="mailto:${escapeHtml(SUPPORT_EMAIL)}" style="color:#fffdf8;text-decoration:underline">${escapeHtml(SUPPORT_EMAIL)}</a></p>
                 <p style="margin:0"><a href="${escapeHtml(termsUrl)}" style="color:#b9b8b1;text-decoration:underline">Pre-order terms</a>&nbsp;&nbsp;&middot;&nbsp;&nbsp;<a href="${escapeHtml(refundsUrl)}" style="color:#b9b8b1;text-decoration:underline">Cancellation &amp; refunds</a>&nbsp;&nbsp;&middot;&nbsp;&nbsp;<a href="${escapeHtml(productStatusUrl)}" style="color:#b9b8b1;text-decoration:underline">Product status</a></p>
-                <p style="margin:14px 0 0;color:#8f8f89">This is a transactional email about pre-order ${safeOrderNumber}.</p>
+                <p style="margin:14px 0 0;color:#8f8f89">This is a transactional email about ${reservation ? "reservation" : "pre-order"} ${safeOrderNumber}.</p>
                 ${legalIdentity ? `<p style="margin:14px 0 0;color:#8f8f89">${escapeHtml(legalIdentity)}</p>` : ""}
               </td>
             </tr>

@@ -17,6 +17,12 @@ function orderEvidence(row: Record<string, unknown>): PreorderLiveSmokeOrderEvid
     paymentStatus: String(row.payment_status),
     amountTotal: Number(row.amount_total),
     amountRefunded: Number(row.amount_refunded),
+    offerType: String(row.offer_type),
+    reservationAmount: Number(row.reservation_amount),
+    lockedTotalPrice: Number(row.locked_total_price),
+    remainingBalance: Number(row.remaining_balance),
+    reservationStatus:
+      typeof row.reservation_status === "string" ? row.reservation_status : null,
     confirmationEmailSentAt:
       typeof row.confirmation_email_sent_at === "string"
         ? row.confirmation_email_sent_at
@@ -30,6 +36,11 @@ function intentEvidence(row: Record<string, unknown>): PreorderLiveSmokeIntentEv
     environment: String(row.environment),
     status: String(row.status),
     source: typeof row.source === "string" ? row.source : null,
+    offerType: String(row.offer_type),
+    reservationAmount: Number(row.reservation_amount),
+    lockedTotalPrice: Number(row.locked_total_price),
+    remainingBalance: Number(row.remaining_balance),
+    unitAmount: Number(row.unit_amount),
   };
 }
 
@@ -40,7 +51,7 @@ export async function verifyPreorderLiveSmokeOrder(input: {
   const orderResult = await input.supabase
     .from("preorders")
     .select(
-      "id,checkout_intent_id,environment,payment_status,amount_total,amount_refunded,confirmation_email_sent_at",
+      "id,checkout_intent_id,environment,payment_status,amount_total,amount_refunded,offer_type,reservation_amount,locked_total_price,remaining_balance,reservation_status,confirmation_email_sent_at",
     )
     .eq("id", input.orderId)
     .maybeSingle();
@@ -55,7 +66,7 @@ export async function verifyPreorderLiveSmokeOrder(input: {
   const order = orderEvidence(orderResult.data as Record<string, unknown>);
   const intentResult = await input.supabase
     .from("preorder_checkout_intents")
-    .select("id,environment,status,source")
+    .select("id,environment,status,source,offer_type,reservation_amount,locked_total_price,remaining_balance,unit_amount")
     .eq("id", order.checkoutIntentId)
     .maybeSingle();
   if (intentResult.error) throw intentResult.error;
