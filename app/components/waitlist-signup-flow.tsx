@@ -1266,7 +1266,7 @@ export function WaitlistSignupFlow({
           <h2 ref={headingRef} tabIndex={-1}>
             You’re subscribed.
           </h2>
-          <p>No problem—your place on the updates list is already confirmed.</p>
+          <p>Your place on the updates list is confirmed.</p>
           <div className="interest-flow__success-actions">
             <Link className="button button--dark" href={finishHref}>
               <span aria-hidden="true">←</span> Back to Frame

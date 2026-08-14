@@ -953,6 +953,10 @@ test("uses generated raster visuals and keeps the page editable", async () => {
     css,
     /\.interest-flow__decline-trigger\s*\{[^}]*border: 1px solid rgba\(32, 33, 30, 0\.22\);/,
   );
+  assert.match(
+    css,
+    /\.preorder-review-copy__desktop,\s*\.preorder-checkout-action__promise > \.preorder-review-copy__desktop\s*\{\s*display: none;/,
+  );
   assert.doesNotMatch(waitlistFlow, /Thanks—your answers have been saved\./);
   assert.doesNotMatch(waitlistFlow, /interest-flow__success--preorder/);
   assert.doesNotMatch(waitlistFlow, /interest-flow__success-product/);

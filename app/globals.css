@@ -769,46 +769,250 @@
   text-align: center;
 }
 
-.unsubscribe-shell .wordmark {
-  display: inline-block;
-  margin-bottom: 62px;
+.legal-page.unsubscribe-page {
+  background: var(--cream);
 }
 
-.unsubscribe-shell .legal-intro {
+.legal-shell.unsubscribe-shell {
+  width: min(860px, calc(100% - 64px));
+  padding: 42px 0 100px;
+}
+
+.unsubscribe-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 28px;
+  border-bottom: 1px solid var(--line);
+}
+
+.unsubscribe-shell .wordmark {
+  display: inline-block;
+  margin: 0;
+}
+
+.unsubscribe-header .text-link {
+  font-size: 0.68rem;
+}
+
+.unsubscribe-shell > .unsubscribe-card {
+  position: relative;
+  max-width: none;
+  margin: 54px auto 0;
+  padding: clamp(48px, 6vw, 68px);
+  border: 1px solid var(--line);
+  background: var(--paper);
+  box-shadow: 0 24px 58px rgba(32, 33, 30, 0.07);
+  overflow: hidden;
+}
+
+.unsubscribe-shell > .unsubscribe-card::before {
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 4px;
+  background: var(--burgundy);
+  content: "";
+}
+
+.unsubscribe-shell .unsubscribe-card h1 {
+  max-width: 660px;
+  margin: 20px 0 0;
+  font-family: var(--serif);
+  font-size: clamp(3rem, 5.6vw, 4.6rem);
+  font-weight: 400;
+  letter-spacing: -0.055em;
+  line-height: 0.95;
+}
+
+.unsubscribe-shell .unsubscribe-card__intro,
+.unsubscribe-shell .unsubscribe-state__message,
+.unsubscribe-shell .unsubscribe-state__guidance {
+  max-width: 620px;
+  color: var(--ink-soft);
+  line-height: 1.65;
+}
+
+.unsubscribe-shell .unsubscribe-card__intro {
+  margin: 26px 0 0;
+  font-size: 0.9rem;
+}
+
+.unsubscribe-impact {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 38px 0 0;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+}
+
+.unsubscribe-impact > div {
+  padding: 24px 24px 26px 0;
+}
+
+.unsubscribe-impact > div + div {
+  padding-right: 0;
+  padding-left: 24px;
+  border-left: 1px solid var(--line);
+}
+
+.unsubscribe-impact dt {
+  color: var(--burgundy);
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.unsubscribe-impact dd {
+  margin: 10px 0 0;
+  color: var(--ink);
+  font-size: 0.78rem;
+  line-height: 1.55;
+}
+
+.unsubscribe-control,
+.unsubscribe-state__actions {
+  display: flex;
+  align-items: center;
+  gap: 26px;
   margin-top: 34px;
 }
 
-.unsubscribe-control {
-  margin: 38px 0 20px;
+.unsubscribe-control .button,
+.unsubscribe-state__action,
+.unsubscribe-state__actions .button {
+  min-width: 210px;
 }
 
-.unsubscribe-control .button {
-  min-width: 190px;
+.unsubscribe-shell .unsubscribe-card .button {
+  color: var(--paper);
+  text-decoration: none;
 }
 
-.unsubscribe-result,
-.unsubscribe-note {
+.unsubscribe-state__action {
+  align-self: flex-start;
+}
+
+.unsubscribe-control .text-link,
+.unsubscribe-state__actions .text-link {
   color: var(--ink-soft);
-  font-size: 0.72rem;
-  line-height: 1.6;
+  font-size: 0.7rem;
 }
 
-.unsubscribe-result {
-  margin: 14px 0 0;
+.unsubscribe-card--status {
+  min-height: 520px;
+  display: flex;
+  justify-content: center;
+  flex-direction: column;
 }
 
-.unsubscribe-result--success {
-  max-width: 620px;
-  margin: 38px 0 28px;
-  padding: 24px;
-  border-left: 3px solid #657766;
+.unsubscribe-state__mark {
+  display: grid;
+  width: 48px;
+  height: 48px;
+  margin-bottom: 28px;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+.unsubscribe-state__mark--success {
   background: var(--sage-soft);
   color: #435645;
 }
 
-.unsubscribe-note {
-  max-width: 620px;
-  margin: 0 0 46px;
+.unsubscribe-state__mark--error {
+  background: rgba(141, 62, 70, 0.1);
+  color: var(--burgundy);
+}
+
+.unsubscribe-card--error::before {
+  background: var(--burgundy);
+}
+
+.unsubscribe-state__message {
+  margin: 26px 0 0;
+  font-size: 0.9rem;
+}
+
+.unsubscribe-state__guidance {
+  margin: 10px 0 0;
+  font-size: 0.74rem;
+}
+
+@media (max-width: 680px) {
+  .legal-shell.unsubscribe-shell {
+    width: calc(100% - 32px);
+    padding: 24px 0 64px;
+  }
+
+  .unsubscribe-header {
+    padding-bottom: 20px;
+  }
+
+  .unsubscribe-header .text-link {
+    font-size: 0.64rem;
+  }
+
+  .unsubscribe-shell > .unsubscribe-card {
+    margin-top: 24px;
+    padding: 42px 24px 34px;
+  }
+
+  .unsubscribe-shell .unsubscribe-card h1 {
+    font-size: clamp(2.75rem, 13vw, 3.55rem);
+  }
+
+  .unsubscribe-shell .unsubscribe-card__intro {
+    margin-top: 22px;
+    font-size: 0.82rem;
+  }
+
+  .unsubscribe-impact {
+    grid-template-columns: 1fr;
+    margin-top: 30px;
+  }
+
+  .unsubscribe-impact > div,
+  .unsubscribe-impact > div + div {
+    padding: 20px 0 22px;
+    border-left: 0;
+  }
+
+  .unsubscribe-impact > div + div {
+    border-top: 1px solid var(--line);
+  }
+
+  .unsubscribe-control,
+  .unsubscribe-state__actions {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 18px;
+    margin-top: 28px;
+  }
+
+  .unsubscribe-control .button,
+  .unsubscribe-state__action,
+  .unsubscribe-state__actions .button {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .unsubscribe-state__action {
+    align-self: stretch;
+  }
+
+  .unsubscribe-control .text-link,
+  .unsubscribe-state__actions .text-link {
+    width: fit-content;
+  }
+
+  .unsubscribe-card--status {
+    min-height: 0;
+  }
 }
 
 @media (max-width: 1050px) {
@@ -3117,33 +3321,18 @@ h2 {
   margin-bottom: 6px;
 }
 
-.contact-page__direct strong {
+.contact-page__direct strong,
+.contact-page__direct a {
   color: rgba(250, 248, 242, 0.86);
   font-size: 0.68rem;
   font-weight: 520;
   letter-spacing: 0.015em;
 }
 
-.contact-page--preorder .contact-page__layout {
-  grid-template-columns: minmax(0, 760px);
-  justify-content: center;
-}
-
-.contact-page--preorder .contact-page__intro {
-  display: none;
-}
-
-.contact-page--preorder .contact-form {
-  border-left: 1px solid var(--line);
-}
-
-.contact-page--preorder .contact-form__heading-copy--default,
-.contact-page--preorder .contact-form__topic {
-  display: none;
-}
-
-.contact-page--preorder .contact-form__heading-copy--preorder {
-  display: block;
+.contact-page__direct a {
+  width: fit-content;
+  border-bottom: 1px solid rgba(250, 248, 242, 0.34);
+  text-decoration: none;
 }
 
 .contact-form,
@@ -9700,7 +9889,7 @@ h2 {
 .preorder-confirmation__receipt {
   display: grid;
   overflow: hidden;
-  margin-top: 48px;
+  margin-top: 36px;
   border: 1px solid var(--preorder-card-border);
   background: var(--preorder-card-surface);
   box-shadow: var(--preorder-card-shadow);
@@ -9892,7 +10081,7 @@ h2 {
 
 .preorder-confirmation__follow-up {
   max-width: 760px;
-  margin: 42px auto 0;
+  margin: 30px auto 0;
   padding: 34px 0;
   text-align: center;
 }
@@ -9955,9 +10144,10 @@ h2 {
 
   .preorder-confirmation__steps small {
     color: var(--ink-soft);
-    font-size: 0.7rem;
-    line-height: 1.45;
+    font-size: 0.75rem;
+    line-height: 1.5;
   }
+
 }
 
 .preorder-confirmation__return-arrow {
@@ -9974,6 +10164,12 @@ h2 {
 
 .preorder-confirmation__actions .button {
   min-width: 210px;
+}
+
+@media (min-width: 681px) {
+  .preorder-confirmation__actions .preorder-confirmation__desktop-manage {
+    min-width: 250px;
+  }
 }
 
 .preorder-confirmation__actions .text-link {
@@ -11146,6 +11342,84 @@ p.preorder-manage-feedback.form-error {
   text-underline-offset: 3px;
 }
 
+@media (min-width: 681px) {
+  .preorder-manage-card__header {
+    margin-bottom: 36px;
+  }
+
+  .preorder-manage-summary__delivery .preorder-manage-email-toggle.preorder-manage-email-toggle--mobile {
+    display: inline-flex;
+    min-height: 0;
+    align-items: center;
+    margin: 0;
+    padding: 3px 0;
+    border: 0;
+    background: transparent;
+    color: var(--burgundy);
+    line-height: 1.2;
+  }
+
+  .preorder-manage-summary__delivery .preorder-manage-email-toggle.preorder-manage-email-toggle--mobile:hover {
+    border-color: transparent;
+    background: transparent;
+    color: var(--burgundy);
+  }
+
+  .preorder-manage-email-toggle--desktop {
+    display: none;
+  }
+
+  .preorder-manage-delivery-details__header .preorder-manage-form-toggle[aria-expanded="true"],
+  .preorder-manage-option--cancellation .preorder-manage-cancel-toggle[aria-expanded="true"] {
+    min-width: 0;
+    min-height: 40px;
+    padding: 0 13px;
+    border: 1px solid var(--manage-line);
+    background: transparent;
+    color: var(--ink-soft);
+    font-size: 0.7rem;
+  }
+
+  .preorder-manage-delivery-details__header .preorder-manage-form-toggle[aria-expanded="true"]:hover:not(:disabled),
+  .preorder-manage-option--cancellation .preorder-manage-cancel-toggle[aria-expanded="true"]:hover:not(:disabled) {
+    border-color: var(--ink);
+    background: transparent;
+    color: var(--ink);
+  }
+
+  .preorder-manage-option--cancellation .preorder-manage-cancel-submit {
+    border: 1px solid rgba(141, 62, 70, 0.52);
+    background: transparent;
+    color: var(--burgundy);
+  }
+
+  .preorder-manage-option--cancellation .preorder-manage-cancel-submit:hover:not(:disabled) {
+    border-color: var(--burgundy);
+    background: var(--burgundy);
+    color: var(--paper);
+  }
+
+  .preorder-manage-option--cancellation .preorder-manage-cancel-keep {
+    display: inline-flex;
+    min-height: 50px;
+    align-items: center;
+    justify-content: center;
+    padding: 0 24px;
+    border: 1px solid var(--ink);
+    background: var(--ink);
+    color: var(--paper);
+    font-size: 0.78rem;
+    font-weight: 650;
+    text-decoration: none;
+  }
+
+  .preorder-manage-option--cancellation .preorder-manage-cancel-keep:hover {
+    border-color: var(--burgundy);
+    background: var(--burgundy);
+    color: var(--paper);
+  }
+}
+
 .preorder-order-detail .admin-header h1 {
   font-size: clamp(2.9rem, 5vw, 4.6rem);
 }
@@ -11949,7 +12223,7 @@ p.preorder-manage-feedback.form-error {
 
 .preorder-review-heading h1 {
   max-width: 1000px;
-  font-size: clamp(3.5rem, 6vw, 5.25rem);
+  font-size: clamp(3.5rem, 4.4vw, 4rem);
   line-height: 0.96;
 }
 
@@ -11997,8 +12271,8 @@ p.preorder-manage-feedback.form-error {
 .preorder-checkout-surface .preorder-order-summary {
   position: static;
   display: grid;
-  grid-template-columns: 170px minmax(0, 1fr) 270px;
-  gap: 34px;
+  grid-template-columns: 160px minmax(0, 1fr) 250px;
+  gap: 30px;
   overflow: visible;
   padding: 24px 30px;
   border: 0;
@@ -12041,7 +12315,7 @@ p.preorder-manage-feedback.form-error {
 
 .preorder-checkout-surface .preorder-order-summary__title h2 {
   margin: 0;
-  font-size: 2.9rem;
+  font-size: 2.65rem;
 }
 
 .preorder-order-summary__shipping {
@@ -12062,33 +12336,90 @@ p.preorder-manage-feedback.form-error {
 
 .preorder-order-summary__offer {
   display: grid;
-  grid-template-columns: 1fr auto;
-  align-items: baseline;
-  gap: 4px 12px;
+  grid-template-columns: max-content max-content;
+  align-items: center;
+  gap: 7px 13px;
   margin: 17px 0 0;
-  padding: 11px 13px;
+  padding: 12px 14px 13px;
   border-left: 3px solid var(--burgundy);
   background: rgba(141, 62, 70, 0.075);
 }
 
 .preorder-order-summary__offer span {
-  color: var(--burgundy);
-  font-size: 0.58rem;
-  font-weight: 700;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
+  color: var(--ink);
+  font-family: var(--serif);
+  font-size: 2.15rem;
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 1;
 }
 
 .preorder-order-summary__offer strong {
-  font-family: var(--serif);
-  font-size: 1.05rem;
-  font-weight: 400;
+  padding: 6px 9px;
+  border-radius: 2px;
+  background: rgba(141, 62, 70, 0.1);
+  color: var(--burgundy);
+  font-size: 0.58rem;
+  font-weight: 720;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
 }
 
 .preorder-order-summary__offer small {
   grid-column: 1 / -1;
   color: var(--ink-soft);
   font-size: 0.58rem;
+}
+
+.preorder-checkout-conversion {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(360px, 0.88fr);
+  border-top: 0;
+}
+
+.preorder-checkout-conversion .preorder-checkout-body,
+.preorder-checkout-conversion .preorder-checkout-footer {
+  min-width: 0;
+}
+
+.preorder-checkout-conversion .preorder-checkout-body__review {
+  width: 100%;
+  padding: 30px 32px;
+}
+
+.preorder-checkout-conversion .preorder-development-note {
+  height: 100%;
+  justify-content: center;
+}
+
+.preorder-checkout-conversion .preorder-checkout-footer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 30px 32px;
+  border-top: 0;
+  border-left: 1px solid rgba(32, 33, 30, 0.15);
+}
+
+.preorder-checkout-conversion .preorder-checkout-action {
+  width: 100%;
+}
+
+.preorder-checkout-action__promise > .preorder-review-copy__desktop {
+  display: grid;
+  gap: 4px;
+}
+
+.preorder-checkout-action__promise > .preorder-review-copy__desktop strong {
+  color: var(--ink);
+  font-size: 0.72rem;
+  font-weight: 680;
+}
+
+.preorder-checkout-action__promise > .preorder-review-copy__desktop > span {
+  color: var(--ink-soft);
+  font-size: 0.67rem;
+  font-weight: 500;
 }
 
 .preorder-checkout-surface .preorder-order-summary__description {
@@ -12442,6 +12773,15 @@ p.preorder-manage-feedback.form-error {
     grid-template-columns: 1fr;
   }
 
+  .preorder-checkout-conversion {
+    grid-template-columns: 1fr;
+  }
+
+  .preorder-checkout-conversion .preorder-checkout-footer {
+    border-top: 1px solid rgba(32, 33, 30, 0.15);
+    border-left: 0;
+  }
+
   .preorder-checkout-body__delivery {
     border-right: 0;
     border-bottom: 1px solid rgba(32, 33, 30, 0.15);
@@ -12475,7 +12815,8 @@ p.preorder-manage-feedback.form-error {
     line-height: 1.5;
   }
 
-  .preorder-review-copy__desktop {
+  .preorder-review-copy__desktop,
+  .preorder-checkout-action__promise > .preorder-review-copy__desktop {
     display: none;
   }
 
@@ -12783,6 +13124,14 @@ p.preorder-manage-feedback.form-error {
     padding: 28px 18px 26px;
   }
 
+  .preorder-checkout-conversion .preorder-checkout-body__review {
+    padding: 27px 18px 30px;
+  }
+
+  .preorder-checkout-conversion .preorder-checkout-footer {
+    padding: 28px 18px 26px;
+  }
+
   .preorder-checkout-page .preorder-checkout-review .checkout-review__submit {
     font-size: 0.8rem;
     white-space: nowrap;
@@ -13019,78 +13368,6 @@ p.preorder-manage-feedback.form-error {
 }
 
 @media (min-width: 681px) {
-  .home-preorder-price-comparison--section {
-    display: block;
-    padding: 0;
-    border: 1px solid rgba(32, 33, 30, 0.15);
-    border-top: 3px solid rgba(141, 62, 70, 0.72);
-    background: rgba(250, 248, 242, 0.52);
-    box-shadow: 0 14px 34px rgba(32, 33, 30, 0.045);
-    overflow: hidden;
-  }
-
-  .home-preorder-price-comparison.home-preorder-price-comparison--section > div {
-    min-height: 0;
-    padding: 19px 22px 18px;
-    border: 0;
-    background: transparent;
-  }
-
-  .home-preorder-price-comparison__primary dd {
-    display: flex;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 12px 16px;
-    margin-top: 7px;
-  }
-
-  .home-preorder-price-comparison__amount {
-    font-family: var(--serif);
-    font-size: 2.65rem;
-    font-weight: 400;
-    letter-spacing: -0.05em;
-    line-height: 1;
-  }
-
-  .home-preorder-price-comparison__badge {
-    padding: 8px 12px;
-    border: 1px solid rgba(141, 62, 70, 0.16);
-    background: rgba(141, 62, 70, 0.08);
-    color: var(--burgundy);
-    font-size: 0.58rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    line-height: 1;
-    text-transform: uppercase;
-  }
-
-  .home-preorder-price-comparison.home-preorder-price-comparison--section .home-preorder-price-comparison__saving {
-    display: block;
-    margin-top: 0;
-    padding: 12px 22px 13px;
-    border-top: 1px solid rgba(141, 62, 70, 0.12);
-    background: rgba(141, 62, 70, 0.055);
-    color: var(--ink-soft);
-  }
-
-  .home-preorder-price-comparison.home-preorder-price-comparison--section .home-preorder-price-comparison__saving dt {
-    position: absolute;
-    width: 1px;
-    height: 1px;
-    overflow: hidden;
-    clip: rect(0 0 0 0);
-    white-space: nowrap;
-  }
-
-  .home-preorder-price-comparison.home-preorder-price-comparison--section .home-preorder-price-comparison__saving dd {
-    margin: 0;
-    font-family: var(--sans);
-    font-size: 0.72rem;
-    font-weight: 500;
-    letter-spacing: 0;
-    line-height: 1.55;
-  }
-
   .home-preorder-copy .home-preorder-actions {
     display: grid;
     grid-template-columns: 1fr;

@@ -185,67 +185,69 @@ export function PreorderCheckoutReview({
           </div>
         </section>
 
-        <div className="preorder-checkout-body preorder-checkout-body--review-only">
-          <div className="preorder-checkout-body__review">
-            <section className="preorder-development-note" aria-labelledby="preorder-development-title">
-              <div>
-                <h2 id="preorder-development-title">
-                  <span className="preorder-review-copy__desktop">Preparing for launch.</span>
-                  <span className="preorder-review-copy__mobile">Preparing for launch.</span>
-                </h2>
-                <p className="preorder-review-copy__desktop">
-                  Engineering and production preparation are now focused on Q1 2027
-                  dispatch. Final specifications and shipping timing may change. Frame
-                  is designed for general wellness and is not for medical decisions.
-                </p>
-                <p className="preorder-review-copy__mobile">
-                  Engineering and production preparation are now focused on Q1 2027
-                  dispatch. Final specifications and shipping timing may change. Frame
-                  is designed for general wellness and is not for medical decisions.
-                </p>
-              </div>
-              <Link href="/preorder/product-status">View product and shipping details →</Link>
-            </section>
-          </div>
-        </div>
-
-        <footer className="preorder-checkout-footer">
-          {error ? <p className="form-error checkout-review__error" role="alert">{error}</p> : null}
-          <div className="preorder-checkout-action">
-            <button className="button button--dark checkout-review__submit" type="submit" disabled={submitting}>
-              {submitting ? (
-                "Opening secure checkout…"
-              ) : (
-                <>
-                  <span className="preorder-review-copy__desktop">Continue to checkout</span>
-                  <span className="preorder-review-copy__mobile">Continue to checkout</span>
-                </>
-              )}
-            </button>
-            <p className="preorder-checkout-action__promise">
-              <span className="preorder-review-copy__desktop">
-                <strong>Secure Stripe checkout</strong>
-                <span>Tax shown before payment · Full refund before fulfilment</span>
-              </span>
-              <span className="preorder-review-copy__mobile preorder-checkout-action__mobile-promise">
-                <strong>Secure Stripe checkout</strong>
-                <span>Tax shown before payment · Full refund before fulfilment</span>
-              </span>
-            </p>
-          </div>
-
-          <div className="preorder-checkout-footer__legal">
-            <div className="checkout-review__policies">
-              <Link href="/privacy">Privacy Notice</Link>
+        <div className="preorder-checkout-conversion">
+          <div className="preorder-checkout-body preorder-checkout-body--review-only">
+            <div className="preorder-checkout-body__review">
+              <section className="preorder-development-note" aria-labelledby="preorder-development-title">
+                <div>
+                  <h2 id="preorder-development-title">
+                    <span className="preorder-review-copy__desktop">Preparing for launch.</span>
+                    <span className="preorder-review-copy__mobile">Preparing for launch.</span>
+                  </h2>
+                  <p className="preorder-review-copy__desktop">
+                    Engineering and production preparation are now focused on Q1 2027
+                    dispatch. Final specifications and shipping timing may change. Frame
+                    is designed for general wellness and is not for medical decisions.
+                  </p>
+                  <p className="preorder-review-copy__mobile">
+                    Engineering and production preparation are now focused on Q1 2027
+                    dispatch. Final specifications and shipping timing may change. Frame
+                    is designed for general wellness and is not for medical decisions.
+                  </p>
+                </div>
+                <Link href="/preorder/product-status">View product and shipping details →</Link>
+              </section>
             </div>
-            {sellerIdentityLine ? (
-              <details className="preorder-seller-details">
-                <summary>Seller information</summary>
-                <p>{sellerIdentityLine}</p>
-              </details>
-            ) : null}
           </div>
-        </footer>
+
+          <footer className="preorder-checkout-footer">
+            {error ? <p className="form-error checkout-review__error" role="alert">{error}</p> : null}
+            <div className="preorder-checkout-action">
+              <button className="button button--dark checkout-review__submit" type="submit" disabled={submitting}>
+                {submitting ? (
+                  "Opening secure checkout…"
+                ) : (
+                  <>
+                    <span className="preorder-review-copy__desktop">Continue to checkout</span>
+                    <span className="preorder-review-copy__mobile">Continue to checkout</span>
+                  </>
+                )}
+              </button>
+              <p className="preorder-checkout-action__promise">
+                <span className="preorder-review-copy__desktop">
+                  <strong>Secure Stripe checkout</strong>
+                  <span>Tax shown before payment · Full refund before fulfilment</span>
+                </span>
+                <span className="preorder-review-copy__mobile preorder-checkout-action__mobile-promise">
+                  <strong>Secure Stripe checkout</strong>
+                  <span>Tax shown before payment · Full refund before fulfilment</span>
+                </span>
+              </p>
+            </div>
+
+            <div className="preorder-checkout-footer__legal">
+              <div className="checkout-review__policies">
+                <Link href="/privacy">Privacy Notice</Link>
+              </div>
+              {sellerIdentityLine ? (
+                <details className="preorder-seller-details">
+                  <summary>Seller information</summary>
+                  <p>{sellerIdentityLine}</p>
+                </details>
+              ) : null}
+            </div>
+          </footer>
+        </div>
       </div>
     </form>
   );

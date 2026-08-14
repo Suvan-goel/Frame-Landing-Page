@@ -377,16 +377,42 @@ export function PreorderManage() {
     }
   }
 
+  function toggleEmailEditor() {
+    const opening = !showEmailForm;
+    setFeedback(null);
+    setEmail("");
+    setEmailConfirmation("");
+    setShowEmailForm(opening);
+    if (opening) {
+      setShowAddressForm(false);
+      setShowCancellationForm(false);
+    }
+  }
+
   function toggleAddressEditor(scrollToEditor = false) {
     const opening = !showAddressForm;
     setFeedback(null);
     setShowAddressForm(opening);
+    if (opening) {
+      setShowEmailForm(false);
+      setShowCancellationForm(false);
+    }
     if (opening && scrollToEditor) {
       window.setTimeout(() => {
         document
           .getElementById("preorder-address-section")
           ?.scrollIntoView({ behavior: "smooth", block: "start" });
       }, 0);
+    }
+  }
+
+  function toggleCancellationEditor() {
+    const opening = !showCancellationForm;
+    setFeedback(null);
+    setShowCancellationForm(opening);
+    if (opening) {
+      setShowEmailForm(false);
+      setShowAddressForm(false);
     }
   }
 
@@ -560,12 +586,7 @@ export function PreorderManage() {
                 type="button"
                 aria-expanded={showEmailForm}
                 aria-controls="preorder-email-form"
-                onClick={() => {
-                  setFeedback(null);
-                  setEmail("");
-                  setEmailConfirmation("");
-                  setShowEmailForm((current) => !current);
-                }}
+                onClick={toggleEmailEditor}
               >
                 {showEmailForm ? "Close" : <>Change <span aria-hidden="true">→</span></>}
               </button>
@@ -576,12 +597,7 @@ export function PreorderManage() {
               type="button"
               aria-expanded={showEmailForm}
               aria-controls="preorder-email-form"
-              onClick={() => {
-                setFeedback(null);
-                setEmail("");
-                setEmailConfirmation("");
-                setShowEmailForm((current) => !current);
-              }}
+              onClick={toggleEmailEditor}
             >
               {showEmailForm ? "Close" : <>Change <span aria-hidden="true">→</span></>}
             </button>
@@ -686,7 +702,7 @@ export function PreorderManage() {
                 <span className="preorder-manage-copy--mobile">Request a change before fulfilment.</span>
               </p>
             </div>
-            <button className="button button--secondary" type="button" aria-expanded={showAddressForm} aria-controls="preorder-address-form" onClick={() => toggleAddressEditor()}>
+            <button className="button button--secondary preorder-manage-form-toggle" type="button" aria-expanded={showAddressForm} aria-controls="preorder-address-form" onClick={() => toggleAddressEditor()}>
               {showAddressForm ? "Close form" : "Change address"}
             </button>
           </div>
@@ -739,7 +755,7 @@ export function PreorderManage() {
                 <span className="preorder-manage-copy--mobile">Cancel before fulfilment for a full refund.</span>
               </p>
             </div>
-            <button className="button button--secondary preorder-manage-cancel-toggle" type="button" aria-expanded={showCancellationForm} aria-controls="preorder-cancellation-form" onClick={() => { setFeedback(null); setShowCancellationForm((current) => !current); }}>
+            <button className="button button--secondary preorder-manage-cancel-toggle" type="button" aria-expanded={showCancellationForm} aria-controls="preorder-cancellation-form" onClick={toggleCancellationEditor}>
               {showCancellationForm ? "Close" : <>Start cancellation <span aria-hidden="true">→</span></>}
             </button>
           </div>
@@ -749,8 +765,8 @@ export function PreorderManage() {
               <label htmlFor="cancellation-reason">Why are you cancelling? <span>(optional)</span></label>
               <textarea id="cancellation-reason" name="cancellation-reason" rows={4} maxLength={1_000} value={cancellationReason} onChange={(event) => setCancellationReason(event.target.value)} placeholder="Share anything that could help us improve" />
               <div className="preorder-manage-form-actions">
-                <button className="button button--dark" type="submit" disabled={Boolean(busy)}>{busy === "request_cancellation" ? "Submitting…" : "Cancel pre-order and request refund"}</button>
-                <button className="text-link" type="button" onClick={() => setShowCancellationForm(false)}>Keep my pre-order</button>
+                <button className="button button--dark preorder-manage-cancel-submit" type="submit" disabled={Boolean(busy)}>{busy === "request_cancellation" ? "Submitting…" : "Cancel pre-order and request refund"}</button>
+                <button className="text-link preorder-manage-cancel-keep" type="button" onClick={() => setShowCancellationForm(false)}>Keep my pre-order</button>
               </div>
             </form>
           ) : null}

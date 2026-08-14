@@ -519,23 +519,22 @@ export default async function Home() {
                   className="home-preorder-price-comparison home-preorder-price-comparison--section"
                   aria-label="Frame pre-order pricing"
                 >
-                  <div className="home-preorder-price-comparison__primary">
-                    <dt>Pre-order price</dt>
-                    <dd>
-                      <span className="home-preorder-price-comparison__amount">
-                        {preorderPriceLabel}
-                      </span>
-                      <span className="home-preorder-price-comparison__badge">
-                        Save {preorderSavingsLabel}
-                      </span>
-                    </dd>
+                  <div className="home-preorder-price-comparison__pair">
+                    <div>
+                      <dt>Pre-order price</dt>
+                      <dd>{preorderPriceLabel}</dd>
+                    </div>
+                    <div>
+                      <dt>Release price</dt>
+                      <dd><del>{preorderReleasePriceLabel}</del></dd>
+                    </div>
                   </div>
                   <div className="home-preorder-price-comparison__saving">
-                    <dt>Release offer</dt>
-                    <dd>
-                      {PREORDER_DISCOUNT_PERCENT}% off the planned{" "}
-                      <del>{preorderReleasePriceLabel}</del> release price
-                    </dd>
+                    <div>
+                      <dt>You save</dt>
+                      <dd>{preorderSavingsLabel}</dd>
+                    </div>
+                    <span>{PREORDER_DISCOUNT_PERCENT}% off</span>
                   </div>
                 </dl>
 

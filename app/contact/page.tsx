@@ -55,7 +55,7 @@ export default async function ContactPage({
 
           <div className="contact-page__direct">
             <span>Direct email</span>
-            <strong>{SUPPORT_EMAIL}</strong>
+            <a href={`mailto:${SUPPORT_EMAIL}`}>{SUPPORT_EMAIL}</a>
           </div>
         </section>
 

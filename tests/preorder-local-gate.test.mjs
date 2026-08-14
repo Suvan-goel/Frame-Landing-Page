@@ -449,8 +449,8 @@ test("keeps the public homepage free of pre-order discovery and blocks webhook b
 
   assert.equal(unsubscribeResponse.status, 200);
   const unsubscribe = await unsubscribeResponse.text();
-  assert.match(unsubscribe, /Stop Frame development updates\?/);
-  assert.match(unsubscribe, /future development and product-update emails/);
+  assert.match(unsubscribe, /We couldn’t update your preferences\./);
+  assert.match(unsubscribe, /This unsubscribe link is invalid\./);
   assert.doesNotMatch(unsubscribe, /Stop Frame updates\?/);
   assert.equal(webhookResponse.status, 404);
   assert.equal(webhookPostResponse.status, 400);
