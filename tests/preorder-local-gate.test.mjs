@@ -91,7 +91,7 @@ test("keeps live verification private, expiring, and separate from public launch
   );
   assert.match(
     preorderLiveSmokeCookieHeader(cookie),
-    /HttpOnly; Secure; SameSite=Strict/,
+    /HttpOnly; Secure; SameSite=Lax/,
   );
 
   assert.equal(
@@ -496,7 +496,7 @@ test("keeps the public homepage free of pre-order discovery and blocks webhook b
   assert.match(preorderAccess, /isPreorderPublicLaunchConfigured/);
   assert.match(worker, /x-frame-preorder-live-smoke-request/);
   assert.match(worker, /verifyPreorderLiveSmokeAccessToken/);
-  assert.match(liveSmokeAccess, /SameSite=Strict/);
+  assert.match(liveSmokeAccess, /SameSite=Lax/);
   assert.match(liveSmokeAccess, /ACCESS_TOKEN_TTL_SECONDS = 15 \* 60/);
   assert.match(checkoutRoute, /source: liveSmokeRequest[\s\S]+private_live_smoke/);
   assert.match(checkoutRoute, /verification_mode: "live_smoke"/);

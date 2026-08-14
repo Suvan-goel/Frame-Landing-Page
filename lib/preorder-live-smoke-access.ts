@@ -186,9 +186,9 @@ export async function verifyPreorderLiveSmokeAccessToken(
 }
 
 export function preorderLiveSmokeCookieHeader(value: string) {
-  return `${PREORDER_LIVE_SMOKE_COOKIE}=${value}; Path=/; Max-Age=${COOKIE_MAX_AGE_SECONDS}; HttpOnly; Secure; SameSite=Strict`;
+  return `${PREORDER_LIVE_SMOKE_COOKIE}=${value}; Path=/; Max-Age=${COOKIE_MAX_AGE_SECONDS}; HttpOnly; Secure; SameSite=Lax`;
 }
 
 export function clearPreorderLiveSmokeCookieHeader() {
-  return `${PREORDER_LIVE_SMOKE_COOKIE}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict`;
+  return `${PREORDER_LIVE_SMOKE_COOKIE}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax`;
 }
