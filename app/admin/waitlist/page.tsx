@@ -224,7 +224,9 @@ export default async function WaitlistAdminPage({
 
         {activeTab !== "insights" && activeSignups.length ? (
           <div className="admin-table-shell">
-            <table className="admin-table">
+            <table
+              className={`admin-table${activeTab === "new" ? " admin-table--new-survey" : ""}`}
+            >
               <thead>
                 {activeTab === "unqualified" ? (
                   <tr>
@@ -251,7 +253,7 @@ export default async function WaitlistAdminPage({
                     <th>30-day frequency</th>
                     <th>Most recent reason or readiness</th>
                     <th>Method</th>
-                    <th>Outcome, insight and pre-order objection</th>
+                    <th>Outcome and follow-up</th>
                     <th>Source</th>
                     <th>Joined</th>
                     <th><span className="sr-only">Actions</span></th>
@@ -403,28 +405,38 @@ export default async function WaitlistAdminPage({
                             ? `${monitoringLabels[qualification.monitoringMethod] ?? qualification.monitoringMethod}${qualification.monitoringMethodOther ? `: ${qualification.monitoringMethodOther}` : ""}`
                             : "N/A"}
                         </td>
-                        <td>
-                          <strong>
-                            {qualification.monitoringOutcome
-                              ? monitoringOutcomeLabels[qualification.monitoringOutcome] ??
-                                qualification.monitoringOutcome.replaceAll("_", " ")
-                              : "N/A"}
-                          </strong>
+                        <td className="admin-survey-answers">
+                          <div className="admin-survey-answer">
+                            <span className="admin-survey-answer__label">Outcome</span>
+                            <strong>
+                              {qualification.monitoringOutcome
+                                ? monitoringOutcomeLabels[qualification.monitoringOutcome] ??
+                                  qualification.monitoringOutcome.replaceAll("_", " ")
+                                : "N/A"}
+                            </strong>
+                          </div>
                           {qualification.qualitativeDetail ? (
-                            <small className="admin-motivation">
-                              {qualification.qualitativeDetail}
-                            </small>
+                            <div className="admin-survey-answer">
+                              <span className="admin-survey-answer__label">
+                                Written insight
+                              </span>
+                              <p>{qualification.qualitativeDetail}</p>
+                            </div>
                           ) : null}
                           {qualification.preorderDeclineReason ? (
-                            <small className="admin-motivation">
-                              <strong>Not ready to pre-order:</strong>{" "}
-                              {preorderDeclineReasonLabels[
-                                qualification.preorderDeclineReason
-                              ] ?? qualification.preorderDeclineReason.replaceAll("_", " ")}
+                            <div className="admin-survey-answer admin-survey-answer--objection">
+                              <span className="admin-survey-answer__label">
+                                Reservation objection
+                              </span>
+                              <strong>
+                                {preorderDeclineReasonLabels[
+                                  qualification.preorderDeclineReason
+                                ] ?? qualification.preorderDeclineReason.replaceAll("_", " ")}
+                              </strong>
                               {qualification.preorderDeclineDetail
-                                ? ` - ${qualification.preorderDeclineDetail}`
-                                : ""}
-                            </small>
+                                ? <p>{qualification.preorderDeclineDetail}</p>
+                                : null}
+                            </div>
                           ) : null}
                         </td>
                         <td className="admin-source">

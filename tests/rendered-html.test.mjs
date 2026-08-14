@@ -1674,7 +1674,13 @@ test("separates, visualizes, exports, and permanently deletes admin leads", asyn
   assert.match(adminPage, /leadLabel=\{signup\.email\}/);
   assert.match(adminPage, /New survey insights/);
   assert.match(adminPage, /waitlistTabHref\("insights"\)/);
-  assert.match(adminPage, /Outcome, insight and pre-order objection/);
+  assert.match(adminPage, /Outcome and follow-up/);
+  assert.match(adminPage, /admin-table--new-survey/);
+  assert.match(adminPage, /admin-survey-answer__label">Outcome/);
+  assert.match(adminPage, /admin-survey-answer__label[\s\S]*?Written insight/);
+  assert.match(adminPage, /admin-survey-answer__label[\s\S]*?Reservation objection/);
+  assert.match(css, /\.admin-table--new-survey\s*\{[^}]*table-layout: fixed;/);
+  assert.match(css, /\.admin-survey-answer\s*\{[^}]*display: grid;/);
   assert.match(adminPage, /Export spreadsheet/);
   assert.match(adminPage, /AdminTimeZoneForm/);
   assert.match(timeZoneForm, /Lead time zone/);
