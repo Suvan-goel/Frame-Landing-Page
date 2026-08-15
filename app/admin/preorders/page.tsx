@@ -103,6 +103,14 @@ export default async function PreorderAdminPage({
 
   const rows = orders.data ?? [];
   const paidRows = rows.filter((order) => order.payment_status === "paid");
+  const reservationRows = rows.filter(
+    (order) => order.offer_type === "reservation",
+  );
+  const activeReservationRows = reservationRows.filter(
+    (order) =>
+      order.payment_status === "paid" && order.reservation_status === "active",
+  );
+  const recentReservationRows = reservationRows.slice(0, 8);
   const grossByCurrency = new Map<string, number>();
   const refundedByCurrency = new Map<string, number>();
   for (const order of rows) {
@@ -119,6 +127,31 @@ export default async function PreorderAdminPage({
     [...values.entries()]
       .map(([currency, cents]) => formatPreorderMoney(cents, currency))
       .join(" + ") || formatPreorderMoney(0, "usd");
+  const reservationMoneySummary = (
+    sourceRows: PreorderAdminRow[],
+    value: (order: PreorderAdminRow) => number,
+  ) => {
+    const values = new Map<string, number>();
+    for (const order of sourceRows) {
+      values.set(
+        order.currency,
+        (values.get(order.currency) ?? 0) + value(order),
+      );
+    }
+    return moneySummary(values);
+  };
+  const reservationPayments = reservationMoneySummary(
+    activeReservationRows,
+    (order) => Math.max(0, order.amount_total - order.amount_refunded),
+  );
+  const reservationCustomerValue = reservationMoneySummary(
+    activeReservationRows,
+    (order) => order.locked_total_price ?? 0,
+  );
+  const reservationBalanceDue = reservationMoneySummary(
+    activeReservationRows,
+    (order) => order.remaining_balance ?? 0,
+  );
   const liveGateReady = launchReadiness.ready;
   const environmentLabel = environment === "test" ? "Sandbox" : "Live";
   const orderAttentionCount = rows.filter(
@@ -185,6 +218,106 @@ export default async function PreorderAdminPage({
           <article><span>Needs attention</span><strong>{orderAttentionCount + (failedEmails.count ?? 0) + failedWebhookRows.length}</strong></article>
         </section>
 
+        <section className="preorder-reservations" aria-labelledby="reservation-overview-heading">
+          <div className="preorder-reservations__heading">
+            <div>
+              <p className="eyebrow">Reservation programme</p>
+              <h2 id="reservation-overview-heading">Reservations</h2>
+              <p>
+                Paid $49 reservations that lock in each customer&apos;s $299 price,
+                with the remaining balance due before shipping.
+              </p>
+            </div>
+            <span>{activeReservationRows.length} active · {reservationRows.length} total</span>
+          </div>
+
+          <dl className="preorder-reservations__metrics">
+            <div>
+              <dt>Active reservations</dt>
+              <dd>{activeReservationRows.length}</dd>
+            </div>
+            <div>
+              <dt>Collected now</dt>
+              <dd>{reservationPayments}</dd>
+            </div>
+            <div>
+              <dt>Customer value locked</dt>
+              <dd>{reservationCustomerValue}</dd>
+            </div>
+            <div>
+              <dt>Balance due later</dt>
+              <dd>{reservationBalanceDue}</dd>
+            </div>
+          </dl>
+
+          {recentReservationRows.length ? (
+            <div className="admin-table-shell preorder-reservations__table-shell">
+              <table className="admin-table preorder-reservations__table">
+                <thead>
+                  <tr>
+                    <th>Reservation</th>
+                    <th>Status</th>
+                    <th>Paid now</th>
+                    <th>Customer price</th>
+                    <th>Due later</th>
+                    <th>Confirmation</th>
+                    <th>Placed</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {recentReservationRows.map((order) => (
+                    <tr key={order.id}>
+                      <td className="admin-lead">
+                        <strong>
+                          <a href={`/admin/preorders/${order.id}`}>
+                            {environment === "test" ? "TEST · " : ""}
+                            {formatPreorderNumber(order.order_number)} · {order.full_name}
+                          </a>
+                        </strong>
+                        <a href={`mailto:${order.email}`}>{order.email}</a>
+                      </td>
+                      <td data-label="Status">
+                        <span className={`admin-status admin-status--${order.reservation_status ?? order.payment_status}`}>
+                          {(order.reservation_status ?? order.payment_status).replaceAll("_", " ")}
+                        </span>
+                      </td>
+                      <td data-label="Paid now">
+                        {formatPreorderMoney(order.amount_total, order.currency)}
+                        {order.amount_refunded ? (
+                          <><br /><small>{formatPreorderMoney(order.amount_refunded, order.currency)} refunded</small></>
+                        ) : null}
+                      </td>
+                      <td data-label="Customer price">
+                        {formatPreorderMoney(order.locked_total_price ?? 0, order.currency)}
+                      </td>
+                      <td data-label="Due later">
+                        {formatPreorderMoney(order.remaining_balance ?? 0, order.currency)}
+                      </td>
+                      <td data-label="Confirmation">
+                        {order.confirmation_email_sent_at ? "Sent" : "Pending / failed"}
+                      </td>
+                      <td data-label="Placed">
+                        <time dateTime={order.placed_at}>
+                          {new Intl.DateTimeFormat("en-GB", {
+                            dateStyle: "medium",
+                            timeStyle: "short",
+                            timeZone: "UTC",
+                          }).format(new Date(order.placed_at))}
+                        </time>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="preorder-reservations__empty">
+              <strong>No {environmentLabel.toLowerCase()} reservations yet.</strong>
+              <span>Completed reservations will appear here as soon as Stripe confirms payment.</span>
+            </div>
+          )}
+        </section>
+
         <PreorderSalesControls
           snapshot={snapshot}
           liveGateReady={liveGateReady}
@@ -208,6 +341,14 @@ export default async function PreorderAdminPage({
           environment={environment}
           events={failedWebhookRows}
         />
+
+        <div className="admin-section-heading" id="preorder-orders">
+          <div>
+            <p className="eyebrow">Payment records</p>
+            <h2>All orders and reservations</h2>
+          </div>
+          <span>{rows.length} total</span>
+        </div>
 
         {rows.length ? (
           <div className="admin-table-shell">

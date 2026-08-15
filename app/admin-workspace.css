@@ -930,6 +930,132 @@
   margin-bottom: 18px;
 }
 
+.preorder-reservations {
+  margin: 0 0 24px;
+  padding: 28px;
+  border: 1px solid var(--admin-border);
+  border-top: 3px solid rgba(141, 62, 70, 0.6);
+  border-radius: 16px;
+  background:
+    radial-gradient(circle at 96% 0%, rgba(141, 62, 70, 0.09), transparent 31%),
+    var(--admin-card);
+  box-shadow: 0 16px 40px rgba(32, 33, 30, 0.035);
+}
+
+.preorder-reservations__heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 32px;
+}
+
+.preorder-reservations__heading .eyebrow {
+  margin: 0 0 8px;
+  color: var(--burgundy);
+  font-size: 0.56rem;
+}
+
+.preorder-reservations__heading h2 {
+  margin: 0;
+  font-family: var(--serif);
+  font-size: clamp(1.8rem, 2.7vw, 2.45rem);
+  font-weight: 400;
+  letter-spacing: -0.045em;
+  line-height: 1;
+}
+
+.preorder-reservations__heading p:last-child {
+  max-width: 680px;
+  margin: 11px 0 0;
+  color: var(--ink-soft);
+  font-size: 0.68rem;
+  line-height: 1.5;
+}
+
+.preorder-reservations__heading > span {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border: 1px solid rgba(141, 62, 70, 0.17);
+  border-radius: 999px;
+  background: rgba(141, 62, 70, 0.055);
+  color: var(--burgundy);
+  font-size: 0.59rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.preorder-reservations__metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin: 24px 0 0;
+  overflow: hidden;
+  border: 1px solid var(--admin-border);
+  border-radius: 12px;
+  background: rgba(243, 239, 230, 0.46);
+}
+
+.preorder-reservations__metrics > div {
+  display: grid;
+  min-height: 100px;
+  align-content: center;
+  gap: 9px;
+  padding: 18px 20px;
+  border-right: 1px solid var(--admin-border);
+}
+
+.preorder-reservations__metrics > div:last-child {
+  border-right: 0;
+}
+
+.preorder-reservations__metrics dt {
+  color: var(--ink-soft);
+  font-size: 0.55rem;
+  font-weight: 690;
+  letter-spacing: 0.09em;
+  line-height: 1.3;
+  text-transform: uppercase;
+}
+
+.preorder-reservations__metrics dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-family: var(--serif);
+  font-size: clamp(1.55rem, 2.1vw, 2rem);
+  letter-spacing: -0.04em;
+  line-height: 1;
+}
+
+.admin-app .preorder-reservations__table-shell {
+  margin-top: 18px;
+  border-radius: 12px;
+  box-shadow: none;
+}
+
+.preorder-reservations__table {
+  min-width: 980px;
+}
+
+.preorder-reservations__table td small {
+  color: var(--ink-soft);
+}
+
+.preorder-reservations__empty {
+  display: grid;
+  gap: 5px;
+  margin-top: 18px;
+  padding: 23px;
+  border: 1px dashed rgba(32, 33, 30, 0.16);
+  border-radius: 12px;
+  color: var(--ink-soft);
+  font-size: 0.66rem;
+  line-height: 1.45;
+}
+
+.preorder-reservations__empty strong {
+  color: var(--ink);
+  font-size: 0.72rem;
+}
+
 .preorder-admin-operations-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.25fr) minmax(340px, 0.75fr);
@@ -1371,6 +1497,34 @@
 }
 
 @media (max-width: 760px) {
+  .preorder-reservations {
+    padding: 22px 18px;
+    border-radius: 12px;
+  }
+
+  .preorder-reservations__heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .preorder-reservations__metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .preorder-reservations__metrics > div {
+    min-height: 90px;
+    border-bottom: 1px solid var(--admin-border);
+  }
+
+  .preorder-reservations__metrics > div:nth-child(2n) {
+    border-right: 0;
+  }
+
+  .preorder-reservations__metrics > div:nth-last-child(-n + 2) {
+    border-bottom: 0;
+  }
+
   .preorder-admin-health-stack,
   .preorder-admin-operations-grid .preorder-sales-controls form {
     grid-template-columns: 1fr;
