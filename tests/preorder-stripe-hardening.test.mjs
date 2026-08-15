@@ -28,6 +28,22 @@ test("keeps webhook verification and paid fulfilment independent from the sales 
   );
 });
 
+test("sends an idempotent internal notification after successful Checkout fulfilment", async () => {
+  const [payments, email] = await Promise.all([
+    readFile(new URL("../lib/preorder-payments.server.ts", import.meta.url), "utf8"),
+    readFile(new URL("../lib/preorder-email.server.ts", import.meta.url), "utf8"),
+  ]);
+
+  assert.match(payments, /sendPreorderOperationsConfirmationEmail\(/);
+  assert.match(payments, /operations_confirmation_email_failed/);
+  assert.match(email, /emailType: "operations_order_confirmation"/);
+  assert.match(
+    email,
+    /deliveryKey: `preorder-operations-confirmation-\$\{input\.preorderId\}`/,
+  );
+  assert.match(email, /const recipient = await preorderOperationsRecipient\(\)/);
+});
+
 test("uses dashboard-managed payment methods and identifies each Checkout flow", async () => {
   const [preorderCheckout, contributorCheckout] = await Promise.all([
     readFile(new URL("../app/api/preorders/checkout/route.ts", import.meta.url), "utf8"),

@@ -3,6 +3,7 @@ import test from "node:test";
 import {
   renderPreorderConfirmationEmail,
   renderPreorderMaintenanceFailureEmail,
+  renderPreorderOperationsConfirmationEmail,
 } from "../lib/preorder-email.server.ts";
 
 const confirmation = {
@@ -102,4 +103,59 @@ test("renders a safe, actionable owner alert when deadline maintenance fails", (
   assert.doesNotMatch(rendered.html, /<script>alert/);
   assert.match(rendered.html, /&lt;script&gt;alert\(&#039;failure&#039;\)&lt;\/script&gt;/);
   assert.match(rendered.text, /scheduled processor will retry/i);
+});
+
+test("renders a separate internal notification for every successful reservation", () => {
+  const rendered = renderPreorderOperationsConfirmationEmail({
+    origin: "https://framewearable.com",
+    preorderId: "preorder-preview",
+    orderNumber: 1042,
+    environment: "live",
+    fullName: "Alex <Morgan>",
+    customerEmail: "alex@example.com",
+    amountPaid: 4900,
+    currency: "usd",
+    placedAt: "2026-08-14T18:30:00.000Z",
+    estimatedShipping: "Q1 2027",
+    offerType: "reservation",
+    lockedTotalPrice: 29900,
+    remainingBalance: 25000,
+  });
+
+  assert.equal(
+    rendered.subject,
+    "New Frame reservation | FR-001042 | $49",
+  );
+  assert.match(rendered.html, /New reservation/);
+  assert.match(rendered.html, /A new Frame reservation was placed/);
+  assert.match(rendered.html, /Paid today/);
+  assert.match(rendered.html, /\$49/);
+  assert.match(rendered.html, /Your price/);
+  assert.match(rendered.html, /\$299/);
+  assert.match(rendered.html, /Balance before shipping/);
+  assert.match(rendered.html, /\$250/);
+  assert.match(rendered.html, /href="https:\/\/framewearable\.com\/admin\/preorders\/preorder-preview"/);
+  assert.doesNotMatch(rendered.html, /Alex <Morgan>/);
+  assert.match(rendered.html, /Alex &lt;Morgan&gt;/);
+});
+
+test("labels internal test reservations as sandbox messages", () => {
+  const rendered = renderPreorderOperationsConfirmationEmail({
+    origin: "https://framewearable.com",
+    preorderId: "preorder-preview",
+    orderNumber: 1042,
+    environment: "test",
+    fullName: "Alex Morgan",
+    customerEmail: "alex@example.com",
+    amountPaid: 4900,
+    currency: "usd",
+    placedAt: "2026-08-14T18:30:00.000Z",
+    estimatedShipping: "Q1 2027",
+    offerType: "reservation",
+    lockedTotalPrice: 29900,
+    remainingBalance: 25000,
+  });
+
+  assert.match(rendered.subject, /^\[Sandbox\]/);
+  assert.match(rendered.html, /Sandbox reservation/);
 });

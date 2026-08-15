@@ -2,6 +2,7 @@ import type Stripe from "stripe";
 import { getPreorderConfiguration } from "./preorder-config.server";
 import {
   sendPreorderConfirmationEmail,
+  sendPreorderOperationsConfirmationEmail,
   sendPreorderRefundUpdateEmail,
 } from "./preorder-email.server";
 import { createPreorderManagePath } from "./preorder-order-access.server";
@@ -392,6 +393,34 @@ export async function fulfillPreorderCheckout(
         },
       });
     }
+  }
+
+  try {
+    await sendPreorderOperationsConfirmationEmail({
+      origin,
+      preorderId: order.id,
+      orderNumber: order.order_number,
+      environment: order.environment,
+      fullName: order.full_name,
+      customerEmail: order.email,
+      amountPaid: order.amount_total,
+      currency: order.currency,
+      placedAt: order.placed_at,
+      estimatedShipping: order.estimated_delivery,
+      offerType: order.offer_type,
+      lockedTotalPrice: order.locked_total_price,
+      remainingBalance: order.remaining_balance,
+    });
+  } catch (error) {
+    console.error("Pre-order operations confirmation email failed", error);
+    await insertOrderEvent({
+      preorderId: order.id,
+      eventKey: `preorder-operations-confirmation-email-failed-${session.id}`,
+      eventType: "operations_confirmation_email_failed",
+      detail: {
+        error: error instanceof Error ? error.message.slice(0, 300) : "Unknown error",
+      },
+    });
   }
 
   return order;

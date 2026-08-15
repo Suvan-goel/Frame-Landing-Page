@@ -44,6 +44,7 @@ async function sendPreorderEmail(input: {
   preorderId: string;
   emailType:
     | "order_confirmation"
+    | "operations_order_confirmation"
     | "shipping_update"
     | "owner_action_required"
     | "cancellation_declined"
@@ -476,6 +477,116 @@ export async function sendPreorderConfirmationEmail(
     emailType: "order_confirmation",
     recipient: input.email,
     deliveryKey,
+    ...email,
+  });
+}
+
+export type PreorderOperationsConfirmationEmailInput = {
+  origin: string;
+  preorderId: string;
+  orderNumber: number;
+  environment: PreorderEnvironment;
+  fullName: string;
+  customerEmail: string;
+  amountPaid: number;
+  currency: string;
+  placedAt: string;
+  estimatedShipping: string;
+  offerType: "full_preorder" | "reservation";
+  lockedTotalPrice?: number | null;
+  remainingBalance?: number | null;
+};
+
+export function renderPreorderOperationsConfirmationEmail(
+  input: PreorderOperationsConfirmationEmailInput,
+) {
+  const orderNumber = formatPreorderNumber(input.orderNumber);
+  const amountPaid = formatPreorderMoney(input.amountPaid, input.currency);
+  const lockedTotalPrice = formatPreorderMoney(
+    input.lockedTotalPrice ?? input.amountPaid,
+    input.currency,
+  );
+  const remainingBalance = formatPreorderMoney(
+    input.remainingBalance ?? 0,
+    input.currency,
+  );
+  const reservation = input.offerType === "reservation";
+  const purchaseLabel = reservation ? "reservation" : "pre-order";
+  const sandbox = input.environment === "test";
+  const placedAt = new Intl.DateTimeFormat("en-US", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "America/Los_Angeles",
+  }).format(new Date(input.placedAt));
+  const ownerUrl = `${input.origin}/admin/preorders/${input.preorderId}`;
+  const subject = `${sandbox ? "[Sandbox] " : ""}New Frame ${purchaseLabel} | ${orderNumber} | ${amountPaid}`;
+  const rows = [
+    { label: "Customer", value: input.fullName },
+    { label: "Email", value: input.customerEmail },
+    { label: "Paid today", value: amountPaid, emphasis: true },
+    ...(reservation
+      ? [
+          { label: "Your price", value: lockedTotalPrice },
+          { label: "Balance before shipping", value: remainingBalance },
+        ]
+      : []),
+    { label: "Estimated shipping", value: input.estimatedShipping },
+    { label: "Placed", value: `${placedAt} PT` },
+  ];
+
+  return {
+    subject,
+    text: [
+      `A new Frame ${purchaseLabel} was placed.`,
+      `Order: ${orderNumber}`,
+      `Customer: ${input.fullName}`,
+      `Email: ${input.customerEmail}`,
+      `Paid today: ${amountPaid}`,
+      ...(reservation
+        ? [
+            `Your price: ${lockedTotalPrice}`,
+            `Balance before shipping: ${remainingBalance}`,
+          ]
+        : []),
+      `Estimated shipping: ${input.estimatedShipping}`,
+      `Placed: ${placedAt} PT`,
+      "",
+      `Review ${purchaseLabel}: ${ownerUrl}`,
+    ].join("\n"),
+    html: renderFrameTransactionalEmail({
+      origin: input.origin,
+      subject,
+      preheader: `${input.fullName} placed ${purchaseLabel} ${orderNumber} and paid ${amountPaid}.`,
+      headerLabel: sandbox ? `Sandbox ${purchaseLabel}` : `New ${purchaseLabel}`,
+      headerMarker: "check",
+      eyebrow: `${sandbox ? "Sandbox · " : ""}${orderNumber}`,
+      heading: `A new Frame ${purchaseLabel} was placed.`,
+      intro: `${input.fullName} paid ${amountPaid}. The customer receipt is handled separately.`,
+      bodyHtml: renderTransactionalSummaryPanel({
+        eyebrow: "Reservation details",
+        title: orderNumber,
+        rows,
+      }),
+      cta: { label: `Review ${purchaseLabel}`, href: ownerUrl },
+      footerNote: "This internal notification was generated after successful Stripe Checkout fulfillment.",
+    }),
+  };
+}
+
+export async function sendPreorderOperationsConfirmationEmail(
+  input: PreorderOperationsConfirmationEmailInput,
+) {
+  const recipient = await preorderOperationsRecipient();
+  if (!recipient) {
+    throw new Error("Pre-order operations email is not configured yet.");
+  }
+  const email = renderPreorderOperationsConfirmationEmail(input);
+
+  return sendPreorderEmail({
+    preorderId: input.preorderId,
+    emailType: "operations_order_confirmation",
+    recipient,
+    deliveryKey: `preorder-operations-confirmation-${input.preorderId}`,
     ...email,
   });
 }
