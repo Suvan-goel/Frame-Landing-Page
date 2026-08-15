@@ -539,18 +539,24 @@ export default async function Home() {
 
                 <div
                   className="home-preorder-mobile-price-card"
-                  aria-label={`${preorderPriceLabel} fully refundable reservation. Locks in your ${preorderFoundingPriceLabel} price; ${preorderRemainingBalanceLabel} due before shipping. Launch price ${preorderLaunchPriceLabel}.`}
+                  aria-label={`Pay ${preorderPriceLabel} today for a fully refundable reservation. It counts toward your ${preorderFoundingPriceLabel} total price, with ${preorderRemainingBalanceLabel} remaining before shipping. There is no automatic later charge.`}
                 >
-                  <span>Your price</span>
-                  <div className="home-preorder-mobile-price-card__price-row">
-                    <strong>{preorderFoundingPriceLabel}</strong>
-                    <span>Reserve {preorderPriceLabel}</span>
+                  <span className="home-preorder-mobile-price-card__eyebrow">
+                    Fully refundable reservation
+                  </span>
+                  <div className="home-preorder-mobile-price-card__summary">
+                    <div className="home-preorder-mobile-price-card__payment">
+                      <span>Pay today</span>
+                      <strong>{preorderPriceLabel}</strong>
+                    </div>
+                    <div className="home-preorder-mobile-price-card__saving">
+                      <strong>Save $100</strong>
+                      <span>by reserving</span>
+                    </div>
                   </div>
-                  <p>
-                    <span>
-                      {preorderRemainingBalanceLabel} due before shipping ·{" "}
-                      {preorderLaunchPriceLabel} launch price
-                    </span>
+                  <p className="home-preorder-mobile-price-card__details">
+                    Counts toward your {preorderFoundingPriceLabel} total. {" "}
+                    {preorderRemainingBalanceLabel} due before shipping.
                   </p>
                 </div>
 
