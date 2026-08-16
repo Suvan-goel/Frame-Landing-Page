@@ -442,6 +442,7 @@ test("server-renders the Frame landing page", async () => {
   );
   assert.doesNotMatch(html, /home-preorder-hero__saving-note/);
   assert.match(html, /home-preorder-hero__actions/);
+  assert.match(html, /Join 400\+ people already waiting for Frame\./);
   assert.doesNotMatch(html, /hero-email-first__shipping-pill/);
   assert.match(html, /SHIPPING EST\.\s*(?:<!-- -->)?Q1 2027/i);
   assert.doesNotMatch(html, /home-preorder-hero__shipping/);

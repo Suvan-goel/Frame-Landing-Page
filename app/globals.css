@@ -13391,9 +13391,25 @@ p.preorder-manage-feedback.form-error {
 .home-preorder-hero__actions {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
-  gap: 24px;
+  column-gap: 24px;
+  row-gap: 10px;
   width: 100%;
   align-items: center;
+}
+
+.home-preorder-hero__social-proof {
+  grid-column: 1;
+  width: max-content;
+  max-width: 100%;
+  margin: 0;
+  padding: 7px 10px;
+  border: 1px solid rgba(32, 33, 30, 0.14);
+  border-radius: 999px;
+  background: rgba(250, 248, 242, 0.5);
+  color: var(--ink-soft);
+  font-size: 0.67rem;
+  font-weight: 560;
+  line-height: 1.35;
 }
 
 .home-preorder-hero .home-preorder-hero__preorder-button,
@@ -13957,6 +13973,12 @@ p.preorder-manage-feedback.form-error {
 
   .home-preorder-hero__actions {
     grid-template-columns: 1fr;
+  }
+
+  .home-preorder-hero__social-proof {
+    justify-self: center;
+    font-size: 0.66rem;
+    text-align: center;
   }
 
   .home-preorder-hero__details-button {

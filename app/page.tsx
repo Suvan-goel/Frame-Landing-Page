@@ -250,6 +250,9 @@ export default async function Home() {
                     <span className="home-preorder-hero__details-label">See details</span>
                     <span aria-hidden="true">↓</span>
                   </a>
+                  <p className="home-preorder-hero__social-proof">
+                    Join 400+ people already waiting for Frame.
+                  </p>
                 </div>
                 <MobileWaitlistDisclosure>
                   <WaitlistSignupFlow
