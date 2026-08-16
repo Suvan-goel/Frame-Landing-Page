@@ -13298,6 +13298,7 @@ p.preorder-manage-feedback.form-error {
 /* Gated homepage pre-order entry point. */
 
 .home-preorder-hero {
+  display: grid;
   width: min(560px, 100%);
   margin-top: 34px;
 }
@@ -13353,19 +13354,6 @@ p.preorder-manage-feedback.form-error {
   padding-bottom: 8px;
 }
 
-.home-preorder-hero__offer-line {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  margin: 0 0 12px;
-  color: var(--burgundy);
-  font-size: 0.68rem;
-  font-weight: 680;
-  letter-spacing: 0.055em;
-  line-height: 1.35;
-  text-transform: uppercase;
-}
-
 .home-preorder-hero__offer-tag {
   flex: 0 0 auto;
   padding: 0;
@@ -13374,42 +13362,47 @@ p.preorder-manage-feedback.form-error {
   white-space: nowrap;
 }
 
-.home-preorder-hero__offer-separator {
-  color: rgba(141, 62, 70, 0.86);
-  font-size: 0.82rem;
-  line-height: 1;
-}
-
-.home-preorder-hero__offer-message {
-  min-width: 0;
-}
-
-.home-preorder-hero__offer-message strong {
-  font-weight: inherit;
-}
-
 .home-preorder-hero__actions {
   display: grid;
+  grid-row: 2;
   grid-template-columns: minmax(0, 1fr) auto;
   column-gap: 24px;
-  row-gap: 10px;
+  row-gap: 0;
   width: 100%;
   align-items: center;
 }
 
 .home-preorder-hero__social-proof {
+  grid-row: 1;
   grid-column: 1;
+  display: flex;
+  align-items: center;
+  gap: 9px;
   width: max-content;
   max-width: 100%;
-  margin: 0;
-  padding: 7px 10px;
-  border: 1px solid rgba(32, 33, 30, 0.14);
-  border-radius: 999px;
-  background: rgba(250, 248, 242, 0.5);
+  margin: 0 0 12px;
   color: var(--ink-soft);
-  font-size: 0.67rem;
-  font-weight: 560;
-  line-height: 1.35;
+  font-size: 0.69rem;
+  font-weight: 520;
+  line-height: 1.4;
+}
+
+.home-preorder-hero__social-proof strong {
+  color: var(--burgundy);
+  display: inline-block;
+  font-size: 1.16em;
+  font-weight: 720;
+  letter-spacing: -0.01em;
+  line-height: 1;
+}
+
+.home-preorder-hero__community {
+  display: block;
+  flex: 0 0 auto;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--burgundy);
 }
 
 .home-preorder-hero .home-preorder-hero__preorder-button,
@@ -13870,6 +13863,7 @@ p.preorder-manage-feedback.form-error {
   }
 
   .hero--email-first .home-preorder-hero {
+    display: grid;
     order: 4;
     margin-top: 48px;
   }
@@ -13877,6 +13871,7 @@ p.preorder-manage-feedback.form-error {
   .home-preorder-hero__mobile-product {
     position: relative;
     display: grid;
+    grid-row: 1;
     min-height: 130px;
     margin: 0 0 54px;
     place-items: center;
@@ -13904,17 +13899,14 @@ p.preorder-manage-feedback.form-error {
     font-weight: 600;
   }
 
-  .home-preorder-hero__offer-line {
-    display: none;
-  }
-
   .home-preorder-hero__mobile-offer {
     display: flex;
+    grid-row: 4;
     align-items: center;
-    justify-content: flex-start;
-    gap: 5px;
-    margin: 0 0 12px;
-    padding: 4px 2px;
+    justify-content: center;
+    gap: 0;
+    margin: 12px 0 0;
+    padding: 0;
     color: var(--ink-soft);
     font-size: 0.7rem;
     line-height: 1.35;
@@ -13972,13 +13964,17 @@ p.preorder-manage-feedback.form-error {
   }
 
   .home-preorder-hero__actions {
+    grid-row: 3;
     grid-template-columns: 1fr;
+    row-gap: 0;
   }
 
   .home-preorder-hero__social-proof {
+    grid-row: 2;
     justify-self: center;
-    font-size: 0.66rem;
-    text-align: center;
+    max-width: 264px;
+    margin-bottom: 16px;
+    font-size: 0.7rem;
   }
 
   .home-preorder-hero__details-button {
@@ -13986,6 +13982,7 @@ p.preorder-manage-feedback.form-error {
   }
 
   .home-preorder-hero__waitlist-disclosure {
+    grid-row: 5;
     margin-top: 16px;
   }
 

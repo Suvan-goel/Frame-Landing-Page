@@ -296,7 +296,7 @@ test("keeps the funnel usable only on loopback during development", async () => 
   assert.match(home, /href="\/preorder\/review\?source=homepage"/);
   assert.doesNotMatch(home, /Pre-orders are now open\./);
   assert.match(home, /See details/);
-  assert.match(home, /home-preorder-hero__offer-line/);
+  assert.doesNotMatch(home, /home-preorder-hero__offer-line/);
   assert.match(home, /Reservation offer/);
   assert.match(
     home,
@@ -304,7 +304,13 @@ test("keeps the funnel usable only on loopback during development", async () => 
   );
   assert.doesNotMatch(home, /home-preorder-hero__saving-note/);
   assert.match(home, /home-preorder-hero__actions/);
-  assert.match(home, /Join 400\+ people already waiting for Frame\./);
+  assert.match(home, /home-preorder-hero__community/);
+  assert.match(home, /450\+/);
+  assert.match(home, /people waiting to receive their Frame/);
+  assert.ok(
+    home.indexOf("home-preorder-hero__social-proof") <
+      home.indexOf('href="/preorder/review?source=homepage_hero"'),
+  );
   assert.doesNotMatch(home, /hero-email-first__shipping-pill/);
   assert.match(home, /SHIPPING EST\.\s*(?:<!-- -->)?Q1 2027/i);
   assert.doesNotMatch(home, /home-preorder-hero__shipping/);

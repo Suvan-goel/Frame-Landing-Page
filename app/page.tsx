@@ -212,28 +212,15 @@ export default async function Home() {
                     decoding="async"
                   />
                 </figure>
-                <p className="home-preorder-hero__offer-line">
-                  <span className="home-preorder-hero__offer-tag">
-                    Save {preorderSavingsLabel} by reserving today
-                  </span>
+                <p className="home-preorder-hero__social-proof">
                   <span
-                    className="home-preorder-hero__offer-separator"
+                    className="home-preorder-hero__community"
                     aria-hidden="true"
-                  >
-                    ·
-                  </span>
-                  <span className="home-preorder-hero__offer-message">
-                    Fully refundable
+                  />
+                  <span>
+                    Join <strong>450+</strong> people waiting to receive their Frame
                   </span>
                 </p>
-                <div
-                  className="home-preorder-hero__mobile-offer"
-                  aria-label="Reservation is fully refundable."
-                >
-                  <span className="home-preorder-hero__offer-tag">
-                    Fully refundable
-                  </span>
-                </div>
                 <div className="home-preorder-hero__actions">
                   <a
                     className="button home-preorder-hero__preorder-button"
@@ -250,9 +237,14 @@ export default async function Home() {
                     <span className="home-preorder-hero__details-label">See details</span>
                     <span aria-hidden="true">↓</span>
                   </a>
-                  <p className="home-preorder-hero__social-proof">
-                    Join 400+ people already waiting for Frame.
-                  </p>
+                </div>
+                <div
+                  className="home-preorder-hero__mobile-offer"
+                  aria-label="Reservation is fully refundable."
+                >
+                  <span className="home-preorder-hero__offer-tag">
+                    Fully refundable
+                  </span>
                 </div>
                 <MobileWaitlistDisclosure>
                   <WaitlistSignupFlow

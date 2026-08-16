@@ -434,7 +434,7 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /href="\/preorder\/review\?source=homepage_hero"/);
   assert.doesNotMatch(html, /Pre-orders are now open\./);
   assert.match(html, /See details/);
-  assert.match(html, /home-preorder-hero__offer-line/);
+  assert.doesNotMatch(html, /home-preorder-hero__offer-line/);
   assert.match(html, /Reservation offer/);
   assert.match(
     html,
@@ -442,7 +442,13 @@ test("server-renders the Frame landing page", async () => {
   );
   assert.doesNotMatch(html, /home-preorder-hero__saving-note/);
   assert.match(html, /home-preorder-hero__actions/);
-  assert.match(html, /Join 400\+ people already waiting for Frame\./);
+  assert.match(html, /home-preorder-hero__community/);
+  assert.match(html, /450\+/);
+  assert.match(html, /people waiting to receive their Frame/);
+  assert.ok(
+    html.indexOf("home-preorder-hero__social-proof") <
+      html.indexOf('href="/preorder/review?source=homepage_hero"'),
+  );
   assert.doesNotMatch(html, /hero-email-first__shipping-pill/);
   assert.match(html, /SHIPPING EST\.\s*(?:<!-- -->)?Q1 2027/i);
   assert.doesNotMatch(html, /home-preorder-hero__shipping/);
