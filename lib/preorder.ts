@@ -11,11 +11,11 @@ export const PREORDER_STRIPE_PRODUCT_IMAGE_URL =
   "https://files.stripe.com/links/MDB8YWNjdF8xVTJVMUJDYXlaejdRRXVvfGZsX2xpdmVfQU0wQjVUdW9VZ0V2YnBReFBwSmFZZGg000RyAxAU5t";
 // The Pre-order Terms and Cancellation and Refund Policy are accepted together
 // and versioned as one legal pack. The database retains `terms_version` for compatibility.
-export const PREORDER_LEGAL_PACK_VERSION = "2026-08-14-v2";
+export const PREORDER_LEGAL_PACK_VERSION = "2026-08-16-v3";
 export const PREORDER_TERMS_VERSION = PREORDER_LEGAL_PACK_VERSION;
-export const PREORDER_LEGAL_PACK_UPDATED = "August 14, 2026";
-export const PREORDER_PRODUCT_STATUS_VERSION = "2026-08-12-v1";
-export const PREORDER_PRODUCT_STATUS_UPDATED = "August 12, 2026";
+export const PREORDER_LEGAL_PACK_UPDATED = "August 16, 2026";
+export const PREORDER_PRODUCT_STATUS_VERSION = "2026-08-16-v2";
+export const PREORDER_PRODUCT_STATUS_UPDATED = "August 16, 2026";
 // This remains false until the single incorporated-company configuration has
 // a valid legal name, registration number, registered office, separately
 // authorised correspondence address, jurisdiction, support contact, privacy
@@ -24,7 +24,7 @@ export const PREORDER_SELLER_DETAILS_COMPLETE = COMPANY_DETAILS_COMPLETE;
 // The one-year limited hardware warranty is now defined in the legal pack.
 // Seller identity remains a separate launch gate because the warrantor must be named.
 export const PREORDER_WARRANTY_DETAILS_COMPLETE = true;
-export const PREORDER_DEFAULT_PRICE_CENTS = 4_900;
+export const PREORDER_DEFAULT_PRICE_CENTS = 9_900;
 export const PREORDER_FOUNDING_PRICE_CENTS = 29_900;
 export const PREORDER_REMAINING_BALANCE_CENTS =
   PREORDER_FOUNDING_PRICE_CENTS - PREORDER_DEFAULT_PRICE_CENTS;
@@ -51,7 +51,7 @@ export function preorderStripeProductDescription(input: {
   estimatedShipping: string;
   sandbox: boolean;
 }) {
-  return `${input.sandbox ? "Sandbox only. " : ""}$49 fully refundable Frame reservation · Locks in your $299 price · $250 due before shipping · Estimated shipping ${input.estimatedShipping}.`;
+  return `${input.sandbox ? "Sandbox only. " : ""}$99 fully refundable Frame reservation · Locks in your $299 price · $200 due before shipping · Estimated shipping ${input.estimatedShipping}.`;
 }
 
 export function formatPreorderNumber(value: number | string) {

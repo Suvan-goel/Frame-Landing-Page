@@ -124,7 +124,7 @@ if (!price) {
         environment,
       },
     },
-    { idempotencyKey: `frame-reservation-price-${environment}-usd-4900-v1` },
+    { idempotencyKey: `frame-reservation-price-${environment}-usd-9900-v1` },
   );
 }
 

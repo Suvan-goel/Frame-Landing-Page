@@ -179,7 +179,7 @@ test("keeps the reviewed reservation, free shipping, tax and inventory controls 
     readFile(new URL("../lib/preorder-launch-readiness.server.ts", import.meta.url), "utf8"),
   ]);
 
-  assert.match(offer, /PREORDER_DEFAULT_PRICE_CENTS = 4_900/);
+  assert.match(offer, /PREORDER_DEFAULT_PRICE_CENTS = 9_900/);
   assert.match(offer, /PREORDER_FOUNDING_PRICE_CENTS = 29_900/);
   assert.match(offer, /PREORDER_REMAINING_BALANCE_CENTS/);
   assert.match(offer, /PREORDER_LAUNCH_PRICE_CENTS = 39_900/);
@@ -192,8 +192,8 @@ test("keeps the reviewed reservation, free shipping, tax and inventory controls 
     /PREORDER_REVIEWED_PRODUCT_IMAGE_PATH[\s\S]*frame-product-concept-realistic-v3-transparent\.png/,
   );
   assert.match(offer, /PREORDER_STRIPE_PRODUCT_IMAGE_URL[\s\S]*https:\/\/files\.stripe\.com\/links\//);
-  assert.match(offer, /\$49 fully refundable Frame reservation/);
-  assert.match(offer, /\$250 due before shipping/);
+  assert.match(offer, /\$99 fully refundable Frame reservation/);
+  assert.match(offer, /\$200 due before shipping/);
   assert.match(checkout, /getStripeReservationPriceId\(environment\)/);
   assert.doesNotMatch(checkout, /getStripePreorderPriceId/);
   assert.match(checkout, /flow: "frame_reservation"/);

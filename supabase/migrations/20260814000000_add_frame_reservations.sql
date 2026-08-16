@@ -193,7 +193,7 @@ end
 $$;
 
 comment on column public.preorder_checkout_intents.offer_type is
-  'Explicitly distinguishes legacy full-payment pre-orders from $49 Frame reservations.';
+  'Explicitly distinguishes legacy full-payment pre-orders from Frame reservations.';
 comment on column public.preorders.offer_type is
   'Legacy rows are full_preorder; new reservation rows retain immutable reservation financial terms.';
 comment on column public.preorders.reservation_status is

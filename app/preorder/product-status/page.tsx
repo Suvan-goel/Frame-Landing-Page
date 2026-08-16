@@ -4,9 +4,14 @@ import { notFound } from "next/navigation";
 import { PreorderHeader } from "../../components/preorder-chrome";
 import { HistoryBackLink } from "../../components/history-back-link";
 import {
+  formatPreorderMoney,
+  PREORDER_DEFAULT_CURRENCY,
+  PREORDER_DEFAULT_PRICE_CENTS,
   PREORDER_ESTIMATED_SHIPPING,
+  PREORDER_FOUNDING_PRICE_CENTS,
   PREORDER_PRODUCT_STATUS_UPDATED,
   PREORDER_PRODUCT_STATUS_VERSION,
+  PREORDER_REMAINING_BALANCE_CENTS,
 } from "@/lib/preorder";
 import { isPreorderSalesPageEnabled } from "@/lib/preorder-sales-page.server";
 import {
@@ -21,6 +26,18 @@ import {
 const PRODUCT_STATUS_TITLE = "Frame Product Progress and Reservation Information";
 const PRODUCT_STATUS_DESCRIPTION =
   "Frame launch readiness, intended use, Q1 2027 shipping plan, and customer protections for reservations.";
+const RESERVATION_PRICE = formatPreorderMoney(
+  PREORDER_DEFAULT_PRICE_CENTS,
+  PREORDER_DEFAULT_CURRENCY,
+);
+const FOUNDING_PRICE = formatPreorderMoney(
+  PREORDER_FOUNDING_PRICE_CENTS,
+  PREORDER_DEFAULT_CURRENCY,
+);
+const REMAINING_BALANCE = formatPreorderMoney(
+  PREORDER_REMAINING_BALANCE_CENTS,
+  PREORDER_DEFAULT_CURRENCY,
+);
 
 const PRODUCT_STATUS_SECTIONS = [
   ["launch-readiness", "Final steps to launch"],
@@ -119,8 +136,8 @@ export default async function PreorderProductStatusPage() {
             <section id="preorder-protection">
               <h2>2. Reservation protection</h2>
               <p>
-                <strong>Your $299 price is locked.</strong> Your fully refundable $49 reservation secures one
-                device at that price. The reservation counts toward the total, leaving $250 due before shipping.
+                <strong>Your {FOUNDING_PRICE} price is locked.</strong> Your fully refundable {RESERVATION_PRICE} reservation secures one
+                device at that price. The reservation counts toward the total, leaving {REMAINING_BALANCE} due before shipping.
               </p>
               <p>
                 <strong>Q1 2027 dispatch.</strong> Engineering and production preparation are focused on

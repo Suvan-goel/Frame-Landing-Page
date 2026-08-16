@@ -64,6 +64,6 @@ export function evaluatePreorderLiveSmokeEvidence(input: {
     ready,
     blocker: ready
       ? null
-      : "The configured verification order is not a completed, confirmation-sent, fully refunded $49 Frame reservation with the reviewed $299 locked price and $250 remaining balance.",
+      : "The configured verification order is not a completed, confirmation-sent, fully refunded $99 Frame reservation with the reviewed $299 locked price and $200 remaining balance.",
   };
 }

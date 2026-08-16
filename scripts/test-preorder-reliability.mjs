@@ -179,10 +179,10 @@ try {
   if (syntheticIntents.error) throw new Error(`Checkout verification: ${syntheticIntents.error.message}`);
   assert(syntheticIntents.data.length === 1, "Duplicate checkout intents were stored.");
   assert(syntheticIntents.data[0].offer_type === "reservation", "The reservation offer type was not stored.");
-  assert(syntheticIntents.data[0].unit_amount === PREORDER_DEFAULT_PRICE_CENTS, "The $49 reservation amount drifted.");
+  assert(syntheticIntents.data[0].unit_amount === PREORDER_DEFAULT_PRICE_CENTS, "The $99 reservation amount drifted.");
   assert(syntheticIntents.data[0].reservation_amount === PREORDER_DEFAULT_PRICE_CENTS, "The reservation amount was not stored.");
   assert(syntheticIntents.data[0].locked_total_price === PREORDER_FOUNDING_PRICE_CENTS, "The $299 locked price was not stored.");
-  assert(syntheticIntents.data[0].remaining_balance === PREORDER_REMAINING_BALANCE_CENTS, "The $250 remaining balance was not stored.");
+  assert(syntheticIntents.data[0].remaining_balance === PREORDER_REMAINING_BALANCE_CENTS, "The $200 remaining balance was not stored.");
   console.log("PASS  Checkout idempotency: 8 simultaneous requests produced one reservation.");
 
   const filledSnapshot = await getSnapshot();

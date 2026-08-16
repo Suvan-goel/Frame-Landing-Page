@@ -428,8 +428,8 @@ test("server-renders the Frame landing page", async () => {
   assert.equal(html.match(/name="email"/g)?.length, 2);
   assert.match(html, /Reserve Frame/);
   assert.match(html, /Your price/);
-  assert.match(html, /Reserve(?: for)?\s*(?:<!-- -->)?\$49/);
-  assert.match(html, /\$250(?:<!-- -->)? due before shipping/);
+  assert.match(html, /Reserve(?: for)?\s*(?:<!-- -->)?\$99/);
+  assert.match(html, /\$200(?:<!-- -->)? due before shipping/);
   assert.match(html, /Launch price/);
   assert.match(html, /href="\/preorder\/review\?source=homepage_hero"/);
   assert.doesNotMatch(html, /Pre-orders are now open\./);
@@ -438,7 +438,7 @@ test("server-renders the Frame landing page", async () => {
   assert.match(html, /Reservation offer/);
   assert.match(
     html,
-    /Reserve\s*(?:<!-- -->)?\$49/,
+    /Reserve\s*(?:<!-- -->)?\$99/,
   );
   assert.doesNotMatch(html, /home-preorder-hero__saving-note/);
   assert.match(html, /home-preorder-hero__actions/);

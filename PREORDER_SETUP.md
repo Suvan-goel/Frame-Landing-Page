@@ -61,7 +61,7 @@ a synthetic `FR-TEST-0001` order and does not call Stripe, Supabase, or Resend.
 1. Apply all pending files in `supabase/migrations` to the existing Supabase
    project. The inventory-ceiling migration fixes the lifetime ceiling at
    1,000 units and keeps live released capacity at zero until an owner raises it.
-2. In Stripe test mode, create one active, one-time USD Price for $49.00 with
+2. In Stripe test mode, create one active, one-time USD Price for $99.00 with
    tax behaviour set to exclusive. Its Product must use the exact reviewed
    reservation name, description, image, and tax code enforced by checkout.
 3. Configure Stripe's test-mode public details and terms-of-service URL so
@@ -71,7 +71,7 @@ a synthetic `FR-TEST-0001` order and does not call Stripe, Supabase, or Resend.
 ```dotenv
 PREORDER_MODE=test
 PREORDER_PREVIEW_MODE=false
-FRAME_RESERVATION_PRICE_CENTS=4900
+FRAME_RESERVATION_PRICE_CENTS=9900
 PREORDER_CURRENCY=usd
 PREORDER_ALLOWED_COUNTRIES=US
 PREORDER_ESTIMATED_SHIPPING=Q1 2027
@@ -123,7 +123,7 @@ available for purchase.
 stripe listen --forward-to localhost:3000/api/stripe/webhook
 ```
 
-6. Complete `/preorder/review` with a Stripe test card. Checkout charges $49
+6. Complete `/preorder/review` with a Stripe test card. Checkout charges $99
    only. Successful reservations appear
    at `/admin/preorders` after signing in with an email in
    `WAITLIST_ADMIN_EMAILS`.

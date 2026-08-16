@@ -272,7 +272,9 @@ export function PreorderSuccess() {
             <span>02</span>
             <div>
               <strong>{reservation ? "Balance invitation" : "Delivery updates"}</strong>
-              <small>{reservation ? "We will ask before the $250 balance is due." : "Timing changes shared before dispatch."}</small>
+              <small>{reservation && order.remainingBalanceCents != null
+                ? `We will ask before the ${formatMoney(order.remainingBalanceCents, order.currency)} balance is due.`
+                : "Timing changes shared before dispatch."}</small>
             </div>
           </li>
           <li>

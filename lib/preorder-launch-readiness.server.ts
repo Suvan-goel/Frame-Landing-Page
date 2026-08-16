@@ -193,7 +193,7 @@ export async function evaluatePreorderLaunchReadiness(): Promise<PreorderLaunchR
       PREORDER_DEFAULT_ALLOWED_COUNTRIES.join(",") ||
     configuration.estimatedShipping !== PREORDER_ESTIMATED_SHIPPING
   ) {
-    blockers.push("The runtime offer does not match the reviewed $49 reservation amount, US-only availability, and Q1 2027 estimated-shipping configuration.");
+    blockers.push("The runtime offer does not match the reviewed $99 reservation amount, US-only availability, and Q1 2027 estimated-shipping configuration.");
   }
   if (configuration.shippingRateCents !== PREORDER_SHIPPING_RATE_CENTS) {
     blockers.push("The pre-order offer does not include the reviewed free standard US shipping rate.");

@@ -105,7 +105,7 @@ const webhookEndpointId =
       ? "STRIPE_LIVE_WEBHOOK_ENDPOINT_ID"
       : "STRIPE_TEST_WEBHOOK_ENDPOINT_ID"
   ] ?? "";
-const expectedPrice = Number(process.env.FRAME_RESERVATION_PRICE_CENTS ?? "4900");
+const expectedPrice = Number(process.env.FRAME_RESERVATION_PRICE_CENTS ?? "9900");
 const expectedCurrency = (process.env.PREORDER_CURRENCY ?? "usd").toLowerCase();
 const allowedCountries = (process.env.PREORDER_ALLOWED_COUNTRIES ?? "US")
   .split(",")
@@ -309,7 +309,7 @@ if (
   allowedCountries[0] === "US" &&
   estimatedShipping === "Q1 2027"
 ) {
-  pass("Reviewed offer", "$49 USD reservation, one device, US-only and Q1 2027 estimated shipping are configured.");
+  pass("Reviewed offer", "$99 USD reservation, one device, US-only and Q1 2027 estimated shipping are configured.");
 } else {
   fail("Reviewed offer", "The runtime offer differs from the reviewed pre-order configuration.");
 }

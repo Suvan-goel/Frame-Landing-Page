@@ -4,7 +4,11 @@ import { notFound } from "next/navigation";
 import { PreorderHeader } from "../../components/preorder-chrome";
 import { HistoryBackLink } from "../../components/history-back-link";
 import {
+  formatPreorderMoney,
+  PREORDER_DEFAULT_CURRENCY,
+  PREORDER_DEFAULT_PRICE_CENTS,
   PREORDER_LEGAL_PACK_UPDATED,
+  PREORDER_REMAINING_BALANCE_CENTS,
   PREORDER_TERMS_VERSION,
   isDraftPreorderVersion,
 } from "@/lib/preorder";
@@ -21,6 +25,14 @@ import {
 const REFUNDS_TITLE = "Frame Reservation Cancellation and Refund Policy";
 const REFUNDS_DESCRIPTION = "How to cancel a Frame reservation or obtain a refund.";
 const LEGAL_PACK_IS_DRAFT = isDraftPreorderVersion(PREORDER_TERMS_VERSION);
+const RESERVATION_PRICE = formatPreorderMoney(
+  PREORDER_DEFAULT_PRICE_CENTS,
+  PREORDER_DEFAULT_CURRENCY,
+);
+const REMAINING_BALANCE = formatPreorderMoney(
+  PREORDER_REMAINING_BALANCE_CENTS,
+  PREORDER_DEFAULT_CURRENCY,
+);
 
 const REFUND_SECTIONS = [
   ["cancelling", "Cancel before fulfilment"],
@@ -66,7 +78,7 @@ export default async function PreorderRefundsPage() {
           {`Legal pack version ${PREORDER_TERMS_VERSION} · ${PREORDER_LEGAL_PACK_UPDATED}`}
         </p>
         <p className="legal-intro">
-          The $49 reservation fee is fully refundable before you pay the remaining balance. If you later
+          The {RESERVATION_PRICE} reservation fee is fully refundable before you pay the remaining balance. If you later
           complete the device purchase, you retain the cancellation and return rights described below.
         </p>
 
@@ -124,13 +136,13 @@ export default async function PreorderRefundsPage() {
               <h2>1. Cancel your reservation</h2>
               <p>
                 You may cancel your reservation for any reason before paying the remaining balance and receive
-                a full refund of the $49 reservation fee and any tax paid. Use the secure “Manage your
+                a full refund of the {RESERVATION_PRICE} reservation fee and any tax paid. Use the secure “Manage your
                 reservation” link in the confirmation email or submit a request through the
                 <Link href="/contact?topic=preorder"> Frame reservation support form</Link> using the reservation
                 email and number. Do not send card details.
               </p>
               <p>
-                The reservation has no cancellation or restocking fee. The remaining $250 is not charged
+                The reservation has no cancellation or restocking fee. The remaining {REMAINING_BALANCE} is not charged
                 automatically, so cancelling the reservation only requires refunding the amount actually paid.
               </p>
               <p>

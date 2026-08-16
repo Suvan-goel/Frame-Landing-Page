@@ -113,27 +113,27 @@ test("renders a separate internal notification for every successful reservation"
     environment: "live",
     fullName: "Alex <Morgan>",
     customerEmail: "alex@example.com",
-    amountPaid: 4900,
+    amountPaid: 9900,
     currency: "usd",
     placedAt: "2026-08-14T18:30:00.000Z",
     estimatedShipping: "Q1 2027",
     offerType: "reservation",
     lockedTotalPrice: 29900,
-    remainingBalance: 25000,
+    remainingBalance: 20000,
   });
 
   assert.equal(
     rendered.subject,
-    "New Frame reservation | FR-001042 | $49",
+    "New Frame reservation | FR-001042 | $99",
   );
   assert.match(rendered.html, /New reservation/);
   assert.match(rendered.html, /A new Frame reservation was placed/);
   assert.match(rendered.html, /Paid today/);
-  assert.match(rendered.html, /\$49/);
+  assert.match(rendered.html, /\$99/);
   assert.match(rendered.html, /Your price/);
   assert.match(rendered.html, /\$299/);
   assert.match(rendered.html, /Balance before shipping/);
-  assert.match(rendered.html, /\$250/);
+  assert.match(rendered.html, /\$200/);
   assert.match(rendered.html, /href="https:\/\/framewearable\.com\/admin\/preorders\/preorder-preview"/);
   assert.doesNotMatch(rendered.html, /Alex <Morgan>/);
   assert.match(rendered.html, /Alex &lt;Morgan&gt;/);
@@ -147,13 +147,13 @@ test("labels internal test reservations as sandbox messages", () => {
     environment: "test",
     fullName: "Alex Morgan",
     customerEmail: "alex@example.com",
-    amountPaid: 4900,
+    amountPaid: 9900,
     currency: "usd",
     placedAt: "2026-08-14T18:30:00.000Z",
     estimatedShipping: "Q1 2027",
     offerType: "reservation",
     lockedTotalPrice: 29900,
-    remainingBalance: 25000,
+    remainingBalance: 20000,
   });
 
   assert.match(rendered.subject, /^\[Sandbox\]/);

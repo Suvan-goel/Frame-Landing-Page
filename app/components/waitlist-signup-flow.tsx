@@ -32,6 +32,11 @@ import {
 } from "./meta-pixel";
 import { recordLandingDiagnostic } from "./landing-diagnostics.client";
 import { requestTrackingPolicyAttestation } from "@/lib/geo-attestation";
+import {
+  formatPreorderMoney,
+  PREORDER_DEFAULT_CURRENCY,
+  PREORDER_REMAINING_BALANCE_CENTS,
+} from "@/lib/preorder";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MAX_QUALITATIVE_DETAIL_LENGTH = 300;
@@ -41,6 +46,10 @@ const NEVER_MEASURED_SURVEY_STEPS = 2;
 const FINAL_MEASURED_STEP = 3;
 const FINAL_NEVER_MEASURED_STEP = 1;
 const LOCAL_PREVIEW_SIGNUP_TOKEN = "local-survey-preview";
+const PREORDER_REMAINING_BALANCE_LABEL = formatPreorderMoney(
+  PREORDER_REMAINING_BALANCE_CENTS,
+  PREORDER_DEFAULT_CURRENCY,
+);
 
 type FlowStage =
   | "email"
@@ -1380,7 +1389,7 @@ export function WaitlistSignupFlow({
                   Reserve Frame for {preorderPriceLabel} today to lock in your
                   $299 price - $100 less than the $399 launch price. Your
                   reservation is fully refundable and counts toward the total,
-                  leaving $250 due before shipping.
+                  leaving {PREORDER_REMAINING_BALANCE_LABEL} due before shipping.
                 </p>
                 <div className="interest-flow__success-actions interest-flow__success-actions--stacked">
                   <a

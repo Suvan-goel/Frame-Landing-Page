@@ -224,7 +224,7 @@ export default async function PreorderAdminPage({
               <p className="eyebrow">Reservation programme</p>
               <h2 id="reservation-overview-heading">Reservations</h2>
               <p>
-                Paid $49 reservations that lock in each customer&apos;s $299 price,
+                Paid reservations that lock in each customer&apos;s $299 price,
                 with the remaining balance due before shipping.
               </p>
             </div>
