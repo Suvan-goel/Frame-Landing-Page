@@ -366,18 +366,18 @@ test("server-renders the Frame landing page", async () => {
   );
   assert.match(
     html,
-    /See how your blood pressure responds to daily life/,
+    /Your blood pressure does not wait for the doctor(?:&#x27;|')s office/,
   );
   assert.doesNotMatch(html, /Currently in development/);
   assert.match(html, /hero--email-first/);
   assert.match(html, /SHIPPING EST\.\s*(?:<!-- -->)?Q1 2027/);
   assert.match(
     html,
-    /The first wearable to continuously track blood pressure\s*(?:<!-- -->)?using ultrasound technology/,
+    /Frame uses wearable ultrasound to help reveal the patterns a single\s*(?:<!-- -->)?cuff reading can miss/,
   );
   assert.match(
     html,
-    /Advanced technology\. Effortless to live with\./,
+    /No screen\. No buzzing\. Nothing to check\./,
   );
   assert.match(
     html,
@@ -390,17 +390,20 @@ test("server-renders the Frame landing page", async () => {
   assert.doesNotMatch(html, /lower-confidence periods/);
   assert.match(
     html,
-    /How intelligent signal analysis keeps your patterns clear\./,
+    /How repeated context helps separate a pattern from a one-off\./,
   );
   assert.match(
     html,
-    /See what is typical for you, how your body responds, and how\s*(?:<!-- -->)?long changes last\./,
+    /See what is typical for you, what changes around sleep, stress,\s*(?:<!-- -->)?meals, and training/,
   );
   assert.match(html, /Research evidence/);
   assert.match(
     html,
-    /Wearable ultrasound has been evaluated in peer-reviewed human\s*(?:<!-- -->)?studies\./,
+    /Built on published science\. Built in the open\./,
   );
+  assert.match(html, /The things you are actually weighing\./);
+  assert.match(html, /How will I know it is accurate\?/);
+  assert.match(html, /Is there a subscription or automatic later charge\?/);
   assert.match(html, />118</);
   assert.match(html, /adults studied/);
   assert.doesNotMatch(html, /Read the clinical validation study/);

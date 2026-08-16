@@ -53,7 +53,7 @@ export async function generateMetadata(): Promise<Metadata> {
       apple: "/favicon.png",
     },
     openGraph: {
-      title: "See how your cardiovascular system responds to daily life.",
+      title: "Your blood pressure does not wait for the doctor's office.",
       description,
       type: "website",
       siteName: SITE_NAME,
@@ -61,18 +61,18 @@ export async function generateMetadata(): Promise<Metadata> {
       url: SITE_URL,
       images: [
         {
-          url: "/og-launch-v2.png",
+          url: "/og-copy-refresh-v1.png",
           width: 1732,
           height: 908,
-          alt: "Frame: See how your blood pressure responds to daily life.",
+          alt: "Frame: Your blood pressure does not wait for the doctor's office.",
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title: "See how your cardiovascular system responds to daily life.",
+      title: "Your blood pressure does not wait for the doctor's office.",
       description,
-      images: ["/og-launch-v2.png"],
+      images: ["/og-copy-refresh-v1.png"],
     },
     robots: {
       index: true,

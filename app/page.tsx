@@ -25,12 +25,13 @@ const content = {
     { label: "Product", href: "#product" },
     { label: "How it works", href: "#how-it-works" },
     { label: "Research", href: "#research" },
+    { label: "FAQ", href: "#faq" },
   ],
   insights: [
-    ["Baseline", "What is typical for you during comparable periods."],
-    ["Response", "How your blood pressure changes around meaningful events."],
-    ["Recovery", "How quickly you return toward your usual pattern."],
-    ["Confidence", "How intelligent signal analysis keeps your patterns clear."],
+    ["Baseline", "What is typical for you across comparable nights, days, and routines."],
+    ["Response", "How your readings move around sleep, training, meals, and stress."],
+    ["Recovery", "How quickly you return toward your usual pattern after a change."],
+    ["Confidence", "How repeated context helps separate a pattern from a one-off."],
   ],
   principles: [
     [
@@ -39,20 +40,20 @@ const content = {
     ],
     [
       "Made to live in",
-      "A soft, adjustable upper-arm form designed for comfortable everyday wear.",
+      "A soft, adjustable upper-arm form designed for sleep, training, and everyday wear.",
     ],
     [
       "Advanced made simple",
-      "Ultrasound and machine learning do the complex work; you see the patterns that matter.",
+      "Ultrasound and machine learning do the complex work; you see baseline, response, and recovery.",
     ],
   ],
 } as const;
 
 const contextIntroCopy =
-  "Blood pressure changes with sleep, stress, movement, and recovery. Frame is designed to connect those moments, helping reveal patterns an occasional reading may miss.";
+  "Blood pressure moves all day and all night—with sleep, stress, training, meals, and recovery. A cuff captures one moment. Frame is designed to connect the moments between.";
 
 const methodIntroCopy =
-  "Frame combines cutting-edge wearable ultrasound technology with movement, contact, sleep, and activity sensing to reveal patterns over time.";
+  "Light-based wearables infer from changes at the skin. Frame uses ultrasound to observe arterial motion beneath it, then adds movement, contact, sleep, and activity context.";
 
 const methodSteps = [
   [
@@ -184,20 +185,22 @@ export default async function Home() {
             </p>
             <h1>
               <span className="hero-heading__desktop">
-                See how your blood pressure responds to daily life
+                Your blood pressure does not wait for the doctor&apos;s office
               </span>
               <span className="hero-heading__mobile">
-                See how your blood pressure responds to daily life
+                Your blood pressure does not wait for the doctor&apos;s office
               </span>
             </h1>
             <p className="hero-intro">
               <span className="hero-intro__desktop">
-                The first wearable to continuously track blood pressure
-                using ultrasound technology
+                It changes at 3 a.m., mid-workout, and after a hard conversation.
+                Frame uses wearable ultrasound to help reveal the patterns a single
+                cuff reading can miss.
               </span>
               <span className="hero-intro__mobile">
-                The first wearable to continuously track blood pressure
-                using ultrasound technology
+                It changes at 3 a.m., mid-workout, and after a hard conversation.
+                Frame uses wearable ultrasound to help reveal the patterns a single
+                cuff reading can miss.
               </span>
             </p>
             {preorderOffer ? (
@@ -285,8 +288,8 @@ export default async function Home() {
       <section className="context-section section">
         <div className="container context-container" id="product">
           <div className="context-intro">
-            <p className="eyebrow">Why context matters</p>
-            <h2>A single reading cannot show a pattern.</h2>
+            <p className="eyebrow">The problem with one reading</p>
+            <h2>A cuff measures a moment. Your life is not a moment.</h2>
             <p className="context-intro__description">
               <span className="context-intro__desktop">
                 {contextIntroCopy}
@@ -354,10 +357,10 @@ export default async function Home() {
               aria-label="How Frame creates context"
             >
               {[
-                ["Baseline", "What is typical for you during comparable periods."],
-                ["Response", "How your blood pressure changes around meaningful events."],
-                ["Recovery", "How quickly you return toward your usual pattern."],
-                ["Confidence", "How intelligent signal analysis keeps your patterns clear."],
+                ["Baseline", "What is typical for you across comparable nights, days, and routines."],
+                ["Response", "How your readings move around sleep, training, meals, and stress."],
+                ["Recovery", "How quickly you return toward your usual pattern after a change."],
+                ["Confidence", "How repeated context helps separate a pattern from a one-off."],
               ].map(([title, description], index) => (
                 <article key={title}>
                   <span>0{index + 1}</span>
@@ -375,8 +378,8 @@ export default async function Home() {
       <section className="method-section section">
         <div className="container" id="how-it-works">
           <div className="section-heading">
-            <p className="eyebrow">How it works</p>
-            <h2>Ultrasound, made wearable.</h2>
+            <p className="eyebrow">The physics</p>
+            <h2>Light infers. Ultrasound observes.</h2>
             <p>
               <span className="method-intro__desktop">
                 {methodIntroCopy}
@@ -455,20 +458,20 @@ export default async function Home() {
             <p className="eyebrow">The experience</p>
             <h2>
               <span className="software-heading__desktop">
-                See the patterns behind your readings.
+                See the patterns behind the number.
               </span>
               <span className="software-heading__mobile">
-                See the patterns behind your readings.
+                See the patterns behind the number.
               </span>
             </h2>
             <p>
               <span className="software-intro__desktop">
-                See what is typical for you, how your body responds, and how
-                long changes last.
+                See what is typical for you, what changes around sleep, stress,
+                meals, and training—and how long it takes to return.
               </span>
               <span className="software-intro__mobile">
-                See what is typical for you, how your body responds, and how
-                long changes last.
+                See what is typical for you, what changes around sleep, stress,
+                meals, and training—and how long it takes to return.
               </span>
             </p>
             <blockquote>
@@ -613,10 +616,10 @@ export default async function Home() {
             <p className="eyebrow">Product principles</p>
             <h2>
               <span className="principles-heading__desktop">
-                Advanced technology. Effortless to live with.
+                No screen. No buzzing. Nothing to check.
               </span>
               <span className="principles-heading__mobile">
-                Advanced technology. Effortless to live with.
+                No screen. No buzzing. Nothing to check.
               </span>
             </h2>
             <div className="principle-list principle-list--desktop">
@@ -644,22 +647,22 @@ export default async function Home() {
               <span className="status-label">Research evidence</span>
               <h3>
                 <span className="research-heading__desktop">
-                  Wearable ultrasound has been evaluated in peer-reviewed human
-                  studies.
+                  Built on published science. Built in the open.
                 </span>
                 <span className="research-heading__mobile">
-                  Wearable ultrasound has been evaluated in peer-reviewed human
-                  studies.
+                  Built on published science. Built in the open.
                 </span>
               </h3>
               <p>
                 <span className="research-intro__desktop">
-                  Backed by peer-reviewed human studies, Frame brings validated
-                  ultrasound sensing to continuous blood-pressure monitoring.
+                  Frame builds on a wearable ultrasound approach evaluated in a
+                  peer-reviewed human study. Frame itself remains in development;
+                  we will publish its evidence before making validation claims.
                 </span>
                 <span className="research-intro__mobile">
-                  Backed by peer-reviewed human studies, Frame brings validated
-                  ultrasound sensing to continuous blood-pressure monitoring.
+                  Frame builds on a wearable ultrasound approach evaluated in a
+                  peer-reviewed human study. Frame itself remains in development;
+                  we will publish its evidence before making validation claims.
                 </span>
               </p>
               <div className="research-standards research-standards--desktop" aria-label="Published evidence for wearable ultrasound">
@@ -698,6 +701,78 @@ export default async function Home() {
         </div>
       </section>
 
+      <section className="home-faq-section section" id="faq">
+        <div className="container home-faq-grid">
+          <div className="home-faq-copy">
+            <p className="eyebrow">Fair questions</p>
+            <h2>The things you are actually weighing.</h2>
+            <p>
+              Frame is still in development. These are the clearest answers we
+              can give today, with links to the details where they matter.
+            </p>
+          </div>
+          <div className="home-faq-list">
+            <details>
+              <summary>How will I know it is accurate?</summary>
+              <p className="home-faq-answer">
+                That is the central question. The measurement approach Frame builds
+                on has been evaluated in a peer-reviewed human study against clinical
+                references. Frame itself is still in development. We plan to test it
+                against appropriate references and share the evidence before shipping.
+              </p>
+            </details>
+            <details>
+              <summary>Does Frame replace a cuff or a clinician?</summary>
+              <p className="home-faq-answer">
+                No. Frame is being developed as a general-wellness wearable for
+                understanding patterns over time. It is not intended for medical
+                decisions, diagnosis, treatment, or to replace an FDA-authorized
+                blood-pressure monitor or your clinician.
+              </p>
+            </details>
+            <details>
+              <summary>What is it designed to feel like to wear?</summary>
+              <p className="home-faq-answer">
+                A soft, adjustable band worn on the upper arm, a few centimetres
+                above the elbow. It is screenless and silent, designed to work in the
+                background through daily life and sleep. Final specifications may
+                change while the product is in development.
+              </p>
+            </details>
+            {preorderOffer ? (
+              <>
+                <details>
+                  <summary>Is the {preorderPriceLabel} reservation really refundable?</summary>
+                  <p className="home-faq-answer">
+                    Yes. You may cancel before paying the remaining balance for a full
+                    refund of the reservation fee and any tax paid. See the full{" "}
+                    <a href="/preorder/refunds">Cancellation &amp; Refund Policy</a>.
+                  </p>
+                </details>
+                <details>
+                  <summary>What if the {preorderOffer.estimatedShipping} estimate changes?</summary>
+                  <p className="home-faq-answer">
+                    We will email you before the current estimate expires, explain the
+                    change, and provide a free way to accept the revised date or cancel
+                    for a full refund. The exact protections are in the{" "}
+                    <a href="/preorder/terms#shipping">Reservation Terms</a>.
+                  </p>
+                </details>
+                <details>
+                  <summary>Is there a subscription or automatic later charge?</summary>
+                  <p className="home-faq-answer">
+                    No. Your reservation does not authorize a later automatic charge,
+                    and there is no subscription. Before shipping, we will ask you to
+                    review the final product details and separately approve payment of
+                    the remaining balance.
+                  </p>
+                </details>
+              </>
+            ) : null}
+          </div>
+        </div>
+      </section>
+
       {showLocalContributorAreas ? (
         <section className="home-contributor-section">
           <div className="container home-contributor-grid">
@@ -722,12 +797,12 @@ export default async function Home() {
       <section className="final-cta" id="early-access">
         <div className="container final-grid">
           <div className="final-cta__copy">
-            <p className="eyebrow">Frame updates</p>
-            <h2>Follow Frame through launch and beyond.</h2>
+            <p className="eyebrow">Built in the open</p>
+            <h2>See every milestone—and every setback.</h2>
           </div>
           <div className="final-cta__form final-cta__action">
             <p className="final-cta__mobile-intro">
-              Get product milestones and launch updates.
+              Get honest product milestones and launch updates.
             </p>
             <WaitlistSignupFlow
               placement="homepage_final"

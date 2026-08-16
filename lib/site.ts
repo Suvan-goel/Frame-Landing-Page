@@ -6,5 +6,5 @@ export const ORGANIZATION_NAME = ORGANIZATION_DISPLAY_NAME;
 export const LEGACY_SITE_DESCRIPTION =
   "Frame is developing a non-invasive upper-arm ultrasound wearable to help people understand blood pressure patterns across sleep, stress, exercise, and recovery.";
 export const SITE_DESCRIPTION =
-  "Frame is a screenless, non-invasive upper-arm ultrasound wearable for understanding blood-pressure patterns across sleep, stress, exercise, and recovery.";
+  "Frame is a screenless upper-arm wearable in development, using ultrasound to help reveal blood-pressure patterns across sleep, stress, exercise, and recovery.";
 export const INSTAGRAM_URL = "https://www.instagram.com/framewearable/";
