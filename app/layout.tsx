@@ -53,7 +53,7 @@ export async function generateMetadata(): Promise<Metadata> {
       apple: "/favicon.png",
     },
     openGraph: {
-      title: "Your blood pressure does not wait for the doctor's office.",
+      title: "Most wearables look at the pulse. Frame looks at the artery.",
       description,
       type: "website",
       siteName: SITE_NAME,
@@ -61,18 +61,18 @@ export async function generateMetadata(): Promise<Metadata> {
       url: SITE_URL,
       images: [
         {
-          url: "/og-copy-refresh-v1.png",
-          width: 1732,
-          height: 908,
-          alt: "Frame: Your blood pressure does not wait for the doctor's office.",
+          url: "/og-why-frame-v1.png",
+          width: 1536,
+          height: 804,
+          alt: "Frame wearable ultrasound observing arterial wall motion beneath the skin.",
         },
       ],
     },
     twitter: {
       card: "summary_large_image",
-      title: "Your blood pressure does not wait for the doctor's office.",
+      title: "Most wearables look at the pulse. Frame looks at the artery.",
       description,
-      images: ["/og-copy-refresh-v1.png"],
+      images: ["/og-why-frame-v1.png"],
     },
     robots: {
       index: true,

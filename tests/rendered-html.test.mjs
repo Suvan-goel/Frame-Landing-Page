@@ -383,6 +383,52 @@ test("server-renders the Frame landing page", async () => {
     html,
     /Personalised machine-learning analysis combines ultrasound\s*(?:<!-- -->)?signals with daily context to reveal clear patterns over time\./,
   );
+  assert.match(html, /Ultrasound, made wearable\./);
+  assert.match(
+    html,
+    /Frame combines cutting-edge wearable ultrasound technology with movement,\s*(?:<!-- -->)?contact, sleep, and activity sensing to reveal patterns over time\./,
+  );
+  assert.match(
+    html,
+    /Most wearables look at the pulse\. Frame looks at the artery\./,
+  );
+  assert.doesNotMatch(html, /technology-optical-ppg-v2/);
+  assert.doesNotMatch(html, /technology-frame-ultrasound-v2/);
+  assert.match(html, /Optical sensing/);
+  assert.match(html, /Inflatable cuff/);
+  assert.match(html, /Frame ultrasound/);
+  assert.match(html, /Different sensing physics\./);
+  assert.match(html, /How Frame compares/);
+  assert.match(html, /Arterial mechanics using ultrasound/);
+  assert.match(html, /Under validation/);
+  assert.match(html, /Samsung Galaxy Watch/);
+  assert.match(
+    html,
+    /Independent research — not a validation study of Frame\./,
+  );
+  assert.match(
+    html,
+    /Frame is developing its own implementation and will validate its\s*(?:<!-- -->)?performance independently before launch\./,
+  );
+  assert.match(html, /We(?:&#x27;|')ll share results as development progresses\./);
+  assert.match(html, /Validation roadmap/);
+  assert.match(html, /We(?:&#x27;|')re proving Frame/);
+  assert.doesNotMatch(
+    html,
+    /Frame (?:directly measures|is clinically proven|is medical grade|replaces (?:a|your) cuff|requires no calibration)/i,
+  );
+  assert.doesNotMatch(html, /2\.0×/);
+  assert.doesNotMatch(html, /2\.6×/);
+  assert.doesNotMatch(html, /Measure a proxy\./);
+  assert.doesNotMatch(html, /Observe the artery\./);
+  assert.doesNotMatch(html, /0\.977/);
+  assert.doesNotMatch(html, /\+15\.5/);
+  assert.doesNotMatch(html, /\+11\.8/);
+  assert.match(html, /Hilo/);
+  assert.match(html, /Apple Watch/);
+  assert.match(html, /WHOOP/);
+  assert.doesNotMatch(html, /Same category\. Different jobs\./);
+  assert.doesNotMatch(html, /A signal anchored to the artery itself\./);
   assert.doesNotMatch(
     html,
     /Frame pairs wearable ultrasound with everyday context/,
@@ -401,9 +447,28 @@ test("server-renders the Frame landing page", async () => {
     html,
     /Built on published science\. Built in the open\./,
   );
+  assert.match(html, /Follow Frame from prototype to launch\./);
+  assert.match(
+    html,
+    /Get product milestones and launch updates, straight from the team\./,
+  );
+  assert.doesNotMatch(html, /every setback|honest product milestones/);
   assert.match(html, /The things you are actually weighing\./);
   assert.match(html, /How will I know it is accurate\?/);
-  assert.match(html, /Is there a subscription or automatic later charge\?/);
+  assert.match(html, /Accuracy will be demonstrated, not assumed\./);
+  assert.match(html, /What exactly does Frame measure\?/);
+  assert.match(html, /Is ultrasound safe to wear\?/);
+  assert.match(html, /What should I expect from the battery and app\?/);
+  assert.match(html, /Frame will be rechargeable/);
+  assert.match(html, /Is there a subscription\?/);
+  assert.match(html, /Do you ship internationally\?/);
+  assert.match(html, /Who is behind Frame\?/);
+  assert.match(html, /What about my data\?/);
+  assert.match(html, /Your data is yours\./);
+  assert.match(
+    html,
+    /We are a team of engineers based in London and San Francisco who\s*(?:<!-- -->)?are obsessed with pushing the boundaries of wearable technology/,
+  );
   assert.match(html, />118</);
   assert.match(html, /adults studied/);
   assert.doesNotMatch(html, /Read the clinical validation study/);
@@ -1118,7 +1183,7 @@ test("uses generated raster visuals and keeps the page editable", async () => {
   assert.match(contributorPayments, /if \(duplicatePayment\) return/);
   assert.match(contributorPayments, /existingContributor\.checkout_intent_id === intent\.id/);
   assert.doesNotMatch(page, /Connect a real waitlist API/);
-  assert.match(layout, /url: "\/og-launch-v2\.png"/);
+  assert.match(layout, /url: "\/og-why-frame-v1\.png"/);
   assert.match(
     layout,
     /\{children\}[\s\S]*?<MetaPixelRouteGuard useRedesignedConsent=\{preorderSalesEnabled\} \/>/,

@@ -457,7 +457,7 @@ test("keeps the public homepage free of pre-order discovery and blocks webhook b
   assert.doesNotMatch(home, /Product concept · final design in development/);
   assert.match(
     home,
-    /Wearable ultrasound has been evaluated in peer-reviewed human\s*(?:<!-- -->)?studies\./,
+    /Independent researchers have demonstrated continuous, non-invasive\s*(?:<!-- -->)?blood-pressure monitoring using wearable ultrasound in human studies\./,
   );
   assert.match(home, /Frame is under development and is not currently available for sale\./);
   assert.match(home, /Frame is developing a non-invasive upper-arm ultrasound wearable/);

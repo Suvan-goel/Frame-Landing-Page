@@ -4,6 +4,7 @@ import { BrandWordmark } from "./components/brand-wordmark";
 import { MobileNavigation } from "./components/mobile-navigation";
 import { MobilePersistentPreorder } from "./components/mobile-persistent-preorder";
 import { MobileWaitlistDisclosure } from "./components/mobile-waitlist-disclosure";
+import { TechnologyComparisonSection } from "./components/technology-comparison-section";
 import {
   WaitlistSignupFlow,
   WaitlistSignupProvider,
@@ -53,7 +54,7 @@ const contextIntroCopy =
   "Blood pressure moves all day and all night—with sleep, stress, training, meals, and recovery. A cuff captures one moment. Frame is designed to connect the moments between.";
 
 const methodIntroCopy =
-  "Light-based wearables infer from changes at the skin. Frame uses ultrasound to observe arterial motion beneath it, then adds movement, contact, sleep, and activity context.";
+  "Frame combines cutting-edge wearable ultrasound technology with movement, contact, sleep, and activity sensing to reveal patterns over time.";
 
 const methodSteps = [
   [
@@ -378,8 +379,8 @@ export default async function Home() {
       <section className="method-section section">
         <div className="container" id="how-it-works">
           <div className="section-heading">
-            <p className="eyebrow">The physics</p>
-            <h2>Light infers. Ultrasound observes.</h2>
+            <p className="eyebrow">How it works</p>
+            <h2>Ultrasound, made wearable.</h2>
             <p>
               <span className="method-intro__desktop">
                 {methodIntroCopy}
@@ -438,6 +439,8 @@ export default async function Home() {
           </div>
         </div>
       </section>
+
+      <TechnologyComparisonSection />
 
       <section className="software-section section">
         <div className="container software-grid">
@@ -642,7 +645,7 @@ export default async function Home() {
               ))}
             </div>
           </div>
-          <aside className="research-panel" id="research">
+          <aside className="research-panel" id="published-research">
             <div className="research-panel__body">
               <span className="status-label">Research evidence</span>
               <h3>
@@ -707,36 +710,107 @@ export default async function Home() {
             <p className="eyebrow">Fair questions</p>
             <h2>The things you are actually weighing.</h2>
             <p>
-              Frame is still in development. These are the clearest answers we
-              can give today, with links to the details where they matter.
+              Direct answers about what Frame is, how it works, and what you can
+              expect from us.
             </p>
           </div>
           <div className="home-faq-list">
             <details>
               <summary>How will I know it is accurate?</summary>
               <p className="home-faq-answer">
-                That is the central question. The measurement approach Frame builds
-                on has been evaluated in a peer-reviewed human study against clinical
-                references. Frame itself is still in development. We plan to test it
-                against appropriate references and share the evidence before shipping.
+                Accuracy will be demonstrated, not assumed. Frame builds on a
+                measurement approach evaluated in a peer-reviewed human study
+                against clinical references. We are validating Frame against
+                appropriate references and will publish the evidence before shipping.
+              </p>
+            </details>
+            <details>
+              <summary>What exactly does Frame measure?</summary>
+              <p className="home-faq-answer">
+                Frame is designed to use ultrasound to observe motion of the
+                brachial artery beneath the skin. Movement, contact, sleep, and
+                activity sensing add context. Personalised analysis is being
+                developed to turn those signals into baseline, response, and
+                recovery patterns over time.
+              </p>
+            </details>
+            <details>
+              <summary>Is ultrasound safe to wear?</summary>
+              <p className="home-faq-answer">
+                Ultrasound uses non-ionizing sound waves rather than X-rays. The{" "}
+                <a href="https://www.fda.gov/radiation-emitting-products/medical-imaging/ultrasound-imaging" target="_blank" rel="noreferrer">FDA describes diagnostic ultrasound as having a long safety record</a>,
+                while also recommending prudent use and minimized exposure.
+                Frame&apos;s acoustic output, sensing schedule, and final hardware
+                still have to complete safety and quality verification before
+                shipping.
               </p>
             </details>
             <details>
               <summary>Does Frame replace a cuff or a clinician?</summary>
               <p className="home-faq-answer">
-                No. Frame is being developed as a general-wellness wearable for
-                understanding patterns over time. It is not intended for medical
-                decisions, diagnosis, treatment, or to replace an FDA-authorized
-                blood-pressure monitor or your clinician.
+                No. Frame has a different job: helping you understand how your
+                blood-pressure patterns move through daily life. It is a
+                general-wellness wearable, not a diagnostic tool, treatment, or
+                replacement for an FDA-authorized monitor or your clinician.
               </p>
             </details>
             <details>
               <summary>What is it designed to feel like to wear?</summary>
               <p className="home-faq-answer">
-                A soft, adjustable band worn on the upper arm, a few centimetres
-                above the elbow. It is screenless and silent, designed to work in the
-                background through daily life and sleep. Final specifications may
-                change while the product is in development.
+                Soft, quiet, and easy to forget. Frame is an adjustable upper-arm
+                band worn a few centimetres above the elbow. It has no screen, no
+                buzzing, and nothing to check; it works in the background through
+                daily life and sleep.
+              </p>
+            </details>
+            <details>
+              <summary>What should I expect from the battery and app?</summary>
+              <p className="home-faq-answer">
+                Frame will be rechargeable and will pair with a companion app.
+                We are optimizing battery life, charging, connectivity, phone
+                support, and data export for dependable everyday use. Final
+                production specifications will be published before shipping and
+                before reservation holders are asked for the remaining balance.
+              </p>
+            </details>
+            <details>
+              <summary>Is there a subscription?</summary>
+              <p className="home-faq-answer">
+                No. There is no subscription or recurring charge in the current
+                offer. Your reservation never authorizes an automatic later charge;
+                you will review the final product and separately approve the
+                remaining balance before shipping. Any future optional service
+                would be clearly separate.
+              </p>
+            </details>
+            <details>
+              <summary>Do you ship internationally?</summary>
+              <p className="home-faq-answer">
+                Frame launches in the 50 United States and Washington, DC, with
+                standard US shipping included. US territories and international
+                destinations are not part of the first launch. We will expand to
+                additional regions as regulatory, support, and fulfilment readiness
+                allows.
+              </p>
+            </details>
+            <details>
+              <summary>Who is behind Frame?</summary>
+              <p className="home-faq-answer">
+                We are a team of engineers based in London and San Francisco who
+                are obsessed with pushing the boundaries of wearable technology
+                with the goal of making a meaningful difference to the lives of
+                millions of people.
+              </p>
+            </details>
+            <details>
+              <summary>What about my data?</summary>
+              <p className="home-faq-answer">
+                Your data is yours. Frame does not sell your personal information
+                for money. Website and order information is handled under our{" "}
+                <a href="/privacy">Privacy Notice</a>, and Frame never receives or
+                stores your full payment-card number. The device platform is being
+                built around encryption in transit and at rest, clear retention
+                controls, and the ability to export or delete your data.
               </p>
             </details>
             {preorderOffer ? (
@@ -744,27 +818,20 @@ export default async function Home() {
                 <details>
                   <summary>Is the {preorderPriceLabel} reservation really refundable?</summary>
                   <p className="home-faq-answer">
-                    Yes. You may cancel before paying the remaining balance for a full
-                    refund of the reservation fee and any tax paid. See the full{" "}
+                    Yes. It is fully refundable before you pay the remaining
+                    balance. Cancel for any reason and we will return the reservation
+                    fee and any tax paid. See the full{" "}
                     <a href="/preorder/refunds">Cancellation &amp; Refund Policy</a>.
                   </p>
                 </details>
                 <details>
                   <summary>What if the {preorderOffer.estimatedShipping} estimate changes?</summary>
                   <p className="home-faq-answer">
-                    We will email you before the current estimate expires, explain the
-                    change, and provide a free way to accept the revised date or cancel
-                    for a full refund. The exact protections are in the{" "}
+                    You stay in control. If the estimate moves, we will tell you
+                    before it expires, explain why, and give you a free way to accept
+                    the revised date or cancel for a full refund. The exact
+                    protections are in the{" "}
                     <a href="/preorder/terms#shipping">Reservation Terms</a>.
-                  </p>
-                </details>
-                <details>
-                  <summary>Is there a subscription or automatic later charge?</summary>
-                  <p className="home-faq-answer">
-                    No. Your reservation does not authorize a later automatic charge,
-                    and there is no subscription. Before shipping, we will ask you to
-                    review the final product details and separately approve payment of
-                    the remaining balance.
                   </p>
                 </details>
               </>
@@ -798,11 +865,11 @@ export default async function Home() {
         <div className="container final-grid">
           <div className="final-cta__copy">
             <p className="eyebrow">Built in the open</p>
-            <h2>See every milestone—and every setback.</h2>
+            <h2>Follow Frame from prototype to launch.</h2>
           </div>
           <div className="final-cta__form final-cta__action">
             <p className="final-cta__mobile-intro">
-              Get honest product milestones and launch updates.
+              Get product milestones and launch updates, straight from the team.
             </p>
             <WaitlistSignupFlow
               placement="homepage_final"
